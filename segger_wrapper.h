@@ -14,6 +14,7 @@
 
 /////////    PARAMETERS
 
+
 #ifndef USE_SVIEW
 #define USE_SVIEW         0
 #endif
@@ -21,6 +22,8 @@
 /////////    DEFINES
 
 #define RTT_LOG_CHANNEL   0
+
+#define USE_RTT           0
 
 #define EMPTY_MACRO                    do {} while (0)
 
@@ -76,6 +79,8 @@
 #define DISPLAY_TASK3                  (TASK_BASE + 12u)
 #define DISPLAY_TASK4                  (TASK_BASE + 13u)
 #define USB_VCOM_TASK                  (TASK_BASE + 14u)
+#define EMPTY1                         (TASK_BASE + 15u)
+#define EMPTY2                         (TASK_BASE + 16u)
 
 
 /////////    FUNCTIONS

@@ -6,6 +6,7 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/*.cpp) \
   $(wildcard $(PROJ_DIR)/drivers/*.c) \
   $(wildcard $(PROJ_DIR)/drivers/lcd/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/sysview/*.c) \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52.S \
   $(SDK_ROOT)/components/libraries/bsp/bsp.c \
   $(SDK_ROOT)/components/libraries/fds/fds.c \
@@ -129,6 +130,7 @@ SRC_FILES += \
 INC_FOLDERS += \
   $(PROJ_DIR) \
   $(PROJ_DIR)/drivers \
+  $(PROJ_DIR)/libraries/sysview \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers/nrf52 \
