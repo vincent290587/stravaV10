@@ -5,9 +5,9 @@
  *      Author: Vincent
  */
 
-#include "assert.h"
+#include "nrf_ASSERT.h"
 #include "Model.h"
-#include "ScreenUtils.h"
+#include "Screenutils.h"
 #include "segger_wrapper.h"
 #include <vue/VueCRS.h>
 
@@ -92,7 +92,7 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 
 		this->afficheSegment(5, m_segs.s_segs[0].p_seg);
 
-		assert(m_segs.s_segs[0].p_seg);
+		ASSERT(m_segs.s_segs[0].p_seg);
 
 		if (SEG_OFF == m_segs.s_segs[0].p_seg->getStatus()) {
 
@@ -109,8 +109,8 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 		this->cadran(1, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm.getData().bpm), "bpm");
 
-		assert(m_segs.s_segs[0].p_seg);
-		assert(m_segs.s_segs[1].p_seg);
+		ASSERT(m_segs.s_segs[0].p_seg);
+		ASSERT(m_segs.s_segs[1].p_seg);
 
 		if (SEG_OFF == m_segs.s_segs[0].p_seg->getStatus() &&
 				SEG_OFF == m_segs.s_segs[1].p_seg->getStatus()) {
@@ -187,7 +187,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	Point pCourant, pSuivant;
 	Point *maPos = nullptr;
 
-	assert(p_seg);
+	ASSERT(p_seg);
 
 	if (p_seg->longueur() < 4) {
 		LOG_ERROR("Segment %s not loaded properly\r\n", p_seg->getName());
@@ -206,7 +206,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	// on cherche la taille de fenetre
 	liste = p_seg->getListePoints();
 
-	assert(liste);
+	ASSERT(liste);
 
 	// compute convertion between deg and meters
 	float deglon_to_m = 1000. * distance_between(att.loc.lat, att.loc.lon, att.loc.lat, att.loc.lon + 0.001);
@@ -392,7 +392,7 @@ void VueCRS::partner(uint8_t ligne, Segment *p_seg) {
 	static int centre = _width / 2;
 	float rtime, curtime;
 
-	assert(p_seg);
+	ASSERT(p_seg);
 
 	rtime   = p_seg->getAvance();
 	curtime = p_seg->getCur();

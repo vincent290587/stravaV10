@@ -6,10 +6,10 @@
  */
 
 #include "Model.h"
+#include "nrf_assert.h"
 #include <vue/VueFEC.h>
 #include <vue/Screenutils.h>
 #include "segger_wrapper.h"
-#include "usb_parser.h"
 
 #define VUE_FEC_NB_LINES            5
 
@@ -21,7 +21,7 @@ static tHistoValue _vue_fec_pw_rb_read(uint16_t ind_) {
 
 	tHistoValue *p_ret_val = boucle_fec.m_pw_buffer.get(ind_);
 
-	assert(p_ret_val);
+	ASSERT(p_ret_val);
 
 	tHistoValue ret_val = p_ret_val[0];
 
@@ -51,14 +51,14 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 
 			m_el_time = 0;
 
-			// blink neopixel
-			if (fec_info.data.power > 200) {
-				nrf52_page0.neo_info.event_type = 1;
-				nrf52_page0.neo_info.on_time = 5;
-				nrf52_page0.neo_info.rgb[0] = 0x00;
-				nrf52_page0.neo_info.rgb[1] = 0xFF;
-				nrf52_page0.neo_info.rgb[2] = 0x00;
-			}
+			// TODO blink neopixel
+//			if (fec_info.data.power > 200) {
+//				nrf52_page0.neo_info.event_type = 1;
+//				nrf52_page0.neo_info.on_time = 5;
+//				nrf52_page0.neo_info.rgb[0] = 0x00;
+//				nrf52_page0.neo_info.rgb[1] = 0xFF;
+//				nrf52_page0.neo_info.rgb[2] = 0x00;
+//			}
 		}
 
 	} else if (m_fec_screen_mode == eVueFECScreenDataFull) {

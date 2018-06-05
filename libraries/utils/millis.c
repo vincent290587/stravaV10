@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "segger_wrapper.h"
+#include "nrf_delay.h"
 
 /*******************************************************************************
  * Definitions

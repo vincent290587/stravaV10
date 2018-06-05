@@ -113,7 +113,7 @@ void GPS_MGMT::init(void) {
 }
 
 bool GPS_MGMT::is3D(void) {
-	return !GPIO_PinRead(BOARD_INITPINS_PIN_3D_GPIO, BOARD_INITPINS_PIN_3D_GPIO_PIN);
+	return !nrf_gpio_pin_read(BOARD_FIX_PIN);
 }
 
 void GPS_MGMT::standby(void) {
@@ -159,28 +159,29 @@ void GPS_MGMT::tasks(void) {
 		m_epo_packet_nb = 0;
 		m_epo_packet_ind = 0;
 
-		int size = epo_file_size();
-		int res  = epo_file_start();
-
-		if (size <= 0 || res < 0) {
-			LOG_ERROR("EPO start failure, size=%ld\r\n", size);
-
-			m_epo_state = eGPSMgmtEPOIdle;
-
-		} else {
-			LOG_INFO("EPO size: %ld bytes\r\n", size);
-
-			m_epo_state = eGPSMgmtEPORunning;
-
-			// set transport to binary
-			SEND_TO_GPS(GPS_BIN_CMD);
-
-			vue.addNotif("GPSMGMT: ", "EPO update started", 4, eNotificationTypeComplete);
-
-			delay_ms(500);
-
-			m_trans_type = eGPSMgmtTransBIN;
-		}
+		// TODO uncomment
+//		int size = epo_file_size();
+//		int res  = epo_file_start();
+//
+//		if (size <= 0 || res < 0) {
+//			LOG_ERROR("EPO start failure, size=%ld\r\n", size);
+//
+//			m_epo_state = eGPSMgmtEPOIdle;
+//
+//		} else {
+//			LOG_INFO("EPO size: %ld bytes\r\n", size);
+//
+//			m_epo_state = eGPSMgmtEPORunning;
+//
+//			// set transport to binary
+//			SEND_TO_GPS(GPS_BIN_CMD);
+//
+//			vue.addNotif("GPSMGMT: ", "EPO update started", 4, eNotificationTypeComplete);
+//
+//			delay_ms(500);
+//
+//			m_trans_type = eGPSMgmtTransBIN;
+//		}
 	}
 	break;
 
@@ -192,49 +193,49 @@ void GPS_MGMT::tasks(void) {
 			sEpoPacketBinData epo_data;
 			memset(&epo_data, 0, sizeof(epo_data));
 
-			for (int i=0; i < MTK_EPO_MAX_SAT_DATA; i++) {
-				// read file
-				int ret_code = epo_file_read(&epo_data.sat_data[epo_data.nb_sat]);
-
-				if (ret_code < 0) {
-					// error
-				} else if (ret_code == 1) {
-					// end
-				} else {
-					epo_data.nb_sat  += 1;
-				}
-			}
-
-			// prepare the packet to be sent
-			if (epo_data.nb_sat > 0) {
-				epo_data.epo_seq = m_epo_packet_ind++;
-
-				LOG_INFO("EPO sending packet #%u - %u sats\r\n",
-						epo_data.epo_seq, epo_data.nb_sat);
-
-				LOG_DEBUG("Sat data 1: %X %X\r\n",
-						epo_data.sat_data[0].sat[0],
-						epo_data.sat_data[0].sat[1]);
-
-				MTK tmp_mtk(&epo_data);
-				tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
-			} else {
-				// process is finished
-				m_epo_packet_ind = 0xFFFF;
-
-				epo_data.epo_seq = m_epo_packet_ind;
-
-				LOG_INFO("EPO last packet\r\n");
-
-				MTK tmp_mtk(&epo_data);
-				tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
-			}
-
-			m_epo_state = eGPSMgmtEPOWaitForEvent;
+//			for (int i=0; i < MTK_EPO_MAX_SAT_DATA; i++) {
+//				// TODO read file
+//				int ret_code = epo_file_read(&epo_data.sat_data[epo_data.nb_sat]);
+//
+//				if (ret_code < 0) {
+//					// error
+//				} else if (ret_code == 1) {
+//					// end
+//				} else {
+//					epo_data.nb_sat  += 1;
+//				}
+//			}
+//
+//			// prepare the packet to be sent
+//			if (epo_data.nb_sat > 0) {
+//				epo_data.epo_seq = m_epo_packet_ind++;
+//
+//				LOG_INFO("EPO sending packet #%u - %u sats\r\n",
+//						epo_data.epo_seq, epo_data.nb_sat);
+//
+//				LOG_DEBUG("Sat data 1: %X %X\r\n",
+//						epo_data.sat_data[0].sat[0],
+//						epo_data.sat_data[0].sat[1]);
+//
+//				MTK tmp_mtk(&epo_data);
+//				tmp_mtk.toBuffer(buffer, sizeof(buffer));
+//
+//				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
+//			} else {
+//				// process is finished
+//				m_epo_packet_ind = 0xFFFF;
+//
+//				epo_data.epo_seq = m_epo_packet_ind;
+//
+//				LOG_INFO("EPO last packet\r\n");
+//
+//				MTK tmp_mtk(&epo_data);
+//				tmp_mtk.toBuffer(buffer, sizeof(buffer));
+//
+//				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
+//			}
+//
+//			m_epo_state = eGPSMgmtEPOWaitForEvent;
 		}
 	}
 	break;
@@ -250,22 +251,23 @@ void GPS_MGMT::tasks(void) {
 
 		vue.addNotif("GPSMGMT: ", "EPO update success", 5, eNotificationTypeComplete);
 
-		// the file should be deleted only upon success
-		(void)epo_file_stop(m_epo_packet_ind == 0xFFFF);
-
-		// NMEA + baud rate default
-		uint8_t cmd[5] = {0x00,0x00,0x00,0x00,0x00};
-		encode_uint32 (cmd + 1, GPS_FAST_SPEED_BAUD);
-
-		// set transport to NMEA
-		MTK tmp_mtk(MTK_FMT_NMEA_CMD_ID, cmd, sizeof(cmd));
-		tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-		LOG_INFO("MTK switched to NMEA\r\n");
-
-		GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
-
-		m_epo_state = eGPSMgmtEPOIdle;
+		// TODO uncomment
+//		// the file should be deleted only upon success
+//		(void)epo_file_stop(m_epo_packet_ind == 0xFFFF);
+//
+//		// NMEA + baud rate default
+//		uint8_t cmd[5] = {0x00,0x00,0x00,0x00,0x00};
+//		encode_uint32 (cmd + 1, GPS_FAST_SPEED_BAUD);
+//
+//		// set transport to NMEA
+//		MTK tmp_mtk(MTK_FMT_NMEA_CMD_ID, cmd, sizeof(cmd));
+//		tmp_mtk.toBuffer(buffer, sizeof(buffer));
+//
+//		LOG_INFO("MTK switched to NMEA\r\n");
+//
+//		GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
+//
+//		m_epo_state = eGPSMgmtEPOIdle;
 
 	}
 	break;

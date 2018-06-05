@@ -7,6 +7,7 @@
 
 #include "segger_wrapper.h"
 #include "parameters.h"
+#include "nordic_common.h"
 #include "utils.h"
 #include "TinyGPS++.h"
 #include <Model.h>

@@ -51,19 +51,19 @@ int Point::objectCount = 0;
  */
 void model_dispatch_sensors_update(void) {
 
-	// check if backlighting is used for notifying
-	if (nrf52_page0.back_info.freq == 0) {
-		// setup backlight
-		uint16_t light_level = veml.getRawVisComp();
-		//LOG_INFO("Light level: %u\r\n", light_level);
-		if (light_level < BACKLIGHT_AUTO_START_RAW_VIS) {
-			// il fait tout noir: TG
-			// TODO
-		} else {
-			// sun is shining
-			// TODO
-		}
-	}
+	// TODO check if backlighting is used for notifying
+//	if (nrf52_page0.back_info.freq == 0) {
+//		// setup backlight
+//		uint16_t light_level = veml.getRawVisComp();
+//		//LOG_INFO("Light level: %u\r\n", light_level);
+//		if (light_level < BACKLIGHT_AUTO_START_RAW_VIS) {
+//			// il fait tout noir: TG
+//			// TODO
+//		} else {
+//			// sun is shining
+//			// TODO
+//		}
+//	}
 }
 
 /**

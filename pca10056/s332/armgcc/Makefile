@@ -9,7 +9,7 @@ PROJ_DIR := ../../..
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := ble_app_lns_c_gcc_nrf52.ld
 
-include $(PROJ_DIR)/makefile.files
+include $(PROJ_DIR)/Makefile.files
 
 # Source files common to all targets
 SRC_FILES += \

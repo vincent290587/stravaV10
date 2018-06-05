@@ -5,10 +5,10 @@
  *      Author: Vincent
  */
 
-#include "assert.h"
+#include "nrf_ASSERT.h"
 #include "Model.h"
 #include "segger_wrapper.h"
-#include <vue/ScreenUtils.h>
+#include <vue/Screenutils.h>
 #include <vue/VuePRC.h>
 
 
@@ -195,7 +195,7 @@ void VuePRC::parcoursSelector(void) {
 
 		m_s_parcours = mes_parcours.getParcoursAt(m_parcours_sel);
 
-		assert(m_s_parcours);
+		ASSERT(m_s_parcours);
 
 		// TODO
 //		if (load_parcours(m_s_parcours[0]) > 0) {
@@ -234,7 +234,7 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 	if (ligne > 1)                drawFastHLine(0, debut_cadran, _width, LS027_PIXEL_BLACK);
 	if (ligne < VUE_PRC_NB_LINES) drawFastHLine(0, fin_cadran,   _width, LS027_PIXEL_BLACK);
 
-	assert(p_liste);
+	ASSERT(p_liste);
 
 	LOG_DEBUG("Printing PRC\r\n");
 
@@ -340,7 +340,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	Point pCourant, pSuivant;
 	Point *maPos = nullptr;
 
-	assert(p_seg);
+	ASSERT(p_seg);
 
 	if (p_seg->longueur() < 4) {
 		LOG_ERROR("Segment %s not loaded properly\r\n", p_seg->getName());
@@ -359,7 +359,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	// on cherche la taille de fenetre
 	liste = p_seg->getListePoints();
 
-	assert(liste);
+	ASSERT(liste);
 
 	LOG_DEBUG("Printing PRC\r\n");
 

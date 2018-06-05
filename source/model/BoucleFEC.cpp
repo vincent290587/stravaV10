@@ -10,9 +10,7 @@
 #include <BoucleFEC.h>
 #include "Model.h"
 #include "segger_wrapper.h"
-#include "spi_scheduler.h"
 #include "parameters.h"
-#include "nrf52.h"
 #include "Locator.h"
 
 
@@ -58,20 +56,9 @@ void BoucleFEC::init() {
  */
 void BoucleFEC::run() {
 
-	// CPU reduced speed
-	pwManager.switchToRun24();
-
 	if (m_needs_init) this->init();
 
 	LOG_INFO("Boucle FEC run\r\n");
-
-	nrf52_page0.fec_info.type = eFecControlNone;
-	nrf52_page0.fec_info.data.power_control.target_power_w = 150;
-
-	nrf52_refresh();
-
-	dma_spi0_mngr_tasks_start();
-	dma_spi0_mngr_finish();
 
 	// TODO add FEC point to record
 //	attitude.addNewFECPoint();
@@ -82,11 +69,5 @@ void BoucleFEC::run() {
 	m_pw_buffer.add(&fec_info.data.power);
 
 	vue.refresh();
-
-	dma_spi0_mngr_tasks_start();
-	dma_spi0_mngr_finish();
-
-	// go back to very low power
-	pwManager.switchToVlpr();
 
 }

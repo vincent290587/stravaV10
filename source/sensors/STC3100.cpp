@@ -74,8 +74,8 @@ bool STC3100::init(uint32_t r_sens, stc3100_res_t res) {
 	this->reset();
 	delay_ms(1);
 
-	// read device ID
-	i2c0_read_reg(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID, 1);
+	// TODO read device ID
+	//i2c0_read_reg(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID, 1);
 
 	LOG_INFO("Device ID: %x\r\n", _deviceID);
 
@@ -246,9 +246,9 @@ void STC3100::writeCommand(uint8_t reg, uint8_t value)
 {
 	uint8_t val_ = value;
 
-	if (kStatus_Success != i2c0_write_reg(STC3100_ADDRESS, reg, &val_, 1)) {
-		LOG_INFO("i2c error\r\n");
-	}
+//	if (kStatus_Success != i2c0_write_reg(STC3100_ADDRESS, reg, &val_, 1)) {
+//		LOG_INFO("i2c error\r\n");
+//	}
 }
 
 /**
@@ -256,7 +256,7 @@ void STC3100::writeCommand(uint8_t reg, uint8_t value)
  */
 void STC3100::readChip()
 {
-	if (kStatus_Success != i2c0_read_reg(STC3100_ADDRESS, REG_CHARGE_LOW, _stc_data.array, 10)) {
-		LOG_INFO("i2c error\r\n");
-	}
+//	if (kStatus_Success != i2c0_read_reg(STC3100_ADDRESS, REG_CHARGE_LOW, _stc_data.array, 10)) {
+//		LOG_INFO("i2c error\r\n");
+//	}
 }

@@ -8,9 +8,11 @@
 #include "ant.h"
 #include "nordic_common.h"
 #include "nrf.h"
+#include "uart.h"
 #include "boards.h"
 #include "segger_wrapper.h"
 #include "nrf_soc.h"
+#include "GPSMGMT.h"
 #include "nrf_delay.h"
 
 #include "nrf_log.h"

@@ -7,7 +7,7 @@
 
 #include "millis.h"
 #include "Model.h"
-#include "spi_scheduler.h"
+#include "nrf_ASSERT.h"
 #include <vue/Menuable.h>
 
 static void _retour_menu(int var) {
@@ -45,12 +45,12 @@ static void _page0_mode_fec(int var) {
 
 static void _page0_shutdown(int var) {
 
-	pwManager.shutdown();
+	// TODO shutdown
 	_retour_menu(0);
 }
 
 void menu_init_page(sMenuPage *page) {
-	assert(page);
+	ASSERT(page);
 
 	page->nb_elem = 1;
 	page->item[0].name   = "Retour";
@@ -58,7 +58,7 @@ void menu_init_page(sMenuPage *page) {
 }
 
 void menu_add_item(sMenuPage *page, const char *name, f_menu_callback callback) {
-	assert(page);
+	ASSERT(page);
 
 	page->item[page->nb_elem].name   = name;
 	if (callback) {
@@ -97,24 +97,7 @@ void Menuable::initMenu(void) {
 
 void Menuable::refreshMenu(void) {
 
-	if (kAPP_PowerModeVlpr == pwManager.getMode()) {
-
-		pwManager.switchToRun24();
-
-		this->refresh();
-
-		dma_spi0_mngr_tasks_start();
-		dma_spi0_mngr_finish();
-
-		// go back to low power
-		pwManager.switchToVlpr();
-	} else {
-
-		this->refresh();
-
-		dma_spi0_mngr_tasks_start();
-		dma_spi0_mngr_finish();
-	}
+	this->refresh();
 
 }
 
@@ -148,7 +131,7 @@ void Menuable::propagateEvent(eButtonsEvent event) {
 			m_menus.cur_page   = 0;
 		} else {
 			//perform the item's action
-			assert(m_ind_selec < m_menus.menu_page[m_menus.cur_page].nb_elem);
+			ASSERT(m_ind_selec < m_menus.menu_page[m_menus.cur_page].nb_elem);
 
 			if (m_menus.menu_page[m_menus.cur_page].item[m_ind_selec].p_func)
 				(m_menus.menu_page[m_menus.cur_page].item[m_ind_selec].p_func)(0);
