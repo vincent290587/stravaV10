@@ -27,11 +27,18 @@
 
 #define TACX_DEVICE_NUMBER              2766U
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void ant_stack_init(void);
 
 int ant_setup_start(void);
 
 void ant_timers_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

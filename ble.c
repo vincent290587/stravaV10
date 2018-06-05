@@ -42,7 +42,6 @@
 #include "ble_lns_c.h"
 #include "ant.h"
 #include "glasses.h"
-#include "spis_pages.h"
 #include "neopixel.h"
 
 #include "nrf_log.h"
@@ -452,9 +451,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 			APP_ERROR_CHECK(err_code);
 		}
 
-		err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
-		APP_ERROR_CHECK(err_code);
-
 		// TODO
 //		if (ble_conn_state_n_centrals() < NRF_SDH_BLE_CENTRAL_LINK_COUNT)
 //		{
@@ -520,9 +516,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 		NRF_LOG_INFO("Disconnected, reason 0x%x.",
 				p_ble_evt->evt.gap_evt.params.disconnected.reason);
-
-		err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-		APP_ERROR_CHECK(err_code);
 
 		// Reset DB discovery structure.
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
@@ -768,10 +761,9 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 				p_lns_c_evt->params.lns.utc_time.minutes,
 				p_lns_c_evt->params.lns.utc_time.seconds);
 
+		// TODO
 //		printf("$LOC,%lu,%ld,%ld,%ld,%u", sec_jour,
 //				p_lns_c_evt->params.lns.lat, p_lns_c_evt->params.lns.lon, elev, speed);
-
-		spis_encode_lns(&lns_info);
 
 		break;
 	}

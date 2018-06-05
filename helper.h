@@ -45,22 +45,6 @@ extern "C" {
 
 void init_timers_millis();
 
-/** @brief Minimum of two uint32_t
- *
- * @param val1
- * @param val2
- * @return
- */
-uint32_t min(uint32_t val1, uint32_t val2);
-
-/** @brief Maximum of two uint32_t
- *
- * @param val1
- * @param val2
- * @return
- */
-uint32_t max(uint32_t val1, uint32_t val2);
-
 /**
  * Delay of X milliseconds. Blocking function
  * @param p_time Number of ms to wait for

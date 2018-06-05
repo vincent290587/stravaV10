@@ -129,19 +129,4 @@ typedef struct {
 } sSpisRxInfo;
 
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void mk64f_parse_rx_info(sSpisRxInfo* output);
-
-void mk64f_toggle_line(eMk64fLineToggle button_action);
-
-void mk64f_power_down_switch(sPowerOrders *power_info);
-
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* MK64F_PARSER_H_ */

@@ -13,7 +13,12 @@ include $(PROJ_DIR)/makefile.files
 
 # Source files common to all targets
 SRC_FILES += \
-
+  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c
+  
+# Include folders common to all targets
+INC_FOLDERS += \
+  ../config \
+  
 # Libraries common to all targets
 LIB_FILES += \
 
@@ -128,6 +133,14 @@ dfu: $(OUTPUT_DIRECTORY)/nrf52832_xxaa.hex
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x9b --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/vault/priv.pem stravaV10.zip
 	mv stravaV10.zip $(DROPBOX)
 
+SDK_CONFIG_FILE := ../config/sdk_config.h
+SDK_CONFIG_FILE_ANT := ../config/sdk_config_ant.h
+CMSIS_CONFIG_TOOL := $(SDK_ROOT)/external_tools/cmsisconfig/CMSIS_Configuration_Wizard.jar
+sdk_config:
+	java -jar $(CMSIS_CONFIG_TOOL) $(SDK_CONFIG_FILE)
+	
+sdk_config_ant:
+	java -jar $(CMSIS_CONFIG_TOOL) $(SDK_CONFIG_FILE_ANT)
 
 erase:
 	nrfjprog --eraseall -f nrf52

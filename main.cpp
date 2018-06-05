@@ -11,7 +11,6 @@
 
 #include "ant.h"
 #include "i2c.h"
-#include "spis.h"
 #include "notifications.h"
 #include "backlighting.h"
 #include "mk64f_parser.h"
@@ -19,7 +18,6 @@
 #include "bsp.h"
 #include "fec.h"
 #include "bsp_btn_ble.h"
-#include "buttons_att.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
@@ -49,7 +47,7 @@ APP_TIMER_DEF(m_job_timer);
 
 nrf_drv_wdt_channel_id m_channel_id;
 
-extern void ble_ant_init(void);
+extern "C" void ble_ant_init(void);
 
 
 static volatile bool job_to_do = false;
@@ -163,16 +161,18 @@ static void log_init(void)
 static void bsp_evt_handler(bsp_event_t evt)
 {
 
+	// TODO schedule
+
 	switch (evt)
 	{
 	case BSP_EVENT_KEY_0:
-		mk64f_toggle_line(eMk64fRightButton);
+
 		break;
 	case BSP_EVENT_KEY_1:
-		mk64f_toggle_line(eMk64fCentralButton);
+
 		break;
 	case BSP_EVENT_KEY_2:
-		mk64f_toggle_line(eMk64fLeftButton);
+
 		break;
 	default:
 		return; // no implementation needed
@@ -279,8 +279,6 @@ int main(void)
 
 	notifications_init(NEO_PIN);
 
-	spis_init();
-
 	// init BLE + ANT
 	ble_ant_init();
 
@@ -311,16 +309,12 @@ int main(void)
 
 			notifications_tasks();
 
-			buttons_att_tasks();
-
 			roller_manager_tasks();
 
 			nrf_drv_wdt_channel_feed(m_channel_id);
 		}
 
 		app_sched_execute();
-
-		spis_tasks();
 
 		backlighting_tasks();
 

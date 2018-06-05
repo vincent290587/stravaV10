@@ -3,6 +3,9 @@
 # Source files common to all targets
 SRC_FILES += \
   $(wildcard $(PROJ_DIR)/*.c) \
+  $(wildcard $(PROJ_DIR)/*.cpp) \
+  $(wildcard $(PROJ_DIR)/drivers/*.c) \
+  $(wildcard $(PROJ_DIR)/drivers/lcd/*.c) \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52.S \
   $(SDK_ROOT)/components/libraries/bsp/bsp.c \
   $(SDK_ROOT)/components/libraries/fds/fds.c \
@@ -31,14 +34,18 @@ SRC_FILES += \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf_format.c \
   $(SDK_ROOT)/components/libraries/gfx/nrf_gfx.c \
   $(SDK_ROOT)/components/libraries/experimental_memobj/nrf_memobj.c \
+  $(SDK_ROOT)/components/libraries/experimental_libuarte/nrf_libuarte.c \
+  $(SDK_ROOT)/components/libraries/experimental_libuarte/nrf_libuarte_async.c \
   $(SDK_ROOT)/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c \
   $(SDK_ROOT)/components/libraries/queue/nrf_queue.c \
   $(SDK_ROOT)/components/libraries/experimental_section_vars/nrf_section_iter.c \
   $(SDK_ROOT)/components/libraries/spi_mngr/nrf_spi_mngr.c \
+  $(SDK_ROOT)/components/libraries/twi_mngr/nrf_twi_mngr.c \
   $(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_spi.c \
-  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_uart.c \
+  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_twi.c \
+  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_ppi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_clock.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power_clock.c \
@@ -47,16 +54,14 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_spim.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twim.c \
-  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \
-  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_ppi.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_timer.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_wdt.c \
   $(SDK_ROOT)/external/thedotfactory_fonts/orkney24pts.c \
   $(SDK_ROOT)/external/thedotfactory_fonts/orkney8pts.c \
-  $(PROJ_DIR)/main.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c \
-  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ble.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c \
@@ -122,6 +127,8 @@ SRC_FILES += \
 
 # Include folders common to all targets
 INC_FOLDERS += \
+  $(PROJ_DIR) \
+  $(PROJ_DIR)/drivers \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers/nrf52 \
@@ -130,6 +137,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/scheduler \
   $(SDK_ROOT)/components/libraries/atomic_fifo \
   $(SDK_ROOT)/components/libraries/experimental_log \
+  $(SDK_ROOT)/components/libraries/experimental_libuarte \
   $(SDK_ROOT)/components/libraries/queue \
   $(SDK_ROOT)/components/libraries/pwr_mgmt \
   $(SDK_ROOT)/components/libraries/strerror \
@@ -138,7 +146,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/util \
   $(SDK_ROOT)/components/libraries/uart \
   $(SDK_ROOT)/components/libraries/fds \
-  ../config \
   $(SDK_ROOT)/components/libraries/balloc \
   $(SDK_ROOT)/modules/nrfx/hal \
   $(SDK_ROOT)/components/libraries/bsp \
@@ -147,7 +154,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
   $(SDK_ROOT)/integration/nrfx/legacy \
   $(SDK_ROOT)/components/libraries/mutex \
-  $(PROJ_DIR) \
   $(SDK_ROOT)/components/libraries/gfx \
   $(SDK_ROOT)/components/libraries/experimental_log/src \
   $(SDK_ROOT)/components/libraries/delay \
@@ -157,10 +163,12 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/fstorage \
   $(SDK_ROOT)/components/boards \
   $(SDK_ROOT)/components/libraries/spi_mngr \
+  $(SDK_ROOT)/components/libraries/twi_mngr \
   $(SDK_ROOT)/components/libraries/experimental_memobj \
   $(SDK_ROOT)/integration/nrfx \
   $(SDK_ROOT)/external/thedotfactory_fonts \
   $(SDK_ROOT)/modules/nrfx/drivers/include \
+  $(SDK_ROOT)/modules/nrfx/drivers \
   $(SDK_ROOT)/external/fprintf \
   $(SDK_ROOT)/components/ble/ble_services/ble_lns_c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_glasses \

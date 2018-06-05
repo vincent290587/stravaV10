@@ -9,8 +9,8 @@
  * the file.
  *
  */
-#ifndef PCA10036_H
-#define PCA10036_H
+#ifndef BOARD_CUSTOM_H
+#define BOARD_CUSTOM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,16 +53,19 @@ extern "C" {
 #define BSP_BUTTON_1   BUTTON_2
 #define BSP_BUTTON_2   BUTTON_3
 
+#define SDA_PIN_NUMBER   14
+#define SCL_PIN_NUMBER   15
+
 #define RX_PIN_NUMBER   7
 #define TX_PIN_NUMBER   6
 #define CTS_PIN_NUMBER  11
 #define RTS_PIN_NUMBER  8
 #define HWFC            false
 
-#define SPIS_MISO_PIN   26  // SPI MISO signal.
-#define SPIS_CSN_PIN    28  // SPI CSN signal.
-#define SPIS_MOSI_PIN   27  // SPI MOSI signal.
-#define SPIS_SCK_PIN    25  // SPI SCK signal.
+#define SPI_MISO_PIN   26  // SPI MISO signal.
+#define SPI_SS_PIN    28  // SPI CSN signal.
+#define SPI_MOSI_PIN   27  // SPI MOSI signal.
+#define SPI_SCK_PIN    25  // SPI SCK signal.
 
 
 // Low frequency clock source to be used by the SoftDevice
@@ -85,4 +88,4 @@ extern "C" {
 }
 #endif
 
-#endif // PCA10036_H
+#endif // BOARD_CUSTOM_H

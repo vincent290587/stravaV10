@@ -180,8 +180,8 @@ float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
 
   // calcul valeur: x commun
   res = x * (b2_f - b2_i) + b2_i;
-  if (res < min(b2_i,b2_f)) res = min(b2_i,b2_f);
-  if (res > max(b2_i,b2_f)) res = max(b2_i,b2_f);
+  if (res < MIN(b2_i,b2_f)) res = MIN(b2_i,b2_f);
+  if (res > MAX(b2_i,b2_f)) res = MAX(b2_i,b2_f);
   return res;
 }
 

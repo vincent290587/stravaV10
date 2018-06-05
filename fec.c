@@ -11,7 +11,6 @@
 #include "ant_fec_pages.h"
 #include "ant_interface.h"
 #include "app_timer.h"
-#include "spis_pages.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -116,14 +115,16 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 		m_fec_spis_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
 		m_fec_spis_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
 
-		spis_encode_fec(&m_fec_spis_info);
+		// TODO
+
 	}
 	break;
 
 	case ANT_FEC_PAGE_25_UPDATED:
 	{
 		m_fec_spis_info.power = p_profile->page_25.inst_power;
-		spis_encode_fec(&m_fec_spis_info);
+		// TODO
+
 	}
 	break;
 

@@ -48,7 +48,6 @@
 #include "ant_glasses.h"
 #include "ant_interface.h"
 
-#include "spis_pages.h"
 #include "glasses.h"
 #include "fec.h"
 
@@ -257,6 +256,8 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
 void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 {
 
+	// TODO add to scheduler
+
 	switch(p_ant_evt->channel) {
 	case HRM_CHANNEL_NUMBER:
 		ant_evt_hrm (p_ant_evt);
@@ -404,7 +405,7 @@ void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event)
 		bsc_info.speed = calculate_speed(p_profile->BSC_PROFILE_speed_rev_count, p_profile->BSC_PROFILE_speed_event_time);
 		bsc_info.cadence = calculate_cadence(p_profile->BSC_PROFILE_cadence_rev_count, p_profile->BSC_PROFILE_cadence_event_time);
 
-		spis_encode_bsc(&bsc_info);
+		// TODO event
 
 		//printf("$CAD,%lu,%lu\n\r", bsc_info.cadence, bsc_info.speed);
 
@@ -460,7 +461,7 @@ static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t eve
 
 			hrm_info.rr = rrInterval * 1000. / 1024.;
 
-			spis_encode_hrm(&hrm_info);
+			// TODO event
 
 //			NRF_LOG_INFO("$HRM,%u,%u\n\r",
 //					hrm_info.bpm,
