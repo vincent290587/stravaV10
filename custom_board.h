@@ -83,6 +83,8 @@ extern "C" {
 #define AT42_COUT           BUTTON_2
 #define SHARP_CS            29
 
+#define BOARD_PPS_PIN       1
+#define BOARD_FIX_PIN       1
 
 #ifdef __cplusplus
 }

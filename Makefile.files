@@ -6,7 +6,12 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/*.cpp) \
   $(wildcard $(PROJ_DIR)/drivers/*.c) \
   $(wildcard $(PROJ_DIR)/drivers/lcd/*.c) \
-  $(wildcard $(PROJ_DIR)/libraries/sysview/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/*/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/*/*.cpp) \
+  $(wildcard $(PROJ_DIR)/rf/*.c) \
+  $(wildcard $(PROJ_DIR)/source/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/*/*.c) \
+  $(wildcard $(PROJ_DIR)/source/*/*.cpp) \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52.S \
   $(SDK_ROOT)/components/libraries/bsp/bsp.c \
   $(SDK_ROOT)/components/libraries/fds/fds.c \
@@ -130,7 +135,22 @@ SRC_FILES += \
 INC_FOLDERS += \
   $(PROJ_DIR) \
   $(PROJ_DIR)/drivers \
+  $(PROJ_DIR)/drivers/lcd \
+  $(PROJ_DIR)/libraries/AdafruitGFX \
+  $(PROJ_DIR)/libraries/GlobalTop \
+  $(PROJ_DIR)/libraries/IntelliScreen \
   $(PROJ_DIR)/libraries/sysview \
+  $(PROJ_DIR)/libraries/TinyGPSPlus \
+  $(PROJ_DIR)/libraries/utils \
+  $(PROJ_DIR)/rf \
+  $(PROJ_DIR)/source \
+  $(PROJ_DIR)/source/display \
+  $(PROJ_DIR)/source/model \
+  $(PROJ_DIR)/source/parsers \
+  $(PROJ_DIR)/source/routes \
+  $(PROJ_DIR)/source/scheduling \
+  $(PROJ_DIR)/source/sensors \
+  $(PROJ_DIR)/source/vue \
   $(SDK_ROOT)/components/softdevice/common \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers/nrf52 \

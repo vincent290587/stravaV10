@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "nrf_twi_mngr.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,26 +19,7 @@ extern "C" {
 
 void i2c_init(void);
 
-bool i2c_device_present(uint8_t address);
-
-void i2c_scan();
-
-bool i2c_read8(uint8_t address, uint8_t *val);
-
-bool i2c_read_n(uint8_t address, uint8_t *val, unsigned int len);
-
-bool i2c_write_n(uint8_t address, uint8_t *val, unsigned int len);
-
-bool i2c_write8(uint8_t address, uint8_t val);
-
-bool i2c_write8_cont(uint8_t address, uint8_t val);
-
-bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val);
-
-bool i2c_write_reg_8(uint8_t address, uint8_t reg, uint8_t val);
-
-bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len);
-
+void i2c_schedule(nrf_twi_mngr_transaction_t const * p_transaction);
 
 #ifdef __cplusplus
 }

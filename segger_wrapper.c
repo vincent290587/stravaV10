@@ -50,6 +50,9 @@ void segger_init(void) {
 #endif
 
 #if USE_SVIEW
+
+#warning "SysView is active"
+
 	  // SYSVIEW
 	  os_api.pfSendTaskList = cbSendTaskList;
 //	  os_api.pfGetTime = (U64)millis();
@@ -66,8 +69,8 @@ void segger_init(void) {
 	  pInfo[nb_tasks].TaskID = UART_TASK;
 	  pInfo[nb_tasks++].sName  = "UART_TASK";
 
-	  pInfo[nb_tasks].TaskID = LCD_TASK;
-	  pInfo[nb_tasks++].sName  = "LCD_TASK";
+	  pInfo[nb_tasks].TaskID = BLE_TASK;
+	  pInfo[nb_tasks++].sName  = "BLE_TASK";
 
 	  pInfo[nb_tasks].TaskID = SD_ACCESS_TASK;
 	  pInfo[nb_tasks++].sName  = "SD_ACCESS_TASK";

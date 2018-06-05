@@ -20,9 +20,11 @@
 /**< SPI instance index. */
 #define SPI_INSTANCE  0
 
-NRF_SPI_MNGR_DEF(m_nrf_spi_mngr, 20, SPI_INSTANCE);
+NRF_SPI_MNGR_DEF(m_nrf_spi_mngr, 10, SPI_INSTANCE);
 
-
+/**
+ *
+ */
 void spi_init(void)
 {
 	static nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
@@ -38,6 +40,10 @@ void spi_init(void)
 	NRF_LOG_INFO("SPI configured");
 }
 
+/**
+ *
+ * @param p_transaction
+ */
 void spi_schedule(nrf_spi_mngr_transaction_t const * p_transaction) {
 
 	/* Start master transfer */

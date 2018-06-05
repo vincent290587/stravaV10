@@ -35,6 +35,7 @@
 #define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
+#define SVIEW_INIT(...)                segger_init()
 #else
 #define LOG_INFO(...)                  EMPTY_MACRO
 #define LOG_DEBUG(...)                 EMPTY_MACRO
@@ -42,6 +43,7 @@
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
+#define SVIEW_INIT(...)                  EMPTY_MACRO
 #endif
 
 
@@ -71,7 +73,7 @@
 #define SPI_TASK                       (TASK_BASE + 1u)
 #define UART_TASK                      (TASK_BASE + 2u)
 
-#define LCD_TASK                       (TASK_BASE + 7u)
+#define BLE_TASK                       (TASK_BASE + 7u)
 #define SD_ACCESS_TASK                 (TASK_BASE + 8u)
 #define SEG_PERF_TASK                  (TASK_BASE + 9u)
 #define NRF52_TASK                     (TASK_BASE + 10u)
@@ -89,8 +91,8 @@
 extern "C" {
 #endif /* _cplusplus */
 
-//void segger_init(void);
-//
+void segger_init(void);
+
 //void segger_update_clocks(void);
 //
 //void segger_send(UART_Type *base, const uint8_t *buffer, size_t length);

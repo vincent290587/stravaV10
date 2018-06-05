@@ -26,6 +26,7 @@
 #include "nrf_drv_wdt.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "segger_wrapper.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -126,11 +127,13 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ERROR:
         {
             error_info_t * p_info = (error_info_t *)info;
+#ifndef USE_SVIEW
             NRF_LOG_ERROR("ERROR %u [%s] at %s:%u",
                           p_info->err_code,
-						  p_info->err_code,
+						  nrf_strerror_get(p_info->err_code),
                           p_info->p_file_name,
                           p_info->line_num);
+#endif
             break;
         }
         default:
@@ -153,6 +156,8 @@ static void log_init(void)
 	APP_ERROR_CHECK(err_code);
 
 	NRF_LOG_DEFAULT_BACKENDS_INIT();
+
+	SVIEW_INIT();
 }
 
 
@@ -302,6 +307,8 @@ int main(void)
 	{
 		if (job_to_do) {
 			job_to_do = false;
+
+
 
 			NRF_LOG_DEBUG("Job");
 
