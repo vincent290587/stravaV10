@@ -82,6 +82,7 @@ extern "C" {
 #define BCK_PIN           8
 #define AT42_COUT         BUTTON_2
 #define SHARP_CS          29
+#define SDC_CS_PIN        30
 
 #define LS027_CS_PIN      0
 

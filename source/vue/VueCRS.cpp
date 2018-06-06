@@ -90,7 +90,7 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
 		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 
-		assert(segMngr.getSeg(0)->p_seg);
+		ASSERT(segMngr.getSeg(0)->p_seg);
 
 		this->afficheSegment(5, segMngr.getSeg(0)->p_seg);
 

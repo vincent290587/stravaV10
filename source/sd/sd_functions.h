@@ -11,14 +11,10 @@
 
 #include "EpoDefinitions.h"
 
-//#if defined(__cplusplus)
-//extern "C" {
-//#endif /* _cplusplus */
+#if defined(__cplusplus)
 
 class Segment;
 class Parcours;
-
-int init_liste_segments(void);
 
 int load_segment(Segment& seg);
 
@@ -26,14 +22,22 @@ int load_parcours(Parcours& mon_parcours);
 
 float segment_allocator(Segment& mon_seg, float lat1, float long1);
 
+
+extern "C" {
+#endif /* _cplusplus */
+
+int sd_functions_init(void);
+
+int init_liste_segments(void);
+
 int epo_file_size(void);
 int epo_file_read(sEpoPacketSatData* epo_data);
 int epo_file_start(void);
 int epo_file_stop(bool toBeDeleted);
 
 
-//#if defined(__cplusplus)
-//}
-//#endif /* _cplusplus */
+#if defined(__cplusplus)
+}
+#endif /* _cplusplus */
 
 #endif /* SOURCE_SD_SD_FUNCTIONS_H_ */

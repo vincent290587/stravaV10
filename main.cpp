@@ -26,6 +26,7 @@
 #include "nrf_drv_wdt.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "Model.h"
 #include "segger_wrapper.h"
 
 #include "nrf_log.h"
@@ -303,12 +304,17 @@ int main(void)
 	neo_order.rgb[2] = 0x00;
 	notifications_setNotify(&neo_order);
 
+	// LCD driver
+	vue.init();
+
+	gps_mgmt.init();
+
+	boucle.init();
+
 	for (;;)
 	{
 		if (job_to_do) {
 			job_to_do = false;
-
-
 
 			NRF_LOG_DEBUG("Job");
 
@@ -317,6 +323,11 @@ int main(void)
 			notifications_tasks();
 
 			roller_manager_tasks();
+
+			boucle.tasks();
+
+			// tasks
+			perform_system_tasks();
 
 			nrf_drv_wdt_channel_feed(m_channel_id);
 		}

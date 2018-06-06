@@ -7,13 +7,21 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "segger_wrapper.h"
-#include "sd_functions.h"
 #include "boards.h"
 #include "Model.h"
 #include "millis.h"
 #include "file_parser.h"
 #include "WString.h"
+#include "segger_wrapper.h"
+
+#include "ff.h"
+#include "diskio_blkdev.h"
+#include "nrf_block_dev_sdc.h"
+#include "sd_functions.h"
+
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
 /*******************************************************************************
  * Definitions
@@ -26,18 +34,12 @@
  * Variables
  ******************************************************************************/
 
-//static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
-static char g_bufferRead[BUFFER_SIZE];  /* Read buffer */
+static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
+static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
 static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
 
-extern const TCHAR driverNumberBuffer[];
-
-
-/*******************************************************************************
- * Code
- ******************************************************************************/
 
 /*!
  * @brief Main function
@@ -367,7 +369,7 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
-	assert(sat_data);
+	ASSERT(sat_data);
 
 	UINT size_read = 0;
 	FRESULT error = f_read (

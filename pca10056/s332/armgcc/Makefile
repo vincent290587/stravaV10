@@ -20,7 +20,8 @@ INC_FOLDERS += \
   ../config \
   
 # Libraries common to all targets
-LIB_FILES += \
+LIB_FILES += -lm -lstdc++
+
 
 # Optimization flags
 OPT = -O3 -g3
@@ -54,16 +55,17 @@ CFLAGS += -DNRF52_PAN_55
 CFLAGS += -DS332
 CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
-CFLAGS +=  -Wall 
+CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
-CFLAGS += -fno-builtin -fshort-enums 
+CFLAGS += -fno-builtin --short-enums -nostdlib -MMD -nostdlib
 
 # C++ flags common to all targets
-CXXFLAGS += $(OPT)
+CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 
 # Assembler flags common to all targets
+ASMFLAGS += -x assembler-with-cpp
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16

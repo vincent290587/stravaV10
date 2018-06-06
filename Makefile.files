@@ -9,6 +9,7 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/libraries/*/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/*/*.cpp) \
   $(wildcard $(PROJ_DIR)/rf/*.c) \
+  $(wildcard $(PROJ_DIR)/sd/*.c) \
   $(wildcard $(PROJ_DIR)/sd/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/*/*.c) \
@@ -39,7 +40,11 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/balloc/nrf_balloc.c \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf.c \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf_format.c \
+  $(SDK_ROOT)/external/fatfs/port/diskio_blkdev.c \
+  $(SDK_ROOT)/external/fatfs/src/ff.c \
   $(SDK_ROOT)/components/libraries/gfx/nrf_gfx.c \
+  $(SDK_ROOT)/components/libraries/sdcard/app_sdcard.c \
+  $(SDK_ROOT)/components/libraries/block_dev/sdc/nrf_block_dev_sdc.c \
   $(SDK_ROOT)/components/libraries/experimental_memobj/nrf_memobj.c \
   $(SDK_ROOT)/components/libraries/experimental_libuarte/nrf_libuarte.c \
   $(SDK_ROOT)/components/libraries/experimental_libuarte/nrf_libuarte_async.c \
@@ -160,6 +165,8 @@ INC_FOLDERS += \
   $(SDK_ROOT)/modules/nrfx/mdk \
   $(SDK_ROOT)/components/libraries/scheduler \
   $(SDK_ROOT)/components/libraries/atomic_fifo \
+  $(SDK_ROOT)/components/libraries/block_dev \
+  $(SDK_ROOT)/components/libraries/block_dev/sdc \
   $(SDK_ROOT)/components/libraries/experimental_log \
   $(SDK_ROOT)/components/libraries/experimental_libuarte \
   $(SDK_ROOT)/components/libraries/queue \
@@ -174,6 +181,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/modules/nrfx/hal \
   $(SDK_ROOT)/components/libraries/bsp \
   $(SDK_ROOT)/components/libraries/button \
+  $(SDK_ROOT)/components/libraries/sdcard \
   $(SDK_ROOT)/modules/nrfx \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
   $(SDK_ROOT)/integration/nrfx/legacy \
@@ -194,6 +202,10 @@ INC_FOLDERS += \
   $(SDK_ROOT)/modules/nrfx/drivers/include \
   $(SDK_ROOT)/modules/nrfx/drivers \
   $(SDK_ROOT)/external/fprintf \
+  $(SDK_ROOT)/external/fatfs/src \
+  $(SDK_ROOT)/external/fatfs/port \
+  $(SDK_ROOT)/external/protothreads \
+  $(SDK_ROOT)/external/protothreads/pt-1.4 \
   $(SDK_ROOT)/components/ble/ble_services/ble_lns_c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_glasses \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common \
