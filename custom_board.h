@@ -56,16 +56,16 @@ extern "C" {
 #define SDA_PIN_NUMBER   14
 #define SCL_PIN_NUMBER   15
 
-#define RX_PIN_NUMBER   7
-#define TX_PIN_NUMBER   6
-#define CTS_PIN_NUMBER  11
-#define RTS_PIN_NUMBER  8
-#define HWFC            false
+#define RX_PIN_NUMBER    7
+#define TX_PIN_NUMBER    6
+#define CTS_PIN_NUMBER   11
+#define RTS_PIN_NUMBER   8
+#define HWFC             false
 
-#define SPI_MISO_PIN   26  // SPI MISO signal.
-#define SPI_SS_PIN    28  // SPI CSN signal.
-#define SPI_MOSI_PIN   27  // SPI MOSI signal.
-#define SPI_SCK_PIN    25  // SPI SCK signal.
+#define SPI_MISO_PIN     26  // SPI MISO signal.
+#define SPI_SS_PIN       28  // SPI CSN signal.
+#define SPI_MOSI_PIN     27  // SPI MOSI signal.
+#define SPI_SCK_PIN      25  // SPI SCK signal.
 
 
 // Low frequency clock source to be used by the SoftDevice
@@ -75,16 +75,18 @@ extern "C" {
                                  .accuracy     = NRF_CLOCK_LF_ACCURACY_20_PPM}
 
 
-#define INT_PIN             4
-#define LDO_PIN             30
-#define NEO_PIN             7
-#define LED_PIN             14
-#define BCK_PIN             8
-#define AT42_COUT           BUTTON_2
-#define SHARP_CS            29
+#define INT_PIN           4
+#define LDO_PIN           30
+#define NEO_PIN           7
+#define LED_PIN           14
+#define BCK_PIN           8
+#define AT42_COUT         BUTTON_2
+#define SHARP_CS          29
 
-#define BOARD_PPS_PIN       1
-#define BOARD_FIX_PIN       1
+#define LS027_CS_PIN      0
+
+#define BOARD_PPS_PIN     1
+#define BOARD_FIX_PIN     2
 
 #ifdef __cplusplus
 }

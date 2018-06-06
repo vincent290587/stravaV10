@@ -16,9 +16,6 @@
 
 #include "ls027.h"
 
-// TODO LS027 CS pin
-#define LS027_CE_PIN          0
-#define LS027_CE_PIN_INIT     0
 
 #define LS027_HW_SPI_BUFFER_SIZE   (1 + LS027_BUFFER_SIZE + (240*2) + 1)
 
@@ -50,7 +47,7 @@ extern nrf_spi_mngr_t m_nrf_spi_mngr;
 
 static void ls027_spi_init() {
 
-	ls027_spi_config.ss_pin   = LS027_CE_PIN;
+	ls027_spi_config.ss_pin   = LS027_CS_PIN;
 	ls027_spi_config.miso_pin = SPI_MISO_PIN;
 	ls027_spi_config.mosi_pin = SPI_MOSI_PIN;
 	ls027_spi_config.sck_pin  = SPI_SCK_PIN;
