@@ -14,6 +14,7 @@
 #include "WString.h"
 #include "LocusCommands.h"
 #include "Screenutils.h"
+#include "sd_functions.h"
 #include "segger_wrapper.h"
 #include "Locator.h"
 #include "Model.h"

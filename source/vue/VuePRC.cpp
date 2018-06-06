@@ -8,6 +8,7 @@
 #include "nrf_ASSERT.h"
 #include "Model.h"
 #include "segger_wrapper.h"
+#include "sd_functions.h"
 #include <vue/Screenutils.h>
 #include <vue/VuePRC.h>
 
@@ -197,16 +198,15 @@ void VuePRC::parcoursSelector(void) {
 
 		ASSERT(m_s_parcours);
 
-		// TODO
-//		if (load_parcours(m_s_parcours[0]) > 0) {
-//			m_prc_screen_mode = eVuePRCScreenGps;
-//
-//			m_selec_en = false;
-//
-//			vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
-//		} else {
-//			vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
-//		}
+		if (load_parcours(m_s_parcours[0]) > 0) {
+			m_prc_screen_mode = eVuePRCScreenGps;
+
+			m_selec_en = false;
+
+			vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
+		} else {
+			vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
+		}
 
 	}
 }

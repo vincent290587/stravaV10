@@ -10,6 +10,7 @@
 #include "Segment.h"
 #include "Model.h"
 #include "uart.h"
+#include "sd_functions.h"
 #include "segger_wrapper.h"
 
 
@@ -68,10 +69,6 @@ void BoucleCRS::run() {
 
 	if (m_needs_init) this->init();
 
-	// TODO
-//	dma_spi0_mngr_tasks_start();
-//	dma_spi0_mngr_finish();
-
 	if (locator.isUpdated()) {
 
 		LOG_INFO("Locator is updated (%u)\r\n", millis());
@@ -93,8 +90,7 @@ void BoucleCRS::run() {
 
 			if (seg.isValid() && mes_points.size() > 2) {
 
-				// TODO
-//				tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
+				tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
 
 				// calculate distance to closest segment
 				if (tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
@@ -155,10 +151,6 @@ void BoucleCRS::run() {
 	vue.refresh();
 	m_last_refresh.setUpdateTime();
 	W_SYSVIEW_OnTaskStopExec(LCD_TASK);
-
-	// TODO
-//	dma_spi0_mngr_tasks_start();
-//	dma_spi0_mngr_finish();
 
 	W_SYSVIEW_OnIdle();
 }

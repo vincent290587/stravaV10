@@ -7,6 +7,7 @@
 
 #include <Boucle.h>
 #include "segger_wrapper.h"
+#include "sd_functions.h"
 
 BoucleCRS boucle_crs;
 

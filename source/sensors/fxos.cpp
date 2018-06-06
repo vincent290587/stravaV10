@@ -19,23 +19,25 @@
 #endif
 
 
-status_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber)
+ret_code_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber)
 {
-	status_t status = kStatus_Success;
+	ret_code_t status = NRF_SUCCESS;
 
-	status = i2c0_read_reg(FXOS_7BIT_ADDRESS, reg, val, bytesNumber);
+	// TODO
+	//status = i2c0_read_reg(FXOS_7BIT_ADDRESS, reg, val, bytesNumber);
 
 	return status;
 }
 
-status_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
+ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
 {
-	status_t status = kStatus_Success;
+	ret_code_t status = NRF_SUCCESS;
 	uint8_t buff[1];
 
 	buff[0] = val;
 
-	status = i2c0_write_reg(FXOS_7BIT_ADDRESS, reg, buff, sizeof(buff));
+	// TODO
+		//status = i2c0_write_reg(FXOS_7BIT_ADDRESS, reg, buff, sizeof(buff));
 
 	return status;
 }
@@ -122,7 +124,9 @@ static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *A
 {
 	fxos_data_t fxos_data;
 
-	if (FXOS_ReadSensorData(g_fxosHandle, &fxos_data) != kStatus_Success)
+
+	// TODO
+		//if (FXOS_ReadSensorData(g_fxosHandle, &fxos_data) != NRF_SUCCESS)
 	{
 		LOG_INFO("Failed to read acceleration data!\r\n");
 	}
@@ -221,7 +225,7 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 
 	if (g_FirstRun) {
 		/* Get sensor range */
-		if (FXOS_ReadReg(g_fxosHandle, XYZ_DATA_CFG_REG, &g_sensorRange, 1) != kStatus_Success)
+		if (FXOS_ReadReg(g_fxosHandle, XYZ_DATA_CFG_REG, &g_sensorRange, 1) != NRF_SUCCESS)
 		{
 			LOG_ERROR("FXOS Read fail\r\n");
 			return;
