@@ -26,6 +26,8 @@ Locator       locator;
 
 Boucle        boucle;
 
+SegmentManager     segMngr;
+
 Vue           vue;
 
 STC3100       stc;

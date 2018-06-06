@@ -28,6 +28,19 @@ public:
 	void addSegment(Segment*);
 	void addSegmentPrio(Segment*);
 
+	uint8_t getNbSegs() {
+		return m_segs.nb_segs;
+	}
+
+	sVueCRSPSeg* getSeg(uint8_t i) {
+		return &m_segs.s_segs[i % NB_SEG_ON_DISPLAY];
+	}
+
+	void clearSegs() {
+		memset(&m_segs, 0, sizeof(m_segs));
+	}
+
+private:
 	sVueCRSSegArray    m_segs;
 };
 

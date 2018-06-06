@@ -31,7 +31,7 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 	}
 
 	if (m_crs_screen_mode != eVueCRSScreenInit) {
-		switch (m_segs.nb_segs) {
+		switch (segMngr.getNbSegs()) {
 		case 0:
 			m_crs_screen_mode = eVueCRSScreenDataFull;
 			break;
@@ -90,16 +90,16 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
 		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 
-		this->afficheSegment(5, m_segs.s_segs[0].p_seg);
+		assert(segMngr.getSeg(0)->p_seg);
 
-		ASSERT(m_segs.s_segs[0].p_seg);
+		this->afficheSegment(5, segMngr.getSeg(0)->p_seg);
 
-		if (SEG_OFF == m_segs.s_segs[0].p_seg->getStatus()) {
+		if (SEG_OFF == segMngr.getSeg(0)->p_seg->getStatus()) {
 
 			this->cadranH(7, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
 
 		} else {
-			this->partner(7, m_segs.s_segs[0].p_seg);
+			this->partner(7, segMngr.getSeg(0)->p_seg);
 		}
 
 	}
@@ -109,11 +109,11 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 		this->cadran(1, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm.getData().bpm), "bpm");
 
-		ASSERT(m_segs.s_segs[0].p_seg);
-		ASSERT(m_segs.s_segs[1].p_seg);
+		ASSERT(segMngr.getSeg(0)->p_seg);
+		ASSERT(segMngr.getSeg(1)->p_seg);
 
-		if (SEG_OFF == m_segs.s_segs[0].p_seg->getStatus() &&
-				SEG_OFF == m_segs.s_segs[1].p_seg->getStatus()) {
+		if (SEG_OFF == segMngr.getSeg(0)->p_seg->getStatus() &&
+				SEG_OFF == segMngr.getSeg(1)->p_seg->getStatus()) {
 
 			// all segments are OFF
 			this->cadran(2, VUE_CRS_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
@@ -125,49 +125,47 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			this->cadran(4, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
 			this->cadran(4, VUE_CRS_NB_LINES, 2, "STC", _imkstr((int)stc.getCurrent()), "mA");
 
-			this->afficheSegment(VUE_CRS_NB_LINES - 2, m_segs.s_segs[0].p_seg);
-			this->afficheSegment(VUE_CRS_NB_LINES - 2, m_segs.s_segs[1].p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(0)->p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(1)->p_seg);
 
 			this->cadranH(VUE_CRS_NB_LINES, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
 
-		} else if (SEG_OFF == m_segs.s_segs[0].p_seg->getStatus()) {
+		} else if (SEG_OFF == segMngr.getSeg(0)->p_seg->getStatus()) {
 
 			// only one segment is OFF
 			this->cadran(2, VUE_CRS_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
 			this->cadran(2, VUE_CRS_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
 
-			this->afficheSegment(VUE_CRS_NB_LINES - 4, m_segs.s_segs[0].p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 4, segMngr.getSeg(0)->p_seg);
 
-			this->afficheSegment(VUE_CRS_NB_LINES - 2, m_segs.s_segs[1].p_seg);
-			this->partner(VUE_CRS_NB_LINES, m_segs.s_segs[1].p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(1)->p_seg);
+			this->partner(VUE_CRS_NB_LINES, segMngr.getSeg(1)->p_seg);
 
-		} else if (SEG_OFF == m_segs.s_segs[1].p_seg->getStatus()) {
+		} else if (SEG_OFF == segMngr.getSeg(1)->p_seg->getStatus()) {
 
 			// only one segment is OFF
 			this->cadran(2, VUE_CRS_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
 			this->cadran(2, VUE_CRS_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
 
-			this->afficheSegment(VUE_CRS_NB_LINES - 4, m_segs.s_segs[0].p_seg);
-			this->partner(VUE_CRS_NB_LINES - 2, m_segs.s_segs[0].p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 4, segMngr.getSeg(0)->p_seg);
+			this->partner(VUE_CRS_NB_LINES - 2, segMngr.getSeg(0)->p_seg);
 
-			this->afficheSegment(VUE_CRS_NB_LINES - 1, m_segs.s_segs[1].p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 1, segMngr.getSeg(1)->p_seg);
 
 		} else {
 
 			// no segment is OFF
-			this->afficheSegment(VUE_CRS_NB_LINES - 5, m_segs.s_segs[0].p_seg);
-			this->partner(VUE_CRS_NB_LINES - 3, m_segs.s_segs[0].p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 5, segMngr.getSeg(0)->p_seg);
+			this->partner(VUE_CRS_NB_LINES - 3, segMngr.getSeg(0)->p_seg);
 
-			this->afficheSegment(VUE_CRS_NB_LINES - 2, m_segs.s_segs[1].p_seg);
-			this->partner(VUE_CRS_NB_LINES, m_segs.s_segs[1].p_seg);
+			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(1)->p_seg);
+			this->partner(VUE_CRS_NB_LINES, segMngr.getSeg(1)->p_seg);
 		}
 
 
 	}
 	break;
 	}
-
-	memset(&m_segs, 0, sizeof(m_segs));
 
 	return m_crs_screen_mode;
 }

@@ -22,7 +22,7 @@ typedef enum {
 	eVuePRCScreenDataFull,
 } eVuePRCScreenModes;
 
-class VuePRC: virtual public Adafruit_GFX, virtual public VueGPS, protected Zoom, virtual public SegmentManager {
+class VuePRC: virtual public Adafruit_GFX, virtual public VueGPS, protected Zoom {
 public:
 	VuePRC();
 

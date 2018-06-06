@@ -44,6 +44,8 @@ extern Locator       locator;
 
 extern Boucle        boucle;
 
+extern SegmentManager     segMngr;
+
 extern Vue           vue;
 
 extern STC3100       stc;

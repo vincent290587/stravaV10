@@ -22,7 +22,7 @@ typedef enum {
 } eVueCRSScreenModes;
 
 
-class VueCRS: virtual public Adafruit_GFX, virtual public VueGPS, virtual public SegmentManager {
+class VueCRS: virtual public Adafruit_GFX, virtual public VueGPS {
 public:
 	VueCRS();
 

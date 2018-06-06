@@ -73,6 +73,9 @@ void BoucleCRS::run() {
 
 		LOG_INFO("Locator is updated (%u)\r\n", millis());
 
+		// reset the segment manager
+		segMngr.clearSegs();
+
 		att.nbact = 0;
 
 		// update position
@@ -103,9 +106,9 @@ void BoucleCRS::run() {
 					att.nbact += 1;
 
 					if (seg.getStatus() < SEG_OFF) {
-						vue.addSegmentPrio(&seg);
+						segMngr.addSegmentPrio(&seg);
 					} else if (seg.getStatus() > SEG_OFF) {
-						vue.addSegment(&seg);
+						segMngr.addSegment(&seg);
 					}
 
 					if (seg.getStatus() == SEG_FIN) {
@@ -127,7 +130,7 @@ void BoucleCRS::run() {
 					seg.majPerformance(mes_points);
 					W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
 
-					vue.addSegment(&seg);
+					segMngr.addSegment(&seg);
 
 				}
 

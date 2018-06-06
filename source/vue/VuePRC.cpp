@@ -8,7 +8,7 @@
 #include "nrf_ASSERT.h"
 #include "Model.h"
 #include "segger_wrapper.h"
-#include "sd_functions.h"
+#include <sd/sd_functions.h>
 #include <vue/Screenutils.h>
 #include <vue/VuePRC.h>
 
@@ -86,8 +86,11 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			this->afficheParcours(5, m_s_parcours->getListePoints());
 
 			// display the segments
-			for (int j=0; j < m_segs.nb_segs && j < 1; j++) {
-				this->afficheSegment(5, m_segs.s_segs[j].p_seg);
+			for (int j=0; j < segMngr.getNbSegs() && j < NB_SEG_ON_DISPLAY - 1; j++) {
+
+				ASSERT(segMngr.getSeg(j)->p_seg);
+
+				this->afficheSegment(5, segMngr.getSeg(j)->p_seg);
 			}
 
 		} else {
@@ -102,8 +105,6 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 	}
 
 	}
-
-	memset(&m_segs, 0, sizeof(m_segs));
 
 	return m_prc_screen_mode;
 }
