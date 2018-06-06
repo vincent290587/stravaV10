@@ -433,9 +433,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	ret_code_t            err_code;
 	ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;
 
-
 	W_SYSVIEW_OnTaskStartExec(BLE_TASK);
-
 
 	switch (p_ble_evt->header.evt_id)
 	{

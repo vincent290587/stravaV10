@@ -47,6 +47,7 @@
 #include "ant_fec.h"
 #include "ant_glasses.h"
 #include "ant_interface.h"
+#include "segger_wrapper.h"
 
 #include "glasses.h"
 #include "fec.h"
@@ -172,7 +173,6 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
 	uint8_t pucDeviceType    = 0;
 	uint8_t pucTransmitType  = 0;
 
-
 	switch (p_ant_evt->event)
 	{
 	case EVENT_RX:
@@ -255,7 +255,7 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
  */
 void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 {
-
+	W_SYSVIEW_RecordEnterISR();
 	// TODO add to scheduler
 
 	switch(p_ant_evt->channel) {
@@ -279,6 +279,7 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 		break;
 	}
 
+    W_SYSVIEW_RecordExitISR();
 }
 NRF_SDH_ANT_OBSERVER(m_ant_observer, APP_ANT_OBSERVER_PRIO, ant_evt_handler, 0);
 
