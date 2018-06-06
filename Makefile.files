@@ -9,6 +9,7 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/libraries/*/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/*/*.cpp) \
   $(wildcard $(PROJ_DIR)/rf/*.c) \
+  $(wildcard $(PROJ_DIR)/sd/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/*/*.c) \
   $(wildcard $(PROJ_DIR)/source/*/*.cpp) \
@@ -148,6 +149,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/source/model \
   $(PROJ_DIR)/source/parsers \
   $(PROJ_DIR)/source/routes \
+  $(PROJ_DIR)/source/sd \
   $(PROJ_DIR)/source/scheduling \
   $(PROJ_DIR)/source/sensors \
   $(PROJ_DIR)/source/vue \

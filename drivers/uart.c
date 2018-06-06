@@ -91,6 +91,13 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
 	 rxIndex = 0;
 }
 
+ /**
+  *
+  */
+ void uart_uninit(void) {
+
+ }
+
 /**
  *
  */

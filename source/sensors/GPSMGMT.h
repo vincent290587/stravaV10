@@ -49,7 +49,7 @@ public:
 	GPS_MGMT();
 
 	void init(void);
-	bool is3D(void);
+	bool isFix(void);
 
 	void standby(void);
 	void awake(void);

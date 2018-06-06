@@ -13,13 +13,14 @@ include $(PROJ_DIR)/Makefile.files
 
 # Source files common to all targets
 SRC_FILES += \
-
+  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52.c
+  
 # Include folders common to all targets
 INC_FOLDERS += \
-
+  ../config \
 
 # Libraries common to all targets
-LIB_FILES += \
+LIB_FILES += -lm -lstdc++
 
 # Optimization flags
 OPT = -O3 -g3

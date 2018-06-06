@@ -22,8 +22,7 @@ void Boucle::init(void) {
 
 	LOG_INFO("Boucle init\r\n");
 
-	// TODO
-	//init_liste_segments();
+	init_liste_segments();
 
 	m_global_mode = BOUCLE_DEFAULT_MODE;
 }

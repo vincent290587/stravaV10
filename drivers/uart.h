@@ -16,6 +16,8 @@ extern "C" {
 
 void uart_init(nrf_uarte_baudrate_t baud);
 
+void uart_uninit(void);
+
 void uart_tasks(void);
 
 void uart_send(uint8_t * p_data, size_t length);
