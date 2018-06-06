@@ -14,21 +14,22 @@
 #include "nrf_soc.h"
 #include "GPSMGMT.h"
 #include "nrf_delay.h"
+#include "ring_buffer.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
 
-#define UART0_RB_SIZE         256
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-uint8_t uart0_rb[UART0_RB_SIZE];
-volatile uint16_t txIndex; /* Index of the data to send out. */
-volatile uint16_t rxIndex; /* Index of the memory to save new arrived data. */
+#define UART0_RB_SIZE         256
+RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
+
 volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
+
 
 
 void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
@@ -48,13 +49,12 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
 		ret = nrf_libuarte_async_tx(&ch, 1);
 		APP_ERROR_CHECK(ret);
 
-		/* If ring buffer is not full, add data to ring buffer. */
-		if (((rxIndex + 1) % UART0_RB_SIZE) != txIndex)
-		{
-			uart0_rb[rxIndex] = ch;
-			rxIndex++;
-			rxIndex %= UART0_RB_SIZE;
+		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
+			RING_BUFFER_ADD(uart0_rb1, ch);
+		} else {
+			NRF_LOG_ERROR("Ring buffer full");
 		}
+
 	}
 		break;
 	case NRF_LIBUARTE_ASYNC_EVT_TX_DONE:
@@ -87,8 +87,6 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
 
 	 nrf_libuarte_async_enable(1);
 
-	 txIndex = 0;
-	 rxIndex = 0;
 }
 
  /**
@@ -96,6 +94,7 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
   */
  void uart_uninit(void) {
 
+	 // TODO
  }
 
 /**
@@ -113,12 +112,11 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
  void uart_tasks(void) {
 
 	 /* If ring buffer is not empty, parse data. */
-	 while (((txIndex + 0) % UART0_RB_SIZE) != rxIndex)
+	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
 	 {
-		 gps_encode_char(uart0_rb[txIndex]);
+		 gps_encode_char(RING_BUFF_GET_ELEM(uart0_rb1));
 
-		 txIndex++;
-		 txIndex %= UART0_RB_SIZE;
+		 RING_BUFFER_POP(uart0_rb1);
 	 }
 
  }
