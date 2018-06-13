@@ -9,6 +9,7 @@
 #define LIBRARIES_UTILS_SEGGER_WRAPPER_H_
 
 
+#include "nrf_log.h"
 #include <stddef.h>
 
 
@@ -37,9 +38,9 @@
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                segger_init()
 #else
-#define LOG_INFO(...)                  EMPTY_MACRO
+#define LOG_INFO(...)                  NRF_LOG_INFO(__VA_ARGS__)
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 EMPTY_MACRO
+#define LOG_ERROR(...)                 NRF_LOG_ERROR(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO

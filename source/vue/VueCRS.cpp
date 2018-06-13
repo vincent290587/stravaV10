@@ -232,8 +232,8 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		Vecteur& delta = liste->getDeltaListe();
 		Point2D& centre = liste->getCenterListe();
 
-		LOG_DEBUG("VueCRS centre lon: %ld\r\n", (int)((centre._lon - att.lon) * deglon_to_m));
-		LOG_DEBUG("VueCRS centre lat: %ld\r\n", (int)((centre._lat - att.lat) * deglat_to_m));
+		//LOG_DEBUG("VueCRS centre lon: %ld\r\n", (int)((centre._lon - att.lon) * deglon_to_m));
+		//LOG_DEBUG("VueCRS centre lat: %ld\r\n", (int)((centre._lat - att.lat) * deglat_to_m));
 
 		LOG_DEBUG("VueCRS delta1 lon: %ld\r\n", (int)(delta._x * deglon_to_m));
 		LOG_DEBUG("VueCRS delta1 lat: %ld\r\n", (int)(delta._y * deglat_to_m));
