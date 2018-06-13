@@ -11,29 +11,9 @@
 #include "millis.h"
 #include "segger_wrapper.h"
 #include "STC3100.h"
-#include "i2c.h"
 #include "utils.h"
 
-/*=========================================================================*/
 
-/*=========================================================================
-    REGISTERS
-    -----------------------------------------------------------------------*/
-
-#define REG_MODE                0
-#define REG_CONTROL             1
-#define REG_CHARGE_LOW          2
-#define REG_CHARGE_HIGH         3
-#define REG_COUNTER_LOW         4
-#define REG_COUNTER_HIGH        5
-#define REG_CURRENT_LOW         6
-#define REG_CURRENT_HIGH        7
-#define REG_VOLTAGE_LOW         8
-#define REG_VOLTAGE_HIGH        9
-#define REG_TEMPERATURE_LOW     10
-#define REG_TEMPERATURE_HIGH    11
-#define REG_DEVICE_ID           24
-/*=========================================================================*/
 
 
 /***************************************************************************
@@ -77,7 +57,7 @@ bool STC3100::init(uint32_t r_sens, stc3100_res_t res) {
 	// TODO read device ID
 	//i2c0_read_reg(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID, 1);
 
-	LOG_INFO("Device ID: %x\r\n", _deviceID);
+//	LOG_INFO("Device ID: %x\r\n", _deviceID);
 
 	/* Set the mode indicator */
 	_stc3100Mode = 0;
@@ -120,9 +100,9 @@ void STC3100::shutdown(void) {
     @brief  Reads the sensor
  */
 /**************************************************************************/
-bool STC3100::refresh()
+bool STC3100::refresh(tSTC31000Data *_data)
 {
-	this->readChip();
+	memcpy(&_stc_data, _data, sizeof(_stc_data));
 
 	this->computeVoltage ();
 	this->computeCharge  ();
@@ -244,7 +224,7 @@ float STC3100::getAverageCurrent(void) {
  */
 void STC3100::writeCommand(uint8_t reg, uint8_t value)
 {
-	uint8_t val_ = value;
+//	uint8_t val_ = value;
 
 //	if (kStatus_Success != i2c0_write_reg(STC3100_ADDRESS, reg, &val_, 1)) {
 //		LOG_INFO("i2c error\r\n");

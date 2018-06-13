@@ -8,11 +8,30 @@
 #ifndef LIBRARIES_STC3100_H_
 #define LIBRARIES_STC3100_H_
 
+#include "i2c.h"
 
 /*=========================================================================
     I2C 7-bit ADDRESS
     -----------------------------------------------------------------------*/
 #define STC3100_ADDRESS                (0x70)
+
+/*=========================================================================
+    REGISTERS
+    -----------------------------------------------------------------------*/
+
+#define REG_MODE                0
+#define REG_CONTROL             1
+#define REG_CHARGE_LOW          2
+#define REG_CHARGE_HIGH         3
+#define REG_COUNTER_LOW         4
+#define REG_COUNTER_HIGH        5
+#define REG_CURRENT_LOW         6
+#define REG_CURRENT_HIGH        7
+#define REG_VOLTAGE_LOW         8
+#define REG_VOLTAGE_HIGH        9
+#define REG_TEMPERATURE_LOW     10
+#define REG_TEMPERATURE_HIGH    11
+#define REG_DEVICE_ID           24
 
 /*=========================================================================
  MODE SETTINGS
@@ -66,6 +85,14 @@ typedef struct {
 
 /*=========================================================================*/
 
+
+#define STC3100_READ_ALL(p_buffer) \
+		I2C_READ_REG_NO_STOP(STC3100_ADDRESS, REG_CHARGE_LOW, p_buffer, 10)
+
+
+/*=========================================================================*/
+
+
 class STC3100 {
 public:
 	STC3100(int32_t sensorID = -1);
@@ -76,7 +103,7 @@ public:
 	void shutdown(void);
 	void reset(void);
 
-	bool refresh();
+	bool refresh(tSTC31000Data *_data);
 
 	float getCurrent() const { return _current;}
 	float getVoltage() const {return _voltage;}
@@ -89,9 +116,11 @@ public:
 		return _charge;
 	}
 
+	uint8_t _stc3100Mode;
+
 private:
 	int32_t _sensorID;
-	uint8_t _deviceID, _stc3100Mode;
+	uint8_t _deviceID;
 	int32_t _r_sens;
 	tSTC31000Data _stc_data;
 

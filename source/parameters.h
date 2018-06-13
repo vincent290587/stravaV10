@@ -44,4 +44,8 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         180000
 
+#define MS5637_REFRESH_PER_MS          100
+
+#define SENSORS_REFRESH_FREQ           2
+
 #endif /* SOURCE_PARAMETERS_H_ */

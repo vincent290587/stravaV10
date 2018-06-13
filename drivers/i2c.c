@@ -54,3 +54,24 @@ void i2c_schedule(nrf_twi_mngr_transaction_t const * p_transaction) {
 	ret_code_t ret_val = nrf_twi_mngr_schedule(&m_nrf_twi_mngr, p_transaction);
 	APP_ERROR_CHECK(ret_val);
 }
+
+
+/**
+ *
+ * @param p_transaction
+ */
+void i2c_perform(nrf_drv_twi_config_t const *    p_config,
+        nrf_twi_mngr_transfer_t const * p_transfers,
+        uint8_t                         number_of_transfers,
+        void                            (* user_function)(void)) {
+
+	/* Start master transfer */
+	ret_code_t ret_val = nrf_twi_mngr_perform(&m_nrf_twi_mngr,
+			p_config,
+			p_transfers,
+			number_of_transfers,
+			user_function);
+	APP_ERROR_CHECK(ret_val);
+}
+
+

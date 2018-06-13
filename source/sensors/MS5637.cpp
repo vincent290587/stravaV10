@@ -8,22 +8,19 @@
 #include "i2c.h"
 #include "MS5637.h"
 #include "millis.h"
+#include "utils.h"
 #include "segger_wrapper.h"
 #include "pgmspace.h"
 
 
-/* 7 bits i2c address of module */
-#define MS5637_ADDR 0x76
+/* error codes */
+#define ERR_NOREPLY -1
+#define ERR_BAD_READLEN -2
+#define ERR_NEEDS_BEGIN -3
+
 
 /* delay to wait for sampling to complete, on each OSR level */
-const uint8_t SamplingDelayMs[6] PROGMEM = { 2, 4, 6, 10, 18, 34 };
-
-/* module commands */
-#define CMD_RESET                      (0x1E)
-#define CMD_PROM_READ(offs)            (0xA0+(offs<<1)) /* Offset 0-7 */
-#define CMD_START_D1(oversample_level) (0x40 + 2*(int)oversample_level)
-#define CMD_START_D2(oversample_level) (0x50 + 2*(int)oversample_level)
-#define CMD_READ_ADC 0x00
+static const uint8_t SamplingDelayMs[6] PROGMEM = { 2, 4, 6, 10, 18, 34 };
 
 #define NAN (-1.)
 
@@ -34,23 +31,24 @@ MS5637::MS5637 () {
 
 }
 
-bool MS5637::init() {
+void MS5637::init(void) {
+
+	initialised = false;
+
+	return;
+}
+
+bool MS5637::setCx(ms5637_handle_t *_handle) {
 
 	if (this->reset() != 0)
 		return false;
 
 	uint16_t prom[7];
-	uint8_t prom_val[3];
 
 	for (int i = 0; i < 7; i++) {
 
-		if (this->wireReadDataBlock(CMD_PROM_READ(i), prom_val, 2) != 0) {
-			err = ERR_BAD_READLEN;
-			return false;
-		}
+		prom[i] = decode_uint16 (_handle->cx_data + 2*i);
 
-		prom[i] = ((uint16_t) prom_val[0]) << 8;
-		prom[i] |= prom_val[1];
 	}
 
 	// TODO verify CRC4 in top 4 bits of prom[0] (follows AN520 but not directly...)
@@ -60,7 +58,9 @@ bool MS5637::init() {
 	c4 = prom[4];
 	c5 = prom[5];
 	c6 = prom[6];
+
 	initialised = true;
+
 	return false;
 }
 
@@ -74,20 +74,21 @@ uint32_t MS5637::reset() {
 
 }
 
-float MS5637::getTemperature(TempUnit scale, BaroOversampleLevel level) {
-	float result;
-	if (this->getTempAndPressure(&result, NULL, scale, level))
-		return result;
-	else
-		return NAN;
-}
+void MS5637::refresh(ms5637_handle_t *_handle) {
 
-float MS5637::getPressure(BaroOversampleLevel level) {
-	float result;
-	if (this->getTempAndPressure(NULL, &result, CELSIUS, level))
-		return result;
-	else
-		return NAN;
+	uint32_t temp = (uint32_t) _handle->temp_adc[0] << 16;
+	temp |= (uint32_t) _handle->temp_adc[1] << 8;
+	temp |= _handle->temp_adc[2];
+
+	int32_t d1 = temp;
+
+	temp = (uint32_t) _handle->press_adc[0] << 16;
+	temp |= (uint32_t) _handle->press_adc[1] << 8;
+	temp |= _handle->press_adc[2];
+
+	int32_t d2 = temp;
+
+	this->getTempAndPressure(d1, d2, &temperature, &pressure);
 }
 
 uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level) {
@@ -113,13 +114,11 @@ uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample
 	return result;
 }
 
-bool MS5637::getTempAndPressure(float *temperature, float *pressure,
-		TempUnit tempScale, BaroOversampleLevel level) {
+bool MS5637::getTempAndPressure(int32_t d1, int32_t d2, float *temperature, float *pressure) {
 
 	if (err || !initialised)
 		return false;
 
-	int32_t d2 = this->takeReading(CMD_START_D2(level), level);
 	if (d2 == 0) {
 		return false;
 	}
@@ -140,12 +139,9 @@ bool MS5637::getTempAndPressure(float *temperature, float *pressure,
 
 	if (temperature != NULL) {
 		*temperature = (float) (temp - t2) / 100;
-		if (tempScale == FAHRENHEIT)
-			*temperature = *temperature * 9 / 5 + 32;
 	}
 
 	if (pressure != NULL) {
-		int32_t d1 = this->takeReading(CMD_START_D1(level), level);
 
 		if (d1 == 0) {
 			return false;

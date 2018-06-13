@@ -690,7 +690,9 @@
 /*! @brief fxos8700cq configure definition. This structure should be global.*/
 typedef struct _fxos_handle
 {
-	uint8_t empty;
+	uint8_t acc_buffer[6];
+	uint8_t mag_buffer[6];
+	uint8_t acc_range[1];
 } fxos_handle_t;
 
 typedef struct _fxos8700cq_data

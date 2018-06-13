@@ -8,6 +8,12 @@
 #ifndef LIBRARIES_VEML6075_H_
 #define LIBRARIES_VEML6075_H_
 
+#include "i2c.h"
+
+
+#define VEML6075_ADDR       0x10
+#define VEML6075_DEVID      0x26
+
 
 // Reading the application note on calculation of UV index, the "dummy" channel
 // value is actually not a dummy value at all, but the dark current count.
@@ -67,6 +73,15 @@ enum veml6075_int_time {
 };
 typedef enum veml6075_int_time veml6075_int_time_t;
 
+
+#define VEML6075_READ_ALL(p_buffer) \
+		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVA    , p_buffer  , 2), \
+		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVB    , p_buffer+2, 2), \
+		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_DUMMY  , p_buffer+4, 2), \
+		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVCOMP1, p_buffer+6, 2), \
+		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVCOMP2, p_buffer+8, 2)
+
+
 class VEML6075 {
 public:
 
@@ -76,7 +91,7 @@ public:
 	void off();
 	uint16_t getConf();
 
-	void poll();
+	void refresh(uint8_t *_data);
 	float getUVA();
 	float getUVB();
 	float getUVIndex();
@@ -90,9 +105,9 @@ public:
 
 	void setIntegrationTime(veml6075_int_time_t it);
 
-private:
-
 	uint8_t config;
+
+private:
 
 	uint16_t raw_uva;
 	uint16_t raw_uvb;

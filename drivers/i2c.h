@@ -13,6 +13,22 @@
 #include "nrf_twi_mngr.h"
 
 
+#define I2C_READ_REG_NO_STOP(addr, p_reg_addr, p_buffer, byte_cnt) \
+    NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
+    NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
+
+#define I2C_READ_REG_REP_START(addr, p_reg_addr, p_buffer, byte_cnt) \
+    NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
+    NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
+
+#define I2C_WRITE_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
+    NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
+    NRF_TWI_MNGR_WRITE(addr, p_buffer, byte_cnt, 0)
+
+#define I2C_WRITE(addr, p_data, byte_cnt) \
+    NRF_TWI_MNGR_WRITE(addr, p_data, byte_cnt, 0)
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,6 +36,11 @@ extern "C" {
 void i2c_init(void);
 
 void i2c_schedule(nrf_twi_mngr_transaction_t const * p_transaction);
+
+void i2c_perform(nrf_drv_twi_config_t const *    p_config,
+        nrf_twi_mngr_transfer_t const * p_transfers,
+        uint8_t                         number_of_transfers,
+        void                            (* user_function)(void));
 
 #ifdef __cplusplus
 }

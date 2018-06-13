@@ -73,8 +73,6 @@ void model_dispatch_sensors_update(void) {
  */
 void perform_system_tasks(void) {
 
-	i2c_scheduling_tasks();
-
 	gps_mgmt.tasks();
 
 	locator.tasks();

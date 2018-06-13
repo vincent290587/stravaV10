@@ -5,16 +5,11 @@
  *      Author: Vincent
  */
 
-#include "i2c.h"
 #include "millis.h"
 #include "segger_wrapper.h"
 #include "pgmspace.h"
-
+#include "utils.h"
 #include "VEML6075.h"
-
-
-#define VEML6075_ADDR       0x10
-#define VEML6075_DEVID      0x26
 
 
 
@@ -22,49 +17,48 @@ VEML6075::VEML6075() {
 
 	// Despite the datasheet saying this isn't the default on startup, it appears
 	// like it is. So tell the thing to actually start gathering data.
-	this->config = 0;
-	this->config |= VEML6075_CONF_HD_HIGH;
-
-	// App note only provided math for this one...
-	this->config |= VEML6075_CONF_IT_100MS;
+	this->config = VEML6075_CONF_PW_OFF;
 }
 
 bool VEML6075::init() {
 
+	this->config |= VEML6075_CONF_HD_HIGH;
+
+	// App note only provided math for this one...
+	this->config |= VEML6075_CONF_IT_100MS;
+
 	this->on();
 
-	delay_ms(1);
-
-	uint16_t dev_id = this->getDevID();
-	if (dev_id != VEML6075_DEVID) {
-		LOG_ERROR("Wrong device ID: %u\r\n", dev_id);
-		return false;
-	}
+//	uint16_t dev_id = this->getDevID();
+//	if (dev_id != VEML6075_DEVID) {
+//		LOG_ERROR("Wrong device ID: %u\r\n", dev_id);
+//		return false;
+//	}
 
 	return true;
 }
 
 void VEML6075::on() {
 
-	// Write config to make sure device is enabled
-	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_ON);
+	this->config &= ~VEML6075_CONF_PW_OFF;
 
 }
 
 void VEML6075::off() {
 
-	// Write config to make sure device is disabled
-	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_OFF);
+	this->config |= VEML6075_CONF_PW_OFF;
 
 }
 
 // Poll sensor for latest values and cache them
-void VEML6075::poll() {
-	this->raw_uva  = this->read16(VEML6075_REG_UVA);
-	this->raw_uvb  = this->read16(VEML6075_REG_UVB);
-	this->raw_dark = this->read16(VEML6075_REG_DUMMY);
-	this->raw_vis  = this->read16(VEML6075_REG_UVCOMP1);
-	this->raw_ir   = this->read16(VEML6075_REG_UVCOMP2);
+void VEML6075::refresh(uint8_t *_data) {
+
+	this->raw_uva  = decode_uint16(_data);
+	this->raw_uvb  = decode_uint16(_data+2);
+	this->raw_dark = decode_uint16(_data+4);
+	this->raw_vis  = decode_uint16(_data+6);
+	this->raw_ir   = decode_uint16(_data+8);
+
 }
 
 uint16_t VEML6075::getRawUVA() {
@@ -127,24 +121,24 @@ float VEML6075::getUVIndex() {
 
 uint16_t VEML6075::read16(uint8_t reg) {
 
-	uint8_t retries = 3;
-	uint16_t res;
+//	uint16_t res = 0xFFFF;
+//	uint8_t retries = 3;
+//
+//	while (retries--) {
+//		res = this->read16_raw(reg);
+//		if (res != 0xFFFF) {
+//			// success
+//			return res;
+//		} else {
+//			LOG_INFO("VEML6075 read fail");
+//		}
+//	}
+//
+//	if (!retries) {
+//		return 0xFFFF;
+//	}
 
-	while (retries--) {
-		res = this->read16_raw(reg);
-		if (res != 0xFFFF) {
-			// success
-			return res;
-		} else {
-			LOG_INFO("VEML6075 read fail");
-		}
-	}
-
-	if (!retries) {
-		return 0xFFFF;
-	}
-
-	return res;
+	return 0;
 }
 
 uint16_t VEML6075::read16_raw(uint8_t reg) {
@@ -159,7 +153,7 @@ uint16_t VEML6075::read16_raw(uint8_t reg) {
 //	uint16_t res = raw_data[1] << 8;
 //	res |= raw_data[0];
 //
-//	return res;
+	return 0;
 }
 
 void VEML6075::write16(uint8_t reg, uint16_t raw_data) {
