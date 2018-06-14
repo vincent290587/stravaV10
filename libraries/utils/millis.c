@@ -8,30 +8,32 @@
 
 #include <stdint.h>
 #include "segger_wrapper.h"
+#include "nrf.h"
+#include "app_timer.h"
 #include "nrf_delay.h"
 
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
 
+#define APP_TIMER_MS(TICKS)                                \
+            ((uint32_t)ROUNDED_DIV(                        \
+            (TICKS) * 1000 * (APP_TIMER_CONFIG_RTC_FREQUENCY + 1),   \
+            (uint64_t)APP_TIMER_CLOCK_FREQ))
 
-
-/*******************************************************************************
- * Variables
- ******************************************************************************/
-
-volatile uint32_t lptmrCounter = 0U;
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
+
 
 /**
  *
  */
 void millis_init(void) {
 
-
+	uint32_t err_code = app_timer_init();
+	APP_ERROR_CHECK(err_code);
 
 }
 
@@ -40,7 +42,10 @@ void millis_init(void) {
  * @return The internal time
  */
 uint32_t millis(void) {
-	return lptmrCounter;
+
+	// TODO check
+	uint32_t ticks = app_timer_cnt_get();
+	return APP_TIMER_MS(ticks);
 }
 
 /** @brief Delays execution by sleeping

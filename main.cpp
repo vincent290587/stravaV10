@@ -26,6 +26,7 @@
 #include "nrf_drv_wdt.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "i2c_scheduler.h"
 #include "Model.h"
 #include "segger_wrapper.h"
 
@@ -231,6 +232,22 @@ static void buttons_leds_init(void)
 	APP_ERROR_CHECK(err_code);
 }
 
+static void pins_init(void)
+{
+//	nrf_gpio_cfg_input(BUTTON_1, NRF_GPIO_PIN_PULLUP);
+//	nrf_gpio_cfg_input(BUTTON_2, NRF_GPIO_PIN_PULLUP);
+//	nrf_gpio_cfg_input(BUTTON_3, NRF_GPIO_PIN_PULLUP);
+
+//	nrf_gpio_cfg_input(SHARP_CS, NRF_GPIO_PIN_NOPULL);
+
+	nrf_gpio_cfg_output(SHARP_CS);
+
+	nrf_gpio_cfg_output(LDO_PIN);
+	nrf_gpio_pin_clear(LDO_PIN);
+
+	nrf_gpio_cfg_output(LED_PIN);
+}
+
 /**
  *
  * @return 0
@@ -239,22 +256,9 @@ int main(void)
 {
 	ret_code_t err_code;
 
-//	nrf_gpio_cfg_input(BUTTON_1, NRF_GPIO_PIN_PULLUP);
-//	nrf_gpio_cfg_input(BUTTON_2, NRF_GPIO_PIN_PULLUP);
-//	nrf_gpio_cfg_input(BUTTON_3, NRF_GPIO_PIN_PULLUP);
+	// TODO check nrf_power.h when S340 is ready
 
-	nrf_gpio_cfg_input(SHARP_CS, NRF_GPIO_PIN_NOPULL);
-
-	nrf_gpio_cfg_output(LDO_PIN);
-	nrf_gpio_pin_clear(LDO_PIN);
-
-	nrf_gpio_cfg_output(INT_PIN);
-	nrf_gpio_pin_clear(INT_PIN);
-
-	nrf_delay_ms(500);
-
-	nrf_gpio_pin_set(LDO_PIN);
-	nrf_gpio_cfg_output(LED_PIN);
+	pins_init();
 
 	// Initialize.
     //Configure WDT.
@@ -274,8 +278,10 @@ int main(void)
 	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
 
 	// Initialize timer module
-	err_code = app_timer_init();
-	APP_ERROR_CHECK(err_code);
+	millis_init();
+
+	// init all I2C devices
+	i2c_scheduling_init();
 
 	ant_timers_init();
 
