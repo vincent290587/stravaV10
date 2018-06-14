@@ -8,6 +8,7 @@
 #include "assert.h"
 #include "ant.h"
 #include "fec.h"
+#include "Model.h"
 #include "ant_fec_pages.h"
 #include "ant_interface.h"
 #include "app_timer.h"
@@ -21,9 +22,9 @@
 
 ant_fec_profile_t        m_ant_fec;
 
-sFecControl              m_fec_control;
+sFecInfo             fec_info;
 
-sFecInfo                 m_fec_spis_info;
+sFecControl          fec_control;
 
 APP_TIMER_DEF(m_fec_update);
 
@@ -63,7 +64,7 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 			if (pusDeviceNumber) {
 				is_fec_init = 1;
 
-				err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &m_fec_control);
+				err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
 				APP_ERROR_CHECK(err_code);
 			}
 		}
@@ -112,19 +113,14 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 
 	case ANT_FEC_PAGE_16_UPDATED:
 	{
-		m_fec_spis_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
-		m_fec_spis_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
-
-		// TODO
-
+		fec_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
+		fec_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
 	}
 	break;
 
 	case ANT_FEC_PAGE_25_UPDATED:
 	{
-		m_fec_spis_info.power = p_profile->page_25.inst_power;
-		// TODO
-
+		fec_info.power = p_profile->page_25.inst_power;
 	}
 	break;
 
@@ -232,8 +228,8 @@ void fec_init(void) {
 
 	memset(&m_fec_message_payload, 0, sizeof(m_fec_message_payload));
 
-	m_fec_control.type = eFecControlTargetNone;
-	m_fec_control.data.power_control.target_power_w = 150;
+	fec_control.type = eFecControlTargetNone;
+	fec_control.data.power_control.target_power_w = 150;
 
 }
 
@@ -241,6 +237,6 @@ void fec_set_control(sFecControl* tbc) {
 
 	NRF_LOG_INFO("FEC control type %u", tbc->type);
 
-	memcpy(&m_fec_control, tbc, sizeof(m_fec_control));
+	memcpy(&fec_control, tbc, sizeof(fec_control));
 
 }

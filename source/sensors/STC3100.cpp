@@ -54,8 +54,8 @@ bool STC3100::init(uint32_t r_sens, stc3100_res_t res) {
 	this->reset();
 	delay_ms(1);
 
-	// TODO read device ID
-	//i2c0_read_reg(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID, 1);
+	// read device ID
+	// i2c0_read_reg(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID, 1);
 
 //	LOG_INFO("Device ID: %x\r\n", _deviceID);
 

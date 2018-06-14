@@ -38,11 +38,9 @@ MS5637        ms5637;
 
 GPS_MGMT           gps_mgmt;
 
-Sensor<sCadenceData> cad;
+sBacklightOrders     backlight;
 
-Sensor<sHrmInfo>     hrm;
-
-Sensor<sFecInfo>     fec_info;
+sNeopixelOrders      neopixel;
 
 // init counters
 int Point2D::objectCount2D = 0;
@@ -53,19 +51,36 @@ int Point::objectCount = 0;
  */
 void model_dispatch_sensors_update(void) {
 
-	// TODO check if backlighting is used for notifying
-//	if (nrf52_page0.back_info.freq == 0) {
-//		// setup backlight
-//		uint16_t light_level = veml.getRawVisComp();
-//		//LOG_INFO("Light level: %u\r\n", light_level);
-//		if (light_level < BACKLIGHT_AUTO_START_RAW_VIS) {
-//			// il fait tout noir: TG
-//			// TODO
-//		} else {
-//			// sun is shining
-//			// TODO
-//		}
-//	}
+	// check if backlighting is used for notifying
+	if (backlight.freq == 0) {
+		// setup backlight
+		uint16_t light_level = veml.getRawVisComp();
+		//LOG_INFO("Light level: %u\r\n", light_level);
+		if (light_level < BACKLIGHT_AUTO_START_RAW_VIS) {
+			// il fait tout noir: TG
+			backlight.state = 1;
+		} else {
+			// sun is shining
+			backlight.state = 0;
+		}
+	}
+}
+
+/**
+ *
+ */
+void model_dispatch_lns_update(sLnsInfo *lns_info) {
+
+	// TODO convert data
+	locator.nrf_loc.data.alt = (float)lns_info->ele / 100;
+	locator.nrf_loc.data.lat = (float)lns_info->lat;
+	locator.nrf_loc.data.lon = (float)lns_info->lon;
+	locator.nrf_loc.data.speed = (float)lns_info->speed;
+
+	locator.nrf_loc.data.utc_time = lns_info->secj;
+	locator.nrf_loc.data.date = lns_info->date;
+
+	locator.nrf_loc.setIsUpdated();
 }
 
 /**

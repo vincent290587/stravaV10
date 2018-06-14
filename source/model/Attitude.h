@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "fec.h"
 
 typedef struct {
 	float lat;
@@ -39,9 +40,6 @@ typedef struct {
 	uint16_t next;
 } SAtt;
 
-typedef struct {
-	int16_t pwr;
-} SFec;
 
 class Attitude {
 public:
@@ -49,7 +47,7 @@ public:
 
 	void addNewDate(SDate &date_);
 	void addNewLocation(SLoc& loc_, SDate &date_);
-	void addNewFECPoint(SFec& fec_);
+	void addNewFECPoint(sFecInfo& fec_);
 
 private:
 	float m_last_save_dist;

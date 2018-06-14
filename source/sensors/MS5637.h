@@ -10,7 +10,7 @@
 
 
 /* 7 bits i2c address of module */
-#define MS5637_ADDR 0x76
+#define MS5637_ADDR                    (0x76)
 
 /* module commands */
 #define CMD_RESET                      (0x1E)

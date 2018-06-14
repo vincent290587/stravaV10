@@ -65,8 +65,8 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_) {
 /**
  *
  */
-void Attitude::addNewFECPoint(SFec& fec_) {
+void Attitude::addNewFECPoint(sFecInfo& fec_) {
 
-
+	// TODO
 
 }

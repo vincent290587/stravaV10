@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <BoucleFEC.h>
+#include "fec.h"
 #include "Model.h"
 #include "segger_wrapper.h"
 #include "parameters.h"
@@ -60,13 +61,13 @@ void BoucleFEC::run() {
 
 	LOG_INFO("Boucle FEC run\r\n");
 
-	// TODO add FEC point to record
-//	attitude.addNewFECPoint();
+	// add FEC point to record
+	attitude.addNewFECPoint(fec_info);
 
 	if (m_pw_buffer.isFull()) {
 		m_pw_buffer.popLast();
 	}
-	m_pw_buffer.add(&fec_info.data.power);
+	m_pw_buffer.add(&fec_info.power);
 
 	vue.refresh();
 

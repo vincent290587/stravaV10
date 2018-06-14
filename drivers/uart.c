@@ -94,7 +94,8 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
   */
  void uart_uninit(void) {
 
-	 // TODO
+	 nrf_libuarte_async_uninit();
+
  }
 
 /**

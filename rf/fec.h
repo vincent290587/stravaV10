@@ -14,8 +14,9 @@
 
 /////////////  STRUCTS
 
+extern sFecControl          fec_control;
 
-extern sFecControl              m_fec_control;
+extern sFecInfo             fec_info;
 
 extern ant_fec_profile_t        m_ant_fec;
 

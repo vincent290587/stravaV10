@@ -6,6 +6,7 @@
  */
 
 #include "nrf_ASSERT.h"
+#include "ant.h"
 #include "Model.h"
 #include "segger_wrapper.h"
 #include <sd/sd_functions.h>
@@ -76,8 +77,8 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			this->cadran(2, VUE_PRC_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
 			this->cadran(2, VUE_PRC_NB_LINES, 2, "Climb", _imkstr((int)att.climb), "m");
 
-			this->cadran(3, VUE_PRC_NB_LINES, 1, "CAD", _imkstr(cad.getData().rpm), "rpm");
-			this->cadran(3, VUE_PRC_NB_LINES, 2, "HRM", _imkstr(hrm.getData().bpm), "bpm");
+			this->cadran(3, VUE_PRC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
+			this->cadran(3, VUE_PRC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 			this->cadran(4, VUE_PRC_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
 			this->cadran(4, VUE_PRC_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");

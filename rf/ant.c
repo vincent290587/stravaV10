@@ -134,6 +134,8 @@ typedef struct
 static bsc_disp_calc_data_t m_speed_calc_data   = {0};
 static bsc_disp_calc_data_t m_cadence_calc_data = {0};
 
+sHrmInfo hrm_info;
+sBscInfo bsc_info;
 
 static uint8_t is_hrm_init = 0;
 static uint8_t is_cad_init = 0;
@@ -402,13 +404,8 @@ void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event)
 
 	case ANT_BSC_COMB_PAGE_0_UPDATED:
 	{
-		sBscInfo bsc_info;
 		bsc_info.speed = calculate_speed(p_profile->BSC_PROFILE_speed_rev_count, p_profile->BSC_PROFILE_speed_event_time);
 		bsc_info.cadence = calculate_cadence(p_profile->BSC_PROFILE_cadence_rev_count, p_profile->BSC_PROFILE_cadence_event_time);
-
-		// TODO event
-
-		//printf("$CAD,%lu,%lu\n\r", bsc_info.cadence, bsc_info.speed);
 
 		NRF_LOG_INFO("Evenement BSC speed=%lu cad=%lu\n",
 				bsc_info.cadence, bsc_info.speed);
@@ -429,7 +426,7 @@ void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event)
  */
 static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t event)
 {
-	sHrmInfo hrm_info;
+
 	static uint32_t     s_previous_beat_count  = 0;    // Heart beat count from previously received page
 	uint16_t            beat_time              = p_profile->page_0.beat_time;
 	uint32_t            beat_count             = p_profile->page_0.beat_count;
@@ -461,12 +458,6 @@ static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t eve
 			uint16_t rrInterval = (beat_time - prev_beat);
 
 			hrm_info.rr = rrInterval * 1000. / 1024.;
-
-			// TODO event
-
-//			NRF_LOG_INFO("$HRM,%u,%u\n\r",
-//					hrm_info.bpm,
-//					hrm_info.rr);
 
 			// Subtracting the event time gives the R-R interval
 			//ble_hrs_rr_interval_add(&m_hrs, beat_time - prev_beat);

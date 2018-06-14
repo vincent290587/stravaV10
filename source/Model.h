@@ -10,7 +10,6 @@
 
 #if defined(__cplusplus)
 
-#include "Sensor.h"
 #include "ListePoints.h"
 #include "Segment.h"
 #include "Parcours.h"
@@ -58,18 +57,24 @@ extern GPS_MGMT      gps_mgmt;
 
 extern sFecControl   fec_control;
 
-extern Sensor<sCadenceData> cad;
+extern sBacklightOrders     backlight;
 
-extern Sensor<sHrmInfo>     hrm;
+extern sNeopixelOrders      neopixel;
 
-extern Sensor<sFecInfo>     fec_info;
+extern "C" {
+#endif // defined C++
 
-extern "C" void model_dispatch_sensors_update(void);
 
-extern "C" void perform_system_tasks(void);
+void model_dispatch_sensors_update(void);
 
-extern "C" bool check_memory_exception(void);
+void model_dispatch_lns_update(sLnsInfo *lns_info);
 
-#endif
+void perform_system_tasks(void);
+
+bool check_memory_exception(void);
+
+#if defined(__cplusplus)
+}
+#endif // defined C++
 
 #endif /* SOURCE_MODEL_H_ */

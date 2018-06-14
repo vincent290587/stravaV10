@@ -2,9 +2,7 @@
 #ifndef __ANT_C__
 #define __ANT_C__
 
-#define APP_TIMER_PRESCALER         0                                   /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_OP_QUEUE_SIZE     10                                   /**< Size of timer operation queues. */
-
+#include "mk64f_parser.h"
 
 
 #define WILDCARD_TRANSMISSION_TYPE      0x00
@@ -26,6 +24,9 @@
 #define FEC_CHANNEL_NUMBER              0x03
 
 #define TACX_DEVICE_NUMBER              2766U
+
+extern sHrmInfo hrm_info;
+extern sBscInfo bsc_info;
 
 #ifdef __cplusplus
 extern "C" {

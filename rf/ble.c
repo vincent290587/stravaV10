@@ -42,6 +42,7 @@
 #include "ble_lns_c.h"
 #include "ant.h"
 #include "glasses.h"
+#include "Model.h"
 #include "neopixel.h"
 #include "segger_wrapper.h"
 
@@ -764,13 +765,11 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 			lns_info.speed = p_lns_c_evt->params.lns.inst_speed;
 		}
 
+		model_dispatch_lns_update(&lns_info);
+
 		NRF_LOG_INFO("Sec jour = %d %d %d\r\n", p_lns_c_evt->params.lns.utc_time.hours,
 				p_lns_c_evt->params.lns.utc_time.minutes,
 				p_lns_c_evt->params.lns.utc_time.seconds);
-
-		// TODO
-//		printf("$LOC,%lu,%ld,%ld,%ld,%u", sec_jour,
-//				p_lns_c_evt->params.lns.lat, p_lns_c_evt->params.lns.lon, elev, speed);
 
 		break;
 	}
