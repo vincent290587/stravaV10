@@ -44,7 +44,11 @@ SRC_FILES += \
   $(SDK_ROOT)/external/fatfs/src/ff.c \
   $(SDK_ROOT)/components/libraries/gfx/nrf_gfx.c \
   $(SDK_ROOT)/components/libraries/sdcard/app_sdcard.c \
+  $(SDK_ROOT)/components/libraries/block_dev/empty/nrf_block_dev_empty.c \
+  $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_block_dev_qspi.c \
+  $(SDK_ROOT)/components/libraries/block_dev/ram/nrf_block_dev_ram.c \
   $(SDK_ROOT)/components/libraries/block_dev/sdc/nrf_block_dev_sdc.c \
+  $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_serial_flash_params.c \
   $(SDK_ROOT)/components/libraries/experimental_memobj/nrf_memobj.c \
   $(SDK_ROOT)/components/libraries/experimental_libuarte/nrf_libuarte.c \
   $(SDK_ROOT)/components/libraries/experimental_libuarte/nrf_libuarte_async.c \
@@ -168,6 +172,8 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/scheduler \
   $(SDK_ROOT)/components/libraries/atomic_fifo \
   $(SDK_ROOT)/components/libraries/block_dev \
+  $(SDK_ROOT)/components/libraries/block_dev/empty \
+  $(SDK_ROOT)/components/libraries/block_dev/qspi \
   $(SDK_ROOT)/components/libraries/block_dev/sdc \
   $(SDK_ROOT)/components/libraries/experimental_log \
   $(SDK_ROOT)/components/libraries/experimental_libuarte \

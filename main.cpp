@@ -28,6 +28,7 @@
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
 #include "Model.h"
+#include "sd_hal.h"
 #include "segger_wrapper.h"
 
 #include "nrf_log.h"
@@ -279,6 +280,8 @@ int main(void)
 
 	// Initialize timer module
 	millis_init();
+
+	sd_functions_init();
 
 	// init all I2C devices
 	i2c_scheduling_init();

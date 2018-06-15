@@ -7,7 +7,7 @@
 
 
 #include <stdlib.h>
-//#include <math.h>
+#include <math.h>
 #include <string.h>
 #include "utils.h"
 #include "parameters.h"
