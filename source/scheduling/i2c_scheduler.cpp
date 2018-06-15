@@ -237,6 +237,8 @@ static void timer_handler(void * p_context)
 {
 	m_last_polled_time++;
 
+	W_SYSVIEW_RecordEnterISR();
+
     read_ms();
 
     if (m_last_polled_time >= 1000 / (MS5637_REFRESH_PER_MS * SENSORS_REFRESH_FREQ)) {
@@ -244,6 +246,8 @@ static void timer_handler(void * p_context)
 
     	read_all();
     }
+
+    W_SYSVIEW_RecordEnterISR();
 }
 
 /**

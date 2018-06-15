@@ -257,7 +257,8 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
  */
 void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 {
-	W_SYSVIEW_RecordEnterISR();
+//	W_SYSVIEW_RecordEnterISR();
+	W_SYSVIEW_OnTaskStartExec(ANT_TASK);
 	// TODO add to scheduler
 
 	switch(p_ant_evt->channel) {
@@ -281,7 +282,8 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 		break;
 	}
 
-    W_SYSVIEW_RecordExitISR();
+	W_SYSVIEW_OnTaskStopExec(ANT_TASK);
+//    W_SYSVIEW_RecordExitISR();
 }
 NRF_SDH_ANT_OBSERVER(m_ant_observer, APP_ANT_OBSERVER_PRIO, ant_evt_handler, 0);
 

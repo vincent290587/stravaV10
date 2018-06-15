@@ -77,7 +77,7 @@ Menuable::Menuable() : Adafruit_GFX(0, 0) {
 }
 
 Menuable::~Menuable() {
-	// TODO Auto-generated destructor stub
+	// Auto-generated destructor stub
 }
 
 void Menuable::initMenu(void) {

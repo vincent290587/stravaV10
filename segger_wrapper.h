@@ -49,10 +49,10 @@
 
 
 #if USE_SVIEW
-//#define W_SYSVIEW_RecordEnterISR(...)  SEGGER_SYSVIEW_RecordEnterISR()
-//#define W_SYSVIEW_RecordExitISR(...)   SEGGER_SYSVIEW_RecordExitISR()
-#define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
-#define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
+#define W_SYSVIEW_RecordEnterISR(...)  SEGGER_SYSVIEW_RecordEnterISR()
+#define W_SYSVIEW_RecordExitISR(...)   SEGGER_SYSVIEW_RecordExitISR()
+//#define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
+//#define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
 #define W_SYSVIEW_OnIdle(...)          SEGGER_SYSVIEW_OnIdle()
 #define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_OnTaskStartExec(X)
 #define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_OnTaskTerminate(X);SEGGER_SYSVIEW_OnIdle()
@@ -74,6 +74,7 @@
 #define SPI_TASK                       (TASK_BASE + 1u)
 #define UART_TASK                      (TASK_BASE + 2u)
 
+#define ANT_TASK                       (TASK_BASE + 6u)
 #define BLE_TASK                       (TASK_BASE + 7u)
 #define SD_ACCESS_TASK                 (TASK_BASE + 8u)
 #define SEG_PERF_TASK                  (TASK_BASE + 9u)

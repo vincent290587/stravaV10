@@ -765,6 +765,12 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 			lns_info.speed = p_lns_c_evt->params.lns.inst_speed;
 		}
 
+		if (p_lns_c_evt->params.lns.flags & HEADING_PRESENT) {
+			lns_info.heading = p_lns_c_evt->params.lns.heading;
+		} else {
+			lns_info.heading = -1;
+		}
+
 		model_dispatch_lns_update(&lns_info);
 
 		NRF_LOG_INFO("Sec jour = %d %d %d\r\n", p_lns_c_evt->params.lns.utc_time.hours,

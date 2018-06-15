@@ -36,7 +36,7 @@ typedef struct {
 } sBatteryOrders;
 
 typedef enum {
-	eFecControlNone,
+	eFecControlTargetNone,
 	eFecControlTargetPower,
 	eFecControlSlope,
 } eFecControlType;
@@ -93,6 +93,7 @@ typedef struct {
 	int32_t lon;
 	int32_t ele;
 	int16_t speed;
+	uint16_t heading;
 	uint32_t secj;
 	uint32_t date;
 } sLnsInfo;
@@ -103,15 +104,7 @@ typedef struct {
 	uint16_t el_time;
 } sFecInfo;
 
-typedef struct {
-	uint8_t  flags;
-	sHrmInfo hrm_info;
-	sBscInfo bsc_info;
-	sLnsInfo lns_info;
-	sFecInfo fec_info;
-} sSpisTxInfoPage0;
-
-////////////// NRF52 RX PAGES
+////////////// RX PAGES
 
 typedef struct {
 	sBatteryOrders  batt_info;
