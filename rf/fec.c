@@ -5,11 +5,12 @@
  *      Author: Vincent
  */
 
-#include "assert.h"
+#include "nrf_assert.h"
 #include "ant.h"
 #include "fec.h"
 #include "Model.h"
 #include "ant_fec_pages.h"
+#include "ant_fec_utils.h"
 #include "ant_interface.h"
 #include "app_timer.h"
 
@@ -158,7 +159,7 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 
 static void roller_manager(void * p_context) {
 
-	assert(p_context);
+	ASSERT(p_context);
 
 	sFecControl* control = (sFecControl*)p_context;
 

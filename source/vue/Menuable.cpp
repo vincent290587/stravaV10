@@ -7,7 +7,9 @@
 
 #include "millis.h"
 #include "Model.h"
-#include "nrf_ASSERT.h"
+#include "nrf_assert.h"
+#include "nrf_gpio.h"
+#include "boards.h"
 #include <vue/Menuable.h>
 
 static void _retour_menu(int var) {
@@ -45,7 +47,9 @@ static void _page0_mode_fec(int var) {
 
 static void _page0_shutdown(int var) {
 
-	// TODO shutdown
+	// shutdown
+	nrf_gpio_pin_set(KILL_PIN);
+
 	_retour_menu(0);
 }
 

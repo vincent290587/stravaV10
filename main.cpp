@@ -155,7 +155,7 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
  */
 static void log_init(void)
 {
-	ret_code_t err_code = NRF_LOG_INIT(NULL);
+	ret_code_t err_code = NRF_LOG_INIT(millis);
 	APP_ERROR_CHECK(err_code);
 
 	NRF_LOG_DEFAULT_BACKENDS_INIT();
@@ -169,18 +169,16 @@ static void log_init(void)
 static void bsp_evt_handler(bsp_event_t evt)
 {
 
-	// TODO schedule
-
 	switch (evt)
 	{
 	case BSP_EVENT_KEY_0:
-
+		vue.tasks(eButtonsEventLeft);
 		break;
 	case BSP_EVENT_KEY_1:
-
+		vue.tasks(eButtonsEventCenter);
 		break;
 	case BSP_EVENT_KEY_2:
-
+		vue.tasks(eButtonsEventRight);
 		break;
 	default:
 		return; // no implementation needed
@@ -247,6 +245,7 @@ static void pins_init(void)
 	nrf_gpio_pin_clear(LDO_PIN);
 
 	nrf_gpio_cfg_output(LED_PIN);
+	nrf_gpio_cfg_output(KILL_PIN);
 }
 
 /**
@@ -306,11 +305,7 @@ int main(void)
 	NRF_LOG_INFO("LNS central start");
 
 	sNeopixelOrders neo_order;
-	neo_order.event_type = eNeoEventNotify;
-	neo_order.on_time = 0;
-	neo_order.rgb[0] = 0xFF;
-	neo_order.rgb[1] = 0x00;
-	neo_order.rgb[2] = 0x00;
+	SET_NEO_EVENT_RED(neopixel, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);
 
 	// LCD driver
@@ -323,27 +318,31 @@ int main(void)
 	for (;;)
 	{
 		if (job_to_do) {
+			// tasks to run non-continuously
+
 			job_to_do = false;
 
 			NRF_LOG_DEBUG("Job");
+
+			roller_manager_tasks();
 
 //			nrf_gpio_pin_toggle(LED_PIN);
 
 			notifications_tasks();
 
-			roller_manager_tasks();
+			backlighting_tasks();
+
+			notifications_tasks();
 
 			boucle.tasks();
-
-			// tasks
-			perform_system_tasks();
 
 			nrf_drv_wdt_channel_feed(m_channel_id);
 		}
 
-		app_sched_execute();
+		// tasks
+		perform_system_tasks();
 
-		backlighting_tasks();
+		app_sched_execute();
 
 		if (NRF_LOG_PROCESS() == false)
 		{

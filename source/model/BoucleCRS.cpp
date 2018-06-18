@@ -13,7 +13,6 @@
 #include "sd_functions.h"
 #include "segger_wrapper.h"
 
-
 /**
  *
  */
@@ -115,12 +114,12 @@ void BoucleCRS::run() {
 
 						LOG_INFO("Segment FIN %s\r\n", seg.getName());
 
-						// TODO
-//						if (seg.getAvance() > 0.) {
-//							ua_send_notification_blue(2);
-//						} else {
-//							ua_send_notification_red (2);
-//						}
+						// show some light !
+						if (seg.getAvance() > 0.) {
+							SET_NEO_EVENT_BLUE(neopixel, eNeoEventWeakNotify, 2);
+						} else {
+							SET_NEO_EVENT_RED(neopixel, eNeoEventWeakNotify, 2);
+						}
 
 					}
 
@@ -149,6 +148,8 @@ void BoucleCRS::run() {
 
 		attitude.addNewDate(dat);
 	}
+
+	notifications_setNotify(&neopixel);
 
 	W_SYSVIEW_OnTaskStartExec(LCD_TASK);
 	vue.refresh();

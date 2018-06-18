@@ -77,6 +77,7 @@ extern "C" {
 
 #define INT_PIN           4
 #define LDO_PIN           30
+#define KILL_PIN          30
 #define NEO_PIN           7
 #define LED_PIN           14
 #define BCK_PIN           8

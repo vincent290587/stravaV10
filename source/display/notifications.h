@@ -1,14 +1,6 @@
-/*
- * WS2812B.h
- *
- * Wrapper for the neopixel LED
- *
- *  Created on: 28 févr. 2017
- *      Author: Vincent
- */
 
-#ifndef LIBRARIES_WS2812B_H_
-#define LIBRARIES_WS2812B_H_
+#ifndef NOTIFICATIONS_H_
+#define NOTIFICATIONS_H_
 
 #include <stdint.h>
 #include "neopixel.h"
@@ -30,6 +22,32 @@ typedef struct
 } neo_sb_init_params_t;
 
 
+//////////////////////////     MACROS
+
+
+#define SET_NEO_EVENT_RED(X, Y, TIME) \
+	X.event_type = Y; \
+	X.on_time = 5; \
+	X.rgb[0] = 0xFF; \
+	X.rgb[1] = 0x00; \
+	X.rgb[2] = 0x00
+
+#define SET_NEO_EVENT_BLUE(X, Y, TIME) \
+	X.event_type = Y; \
+	X.on_time = 5; \
+	X.rgb[0] = 0x00; \
+	X.rgb[1] = 0xFF; \
+	X.rgb[2] = 0x00
+
+#define SET_NEO_EVENT_GREEN(X, Y, TIME) \
+	X.event_type = Y; \
+	X.on_time = 5; \
+	X.rgb[0] = 0x00; \
+	X.rgb[1] = 0x00; \
+	X.rgb[2] = 0xFF
+
+//////////////////////////     FUNCTIONS
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,4 +62,4 @@ uint8_t notifications_tasks(void);
 }
 #endif
 
-#endif /* LIBRARIES_WS2812B_H_ */
+#endif /* NOTIFICATIONS_H_ */

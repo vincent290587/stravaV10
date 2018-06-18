@@ -25,7 +25,6 @@ void Vue::init(void) {
 
 void Vue::tasks(eButtonsEvent event) {
 
-	// TODO
 	switch (m_global_mode) {
 	case eVueGlobalScreenCRS:
 	{

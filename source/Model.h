@@ -8,6 +8,10 @@
 #ifndef SOURCE_MODEL_H_
 #define SOURCE_MODEL_H_
 
+
+#include "notifications.h"
+#include "parameters.h"
+
 #if defined(__cplusplus)
 
 #include "ListePoints.h"
@@ -23,7 +27,6 @@
 #include "VEML6075.h"
 #include "MS5637.h"
 #include "Attitude.h"
-#include "parameters.h"
 #include "mk64f_parser.h"
 
 
