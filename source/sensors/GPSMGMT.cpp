@@ -80,10 +80,10 @@ GPS_MGMT::GPS_MGMT() {
 void GPS_MGMT::init(void) {
 
 	// configure PPS pin
-	nrf_gpio_cfg_input(BOARD_PPS_PIN, NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_input(PPS_PIN, NRF_GPIO_PIN_NOPULL);
 
-	// configure 3D pin
-	nrf_gpio_cfg_input(BOARD_FIX_PIN, NRF_GPIO_PIN_NOPULL);
+	// configure fix pin
+	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
 
 #if GPS_USE_COLD_START
 	SEND_TO_GPS(PMTK_COLD);
@@ -113,7 +113,7 @@ void GPS_MGMT::init(void) {
 }
 
 bool GPS_MGMT::isFix(void) {
-	return !nrf_gpio_pin_read(BOARD_FIX_PIN);
+	return nrf_gpio_pin_read(FIX_PIN);
 }
 
 void GPS_MGMT::standby(void) {

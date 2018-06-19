@@ -200,8 +200,7 @@ static void bsp_evt_handler(bsp_event_t evt)
 static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 {
 	if (NRF_PWR_MGMT_EVT_PREPARE_SYSOFF == event) {
-		nrf_gpio_pin_clear(LDO_PIN);
-		nrf_gpio_pin_set(LED_PIN);
+		nrf_gpio_pin_set(KILL_PIN);
 		return true;
 	}
 
@@ -233,19 +232,26 @@ static void buttons_leds_init(void)
 
 static void pins_init(void)
 {
-//	nrf_gpio_cfg_input(BUTTON_1, NRF_GPIO_PIN_PULLUP);
-//	nrf_gpio_cfg_input(BUTTON_2, NRF_GPIO_PIN_PULLUP);
-//	nrf_gpio_cfg_input(BUTTON_3, NRF_GPIO_PIN_PULLUP);
+	// TODO map (SST_CS ?)
+	nrf_gpio_cfg_output(NEO_PIN);
 
-//	nrf_gpio_cfg_input(SHARP_CS, NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_input(FXOS_INT1, NRF_GPIO_PIN_PULLDOWN);
+	nrf_gpio_cfg_input(FXOS_INT2, NRF_GPIO_PIN_PULLDOWN);
 
-	nrf_gpio_cfg_output(SHARP_CS);
+	nrf_gpio_cfg_output(FXOS_RST);
 
-	nrf_gpio_cfg_output(LDO_PIN);
-	nrf_gpio_pin_clear(LDO_PIN);
+	// SDC_CS_PIN is configured later
+	// LS027_CS_PIN is configured later
 
-	nrf_gpio_cfg_output(LED_PIN);
+	nrf_gpio_cfg_output(BCK_PIN);
+
+	nrf_gpio_cfg_output(SPK_IN);
+
+	// PPS_PIN is configured later
+	// FIX_PIN is configured later
+
 	nrf_gpio_cfg_output(KILL_PIN);
+	nrf_gpio_pin_clear(KILL_PIN);
 }
 
 /**
@@ -305,7 +311,7 @@ int main(void)
 	NRF_LOG_INFO("LNS central start");
 
 	sNeopixelOrders neo_order;
-	SET_NEO_EVENT_RED(neopixel, eNeoEventNotify, 0);
+	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);
 
 	// LCD driver

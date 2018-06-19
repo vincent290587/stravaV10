@@ -18,12 +18,12 @@ extern "C" {
 
 #include "nrf_gpio.h"
 
-// LEDs definitions for PCA10036
+// LEDs definitions
 #define LEDS_NUMBER    1
 
-#define LED_START      14
-#define LED_1          14
-#define LED_STOP       14
+//#define LED_START      14
+#define LED_1            NRF_GPIO_PIN_MAP(0, 19)
+//#define LED_STOP       14
 
 #define LEDS_ACTIVE_STATE 0
 
@@ -38,11 +38,11 @@ extern "C" {
 
 #define BUTTONS_NUMBER 3
 
-#define BUTTON_START   17
-#define BUTTON_1       17
-#define BUTTON_2       18
-#define BUTTON_3       19
-#define BUTTON_STOP    19
+//#define BUTTON_START   17
+#define BUTTON_1       NRF_GPIO_PIN_MAP(0, 17)
+#define BUTTON_2       NRF_GPIO_PIN_MAP(0, 15)
+#define BUTTON_3       NRF_GPIO_PIN_MAP(0, 13)
+//#define BUTTON_STOP    19
 #define BUTTON_PULL    NRF_GPIO_PIN_PULLUP
 
 #define BUTTONS_ACTIVE_STATE 0
@@ -53,19 +53,19 @@ extern "C" {
 #define BSP_BUTTON_1   BUTTON_2
 #define BSP_BUTTON_2   BUTTON_3
 
-#define SDA_PIN_NUMBER   14
-#define SCL_PIN_NUMBER   15
+#define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(1, 15)
+#define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(1, 13)
 
-#define RX_PIN_NUMBER    7
-#define TX_PIN_NUMBER    6
+#define RX_PIN_NUMBER    NRF_GPIO_PIN_MAP(1, 9)
+#define TX_PIN_NUMBER    NRF_GPIO_PIN_MAP(0, 12)
 #define CTS_PIN_NUMBER   11
 #define RTS_PIN_NUMBER   8
 #define HWFC             false
 
-#define SPI_MISO_PIN     26  // SPI MISO signal.
-#define SPI_SS_PIN       28  // SPI CSN signal.
-#define SPI_MOSI_PIN     27  // SPI MOSI signal.
-#define SPI_SCK_PIN      25  // SPI SCK signal.
+#define SPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 24)
+#define SPI_SS_PIN       NRF_GPIO_PIN_MAP(1, 6)
+#define SPI_MOSI_PIN     NRF_GPIO_PIN_MAP(0, 22)
+#define SPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 20)
 
 
 // Low frequency clock source to be used by the SoftDevice
@@ -75,20 +75,29 @@ extern "C" {
                                  .accuracy     = NRF_CLOCK_LF_ACCURACY_20_PPM}
 
 
-#define INT_PIN           4
-#define LDO_PIN           30
-#define KILL_PIN          30
-#define NEO_PIN           7
-#define LED_PIN           14
-#define BCK_PIN           8
-#define AT42_COUT         BUTTON_2
-#define SHARP_CS          29
-#define SDC_CS_PIN        30
+#define FXOS_INT1         NRF_GPIO_PIN_MAP(0, 31)
+#define FXOS_INT2         NRF_GPIO_PIN_MAP(0, 29)
+#define FXOS_RST          NRF_GPIO_PIN_MAP(0, 2)
 
-#define LS027_CS_PIN      0
+#define SST_CS            NRF_GPIO_PIN_MAP(1, 2)
 
-#define BOARD_PPS_PIN     1
-#define BOARD_FIX_PIN     2
+#define SDC_CS_PIN        NRF_GPIO_PIN_MAP(1, 4)
+
+#define LS027_CS_PIN      NRF_GPIO_PIN_MAP(1, 6)
+
+#define BCK_PIN           NRF_GPIO_PIN_MAP(1, 0)
+
+#define SPK_IN            NRF_GPIO_PIN_MAP(0, 26)
+
+#define PPS_PIN           NRF_GPIO_PIN_MAP(0, 6)
+
+#define FIX_PIN           NRF_GPIO_PIN_MAP(0, 8)
+
+// map (SPK_IN ?)
+#define KILL_PIN          SST_CS
+
+// map (SST_CS ?)
+#define NEO_PIN           SPK_IN
 
 #ifdef __cplusplus
 }
