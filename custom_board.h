@@ -56,8 +56,8 @@ extern "C" {
 #define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(1, 15)
 #define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(1, 13)
 
-#define RX_PIN_NUMBER    NRF_GPIO_PIN_MAP(1, 9)
-#define TX_PIN_NUMBER    NRF_GPIO_PIN_MAP(0, 12)
+#define TX_PIN_NUMBER    NRF_GPIO_PIN_MAP(1, 9)
+#define RX_PIN_NUMBER    NRF_GPIO_PIN_MAP(0, 12)
 #define CTS_PIN_NUMBER   11
 #define RTS_PIN_NUMBER   8
 #define HWFC             false
