@@ -193,17 +193,30 @@ static void Magnetometer_Calibrate(fxos_handle_t *g_fxosHandle)
  */
 void fxos_init(void) {
 
-	static uint8_t tmp[2] = {0,0};
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_reg1[2] = {CTRL_REG1, WHO_AM_I_REG};
+
+	static uint8_t p_ans_buffer[2] = {0};
+
+	static nrf_twi_mngr_transfer_t const fxos_init_transfers1[] =
+	{
+		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, fxos_reg1  , p_ans_buffer  , 1),
+		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, fxos_reg1+1, p_ans_buffer+1, 1)
+	};
+
+	i2c_perform(NULL, fxos_init_transfers1, sizeof(fxos_init_transfers1) / sizeof(fxos_init_transfers1[0]), NULL);
+
 
 //	if(FXOS_ReadReg(fxos_handle, WHO_AM_I_REG, tmp, 1) != kStatus_Success)
 //	{
 //		return kStatus_Fail;
 //	}
-//
-//	if (tmp[0] != kFXOS_WHO_AM_I_Device_ID)
-//	{
-//		return kStatus_Fail;
-//	}
+
+	if (p_ans_buffer[0] != kFXOS_WHO_AM_I_Device_ID)
+	{
+		NRF_LOG_ERROR("FXOS absent");
+		return;
+	}
 
 	/* setup auto sleep with FFMT trigger */
 	/* go to standby */
@@ -342,52 +355,93 @@ void fxos_init(void) {
 //		return kStatus_Fail;
 //	}
 
-
-
-	static nrf_twi_mngr_transfer_t const fxos_init_transfers[] =
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_config[][2] =
 	{
 		/* Put in standby */
-		FXOS_STANDBY(tmp),
+		FXOS_STANDBY_REGS(p_ans_buffer[0]),
 		/* Disable the FIFO */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, F_SETUP_REG, F_MODE_DISABLED, 1),
+		{F_SETUP_REG, F_MODE_DISABLED},
 #ifdef LPSLEEP_HIRES
 		/* enable auto-sleep, low power in sleep, high res in wake */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, CTRL_REG2, SLPE_MASK | SMOD_LOW_POWER | MOD_HIGH_RES, 1),
+		{CTRL_REG2, SLPE_MASK | SMOD_LOW_POWER | MOD_HIGH_RES},
 #else
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, CTRL_REG2, MOD_HIGH_RES, 1),
+		{CTRL_REG2, MOD_HIGH_RES},
 #endif
 		/* set up Mag OSR and Hybrid mode using M_CTRL_REG1, use default for Acc */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, M_CTRL_REG1, (M_RST_MASK | M_OSR_MASK | M_HMS_MASK), 1),
+		{M_CTRL_REG1, (M_RST_MASK | M_OSR_MASK | M_HMS_MASK)},
 		/* Enable hyrid mode auto increment using M_CTRL_REG2 */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, M_CTRL_REG2, (M_HYB_AUTOINC_MASK), 1),
+		{M_CTRL_REG2, (M_HYB_AUTOINC_MASK)},
 
 #ifdef EN_FFMT
 		/* enable FFMT for motion detect for X and Y axes, latch enable */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, FF_MT_CFG_REG, (XEFE_MASK | YEFE_MASK | ELE_MASK | OAE_MASK), 1),
+		{FF_MT_CFG_REG, (XEFE_MASK | YEFE_MASK | ELE_MASK | OAE_MASK)},
 #endif
 
 #ifdef SET_THRESHOLD
 		/* set threshold to about 0.25g */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, FT_MT_THS_REG, 0x04, 1),
+		{FT_MT_THS_REG, 0x04},
 #endif
 
 #ifdef SET_DEBOUNCE
 		/* set debounce to zero */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, FF_MT_COUNT_REG, 0x00, 1),
+		{FF_MT_COUNT_REG, 0x00},
 #endif
 
 #ifdef EN_AUTO_SLEEP
 		/* set auto-sleep wait period to 5s (=5/0.64=~8) */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, ASLP_COUNT_REG, 8, 1),
+		{ASLP_COUNT_REG, 8},
 #endif
 		/* default set to 4g mode */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, XYZ_DATA_CFG_REG, FULL_SCALE_4G, 1),
+		{XYZ_DATA_CFG_REG, FULL_SCALE_4G},
 
 		/* Setup the ODR for 50 Hz and activate the accelerometer */
-		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, CTRL_REG1, (HYB_DATA_RATE_200HZ | ACTIVE_MASK), 1),
+		{CTRL_REG1, (HYB_DATA_RATE_200HZ | ACTIVE_MASK)},
 	};
 
-	i2c_perform(NULL, fxos_init_transfers, sizeof(fxos_init_transfers) / sizeof(fxos_init_transfers[0]), NULL);
+	uint16_t cur_ind = 0;
+	static nrf_twi_mngr_transfer_t const fxos_init_transfers2[] =
+	{
+		/* Put in standby */
+		FXOS_STANDBY(fxos_config[cur_ind++], 1),
+		/* Disable the FIFO */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+#ifdef LPSLEEP_HIRES
+		/* enable auto-sleep, low power in sleep, high res in wake */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+#else
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+#endif
+		/* set up Mag OSR and Hybrid mode using M_CTRL_REG1, use default for Acc */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+		/* Enable hyrid mode auto increment using M_CTRL_REG2 */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+
+#ifdef EN_FFMT
+		/* enable FFMT for motion detect for X and Y axes, latch enable */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+#endif
+
+#ifdef SET_THRESHOLD
+		/* set threshold to about 0.25g */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+#endif
+
+#ifdef SET_DEBOUNCE
+		/* set debounce to zero */
+#endif
+
+#ifdef EN_AUTO_SLEEP
+		/* set auto-sleep wait period to 5s (=5/0.64=~8) */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+#endif
+		/* default set to 4g mode */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+
+		/* Setup the ODR for 50 Hz and activate the accelerometer */
+		I2C_WRITE_REG(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], &fxos_config[cur_ind++][1], 1),
+	};
+
+	i2c_perform(NULL, fxos_init_transfers2, sizeof(fxos_init_transfers2) / sizeof(fxos_init_transfers2[0]), NULL);
 
 	return;
 }
@@ -468,6 +522,8 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 	g_Ay /= MAX_ACCEL_AVG_COUNT;
 	g_Az /= MAX_ACCEL_AVG_COUNT;
 
+	LOG_INFO("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
+
 	if(g_FirstRun)
 	{
 		g_Mx_LP = g_Mx_Raw;
@@ -512,6 +568,6 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 
 	g_Yaw_LP += (g_Yaw - g_Yaw_LP) * 0.01;
 
-	LOG_INFO("Compass Angle: %d\r\n", (int)g_Yaw);
+	NRF_LOG_INFO("Compass Angle: %d", (int)g_Yaw);
 
 }

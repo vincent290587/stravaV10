@@ -36,9 +36,7 @@ static void _i2c_scheduling_sensors_post_init(void) {
 
 	ms5637.setCx(&m_ms5637_handle);
 
-	// start gathering pressure data
-	read_ms();
-
+	LOG_INFO("Sensors initialized");
 }
 
 
@@ -47,48 +45,67 @@ static void _i2c_scheduling_sensors_post_init(void) {
  */
 static void _i2c_scheduling_sensors_init() {
 
-	m_last_polled_time = 1;
-
 	// Reset sensors
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config[2] = {REG_CONTROL, STC_RESET};
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config[2] = STC_RESET_REGS;
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config[2];
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config[3];
 	veml_config[0] = VEML6075_REG_CONF;
-	veml_config[1] = veml.config;
+	veml_config[1] = (uint8_t) (veml.config & 0xFF);
+	veml_config[2] = (uint8_t)((0xFF00 & veml.config) >> 8);
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND ms_config[1] = {CMD_RESET};
 
 	static nrf_twi_mngr_transfer_t const sensors_init_transfers[] =
 	{
-	    NRF_TWI_MNGR_WRITE(STC3100_ADDRESS, stc_config, sizeof(stc_config), 0),
-		NRF_TWI_MNGR_WRITE(VEML6075_ADDR, veml_config, sizeof(veml_config), 0),
-		MS5637_RESET()
+		I2C_WRITE     (VEML6075_ADDR  , veml_config, sizeof(veml_config)),
+		I2C_WRITE     (MS5637_ADDR    , ms_config, sizeof(ms_config))
+//		I2C_WRITE     (STC3100_ADDRESS, stc_config, sizeof(stc_config))
 	};
 	i2c_perform(NULL, sensors_init_transfers, sizeof(sensors_init_transfers) / sizeof(sensors_init_transfers[0]), NULL);
 
 	// init sensors configuration
 	fxos_init();
 
-	veml.init();
-
 	// init configuration
 	stc.init(STC3100_CUR_SENS_RES_MO);
 
+	nrf_delay_ms(1);
+
 	// Init sensors
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config2[2];
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config2[4];
 	veml_config2[0] = VEML6075_REG_CONF;
-	veml_config2[1] = veml.config;
+	veml_config2[1] = (uint8_t) (veml.config & 0xFF);
+	veml_config2[2] = (uint8_t)((0xFF00 & veml.config) >> 8);
+	veml_config2[3] = VEML6075_REG_DEVID;
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config2[2];
 	stc_config2[0] = REG_MODE;
 	stc_config2[1] = stc._stc3100Mode;
 
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config3[1];
+	stc_config3[0] = REG_DEVICE_ID;
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND ms_config2[7] = MS5637_INIT_REGS;
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND ms_config3[1] = MS5637_CMD_TEMP_REG;
+
+	static uint8_t raw_data[2];
+	static uint8_t raw_data_stc[1];
+
 	static nrf_twi_mngr_transfer_t const sensors_init_transfers2[] =
 	{
-			NRF_TWI_MNGR_WRITE(STC3100_ADDRESS, stc_config2, sizeof(stc_config2), 0),
-			NRF_TWI_MNGR_WRITE(VEML6075_ADDR,  veml_config2, sizeof(veml_config2), 0),
-			MS5637_INIT(m_ms5637_handle.cx_data),
-			MS5637_CMD_TEMP()
+			MS5637_INIT         (ms_config2, m_ms5637_handle.cx_data),
+			VEML_READ_REG_REP_START(&veml_config2[3], &raw_data[0], 2),
+			VEML_READ_REG_REP_START(&veml_config2[3], &raw_data[0], 2),
+			MS5637_CMD_TEMP     (ms_config3)
+//			I2C_READ_REG_NO_STOP(STC3100_ADDRESS, stc_config3, raw_data_stc, 1),
+//			I2C_WRITE           (STC3100_ADDRESS, stc_config2, sizeof(stc_config2))
 	};
 	i2c_perform(NULL, sensors_init_transfers2, sizeof(sensors_init_transfers2) / sizeof(sensors_init_transfers2[0]), NULL);
+
+	uint16_t res = raw_data[1] << 8;
+	res |= raw_data[0];
+	veml.init(res);
 
 	// post-init steps
 	_i2c_scheduling_sensors_post_init();
@@ -109,12 +126,12 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	fxos_tasks(&m_fxos_handle);
 
-	stc.refresh(&m_stc_buffer);
+//	stc.refresh(&m_stc_buffer);
 
 	veml.refresh(m_veml_buffer);
 
 	// dispatch to model
-	m_last_polled_time = millis();
+	m_last_polled_time++;
 
 	model_dispatch_sensors_update();
 
@@ -128,11 +145,18 @@ static void read_all(void)
     // [these structures have to be "static" - they cannot be placed on stack
     //  since the transaction is scheduled and these structures most likely
     //  will be referred after this function returns]
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_regs[5] = VEML_READ_ALL_REGS;
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[2] = FXOS_READ_ALL_REGS;
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_regs[1]  = STC_READ_ALL_REGS;
+
     static nrf_twi_mngr_transfer_t const transfers[] =
     {
-    	STC3100_READ_ALL (&m_stc_buffer.array[0]),
-		VEML6075_READ_ALL(&m_veml_buffer[0]),
-		FXOS_READ_ALL    (&m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
+//    	STC3100_READ_ALL (&stc_regs[0] , &m_stc_buffer.array[0]),
+		VEML6075_READ_ALL(&veml_regs[0], &m_veml_buffer[0]),
+		FXOS_READ_ALL    (&fxos_regs[0], &m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
     };
     static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
     {
@@ -155,22 +179,23 @@ static void read_ms_cb(ret_code_t result, void * p_user_data) {
 
 	ASSERT(p_user_data);
 
+	ms5637_handle_t *_handle = (ms5637_handle_t*)p_user_data;
+
 	// state machine of the measurement
-    switch (m_ms5637_handle.meas_type) {
+    switch (_handle->meas_type) {
     case eMS5637MeasCmdTemp:
     {
-    	m_ms5637_handle.meas_type = eMS5637MeasCmdPress;
+    	_handle->meas_type = eMS5637MeasCmdPress;
 
     	// temp has just been commanded, meaning we just got a pressure
     	//  measurement
     	// --> refresh device
-    	ms5637_handle_t *_handle = (ms5637_handle_t*)p_user_data;
     	ms5637.refresh(_handle);
     }
     	break;
     case eMS5637MeasCmdPress:
     {
-    	m_ms5637_handle.meas_type = eMS5637MeasCmdTemp;
+    	_handle->meas_type = eMS5637MeasCmdTemp;
     }
     	break;
     default:
@@ -187,9 +212,11 @@ static void read_ms(void) {
 	// [these structures have to be "static" - they cannot be placed on stack
 	//  since the transaction is scheduled and these structures most likely
 	//  will be referred after this function returns]
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND ms_config[2] = MS5637_READ_TEMP_REG;
+
 	static nrf_twi_mngr_transfer_t const transfers_temp[] =
 	{
-			MS5637_READ_TEMP  (&m_ms5637_handle.temp_adc[0], OSR_8192)
+			MS5637_READ_TEMP(&m_ms5637_handle.temp_adc[0], ms_config)
 	};
 	static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction_temp =
 	{
@@ -199,9 +226,11 @@ static void read_ms(void) {
 			.number_of_transfers = sizeof(transfers_temp) / sizeof(transfers_temp[0])
 	};
 
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND ms_config2[2] = MS5637_READ_PRESS_REG;
+
 	static nrf_twi_mngr_transfer_t const transfers_press[] =
 	{
-			MS5637_READ_PRESS  (&m_ms5637_handle.press_adc[0], OSR_8192)
+			MS5637_READ_PRESS  (&m_ms5637_handle.press_adc[0], ms_config2)
 	};
 	static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction_press =
 	{
@@ -254,8 +283,7 @@ static void timer_handler(void * p_context)
  *
  */
 void i2c_scheduling_init(void) {
-
-	m_last_polled_time = 0;
+#ifndef _DEBUG_TWI
 
 	_i2c_scheduling_sensors_init();
 
@@ -263,9 +291,18 @@ void i2c_scheduling_init(void) {
 
     ret_code_t err_code;
 
-    err_code = app_timer_create(&m_timer, APP_TIMER_MODE_REPEATED, timer_handler);
-    APP_ERROR_CHECK(err_code);
+    if (!m_last_polled_time) {
+    	err_code = app_timer_create(&m_timer, APP_TIMER_MODE_REPEATED, timer_handler);
+    	APP_ERROR_CHECK(err_code);
 
-    err_code = app_timer_start(m_timer, APP_TIMER_TICKS(MS5637_REFRESH_PER_MS), NULL);
-    APP_ERROR_CHECK(err_code);
+    	err_code = app_timer_start(m_timer, APP_TIMER_TICKS(MS5637_REFRESH_PER_MS), NULL);
+    	APP_ERROR_CHECK(err_code);
+
+    	m_last_polled_time = 1;
+    }
+#else
+    //stc.init(100);
+    veml.init();
+    ms5637.init();
+#endif
 }

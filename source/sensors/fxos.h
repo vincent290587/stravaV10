@@ -17,16 +17,33 @@
 
 /*=========================================================================*/
 
-#define FXOS_STANDBY(p_buffer) \
-		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, CTRL_REG1, p_buffer, 1),  \
-		I2C_WRITE(FXOS_7BIT_ADDRESS, p_buffer[0] & (uint8_t)~ACTIVE_MASK, 1)
+#define FXOS_STANDBY_REGS(_reg1) \
+{                                          \
+		CTRL_REG1,                             \
+		(uint8_t)_reg1 & ~((uint8_t)ACTIVE_MASK),                                     \
+}
 
-#define FXOS_RESET(...) \
-		I2C_WRITE(FXOS_7BIT_ADDRESS, CMD_RESET, 1)
+#define FXOS_STANDBY(p_cmd, p_buffer) \
+		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, p_cmd, p_buffer, 1),  \
+		I2C_WRITE(FXOS_7BIT_ADDRESS, p_cmd+1, 1)
 
-#define FXOS_READ_ALL(p_mag_buffer, p_acc_buffer) \
-		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, OUT_X_MSB_REG, p_acc_buffer, 6), \
-		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, M_OUT_X_MSB_REG, p_mag_buffer, 6)
+#define FXOS_RESET_REGS \
+{                                          \
+		CMD_RESET,                             \
+}
+
+#define FXOS_RESET(p_cmd) \
+		I2C_WRITE2(FXOS_7BIT_ADDRESS, p_cmd, 1)
+
+#define FXOS_READ_ALL_REGS \
+{                                          \
+		OUT_X_MSB_REG,                         \
+		M_OUT_X_MSB_REG,                       \
+}
+
+#define FXOS_READ_ALL(p_cmd, p_mag_buffer, p_acc_buffer) \
+		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, p_cmd, p_acc_buffer, 6), \
+		I2C_READ_REG_REP_START(FXOS_7BIT_ADDRESS, p_cmd+1, p_mag_buffer, 6)
 
 
 /*=========================================================================*/

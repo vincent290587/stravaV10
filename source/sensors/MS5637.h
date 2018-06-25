@@ -49,30 +49,53 @@ typedef struct _ms5637_handle
 
 
 /*=========================================================================*/
+#define MS5637_INIT_REGS \
+{                                          \
+	CMD_PROM_READ(0),                      \
+	CMD_PROM_READ(1),                      \
+	CMD_PROM_READ(2),                      \
+	CMD_PROM_READ(3),                      \
+	CMD_PROM_READ(4),                      \
+	CMD_PROM_READ(5),                      \
+	CMD_PROM_READ(6)                       \
+}
 
+#define MS5637_INIT(r_buffer, p_buffer) \
+		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer  , p_buffer   , 2),  \
+		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+1, p_buffer+2 , 2),  \
+		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+2, p_buffer+4 , 2),  \
+		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+3, p_buffer+6 , 2),  \
+		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+4, p_buffer+8 , 2),  \
+		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+5, p_buffer+10, 2), \
+		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+6, p_buffer+12, 2)
 
-#define MS5637_INIT(p_buffer) \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_PROM_READ(0), p_buffer  , 2),  \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_PROM_READ(1), p_buffer+2, 2),  \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_PROM_READ(2), p_buffer+4, 2),  \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_PROM_READ(3), p_buffer+6, 2),  \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_PROM_READ(4), p_buffer+8, 2),  \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_PROM_READ(5), p_buffer+10, 2), \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_PROM_READ(6), p_buffer+12, 2)
+#define MS5637_CMD_TEMP_REG \
+{                                          \
+	CMD_START_D2(BARO_LEVEL)               \
+}
 
-#define MS5637_RESET(...) \
-		I2C_WRITE(MS5637_ADDR, CMD_RESET, 1)
+#define MS5637_CMD_TEMP(p_cmd) \
+ 		I2C_WRITE   (MS5637_ADDR, p_cmd, 1)
 
-#define MS5637_CMD_TEMP(...) \
-		I2C_WRITE   (MS5637_ADDR, CMD_START_D2(BARO_LEVEL), 1)
+#define MS5637_READ_TEMP_REG \
+{                                          \
+	CMD_READ_ADC,                          \
+	CMD_START_D2(BARO_LEVEL)               \
+}
 
-#define MS5637_READ_TEMP(p_buffer, cmd) \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_READ_ADC, p_buffer, 3), \
-		I2C_WRITE   (MS5637_ADDR, CMD_START_D2(BARO_LEVEL), 1)
+#define MS5637_READ_TEMP(p_buffer, p_cmd) \
+		I2C_READ_REG_REP_START(MS5637_ADDR, p_cmd, p_buffer, 3), \
+ 		I2C_WRITE(MS5637_ADDR, p_cmd+1, 1)
 
-#define MS5637_READ_PRESS(p_buffer, cmd) \
-		I2C_READ_REG_NO_STOP(MS5637_ADDR, CMD_READ_ADC, p_buffer, 3), \
-		I2C_WRITE   (MS5637_ADDR, CMD_START_D1(BARO_LEVEL), 1)
+#define MS5637_READ_PRESS_REG \
+{                                          \
+	CMD_READ_ADC,                          \
+	CMD_START_D1(BARO_LEVEL)               \
+}
+
+#define MS5637_READ_PRESS(p_buffer, p_cmd) \
+		I2C_READ_REG_REP_START(MS5637_ADDR, p_cmd, p_buffer, 3), \
+ 		I2C_WRITE(MS5637_ADDR, p_cmd+1, 1)
 
 /*=========================================================================*/
 

@@ -44,7 +44,7 @@ CFLAGS += -DNRF52_PAN_58
 CFLAGS += -DNRF52_PAN_54
 CFLAGS += -DNRF52_PAN_31
 CFLAGS += -DNRF52_PAN_51
-CFLAGS += -D__HEAP_SIZE=0
+CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DANT_STACK_SUPPORT_REQD
 CFLAGS += -DNRF52_PAN_15
@@ -80,7 +80,7 @@ ASMFLAGS += -DNRF52_PAN_58
 ASMFLAGS += -DNRF52_PAN_54
 ASMFLAGS += -DNRF52_PAN_31
 ASMFLAGS += -DNRF52_PAN_51
-ASMFLAGS += -D__HEAP_SIZE=0
+ASMFLAGS += -D__HEAP_SIZE=150000
 ASMFLAGS += -DBLE_STACK_SUPPORT_REQD -DANT_STACK_SUPPORT_REQD
 ASMFLAGS += -DNRF52_PAN_15
 ASMFLAGS += -DNRF_SD_BLE_API_VERSION=5
@@ -131,9 +131,13 @@ flash_softdevice:
 	nrfjprog --program $(SDK_ROOT)/components/softdevice/s332_v5.0.0/hex/ANT_s332_nrf52_5.0.0.hex -f nrf52 --sectorerase 
 #	nrfjprog --reset -f nrf52
 
-dfu: $(OUTPUT_DIRECTORY)/nrf52832_xxaa.hex
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x9b --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/vault/priv.pem stravaV10.zip
-	mv stravaV10.zip $(DROPBOX)
+dfu:
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x9b --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
+	cp stravaV10.zip $(DROPBOX)
+
+dfu_send:
+	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
+
 
 SDK_CONFIG_FILE := ../config/sdk_config.h
 SDK_CONFIG_FILE_ANT := ../config/sdk_config_ant.h

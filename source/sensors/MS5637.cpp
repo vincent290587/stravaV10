@@ -6,9 +6,10 @@
  */
 
 #include "i2c.h"
+#include "utils.h"
 #include "MS5637.h"
 #include "millis.h"
-#include "utils.h"
+#include "parameters.h"
 #include "segger_wrapper.h"
 #include "pgmspace.h"
 
@@ -35,6 +36,10 @@ void MS5637::init(void) {
 
 	initialised = false;
 
+#ifdef _DEBUG_TWI
+	this->setCx(nullptr);
+#endif
+
 	return;
 }
 
@@ -44,12 +49,26 @@ bool MS5637::setCx(ms5637_handle_t *_handle) {
 		return false;
 
 	uint16_t prom[7];
+#ifdef _DEBUG_TWI
+	uint8_t prom_val[3];
 
+	for (int i = 0; i < 7; i++) {
+
+		if (wireReadDataBlock(CMD_PROM_READ(i), prom_val, 2) != 2) {
+			err = ERR_BAD_READLEN;
+			return false;
+		}
+
+		prom[i] = ((uint16_t) prom_val[0]) << 8;
+		prom[i] |= prom_val[1];
+	}
+#else
 	for (int i = 0; i < 7; i++) {
 
 		prom[i] = decode_uint16 (_handle->cx_data + 2*i);
 
 	}
+#endif
 
 	// TODO verify CRC4 in top 4 bits of prom[0] (follows AN520 but not directly...)
 	c1 = prom[1];
@@ -82,11 +101,17 @@ void MS5637::refresh(ms5637_handle_t *_handle) {
 
 	int32_t d1 = temp;
 
+	NRF_LOG_INFO("Calculating d1: %d", d1);
+
 	temp = (uint32_t) _handle->press_adc[0] << 16;
 	temp |= (uint32_t) _handle->press_adc[1] << 8;
 	temp |= _handle->press_adc[2];
 
 	int32_t d2 = temp;
+
+	NRF_LOG_INFO("Calculating d2: %d", d2);
+
+	NRF_LOG_DEBUG("Calculating pressure...");
 
 	this->getTempAndPressure(d1, d2, &temperature, &pressure);
 }
@@ -185,12 +210,11 @@ bool MS5637::getTempAndPressure(int32_t d1, int32_t d2, float *temperature, floa
  * @return True if successful write operation. False otherwise.
  */
 bool MS5637::wireWriteByte(uint8_t val) {
-
-//	if (NRF_SUCCESS != i2c0_write(MS5637_ADDR, &val, 1)) {
-//		return false;
-//	}
-
+#ifdef _DEBUG_TWI
+	return i2c_write8(MS5637_ADDR, val);
+#else
 	return true;
+#endif
 }
 
 /**
@@ -202,10 +226,10 @@ bool MS5637::wireWriteByte(uint8_t val) {
  * @return Number of bytes read. -1 on read error.
  */
 int MS5637::wireReadDataBlock(uint8_t reg, uint8_t *val, unsigned int len) {
-
-//	if (NRF_SUCCESS != i2c0_read_reg(MS5637_ADDR, reg, val, len)) {
-//		return 0;
-//	}
-
+#ifdef _DEBUG_TWI
+	if (!i2c_read_reg_n(MS5637_ADDR, reg, val, len)) {
+		return 0;
+	}
+#endif
 	return len;
 }

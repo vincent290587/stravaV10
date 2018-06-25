@@ -74,19 +74,35 @@ enum veml6075_int_time {
 typedef enum veml6075_int_time veml6075_int_time_t;
 
 
-#define VEML6075_READ_ALL(p_buffer) \
-		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVA    , p_buffer  , 2), \
-		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVB    , p_buffer+2, 2), \
-		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_DUMMY  , p_buffer+4, 2), \
-		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVCOMP1, p_buffer+6, 2), \
-		I2C_READ_REG_REP_START(VEML6075_ADDR, VEML6075_REG_UVCOMP2, p_buffer+8, 2)
+#define VEML_READ_REG_REP_START(_reg_def, p_buffer, byte_cnt) \
+		NRF_TWI_MNGR_WRITE(VEML6075_ADDR, _reg_def, 1, 0), \
+		NRF_TWI_MNGR_READ (VEML6075_ADDR, p_buffer, byte_cnt, 0)
+
+#define VEML_WRITE_REG(p_buffer, byte_cnt) \
+		NRF_TWI_MNGR_WRITE(VEML6075_ADDR, p_buffer, byte_cnt, 0)
+
+#define VEML_READ_ALL_REGS \
+{                                          \
+	VEML6075_REG_UVA,                      \
+	VEML6075_REG_UVB,                      \
+	VEML6075_REG_DUMMY,                    \
+	VEML6075_REG_UVCOMP1,                  \
+	VEML6075_REG_UVCOMP2                   \
+}
+
+#define VEML6075_READ_ALL(r_buffer, p_buffer) \
+		VEML_READ_REG_REP_START(r_buffer  , p_buffer  , 2), \
+		VEML_READ_REG_REP_START(r_buffer+1, p_buffer+2, 2), \
+		VEML_READ_REG_REP_START(r_buffer+2, p_buffer+4, 2), \
+		VEML_READ_REG_REP_START(r_buffer+3, p_buffer+6, 2), \
+		VEML_READ_REG_REP_START(r_buffer+4, p_buffer+8, 2)
 
 
 class VEML6075 {
 public:
 
 	VEML6075();
-	bool init();
+	bool init(uint16_t dev_id=0);
 	void on();
 	void off();
 	uint16_t getConf();

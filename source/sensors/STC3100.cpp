@@ -9,6 +9,8 @@
 
 
 #include "millis.h"
+#include "helper.h"
+#include "parameters.h"
 #include "segger_wrapper.h"
 #include "STC3100.h"
 #include "utils.h"
@@ -50,24 +52,35 @@ bool STC3100::init(uint32_t r_sens, stc3100_res_t res) {
 
 	_r_sens = r_sens;
 
+#ifdef _DEBUG_TWI
     // reset
-	this->reset();
-	delay_ms(1);
+	writeCommand(REG_CONTROL, STC_RESET);
+	delay(1);
 
 	// read device ID
-	// i2c0_read_reg(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID, 1);
+	i2c_read_reg_8(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID);
+	NRF_LOG_INFO("Device ID: %x\r\n", _deviceID);
 
-//	LOG_INFO("Device ID: %x\r\n", _deviceID);
+	LOG_INFO("Device ID: %x\r\n", _deviceID);
+#endif
 
 	/* Set the mode indicator */
 	_stc3100Mode = 0;
 	_stc3100Mode |= MODE_RUN;
 	_stc3100Mode |= res;
 
+#ifdef _DEBUG_TWI
 	// set mode
 	this->writeCommand(REG_MODE, _stc3100Mode);
+#endif
 
 	return true;
+}
+
+void STC3100::checkDevID(uint8_t dev_id) {
+
+	LOG_INFO("STC device ID: %x\r\n", dev_id);
+
 }
 
 
@@ -224,11 +237,9 @@ float STC3100::getAverageCurrent(void) {
  */
 void STC3100::writeCommand(uint8_t reg, uint8_t value)
 {
-//	uint8_t val_ = value;
-
-//	if (kStatus_Success != i2c0_write_reg(STC3100_ADDRESS, reg, &val_, 1)) {
-//		LOG_INFO("i2c error\r\n");
-//	}
+#ifdef _DEBUG_TWI
+	i2c_write_reg_8(STC3100_ADDRESS, reg, value);
+#endif
 }
 
 /**
@@ -236,7 +247,7 @@ void STC3100::writeCommand(uint8_t reg, uint8_t value)
  */
 void STC3100::readChip()
 {
-//	if (kStatus_Success != i2c0_read_reg(STC3100_ADDRESS, REG_CHARGE_LOW, _stc_data.array, 10)) {
-//		LOG_INFO("i2c error\r\n");
-//	}
+#ifdef _DEBUG_TWI
+	i2c_read_reg_n(STC3100_ADDRESS, REG_CHARGE_LOW, _stc_data.array, 10);
+#endif
 }

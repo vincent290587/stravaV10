@@ -21,7 +21,7 @@
 
 #define REG_MODE                0
 #define REG_CONTROL             1
-#define REG_CHARGE_LOW          2
+#define REG_CHARGE_LOW          (2)
 #define REG_CHARGE_HIGH         3
 #define REG_COUNTER_LOW         4
 #define REG_COUNTER_HIGH        5
@@ -85,9 +85,19 @@ typedef struct {
 
 /*=========================================================================*/
 
+#define STC_RESET_REGS \
+{                                          \
+	REG_CONTROL,                           \
+	STC_RESET                              \
+}
 
-#define STC3100_READ_ALL(p_buffer) \
-		I2C_READ_REG_NO_STOP(STC3100_ADDRESS, REG_CHARGE_LOW, p_buffer, 10)
+#define STC_READ_ALL_REGS \
+{                                          \
+	REG_CHARGE_LOW                         \
+}
+
+#define STC3100_READ_ALL(p_reg, p_buffer) \
+		I2C_READ_REG_NO_STOP(STC3100_ADDRESS, p_reg, p_buffer, 10)
 
 
 /*=========================================================================*/
@@ -99,6 +109,7 @@ public:
 
 	bool init(uint32_t r_sens = 100,
 			stc3100_res_t res = STC3100_MODE_HIGHRES);
+	void checkDevID(uint8_t dev_id);
 
 	void shutdown(void);
 	void reset(void);

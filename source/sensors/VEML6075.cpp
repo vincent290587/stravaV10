@@ -6,6 +6,8 @@
  */
 
 #include "millis.h"
+#include "nrf_delay.h"
+#include "parameters.h"
 #include "segger_wrapper.h"
 #include "pgmspace.h"
 #include "utils.h"
@@ -17,48 +19,63 @@ VEML6075::VEML6075() {
 
 	// Despite the datasheet saying this isn't the default on startup, it appears
 	// like it is. So tell the thing to actually start gathering data.
-	this->config = VEML6075_CONF_PW_OFF;
-}
-
-bool VEML6075::init() {
+	this->config = VEML6075_CONF_PW_ON;
 
 	this->config |= VEML6075_CONF_HD_HIGH;
 
 	// App note only provided math for this one...
 	this->config |= VEML6075_CONF_IT_100MS;
+}
+
+bool VEML6075::init(uint16_t dev_id) {
 
 	this->on();
 
-//	uint16_t dev_id = this->getDevID();
-//	if (dev_id != VEML6075_DEVID) {
-//		LOG_ERROR("Wrong device ID: %u\r\n", dev_id);
-//		return false;
-//	}
+#ifdef _DEBUG_TWI
+	nrf_delay_ms(1);
+	dev_id = this->getDevID();
+#endif
+
+	if (dev_id != VEML6075_DEVID) {
+		LOG_ERROR("VEML wrong device ID: %u\r\n", dev_id);
+		return false;
+	} else {
+		LOG_INFO("VEML device ID: 0x%X\r\n", dev_id);
+	}
 
 	return true;
 }
 
 void VEML6075::on() {
-
-	this->config &= ~VEML6075_CONF_PW_OFF;
-
+#ifdef _DEBUG_TWI
+	// Write config to make sure device is disabled
+	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_ON);
+	nrf_delay_ms(1);
+#endif
 }
 
 void VEML6075::off() {
-
-	this->config |= VEML6075_CONF_PW_OFF;
-
+#ifdef _DEBUG_TWI
+	// Write config to make sure device is disabled
+	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_OFF);
+#endif
 }
 
 // Poll sensor for latest values and cache them
 void VEML6075::refresh(uint8_t *_data) {
-
+#ifndef _DEBUG_TWI
 	this->raw_uva  = decode_uint16(_data);
 	this->raw_uvb  = decode_uint16(_data+2);
 	this->raw_dark = decode_uint16(_data+4);
 	this->raw_vis  = decode_uint16(_data+6);
 	this->raw_ir   = decode_uint16(_data+8);
-
+#else
+	this->raw_uva  = this->read16(VEML6075_REG_UVA);
+	this->raw_uvb  = this->read16(VEML6075_REG_UVB);
+	this->raw_dark = this->read16(VEML6075_REG_DUMMY);
+	this->raw_vis  = this->read16(VEML6075_REG_UVCOMP1);
+	this->raw_ir   = this->read16(VEML6075_REG_UVCOMP2);
+#endif
 }
 
 uint16_t VEML6075::getRawUVA() {
@@ -120,54 +137,60 @@ float VEML6075::getUVIndex() {
 /////// I2C functions  ////////
 
 uint16_t VEML6075::read16(uint8_t reg) {
+	uint16_t res = 0;
+#ifdef _DEBUG_TWI
+	uint8_t retries = 3;
 
-//	uint16_t res = 0xFFFF;
-//	uint8_t retries = 3;
-//
-//	while (retries--) {
-//		res = this->read16_raw(reg);
-//		if (res != 0xFFFF) {
-//			// success
-//			return res;
-//		} else {
-//			LOG_INFO("VEML6075 read fail");
-//		}
-//	}
-//
-//	if (!retries) {
-//		return 0xFFFF;
-//	}
+	while (retries--) {
+		res = this->read16_raw(reg);
+		if (res != 0xFFFF) {
+			// success
+			return res;
+		}
+	}
 
-	return 0;
+	if (!retries) {
+		APP_ERROR_CHECK(0x4);
+		return 0xFFFF;
+	}
+#endif
+	return res;
 }
 
 uint16_t VEML6075::read16_raw(uint8_t reg) {
+	uint16_t res = 0;
+#ifdef _DEBUG_TWI
+	if (!i2c_write8(VEML6075_ADDR, reg)) {
+		//NRF_LOG_ERROR("Error on I2C\r\n");
+		return 0xFFFF;
+	}
 
-//	// read from I2C
-//	uint8_t raw_data[2];
-//
-//	if (kStatus_Success != i2c0_read_reg(VEML6075_ADDR, reg, raw_data, 2)) {
-//		return 0xFFFF;
-//	}
-//
-//	uint16_t res = raw_data[1] << 8;
-//	res |= raw_data[0];
-//
-	return 0;
+	// read from I2C
+	uint8_t raw_data[2];
+	if (!i2c_read_n(VEML6075_ADDR, raw_data, 2)) {
+		return 0xFFFF;
+	}
+
+	res = raw_data[1] << 8;
+	res |= raw_data[0];
+#endif
+	return res;
 }
 
 void VEML6075::write16(uint8_t reg, uint16_t raw_data) {
+#ifdef _DEBUG_TWI
+	uint8_t retries = 3;
 
-//	uint8_t retries = 3;
-//
-//	// reg LSB MSB
-//	uint8_t data[2] = {(uint8_t)(0xFF & raw_data), (uint8_t)((0xFF00 & raw_data) >> 8)};
-//
-//	while (retries--) {
-//		if (kStatus_Success == i2c0_write_reg(VEML6075_ADDR, reg, data, 2)) {
-//			// success
-//			return;
-//		}
-//	}
+	// reg LSB MSB
+	uint8_t data[3] = {reg, (uint8_t)(0xFF & raw_data), (uint8_t)((0xFF00 & raw_data) >> 8)};
 
+	while (retries--) {
+		if (i2c_write_n(VEML6075_ADDR, data, 3)) {
+			// success
+			return;
+		}
+	}
+
+	if (!retries) APP_ERROR_CHECK(0x5);
+#endif
 }

@@ -2445,7 +2445,7 @@
 // <4=> Debug 
 
 #ifndef NRFX_PPI_CONFIG_LOG_LEVEL
-#define NRFX_PPI_CONFIG_LOG_LEVEL 3
+#define NRFX_PPI_CONFIG_LOG_LEVEL 2
 #endif
 
 // <o> NRFX_PPI_CONFIG_INFO_COLOR  - ANSI escape code prefix.
@@ -5692,7 +5692,7 @@
 
 
 #ifndef WDT_CONFIG_RELOAD_VALUE
-#define WDT_CONFIG_RELOAD_VALUE 2000
+#define WDT_CONFIG_RELOAD_VALUE 3000
 #endif
 
 // <o> WDT_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -5855,7 +5855,7 @@
 // <i> will fail.
 
 #ifndef APP_TIMER_CONFIG_OP_QUEUE_SIZE
-#define APP_TIMER_CONFIG_OP_QUEUE_SIZE 10
+#define APP_TIMER_CONFIG_OP_QUEUE_SIZE 15
 #endif
 
 // <q> APP_TIMER_CONFIG_USE_SCHEDULER  - Enable scheduling app_timer events to app_scheduler
@@ -7172,7 +7172,7 @@
 // <i> Log data is buffered and can be processed in idle.
 
 #ifndef NRF_LOG_DEFERRED
-#define NRF_LOG_DEFERRED 0
+#define NRF_LOG_DEFERRED 1
 #endif
 
 // <o> NRF_LOG_BUFSIZE  - Size of the buffer for storing logs (in bytes).
@@ -7208,7 +7208,7 @@
 // <i> Function for getting the timestamp is provided by the user
 //==========================================================
 #ifndef NRF_LOG_USES_TIMESTAMP
-#define NRF_LOG_USES_TIMESTAMP 0
+#define NRF_LOG_USES_TIMESTAMP 1
 #endif
 // <o> NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY - Default frequency of the timestamp (in Hz) 
 #ifndef NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY

@@ -51,11 +51,14 @@ int Point::objectCount = 0;
  */
 void model_dispatch_sensors_update(void) {
 
+	uint16_t light_level = veml.getRawVisComp();
+	NRF_LOG_INFO("Light level: %u\r\n", light_level);
+
+	NRF_LOG_INFO("Temperature: %d\r\n", (int)ms5637.temperature);
+
 	// check if backlighting is used for notifying
 	if (backlight.freq == 0) {
 		// setup backlight
-		uint16_t light_level = veml.getRawVisComp();
-		//LOG_INFO("Light level: %u\r\n", light_level);
 		if (light_level < BACKLIGHT_AUTO_START_RAW_VIS) {
 			// il fait tout noir: TG
 			backlight.state = 1;

@@ -8,6 +8,8 @@
 #ifndef SOURCE_PARAMETERS_H_
 #define SOURCE_PARAMETERS_H_
 
+#define APP_DELAY_MS                   500
+
 #define S_TO_MS(X)                     ((X)*1000)
 
 #define GPS_USE_COLD_START             0
@@ -42,10 +44,16 @@
 
 #define USB_TIMEOUT_MS                 20
 
-#define TOT_HEAP_MEM_AVAILABLE         180000
+#define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define MS5637_REFRESH_PER_MS          100
+#define MS5637_REFRESH_PER_MS          5000
 
 #define SENSORS_REFRESH_FREQ           2
+
+
+///// CODE FLAGS
+
+//#define _DEBUG_TWI
+
 
 #endif /* SOURCE_PARAMETERS_H_ */

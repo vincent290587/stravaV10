@@ -16,6 +16,8 @@
 #include "mk64f_parser.h"
 #include "helper.h"
 #include "bsp.h"
+#include "spi.h"
+#include "i2c.h"
 #include "fec.h"
 #include "bsp_btn_ble.h"
 #include "app_scheduler.h"
@@ -38,7 +40,7 @@
 
 #define DEAD_BEEF           0xDEADBEEF                                  /**< Value used as error code on stack dump. Can be used to identify stack location on stack unwind. */
 
-#define APP_DELAY           APP_TIMER_TICKS(100)
+#define APP_DELAY           APP_TIMER_TICKS(APP_DELAY_MS)
 
 #define SCHED_MAX_EVENT_DATA_SIZE      APP_TIMER_SCHED_EVENT_DATA_SIZE              /**< Maximum size of scheduler events. */
 #ifdef SVCALL_AS_NORMAL_FUNCTION
@@ -232,24 +234,32 @@ static void buttons_leds_init(void)
 
 static void pins_init(void)
 {
-	// TODO map (SST_CS ?)
-	nrf_gpio_cfg_output(NEO_PIN);
-
 	nrf_gpio_cfg_input(FXOS_INT1, NRF_GPIO_PIN_PULLDOWN);
 	nrf_gpio_cfg_input(FXOS_INT2, NRF_GPIO_PIN_PULLDOWN);
 
 	nrf_gpio_cfg_output(FXOS_RST);
+	nrf_gpio_pin_clear(FXOS_RST);
 
 	// SDC_CS_PIN is configured later
 	// LS027_CS_PIN is configured later
 
 	nrf_gpio_cfg_output(BCK_PIN);
+	nrf_gpio_pin_clear(BCK_PIN);
 
 	nrf_gpio_cfg_output(SPK_IN);
+	nrf_gpio_pin_clear(SPK_IN);
+
+//	nrf_gpio_cfg_output(SCL_PIN_NUMBER);
+//	nrf_gpio_pin_set(SCL_PIN_NUMBER);
+//
+//	nrf_gpio_cfg_output(SDA_PIN_NUMBER);
+//	nrf_gpio_pin_set(SDA_PIN_NUMBER);
 
 	// PPS_PIN is configured later
 	// FIX_PIN is configured later
 
+	nrf_gpio_cfg_output(NEO_PIN);
+	nrf_gpio_pin_clear(NEO_PIN);
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
 }
