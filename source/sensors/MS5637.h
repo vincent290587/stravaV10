@@ -19,6 +19,8 @@
 #define CMD_START_D2(oversample_level) (0x50 + 2*(int)oversample_level)
 #define CMD_READ_ADC 0x00
 
+#define MS5637_CRC_INDEX 0
+#define MS5637_COEFFICIENT_COUNT 7
 /* Module supports a range of lower oversampling levels, for faster
    less accurate results.
 
@@ -39,7 +41,7 @@ typedef enum {
 
 typedef struct _ms5637_handle
 {
-	uint8_t cx_data[14];
+	uint8_t cx_data[MS5637_COEFFICIENT_COUNT*2];
 	uint8_t press_adc[3];
 	uint8_t temp_adc[3];
 	eMS5637MeasType meas_type;
@@ -113,23 +115,24 @@ class MS5637 {
      error */
 
   void refresh(ms5637_handle_t *_handle);
+  bool computeTempAndPressure(int32_t d1, int32_t d2);
 
   uint32_t reset();
 
-  bool wireWriteByte(uint8_t val);
-  int wireReadDataBlock(uint8_t reg, uint8_t *val, unsigned int len);
+  inline bool isOK() { return initialised && m_err == 0; }
 
-  inline bool isOK() { return initialised && err == 0; }
-
-  float temperature, pressure;
+  float m_temperature, m_pressure;
 
 private:
   bool initialised;
-  int8_t err;
+  int8_t m_err;
   uint16_t c1,c2,c3,c4,c5,c6; // Calibration constants used in producing results
 
-  uint32_t takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level);
-  bool getTempAndPressure(int32_t d1, int32_t d2, float *temperature, float *pressure);
+  bool crc_check(uint16_t *n_prom, uint8_t crc);
+  uint32_t takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level=BARO_LEVEL);
+
+  bool wireWriteByte(uint8_t val);
+  int wireReadDataBlock(uint8_t reg, uint8_t *val, unsigned int len);
 };
 
 

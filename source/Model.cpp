@@ -52,9 +52,10 @@ int Point::objectCount = 0;
 void model_dispatch_sensors_update(void) {
 
 	uint16_t light_level = veml.getRawVisComp();
-	NRF_LOG_INFO("Light level: %u\r\n", light_level);
 
-	NRF_LOG_INFO("Temperature: %d\r\n", (int)ms5637.temperature);
+	NRF_LOG_INFO("Light level: %u", light_level);
+	NRF_LOG_DEBUG("Temperature: %ld", (int)ms5637.m_temperature);
+	NRF_LOG_DEBUG("Pressure: %ld", (int)ms5637.m_pressure);
 
 	// check if backlighting is used for notifying
 	if (backlight.freq == 0) {

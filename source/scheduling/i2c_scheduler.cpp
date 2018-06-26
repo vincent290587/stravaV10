@@ -15,7 +15,7 @@
 #include "app_timer.h"
 #include "Model.h"
 
-static uint32_t m_last_polled_time = 0;
+static uint32_t m_last_polled_index = 0;
 
 // Buffer for data read from sensors.
 static uint8_t m_veml_buffer[10];
@@ -118,7 +118,9 @@ static void _i2c_scheduling_sensors_init() {
  */
 static void read_all_cb(ret_code_t result, void * p_user_data) {
 
-	if (m_last_polled_time == 0) {
+	APP_ERROR_CHECK(result);
+
+	if (m_last_polled_index == 0) {
 		_i2c_scheduling_sensors_init();
 	}
 
@@ -131,7 +133,7 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 	veml.refresh(m_veml_buffer);
 
 	// dispatch to model
-	m_last_polled_time++;
+	m_last_polled_index++;
 
 	model_dispatch_sensors_update();
 
@@ -176,6 +178,8 @@ static void read_all(void)
  * @param p_user_data
  */
 static void read_ms_cb(ret_code_t result, void * p_user_data) {
+
+	APP_ERROR_CHECK(result);
 
 	ASSERT(p_user_data);
 
@@ -264,14 +268,14 @@ static void read_ms(void) {
  */
 static void timer_handler(void * p_context)
 {
-	m_last_polled_time++;
-
 	W_SYSVIEW_RecordEnterISR();
+
+	m_last_polled_index++;
 
     read_ms();
 
-    if (m_last_polled_time >= 1000 / (MS5637_REFRESH_PER_MS * SENSORS_REFRESH_FREQ)) {
-    	m_last_polled_time = 1;
+    if (m_last_polled_index >= 1000 / (MS5637_REFRESH_PER_MS * SENSORS_REFRESH_FREQ)) {
+    	m_last_polled_index = 1;
 
     	read_all();
     }
@@ -291,14 +295,14 @@ void i2c_scheduling_init(void) {
 
     ret_code_t err_code;
 
-    if (!m_last_polled_time) {
+    if (!m_last_polled_index) {
     	err_code = app_timer_create(&m_timer, APP_TIMER_MODE_REPEATED, timer_handler);
     	APP_ERROR_CHECK(err_code);
 
     	err_code = app_timer_start(m_timer, APP_TIMER_TICKS(MS5637_REFRESH_PER_MS), NULL);
     	APP_ERROR_CHECK(err_code);
 
-    	m_last_polled_time = 1;
+    	m_last_polled_index = 1;
     }
 #else
     //stc.init(100);

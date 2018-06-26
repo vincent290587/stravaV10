@@ -79,6 +79,8 @@ GPS_MGMT::GPS_MGMT() {
 
 void GPS_MGMT::init(void) {
 
+	gps_uart_start();
+
 	// configure PPS pin
 	nrf_gpio_cfg_input(PPS_PIN, NRF_GPIO_PIN_NOPULL);
 
