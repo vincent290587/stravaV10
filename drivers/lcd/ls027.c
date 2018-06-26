@@ -40,25 +40,28 @@ static uint8_t LS027_sharpmem_vcom;
 
 static bool m_is_color_inverted = true;
 
-static nrf_drv_spi_config_t  ls027_spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
-
 extern nrf_spi_mngr_t m_nrf_spi_mngr;
 
 /*******************************************************************************
  * Functions
  ******************************************************************************/
 
-static void ls027_cs_on(void * p_user_data) {
+static void ls027_cs_on() {
+
+	nrf_gpio_pin_set(LS027_CS_PIN);
 
 }
 
-static void ls027_cs_off(ret_code_t result, void * p_user_data) {
+static void ls027_cs_off() {
+
+	nrf_gpio_pin_clear(LS027_CS_PIN);
 
 }
 
 static void ls027_spi_init() {
 
-
+	nrf_gpio_pin_clear(LS027_CS_PIN);
+	nrf_gpio_cfg_output(LS027_CS_PIN);
 
 }
 
@@ -66,7 +69,7 @@ static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data)
 {
 	NRF_LOG_INFO("LS027 refreshed");
 
-	ls027_cs_off(result, p_user_data);
+	ls027_cs_off();
 
 	if (!m_is_color_inverted) {
 		memset(LS027_SpiBuf, LS027_PIXEL_GROUP_WHITE, sizeof(LS027_SpiBuf));
@@ -248,8 +251,12 @@ void LS027_UpdateFull(void)
 	// prepare the SPI commands
 	ls027_prepare_buffer();
 
+	ls027_cs_on();
+
 	/* Start master transfer */
 	spi_schedule(LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
+
+	ls027_cs_off();
 
 	ls027_spi_buffer_clear(0, NULL);
 }

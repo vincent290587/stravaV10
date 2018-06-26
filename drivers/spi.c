@@ -19,28 +19,17 @@
 #include "nrf_log_default_backends.h"
 
 
+#define SPI_INSTANCE  0
 
 #ifdef _DEBUG_SPI
 /**< SPI instance index. */
-#define SPI_INSTANCE  3
 static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPI_INSTANCE);  /**< SPI instance. */
 #else
 /**< SPI instance index. */
-#define SPI_INSTANCE  0
 NRF_SPI_MNGR_DEF(m_nrf_spi_mngr, 10, SPI_INSTANCE);
 #endif
 
-static volatile bool spi_xfer_done = true;
-
-/**
- * @brief SPI user event handler.
- * @param event
- */
-static void spim_event_handler(nrfx_spim_evt_t const * p_event, void *p_context) {
-
-	spi_xfer_done = true;
-	NRF_LOG_INFO("Transfer completed.\r\n");
-}
+static nrfx_spim_config_t spi_config = NRFX_SPIM_DEFAULT_CONFIG;
 
 /**
  *
@@ -49,19 +38,18 @@ void spi_init(void)
 {
 
 #ifdef _DEBUG_SPI
-    nrfx_spim_config_t spi_config = NRFX_SPIM_DEFAULT_CONFIG;
-    spi_config.frequency      = NRF_SPIM_FREQ_2M;
+    spi_config.frequency      = NRF_SPIM_FREQ_4M;
     spi_config.ss_pin         = LS027_CS_PIN;
     spi_config.miso_pin       = SPI_MISO_PIN;
     spi_config.mosi_pin       = SPI_MOSI_PIN;
     spi_config.sck_pin        = SPI_SCK_PIN;
-    spi_config.dcx_pin        = NRFX_SPIM_PIN_NOT_USED;
-    spi_config.use_hw_ss      = true;
-    spi_config.ss_duration    = 25U;
+//    spi_config.dcx_pin        = NRFX_SPIM_PIN_NOT_USED;
+//    spi_config.use_hw_ss      = true;
+//    spi_config.ss_active_high = true;
+//    spi_config.ss_duration    = 25U;
     spi_config.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
-    spi_config.ss_active_high = true;
 
-	APP_ERROR_CHECK(nrfx_spim_init(&spi, &spi_config, NULL, NULL));
+	//APP_ERROR_CHECK(nrfx_spim_init(&spi, &spi_config, NULL, NULL));
 #else
 	static nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 	spi_config.ss_pin   = SPI_SS_PIN;
@@ -92,9 +80,19 @@ void spi_schedule (uint8_t const * p_tx_buffer,
 
 	NRF_LOG_INFO("Preparing SPI transfer of %u bytes", tx_length);
 
-	spi_xfer_done = false;
+	nrf_spim_frequency_set(spi.p_reg, spi_config.frequency);
 
+	nrf_spim_configure(spi.p_reg, spi_config.mode, spi_config.bit_order);
+
+	nrf_spim_int_disable(spi.p_reg, NRF_SPIM_INT_END_MASK);
+
+	// Xfer bytes
 	APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
+
+
+	nrf_spim_int_enable(spi.p_reg, NRF_SPIM_INT_END_MASK);
+
+	nrf_spim_configure(spi.p_reg, spi_config.mode, NRF_SPIM_BIT_ORDER_MSB_FIRST);
 
 //	while (!spi_xfer_done) {
 //		app_sched_execute();

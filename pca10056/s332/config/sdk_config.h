@@ -3272,14 +3272,14 @@
  
 
 #ifndef NRFX_SPIM3_ENABLED
-#define NRFX_SPIM3_ENABLED 1
+#define NRFX_SPIM3_ENABLED 0
 #endif
 
 // <q> NRFX_SPIM_EXTENDED_ENABLED  - Enable extended SPIM features
  
 
 #ifndef NRFX_SPIM_EXTENDED_ENABLED
-#define NRFX_SPIM_EXTENDED_ENABLED 1
+#define NRFX_SPIM_EXTENDED_ENABLED 0
 #endif
 
 // <o> NRFX_SPIM_MISO_PULL_CFG  - MISO pin pull configuration.
@@ -5808,7 +5808,7 @@
 // <2147483648=> 8 MHz 
 
 #ifndef APP_SDCARD_FREQ_INIT
-#define APP_SDCARD_FREQ_INIT 67108864
+#define APP_SDCARD_FREQ_INIT 1073741824
 #endif
 
 // <o> APP_SDCARD_FREQ_DATA  - SPI frequency
@@ -6910,7 +6910,7 @@
  
 
 #ifndef NRF_SPI_MNGR_ENABLED
-#define NRF_SPI_MNGR_ENABLED 1
+#define NRF_SPI_MNGR_ENABLED 0
 #endif
 
 // <q> NRF_STRERROR_ENABLED  - nrf_strerror - Library for converting error code to string.
