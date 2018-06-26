@@ -39,6 +39,7 @@
 #define SVIEW_INIT(...)                segger_init()
 #else
 #define LOG_INFO(...)                  NRF_LOG_INFO(__VA_ARGS__)
+#define LOG_WARNING(...)               NRF_LOG_WARNING(__VA_ARGS__)
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 NRF_LOG_ERROR(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO

@@ -43,20 +43,38 @@ static nrf_drv_spi_config_t  ls027_spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 
 extern nrf_spi_mngr_t m_nrf_spi_mngr;
 
+static void ls027_cs_on(void * p_user_data) {
+	nrf_gpio_pin_set(LS027_CS_PIN);
+	nrf_delay_us(3);
+}
 
+static void ls027_cs_off(ret_code_t result, void * p_user_data) {
+	nrf_delay_us(3);
+	nrf_gpio_pin_clear(LS027_CS_PIN);
+
+	APP_ERROR_CHECK(result);
+}
 
 static void ls027_spi_init() {
 
-	ls027_spi_config.ss_pin   = LS027_CS_PIN;
-	ls027_spi_config.miso_pin = SPI_MISO_PIN;
+	ls027_cs_off(0, NULL);
+	nrf_gpio_cfg_output(LS027_CS_PIN);
+
+	ls027_spi_config.ss_pin   = NRF_DRV_SPI_PIN_NOT_USED;
+	ls027_spi_config.miso_pin = NRF_DRV_SPI_PIN_NOT_USED;
 	ls027_spi_config.mosi_pin = SPI_MOSI_PIN;
 	ls027_spi_config.sck_pin  = SPI_SCK_PIN;
 	ls027_spi_config.bit_order = NRF_DRV_SPI_BIT_ORDER_LSB_FIRST;
-	ls027_spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
+	ls027_spi_config.frequency = NRF_DRV_SPI_FREQ_2M;
+
 }
 
 static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data)
 {
+	NRF_LOG_DEBUG("LS027 refreshed");
+
+	ls027_cs_off(result, p_user_data);
+
 	if (!m_is_color_inverted) {
 		memset(LS027_SpiBuf, LS027_PIXEL_GROUP_WHITE, sizeof(LS027_SpiBuf));
 	} else {
@@ -162,8 +180,8 @@ void LS027_Clear(void)
 
 	static nrf_spi_mngr_transaction_t const transaction_clear =
 	{
-			.begin_callback      = NULL,
-			.end_callback        = NULL,
+			.begin_callback      = ls027_cs_on,
+			.end_callback        = ls027_cs_off,
 			.p_user_data         = NULL,
 			.p_transfers         = &ls027_spi_xfer,
 			.number_of_transfers = 1,
@@ -240,8 +258,8 @@ void LS027_ToggleVCOM(void)
 
 	static nrf_spi_mngr_transaction_t const transaction_vcom =
 	{
-			.begin_callback      = NULL,
-			.end_callback        = NULL,
+			.begin_callback      = ls027_cs_on,
+			.end_callback        = ls027_cs_off,
 			.p_user_data         = NULL,
 			.p_transfers         = &ls027_spi_xfer,
 			.number_of_transfers = 1,
@@ -277,7 +295,7 @@ void LS027_UpdateFull(void)
 
 	static nrf_spi_mngr_transaction_t const transaction_data =
 	{
-			.begin_callback      = NULL,
+			.begin_callback      = ls027_cs_on,
 			.end_callback        = ls027_spi_buffer_clear,
 			.p_user_data         = NULL,
 			.p_transfers         = &ls027_spi_xfer,

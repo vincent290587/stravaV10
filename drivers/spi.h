@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+void spi_init(void);
+
 void spi_schedule(nrf_spi_mngr_transaction_t const * p_transaction);
 
 #ifdef __cplusplus

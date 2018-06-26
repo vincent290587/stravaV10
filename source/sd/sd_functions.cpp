@@ -11,6 +11,7 @@
 #include "Model.h"
 #include "millis.h"
 #include "file_parser.h"
+#include "nrf_delay.h"
 #include "WString.h"
 #include "segger_wrapper.h"
 
@@ -59,21 +60,21 @@ int init_liste_segments(void)
 	error = f_chdrive((char const *)&driverNumberBuffer[0U]);
 	if (error)
 	{
-		LOG_INFO("Change drive failed.\r\n");
+		LOG_INFO("Change drive failed.");
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
 #endif
 
-	LOG_INFO("\r\nList the file in the root directory......\r\n");
+	LOG_INFO("List the file in the root directory......");
 	if (f_opendir(&directory, "/"))
 	{
-		LOG_INFO("Open directory failed.\r\n");
+		LOG_INFO("Open directory failed.");
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
 
-	for (;;)
+	do
 	{
 		error = f_readdir(&directory, &fileInformation);
 
@@ -82,37 +83,46 @@ int init_liste_segments(void)
 		{
 			break;
 		}
+		if (!fileInformation.fname[0]) {
+			continue;
+		}
 		if (fileInformation.fname[0] == '.')
 		{
 			continue;
 		}
 		if (fileInformation.fattrib & AM_DIR)
 		{
-//			LOG_INFO("Directory file : %s\r\n", fileInformation.fname);
+//			LOG_INFO("Directory file : %s", (uint32_t)fileInformation.fname);
 		}
 		else
 		{
 			fileInformation.fname[12] = 0;
 
-//			LOG_INFO("General file : %s\r\n", fileInformation.fname);
+			LOG_DEBUG("General file : %s", (uint32_t)fileInformation.fname);
 
 			if (Segment::nomCorrect(fileInformation.fname)) {
-//				LOG_INFO("Segment added\r\n");
+				LOG_DEBUG("Segment added : %s", (uint32_t)fileInformation.fname);
+//				LOG_INFO("Segment added");
 				mes_segments.push_back(Segment(fileInformation.fname));
 			} else if (Parcours::nomCorrect(fileInformation.fname)) {
 				// pas de chargement en double
-//				LOG_INFO("Parcours added\r\n");
+				LOG_INFO("Parcours added");
 				mes_parcours.push_back(Parcours(fileInformation.fname));
 			} else {
-				LOG_INFO("File refused\r\n");
+				LOG_INFO("File refused");
 				nb_files_errors++;
 			}
 
-		}
-	}
+			NRF_LOG_FLUSH();
 
-	LOG_INFO("%u files refused\r\n", nb_files_errors);
-	LOG_INFO("%u segments addded\r\n", mes_segments.size());
+		}
+
+	} while (fileInformation.fname[0U]);
+
+	LOG_INFO("%u files refused", nb_files_errors);
+	LOG_INFO("%u segments addded", mes_segments.size());
+
+	NRF_LOG_FLUSH();
 
 	W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 
@@ -139,7 +149,7 @@ int load_segment(Segment& seg) {
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
-		LOG_INFO("Open file failed.\r\n");
+		LOG_INFO("Open file failed.");
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
@@ -162,14 +172,14 @@ int load_segment(Segment& seg) {
 	error = f_close (&g_fileObject);
 	if (error)
 	{
-		LOG_INFO("Close file failed.\r\n");
+		LOG_INFO("Close file failed.");
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
 
 	W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 
-	LOG_INFO("%d points loaded\r\n", res);
+	LOG_INFO("%d points loaded", res);
 
 	return res;
 }
@@ -194,7 +204,7 @@ int load_parcours(Parcours& mon_parcours) {
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
-		LOG_INFO("Open file failed.\r\n");
+		LOG_INFO("Open file failed.");
 		return -1;
 	}
 
@@ -221,10 +231,10 @@ int load_parcours(Parcours& mon_parcours) {
 	error = f_close(&g_fileObject);
 	if (error)
 	{
-		LOG_INFO("Close file failed.\r\n");
+		LOG_INFO("Close file failed.");
 		return -1;
 	} else {
-		LOG_INFO("%u points added to PRC\r\n", res);
+		LOG_INFO("%u points added to PRC", res);
 	}
 
 	return res;
@@ -258,7 +268,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
 			if (tmp_dist > DIST_ALLOC) {
 				// on desalloue
-				LOG_INFO("Unallocate %s\r\n", mon_seg.getName());
+				LOG_INFO("Unallocate %s", mon_seg.getName());
 
 				mon_seg.desallouerPoints();
 				mon_seg.setStatus(SEG_OFF);
@@ -280,14 +290,14 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 			if (tmp_dist < DIST_ALLOC) {
 
 				if (mon_seg.longueur() > 0) {
-					LOG_INFO("Saving points %s\r\n", mon_seg.getName());
+					LOG_INFO("Saving points %s", mon_seg.getName());
 
 					mon_seg.desallouerPoints();
 				}
 
 
 				int res = load_segment(mon_seg);
-				LOG_INFO("-->> Loading segment %s\r\n", mon_seg.getName(), res);
+				LOG_INFO("-->> Loading segment %s", mon_seg.getName(), res);
 
 				if (res > 0) mon_seg.init();
 			}
@@ -307,7 +317,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 		// test desallocation
 		if (tmp_dist > MARGE_DESACT * DIST_ALLOC) {
 			// on desalloue
-			LOG_INFO("Desallocation non nominale !\r\n");
+			LOG_INFO("Desallocation non nominale !");
 
 			mon_seg.desallouerPoints();
 			mon_seg.setStatus(SEG_OFF);
@@ -334,7 +344,7 @@ int epo_file_size(void) {
 	error = f_stat (fname, &file_info);
 
 	if (error) {
-		LOG_INFO("Stat file failed.\r\n");
+		LOG_INFO("Stat file failed.");
 		return -1;
 	}
 
@@ -353,7 +363,7 @@ int epo_file_start(void) {
 	error = f_open(&g_EpoFileObject, fname, FA_READ);
 	if (error)
 	{
-		LOG_INFO("Open file failed.\r\n");
+		LOG_INFO("Open file failed.");
 		return  -1;
 	}
 
@@ -381,12 +391,12 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
 
 	if (error)
 	{
-		LOG_INFO("Read EPO file failed.\r\n");
+		LOG_INFO("Read EPO file failed.");
 		return -1;
 	}
 
 	if (size_read != MTK_EPO_SAT_DATA_SIZE) {
-		LOG_INFO("End of EPO file\r\n");
+		LOG_INFO("End of EPO file");
 		return 1;
 	} else {
 		memcpy(sat_data->sat, g_bufferRead, MTK_EPO_SAT_DATA_SIZE);
@@ -404,7 +414,7 @@ int epo_file_stop(bool toBeDeleted) {
 	FRESULT error = f_close (&g_EpoFileObject);
 	if (error)
 	{
-		LOG_INFO("Close file failed.\r\n");
+		LOG_INFO("Close file failed.");
 		return -1;
 	}
 
@@ -413,7 +423,7 @@ int epo_file_stop(bool toBeDeleted) {
 		error = f_unlink("/MTK14.EPO");
 		if (error)
 		{
-			LOG_INFO("Unlink file failed.\r\n");
+			LOG_INFO("Unlink file failed.");
 			return -2;
 		}
 	}

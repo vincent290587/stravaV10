@@ -103,14 +103,14 @@ bool MS5637::setCx(ms5637_handle_t *_handle) {
 
 		prom[i] = ((uint16_t) prom_val[0]) << 8;
 		prom[i] |= prom_val[1];
-		NRF_LOG_INFO("Prom %u: 0x%X", i, prom[i]);
+		NRF_LOG_DEBUG("Prom %u: 0x%X", i, prom[i]);
 	}
 #else
 	for (int i = 0; i < MS5637_COEFFICIENT_COUNT; i++) {
 
 		prom[i] = ((uint16_t) _handle->cx_data[2*i]) << 8;
 		prom[i] |= _handle->cx_data[2*i+1];
-		NRF_LOG_INFO("Prom %u: 0x%X", i, prom[i]);
+		NRF_LOG_DEBUG("Prom %u: 0x%X", i, prom[i]);
 	}
 #endif
 
@@ -152,7 +152,7 @@ void MS5637::refresh(ms5637_handle_t *_handle) {
 
 	int32_t d1 = temp;
 
-	NRF_LOG_INFO("Calculating d1: %d", d1);
+	NRF_LOG_DEBUG("Calculating d1: %d", d1);
 
 	temp = (uint32_t) _handle->press_adc[0] << 16;
 	temp |= (uint32_t) _handle->press_adc[1] << 8;
@@ -160,7 +160,7 @@ void MS5637::refresh(ms5637_handle_t *_handle) {
 
 	int32_t d2 = temp;
 
-	NRF_LOG_INFO("Calculating d2: %d", d2);
+	NRF_LOG_DEBUG("Calculating d2: %d", d2);
 
 	this->computeTempAndPressure(d1, d2);
 }

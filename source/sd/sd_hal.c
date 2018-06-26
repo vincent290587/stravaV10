@@ -30,14 +30,13 @@ NRF_BLOCK_DEV_SDC_DEFINE(
          NFR_BLOCK_DEV_INFO_CONFIG("Nordic", "SDC", "1.00")
 );
 
+static FATFS fs;
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
 int sd_functions_init(void) {
-
-	static FATFS fs;
 
 	FRESULT ff_result;
 	DSTATUS disk_state = STA_NOINIT;
@@ -72,6 +71,7 @@ int sd_functions_init(void) {
 		NRF_LOG_INFO("Mount failed.");
 		return -2;
 	}
+	NRF_LOG_INFO("Volume mounted");
 
 	return 0;
 }

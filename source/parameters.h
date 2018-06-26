@@ -8,7 +8,7 @@
 #ifndef SOURCE_PARAMETERS_H_
 #define SOURCE_PARAMETERS_H_
 
-#define APP_DELAY_MS                   500
+#define APP_DELAY_MS                   2000
 
 #define S_TO_MS(X)                     ((X)*1000)
 

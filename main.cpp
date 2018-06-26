@@ -296,10 +296,16 @@ int main(void)
 	// Initialize timer module
 	millis_init();
 
-	sd_functions_init();
+	nrf_delay_ms(2000);
 
-	// init all I2C devices
-	i2c_scheduling_init();
+	// drivers
+	spi_init();
+	i2c_init();
+	//// uart is started later
+
+	// SD functions
+	nrf_drv_wdt_channel_feed(m_channel_id);
+	sd_functions_init();
 
 	ant_timers_init();
 
@@ -318,18 +324,21 @@ int main(void)
 	err_code = app_timer_start(m_job_timer, APP_DELAY, NULL);
 	APP_ERROR_CHECK(err_code);
 
-	NRF_LOG_INFO("LNS central start");
-
 	sNeopixelOrders neo_order;
 	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);
 
-	// LCD driver
+	// LCD displayer
 	vue.init();
 
 	gps_mgmt.init();
 
+	// init all I2C devices
+	i2c_scheduling_init();
+
 	boucle.init();
+
+	NRF_LOG_INFO("App init done");
 
 	for (;;)
 	{
@@ -338,9 +347,13 @@ int main(void)
 
 			job_to_do = false;
 
-			NRF_LOG_DEBUG("Job");
+			NRF_LOG_INFO("Job");
 
 			roller_manager_tasks();
+
+#ifdef _DEBUG_TWI
+//			ms5637.computeTempAndPressure(0,0);
+#endif
 
 //			nrf_gpio_pin_toggle(LED_PIN);
 
@@ -348,11 +361,10 @@ int main(void)
 
 			backlighting_tasks();
 
-			notifications_tasks();
-
 			boucle.tasks();
 
 			nrf_drv_wdt_channel_feed(m_channel_id);
+
 		}
 
 		// tasks
