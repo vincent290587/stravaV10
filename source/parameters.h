@@ -54,6 +54,6 @@
 ///// CODE FLAGS
 
 //#define _DEBUG_TWI
-
+#define _DEBUG_SPI
 
 #endif /* SOURCE_PARAMETERS_H_ */

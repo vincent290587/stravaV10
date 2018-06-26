@@ -16,7 +16,10 @@ extern "C" {
 
 void spi_init(void);
 
-void spi_schedule(nrf_spi_mngr_transaction_t const * p_transaction);
+void spi_schedule(uint8_t const * p_tx_buffer,
+		size_t          tx_length,
+		uint8_t       * p_rx_buffer,
+		size_t          rx_length);
 
 #ifdef __cplusplus
 }
