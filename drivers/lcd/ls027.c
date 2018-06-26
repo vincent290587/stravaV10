@@ -9,6 +9,7 @@
 #include "app_util_platform.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
+#include "parameters.h"
 #include "spi.h"
 #include "boards.h"
 #include "nordic_common.h"
@@ -43,35 +44,27 @@ static nrf_drv_spi_config_t  ls027_spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 
 extern nrf_spi_mngr_t m_nrf_spi_mngr;
 
+/*******************************************************************************
+ * Functions
+ ******************************************************************************/
+
 static void ls027_cs_on(void * p_user_data) {
-	nrf_gpio_pin_set(LS027_CS_PIN);
-	nrf_delay_us(3);
+
 }
 
 static void ls027_cs_off(ret_code_t result, void * p_user_data) {
-	nrf_delay_us(3);
-	nrf_gpio_pin_clear(LS027_CS_PIN);
 
-	APP_ERROR_CHECK(result);
 }
 
 static void ls027_spi_init() {
 
-	ls027_cs_off(0, NULL);
-	nrf_gpio_cfg_output(LS027_CS_PIN);
 
-	ls027_spi_config.ss_pin   = NRF_DRV_SPI_PIN_NOT_USED;
-	ls027_spi_config.miso_pin = NRF_DRV_SPI_PIN_NOT_USED;
-	ls027_spi_config.mosi_pin = SPI_MOSI_PIN;
-	ls027_spi_config.sck_pin  = SPI_SCK_PIN;
-	ls027_spi_config.bit_order = NRF_DRV_SPI_BIT_ORDER_LSB_FIRST;
-	ls027_spi_config.frequency = NRF_DRV_SPI_FREQ_2M;
 
 }
 
 static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data)
 {
-	NRF_LOG_DEBUG("LS027 refreshed");
+	NRF_LOG_INFO("LS027 refreshed");
 
 	ls027_cs_off(result, p_user_data);
 
@@ -172,24 +165,8 @@ void LS027_Clear(void)
 
 	LS027_TOGGLE_VCOM;
 
-	// Below structures have to be "static" - they cannot be placed on stack
-	// since the transaction is scheduled and these structures most likely
-	// will be referred after this function returns
-	static nrf_spi_mngr_transfer_t NRF_SPI_MNGR_BUFFER_LOC_IND ls027_spi_xfer = \
-			NRF_SPI_MNGR_TRANSFER(ls027_clear_buffer, 2, NULL, 0);
-
-	static nrf_spi_mngr_transaction_t const transaction_clear =
-	{
-			.begin_callback      = ls027_cs_on,
-			.end_callback        = ls027_cs_off,
-			.p_user_data         = NULL,
-			.p_transfers         = &ls027_spi_xfer,
-			.number_of_transfers = 1,
-			.p_required_spi_cfg  = &ls027_spi_config
-	};
-
 	/* Start master transfer */
-	spi_schedule(&transaction_clear);
+	spi_schedule(ls027_clear_buffer, 2, NULL, 0);
 
 	return;
 }
@@ -250,24 +227,8 @@ void LS027_ToggleVCOM(void)
 
 	LS027_TOGGLE_VCOM;
 
-	// Below structures have to be "static" - they cannot be placed on stack
-	// since the transaction is scheduled and these structures most likely
-	// will be referred after this function returns
-	static nrf_spi_mngr_transfer_t NRF_SPI_MNGR_BUFFER_LOC_IND ls027_spi_xfer = \
-			NRF_SPI_MNGR_TRANSFER(ls027_vcom_buffer, 2, NULL, 0);
-
-	static nrf_spi_mngr_transaction_t const transaction_vcom =
-	{
-			.begin_callback      = ls027_cs_on,
-			.end_callback        = ls027_cs_off,
-			.p_user_data         = NULL,
-			.p_transfers         = &ls027_spi_xfer,
-			.number_of_transfers = 1,
-			.p_required_spi_cfg  = &ls027_spi_config
-	};
-
 	/* Start master transfer */
-	spi_schedule(&transaction_vcom);
+	spi_schedule(ls027_vcom_buffer, 2, NULL, 0);
 
 	return;
 }
@@ -281,28 +242,14 @@ void LS027_ToggleVCOM(void)
  **     Returns     : Nothing
  ** ===================================================================
  */
+
 void LS027_UpdateFull(void)
 {
 	// prepare the SPI commands
 	ls027_prepare_buffer();
 
-	// program the task
-	// Below structures have to be "static" - they cannot be placed on stack
-	// since the transaction is scheduled and these structures most likely
-	// will be referred after this function returns
-	static nrf_spi_mngr_transfer_t NRF_SPI_MNGR_BUFFER_LOC_IND ls027_spi_xfer = \
-			NRF_SPI_MNGR_TRANSFER(LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
-
-	static nrf_spi_mngr_transaction_t const transaction_data =
-	{
-			.begin_callback      = ls027_cs_on,
-			.end_callback        = ls027_spi_buffer_clear,
-			.p_user_data         = NULL,
-			.p_transfers         = &ls027_spi_xfer,
-			.number_of_transfers = 1,
-			.p_required_spi_cfg  = &ls027_spi_config
-	};
-
 	/* Start master transfer */
-	spi_schedule(&transaction_data);
+	spi_schedule(LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
+
+	ls027_spi_buffer_clear(0, NULL);
 }

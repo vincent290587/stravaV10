@@ -3251,7 +3251,7 @@
  
 
 #ifndef NRFX_SPIM0_ENABLED
-#define NRFX_SPIM0_ENABLED 0
+#define NRFX_SPIM0_ENABLED 1
 #endif
 
 // <q> NRFX_SPIM1_ENABLED  - Enable SPIM1 instance
@@ -3310,7 +3310,7 @@
 // <e> NRFX_SPIM_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
 #ifndef NRFX_SPIM_CONFIG_LOG_ENABLED
-#define NRFX_SPIM_CONFIG_LOG_ENABLED 0
+#define NRFX_SPIM_CONFIG_LOG_ENABLED 1
 #endif
 // <o> NRFX_SPIM_CONFIG_LOG_LEVEL  - Default Severity level
  
@@ -3337,7 +3337,7 @@
 // <8=> White 
 
 #ifndef NRFX_SPIM_CONFIG_INFO_COLOR
-#define NRFX_SPIM_CONFIG_INFO_COLOR 0
+#define NRFX_SPIM_CONFIG_INFO_COLOR 6
 #endif
 
 // <o> NRFX_SPIM_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
@@ -5279,6 +5279,20 @@
 
 // </e>
 
+// <e> SPI3_ENABLED - Enable SPI3 instance
+//==========================================================
+#ifndef SPI3_ENABLED
+#define SPI3_ENABLED 1
+#endif
+// <q> SPI3_USE_EASY_DMA  - Use EasyDMA
+
+
+#ifndef SPI3_USE_EASY_DMA
+#define SPI3_USE_EASY_DMA 1
+#endif
+
+// </e>
+
 // </e>
 
 // <e> TIMER_ENABLED - nrf_drv_timer - TIMER periperal driver - legacy layer
@@ -5532,7 +5546,7 @@
  
 
 #ifndef TWI1_USE_EASY_DMA
-#define TWI1_USE_EASY_DMA 0
+#define TWI1_USE_EASY_DMA 1
 #endif
 
 // </e>

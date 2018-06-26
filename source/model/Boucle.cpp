@@ -21,7 +21,7 @@ Boucle::Boucle() {
 
 void Boucle::init(void) {
 
-	LOG_INFO("Boucle init\r\n");
+	LOG_INFO("Boucle init...");
 
 	init_liste_segments();
 

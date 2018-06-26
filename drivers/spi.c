@@ -61,7 +61,7 @@ void spi_init(void)
     spi_config.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
     spi_config.ss_active_high = true;
 
-	APP_ERROR_CHECK(nrfx_spim_init(&spi, &spi_config, spim_event_handler, NULL));
+	APP_ERROR_CHECK(nrfx_spim_init(&spi, &spi_config, NULL, NULL));
 #else
 	static nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 	spi_config.ss_pin   = SPI_SS_PIN;
