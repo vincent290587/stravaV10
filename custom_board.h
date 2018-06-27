@@ -63,10 +63,12 @@ extern "C" {
 #define HWFC             false
 
 #define SPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 24)
-#define SPI_SS_PIN       NRF_GPIO_PIN_MAP(1, 6)
+#define SPI_SS_PIN       0xFF
+//#define SPI_MOSI_PIN     NRF_GPIO_PIN_MAP(1, 2)
+//#define SPI_SCK_PIN      NRF_GPIO_PIN_MAP(1, 3)
+
 #define SPI_MOSI_PIN     NRF_GPIO_PIN_MAP(0, 22)
 #define SPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 20)
-
 
 // Low frequency clock source to be used by the SoftDevice
 #define NRF_CLOCK_LFCLKSRC      {.source       = NRF_CLOCK_LF_SRC_XTAL,      \

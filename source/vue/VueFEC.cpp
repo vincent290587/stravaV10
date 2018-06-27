@@ -41,7 +41,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->setTextSize(3);
 		this->print(String("Connecting"));
 
-		LOG_INFO("VueFEC waiting for sensors\r\n");
+		LOG_INFO("VueFEC waiting for sensors");
 
 		if (!m_el_time) vue.addNotif("FEC", "Connecting...", 5, eNotificationTypeComplete);
 
@@ -65,7 +65,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 
 	} else if (m_fec_screen_mode == eVueFECScreenDataFull) {
 
-		LOG_INFO("VueFEC update full data\r\n");
+		LOG_INFO("VueFEC update full data");
 
 		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(++m_el_time, ':'), NULL);
 

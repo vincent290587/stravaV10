@@ -40,7 +40,7 @@ static uint8_t LS027_sharpmem_vcom;
 
 static bool m_is_color_inverted = true;
 
-extern nrf_spi_mngr_t m_nrf_spi_mngr;
+static sSpimConfig m_spi_ls027_cfg;
 
 /*******************************************************************************
  * Functions
@@ -52,24 +52,15 @@ static void ls027_cs_on() {
 
 }
 
-static void ls027_cs_off() {
+static void ls027_cs_off(nrfx_spim_evt_t const * p_event,
+        void *                  p_context) {
 
 	nrf_gpio_pin_clear(LS027_CS_PIN);
 
 }
 
-static void ls027_spi_init() {
-
-	nrf_gpio_pin_clear(LS027_CS_PIN);
-	nrf_gpio_cfg_output(LS027_CS_PIN);
-
-}
-
-static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data)
-{
-	NRF_LOG_INFO("LS027 refreshed");
-
-	ls027_cs_off();
+static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data) {
+	NRF_LOG_DEBUG("LS027 buffers cleared");
 
 	if (!m_is_color_inverted) {
 		memset(LS027_SpiBuf, LS027_PIXEL_GROUP_WHITE, sizeof(LS027_SpiBuf));
@@ -78,6 +69,16 @@ static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data)
 	}
 }
 
+static void ls027_spi_init() {
+
+	nrf_gpio_pin_clear(LS027_CS_PIN);
+	nrf_gpio_cfg_output(LS027_CS_PIN);
+
+	m_spi_ls027_cfg.frequency      = NRF_SPIM_FREQ_4M;
+	m_spi_ls027_cfg.handler        = ls027_cs_off;
+	m_spi_ls027_cfg.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
+	m_spi_ls027_cfg.blocking       = true;
+}
 
 static int ls027_prepare_buffer(void)
 {
@@ -169,7 +170,7 @@ void LS027_Clear(void)
 	LS027_TOGGLE_VCOM;
 
 	/* Start master transfer */
-	spi_schedule(ls027_clear_buffer, 2, NULL, 0);
+	spi_schedule(&m_spi_ls027_cfg, ls027_clear_buffer, 2, NULL, 0);
 
 	return;
 }
@@ -191,6 +192,8 @@ void LS027_Init(void)
 	ls027_spi_buffer_clear(0, NULL);
 
 	ls027_spi_init();
+
+	LS027_Clear();
 }
 
 void LS027_InvertColors(void)
@@ -231,7 +234,7 @@ void LS027_ToggleVCOM(void)
 	LS027_TOGGLE_VCOM;
 
 	/* Start master transfer */
-	spi_schedule(ls027_vcom_buffer, 2, NULL, 0);
+	spi_schedule(&m_spi_ls027_cfg, ls027_vcom_buffer, 2, NULL, 0);
 
 	return;
 }
@@ -254,9 +257,7 @@ void LS027_UpdateFull(void)
 	ls027_cs_on();
 
 	/* Start master transfer */
-	spi_schedule(LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
-
-	ls027_cs_off();
+	spi_schedule(&m_spi_ls027_cfg, LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
 
 	ls027_spi_buffer_clear(0, NULL);
 }

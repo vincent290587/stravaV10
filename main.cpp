@@ -303,8 +303,13 @@ int main(void)
 	i2c_init();
 	//// uart is started later
 
-	// SD functions
+	// LCD displayer
+	vue.init();
+
 	nrf_drv_wdt_channel_feed(m_channel_id);
+
+	// SD functions
+	NRF_LOG_FLUSH();
 	sd_functions_init();
 
 	ant_timers_init();
@@ -328,8 +333,6 @@ int main(void)
 	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);
 
-	// LCD displayer
-	vue.init();
 
 	gps_mgmt.init();
 
@@ -347,15 +350,8 @@ int main(void)
 
 			job_to_do = false;
 
-			NRF_LOG_INFO("Job");
-
 			roller_manager_tasks();
 
-#ifdef _DEBUG_TWI
-//			ms5637.computeTempAndPressure(0,0);
-#endif
-
-//			nrf_gpio_pin_toggle(LED_PIN);
 
 			notifications_tasks();
 

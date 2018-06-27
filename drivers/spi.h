@@ -8,7 +8,18 @@
 #ifndef DRIVERS_SPI_H_
 #define DRIVERS_SPI_H_
 
-#include "nrf_spi_mngr.h"
+#include "nrfx_spim.h"
+
+/**
+ * @brief SPIM master driver instance configuration structure.
+ */
+typedef struct
+{
+    nrf_spim_frequency_t frequency; ///< SPI frequency.
+    nrf_spim_bit_order_t bit_order; ///< SPI bit order.
+    nrfx_spim_evt_handler_t handler;
+    bool blocking;
+} sSpimConfig;
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +27,10 @@ extern "C" {
 
 void spi_init(void);
 
-void spi_schedule(uint8_t const * p_tx_buffer,
+void spi_uninit(void);
+
+void spi_schedule(sSpimConfig const * spi_config,
+		uint8_t const * p_tx_buffer,
 		size_t          tx_length,
 		uint8_t       * p_rx_buffer,
 		size_t          rx_length);

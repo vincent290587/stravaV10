@@ -33,7 +33,7 @@ bool BoucleCRS::isTime() {
 
 	if (m_needs_init ||
 			m_last_refresh.getAge() > 1200) {
-		LOG_INFO("Auto refresh\r\n");
+		LOG_DEBUG("Auto refresh");
 		return true;
 	}
 
@@ -139,7 +139,7 @@ void BoucleCRS::run() {
 
 		att.next = m_dist_next_seg;
 
-		LOG_INFO("Next segment: %u\r\n", att.next);
+		LOG_INFO("Next segment: %u", att.next);
 	} else {
 		// update date
 		SDate dat;

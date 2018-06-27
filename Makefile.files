@@ -43,7 +43,6 @@ SRC_FILES += \
   $(SDK_ROOT)/external/fatfs/port/diskio_blkdev.c \
   $(SDK_ROOT)/external/fatfs/src/ff.c \
   $(SDK_ROOT)/components/libraries/gfx/nrf_gfx.c \
-  $(SDK_ROOT)/components/libraries/sdcard/app_sdcard.c \
   $(SDK_ROOT)/components/libraries/block_dev/empty/nrf_block_dev_empty.c \
   $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_block_dev_qspi.c \
   $(SDK_ROOT)/components/libraries/block_dev/ram/nrf_block_dev_ram.c \
@@ -60,7 +59,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
-  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_spi.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_twi.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_ppi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_clock.c \
@@ -68,7 +66,6 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power_clock.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
-  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_spi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_spim.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twim.c \
@@ -154,6 +151,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/sysview \
   $(PROJ_DIR)/libraries/TinyGPSPlus \
   $(PROJ_DIR)/libraries/utils \
+  $(PROJ_DIR)/libraries/sdcard \
   $(PROJ_DIR)/rf \
   $(PROJ_DIR)/source \
   $(PROJ_DIR)/source/display \
@@ -189,7 +187,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/modules/nrfx/hal \
   $(SDK_ROOT)/components/libraries/bsp \
   $(SDK_ROOT)/components/libraries/button \
-  $(SDK_ROOT)/components/libraries/sdcard \
   $(SDK_ROOT)/modules/nrfx \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
   $(SDK_ROOT)/integration/nrfx/legacy \

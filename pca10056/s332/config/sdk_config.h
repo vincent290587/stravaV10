@@ -3310,7 +3310,7 @@
 // <e> NRFX_SPIM_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
 #ifndef NRFX_SPIM_CONFIG_LOG_ENABLED
-#define NRFX_SPIM_CONFIG_LOG_ENABLED 1
+#define NRFX_SPIM_CONFIG_LOG_ENABLED 0
 #endif
 // <o> NRFX_SPIM_CONFIG_LOG_LEVEL  - Default Severity level
  
@@ -3354,114 +3354,6 @@
 
 #ifndef NRFX_SPIM_CONFIG_DEBUG_COLOR
 #define NRFX_SPIM_CONFIG_DEBUG_COLOR 0
-#endif
-
-// </e>
-
-// </e>
-
-// <e> NRFX_SPIS_ENABLED - nrfx_spis - SPIS peripheral driver
-//==========================================================
-#ifndef NRFX_SPIS_ENABLED
-#define NRFX_SPIS_ENABLED 0
-#endif
-// <q> NRFX_SPIS0_ENABLED  - Enable SPIS0 instance
- 
-
-#ifndef NRFX_SPIS0_ENABLED
-#define NRFX_SPIS0_ENABLED 0
-#endif
-
-// <q> NRFX_SPIS1_ENABLED  - Enable SPIS1 instance
- 
-
-#ifndef NRFX_SPIS1_ENABLED
-#define NRFX_SPIS1_ENABLED 0
-#endif
-
-// <q> NRFX_SPIS2_ENABLED  - Enable SPIS2 instance
- 
-
-#ifndef NRFX_SPIS2_ENABLED
-#define NRFX_SPIS2_ENABLED 0
-#endif
-
-// <o> NRFX_SPIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef NRFX_SPIS_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_SPIS_DEFAULT_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// <o> NRFX_SPIS_DEFAULT_DEF - SPIS default DEF character  <0-255> 
-
-
-#ifndef NRFX_SPIS_DEFAULT_DEF
-#define NRFX_SPIS_DEFAULT_DEF 255
-#endif
-
-// <o> NRFX_SPIS_DEFAULT_ORC - SPIS default ORC character  <0-255> 
-
-
-#ifndef NRFX_SPIS_DEFAULT_ORC
-#define NRFX_SPIS_DEFAULT_ORC 255
-#endif
-
-// <e> NRFX_SPIS_CONFIG_LOG_ENABLED - Enables logging in the module.
-//==========================================================
-#ifndef NRFX_SPIS_CONFIG_LOG_ENABLED
-#define NRFX_SPIS_CONFIG_LOG_ENABLED 0
-#endif
-// <o> NRFX_SPIS_CONFIG_LOG_LEVEL  - Default Severity level
- 
-// <0=> Off 
-// <1=> Error 
-// <2=> Warning 
-// <3=> Info 
-// <4=> Debug 
-
-#ifndef NRFX_SPIS_CONFIG_LOG_LEVEL
-#define NRFX_SPIS_CONFIG_LOG_LEVEL 3
-#endif
-
-// <o> NRFX_SPIS_CONFIG_INFO_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef NRFX_SPIS_CONFIG_INFO_COLOR
-#define NRFX_SPIS_CONFIG_INFO_COLOR 0
-#endif
-
-// <o> NRFX_SPIS_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
- 
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
-
-#ifndef NRFX_SPIS_CONFIG_DEBUG_COLOR
-#define NRFX_SPIS_CONFIG_DEBUG_COLOR 0
 #endif
 
 // </e>
@@ -3682,7 +3574,7 @@
 // <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
 //==========================================================
 #ifndef NRFX_TIMER_ENABLED
-#define NRFX_TIMER_ENABLED 0
+#define NRFX_TIMER_ENABLED 1
 #endif
 // <q> NRFX_TIMER0_ENABLED  - Enable TIMER0 instance
  
@@ -5126,175 +5018,6 @@
 
 // </e>
 
-// <e> SPIS_ENABLED - nrf_drv_spis - SPIS peripheral driver - legacy layer
-//==========================================================
-#ifndef SPIS_ENABLED
-#define SPIS_ENABLED 0
-#endif
-// <o> SPIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef SPIS_DEFAULT_CONFIG_IRQ_PRIORITY
-#define SPIS_DEFAULT_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// <o> SPIS_DEFAULT_MODE  - Mode
- 
-// <0=> MODE_0 
-// <1=> MODE_1 
-// <2=> MODE_2 
-// <3=> MODE_3 
-
-#ifndef SPIS_DEFAULT_MODE
-#define SPIS_DEFAULT_MODE 0
-#endif
-
-// <o> SPIS_DEFAULT_BIT_ORDER  - SPIS default bit order
- 
-// <0=> MSB first 
-// <1=> LSB first 
-
-#ifndef SPIS_DEFAULT_BIT_ORDER
-#define SPIS_DEFAULT_BIT_ORDER 0
-#endif
-
-// <o> SPIS_DEFAULT_DEF - SPIS default DEF character  <0-255> 
-
-
-#ifndef SPIS_DEFAULT_DEF
-#define SPIS_DEFAULT_DEF 255
-#endif
-
-// <o> SPIS_DEFAULT_ORC - SPIS default ORC character  <0-255> 
-
-
-#ifndef SPIS_DEFAULT_ORC
-#define SPIS_DEFAULT_ORC 255
-#endif
-
-// <q> SPIS0_ENABLED  - Enable SPIS0 instance
- 
-
-#ifndef SPIS0_ENABLED
-#define SPIS0_ENABLED 0
-#endif
-
-// <q> SPIS1_ENABLED  - Enable SPIS1 instance
- 
-
-#ifndef SPIS1_ENABLED
-#define SPIS1_ENABLED 0
-#endif
-
-// <q> SPIS2_ENABLED  - Enable SPIS2 instance
- 
-
-#ifndef SPIS2_ENABLED
-#define SPIS2_ENABLED 0
-#endif
-
-// </e>
-
-// <e> SPI_ENABLED - nrf_drv_spi - SPI/SPIM peripheral driver - legacy layer
-//==========================================================
-#ifndef SPI_ENABLED
-#define SPI_ENABLED 1
-#endif
-// <o> SPI_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef SPI_DEFAULT_CONFIG_IRQ_PRIORITY
-#define SPI_DEFAULT_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// <o> NRF_SPI_DRV_MISO_PULLUP_CFG  - MISO PIN pull-up configuration.
- 
-// <0=> NRF_GPIO_PIN_NOPULL 
-// <1=> NRF_GPIO_PIN_PULLDOWN 
-// <3=> NRF_GPIO_PIN_PULLUP 
-
-#ifndef NRF_SPI_DRV_MISO_PULLUP_CFG
-#define NRF_SPI_DRV_MISO_PULLUP_CFG 1
-#endif
-
-// <e> SPI0_ENABLED - Enable SPI0 instance
-//==========================================================
-#ifndef SPI0_ENABLED
-#define SPI0_ENABLED 1
-#endif
-// <q> SPI0_USE_EASY_DMA  - Use EasyDMA
- 
-
-#ifndef SPI0_USE_EASY_DMA
-#define SPI0_USE_EASY_DMA 1
-#endif
-
-// </e>
-
-// <e> SPI1_ENABLED - Enable SPI1 instance
-//==========================================================
-#ifndef SPI1_ENABLED
-#define SPI1_ENABLED 0
-#endif
-// <q> SPI1_USE_EASY_DMA  - Use EasyDMA
- 
-
-#ifndef SPI1_USE_EASY_DMA
-#define SPI1_USE_EASY_DMA 1
-#endif
-
-// </e>
-
-// <e> SPI2_ENABLED - Enable SPI2 instance
-//==========================================================
-#ifndef SPI2_ENABLED
-#define SPI2_ENABLED 0
-#endif
-// <q> SPI2_USE_EASY_DMA  - Use EasyDMA
- 
-
-#ifndef SPI2_USE_EASY_DMA
-#define SPI2_USE_EASY_DMA 1
-#endif
-
-// </e>
-
-// <e> SPI3_ENABLED - Enable SPI3 instance
-//==========================================================
-#ifndef SPI3_ENABLED
-#define SPI3_ENABLED 1
-#endif
-// <q> SPI3_USE_EASY_DMA  - Use EasyDMA
-
-
-#ifndef SPI3_USE_EASY_DMA
-#define SPI3_USE_EASY_DMA 1
-#endif
-
-// </e>
-
-// </e>
-
 // <e> TIMER_ENABLED - nrf_drv_timer - TIMER periperal driver - legacy layer
 //==========================================================
 #ifndef TIMER_ENABLED
@@ -5808,7 +5531,7 @@
 // <2147483648=> 8 MHz 
 
 #ifndef APP_SDCARD_FREQ_INIT
-#define APP_SDCARD_FREQ_INIT 1073741824
+#define APP_SDCARD_FREQ_INIT 67108864
 #endif
 
 // <o> APP_SDCARD_FREQ_DATA  - SPI frequency

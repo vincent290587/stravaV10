@@ -19,8 +19,8 @@ Vue::Vue() : Adafruit_GFX(LS027_HW_WIDTH, LS027_HW_HEIGHT) {
 
 void Vue::init(void) {
 	this->setRotation(3);
-	LS027_Init();
 	this->initMenu();
+	LS027_Init();
 }
 
 void Vue::tasks(eButtonsEvent event) {
