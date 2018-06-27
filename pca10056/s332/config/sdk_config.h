@@ -3601,14 +3601,14 @@
  
 
 #ifndef NRFX_TIMER3_ENABLED
-#define NRFX_TIMER3_ENABLED 0
+#define NRFX_TIMER3_ENABLED 1
 #endif
 
 // <q> NRFX_TIMER4_ENABLED  - Enable TIMER4 instance
  
 
 #ifndef NRFX_TIMER4_ENABLED
-#define NRFX_TIMER4_ENABLED 0
+#define NRFX_TIMER4_ENABLED 1
 #endif
 
 // <o> NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY  - Timer frequency if in Timer mode
@@ -4491,12 +4491,6 @@
 
 // </e>
 
-// <q> PPI_ENABLED  - nrf_drv_ppi - PPI peripheral driver - legacy layer
- 
-
-#ifndef PPI_ENABLED
-#define PPI_ENABLED 1
-#endif
 
 // <e> PWM_ENABLED - nrf_drv_pwm - PWM peripheral driver - legacy layer
 //==========================================================
@@ -5018,187 +5012,6 @@
 
 // </e>
 
-// <e> TIMER_ENABLED - nrf_drv_timer - TIMER periperal driver - legacy layer
-//==========================================================
-#ifndef TIMER_ENABLED
-#define TIMER_ENABLED 1
-#endif
-// <o> TIMER_DEFAULT_CONFIG_FREQUENCY  - Timer frequency if in Timer mode
- 
-// <0=> 16 MHz 
-// <1=> 8 MHz 
-// <2=> 4 MHz 
-// <3=> 2 MHz 
-// <4=> 1 MHz 
-// <5=> 500 kHz 
-// <6=> 250 kHz 
-// <7=> 125 kHz 
-// <8=> 62.5 kHz 
-// <9=> 31.25 kHz 
-
-#ifndef TIMER_DEFAULT_CONFIG_FREQUENCY
-#define TIMER_DEFAULT_CONFIG_FREQUENCY 0
-#endif
-
-// <o> TIMER_DEFAULT_CONFIG_MODE  - Timer mode or operation
- 
-// <0=> Timer 
-// <1=> Counter 
-
-#ifndef TIMER_DEFAULT_CONFIG_MODE
-#define TIMER_DEFAULT_CONFIG_MODE 0
-#endif
-
-// <o> TIMER_DEFAULT_CONFIG_BIT_WIDTH  - Timer counter bit width
- 
-// <0=> 16 bit 
-// <1=> 8 bit 
-// <2=> 24 bit 
-// <3=> 32 bit 
-
-#ifndef TIMER_DEFAULT_CONFIG_BIT_WIDTH
-#define TIMER_DEFAULT_CONFIG_BIT_WIDTH 0
-#endif
-
-// <o> TIMER_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef TIMER_DEFAULT_CONFIG_IRQ_PRIORITY
-#define TIMER_DEFAULT_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// <q> TIMER0_ENABLED  - Enable TIMER0 instance
- 
-
-#ifndef TIMER0_ENABLED
-#define TIMER0_ENABLED 1
-#endif
-
-// <q> TIMER1_ENABLED  - Enable TIMER1 instance
- 
-
-#ifndef TIMER1_ENABLED
-#define TIMER1_ENABLED 0
-#endif
-
-// <q> TIMER2_ENABLED  - Enable TIMER2 instance
- 
-
-#ifndef TIMER2_ENABLED
-#define TIMER2_ENABLED 0
-#endif
-
-// <q> TIMER3_ENABLED  - Enable TIMER3 instance
- 
-
-#ifndef TIMER3_ENABLED
-#define TIMER3_ENABLED 1
-#endif
-
-// <q> TIMER4_ENABLED  - Enable TIMER4 instance
- 
-
-#ifndef TIMER4_ENABLED
-#define TIMER4_ENABLED 1
-#endif
-
-// </e>
-
-// <e> TWIS_ENABLED - nrf_drv_twis - TWIS peripheral driver - legacy layer
-//==========================================================
-#ifndef TWIS_ENABLED
-#define TWIS_ENABLED 0
-#endif
-// <q> TWIS0_ENABLED  - Enable TWIS0 instance
- 
-
-#ifndef TWIS0_ENABLED
-#define TWIS0_ENABLED 0
-#endif
-
-// <q> TWIS1_ENABLED  - Enable TWIS1 instance
- 
-
-#ifndef TWIS1_ENABLED
-#define TWIS1_ENABLED 0
-#endif
-
-// <q> TWIS_ASSUME_INIT_AFTER_RESET_ONLY  - Assume that any instance would be initialized only once
- 
-
-// <i> Optimization flag. Registers used by TWIS are shared by other peripherals. Normally, during initialization driver tries to clear all registers to known state before doing the initialization itself. This gives initialization safe procedure, no matter when it would be called. If you activate TWIS only once and do never uninitialize it - set this flag to 1 what gives more optimal code.
-
-#ifndef TWIS_ASSUME_INIT_AFTER_RESET_ONLY
-#define TWIS_ASSUME_INIT_AFTER_RESET_ONLY 0
-#endif
-
-// <q> TWIS_NO_SYNC_MODE  - Remove support for synchronous mode
- 
-
-// <i> Synchronous mode would be used in specific situations. And it uses some additional code and data memory to safely process state machine by polling it in status functions. If this functionality is not required it may be disabled to free some resources.
-
-#ifndef TWIS_NO_SYNC_MODE
-#define TWIS_NO_SYNC_MODE 0
-#endif
-
-// <o> TWIS_DEFAULT_CONFIG_ADDR0 - Address0 
-#ifndef TWIS_DEFAULT_CONFIG_ADDR0
-#define TWIS_DEFAULT_CONFIG_ADDR0 0
-#endif
-
-// <o> TWIS_DEFAULT_CONFIG_ADDR1 - Address1 
-#ifndef TWIS_DEFAULT_CONFIG_ADDR1
-#define TWIS_DEFAULT_CONFIG_ADDR1 0
-#endif
-
-// <o> TWIS_DEFAULT_CONFIG_SCL_PULL  - SCL pin pull configuration
- 
-// <0=> Disabled 
-// <1=> Pull down 
-// <3=> Pull up 
-
-#ifndef TWIS_DEFAULT_CONFIG_SCL_PULL
-#define TWIS_DEFAULT_CONFIG_SCL_PULL 0
-#endif
-
-// <o> TWIS_DEFAULT_CONFIG_SDA_PULL  - SDA pin pull configuration
- 
-// <0=> Disabled 
-// <1=> Pull down 
-// <3=> Pull up 
-
-#ifndef TWIS_DEFAULT_CONFIG_SDA_PULL
-#define TWIS_DEFAULT_CONFIG_SDA_PULL 0
-#endif
-
-// <o> TWIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef TWIS_DEFAULT_CONFIG_IRQ_PRIORITY
-#define TWIS_DEFAULT_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// </e>
 
 // <e> TWI_ENABLED - nrf_drv_twi - TWI/TWIM peripheral driver - legacy layer
 //==========================================================
@@ -5276,105 +5089,6 @@
 
 // </e>
 
-// <e> UART_ENABLED - nrf_drv_uart - UART/UARTE peripheral driver - legacy layer
-//==========================================================
-#ifndef UART_ENABLED
-#define UART_ENABLED 1
-#endif
-// <o> UART_DEFAULT_CONFIG_HWFC  - Hardware Flow Control
- 
-// <0=> Disabled 
-// <1=> Enabled 
-
-#ifndef UART_DEFAULT_CONFIG_HWFC
-#define UART_DEFAULT_CONFIG_HWFC 0
-#endif
-
-// <o> UART_DEFAULT_CONFIG_PARITY  - Parity
- 
-// <0=> Excluded 
-// <14=> Included 
-
-#ifndef UART_DEFAULT_CONFIG_PARITY
-#define UART_DEFAULT_CONFIG_PARITY 0
-#endif
-
-// <o> UART_DEFAULT_CONFIG_BAUDRATE  - Default Baudrate
- 
-// <323584=> 1200 baud 
-// <643072=> 2400 baud 
-// <1290240=> 4800 baud 
-// <2576384=> 9600 baud 
-// <3862528=> 14400 baud 
-// <5152768=> 19200 baud 
-// <7716864=> 28800 baud 
-// <10289152=> 38400 baud 
-// <15400960=> 57600 baud 
-// <20615168=> 76800 baud 
-// <30801920=> 115200 baud 
-// <61865984=> 230400 baud 
-// <67108864=> 250000 baud 
-// <121634816=> 460800 baud 
-// <251658240=> 921600 baud 
-// <268435456=> 1000000 baud 
-
-#ifndef UART_DEFAULT_CONFIG_BAUDRATE
-#define UART_DEFAULT_CONFIG_BAUDRATE 30801920
-#endif
-
-// <o> UART_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef UART_DEFAULT_CONFIG_IRQ_PRIORITY
-#define UART_DEFAULT_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// <q> UART_EASY_DMA_SUPPORT  - Driver supporting EasyDMA
- 
-
-#ifndef UART_EASY_DMA_SUPPORT
-#define UART_EASY_DMA_SUPPORT 1
-#endif
-
-// <q> UART_LEGACY_SUPPORT  - Driver supporting Legacy mode
- 
-
-#ifndef UART_LEGACY_SUPPORT
-#define UART_LEGACY_SUPPORT 1
-#endif
-
-// <e> UART0_ENABLED - Enable UART0 instance
-//==========================================================
-#ifndef UART0_ENABLED
-#define UART0_ENABLED 1
-#endif
-// <q> UART0_CONFIG_USE_EASY_DMA  - Default setting for using EasyDMA
- 
-
-#ifndef UART0_CONFIG_USE_EASY_DMA
-#define UART0_CONFIG_USE_EASY_DMA 1
-#endif
-
-// </e>
-
-// <e> UART1_ENABLED - Enable UART1 instance
-//==========================================================
-#ifndef UART1_ENABLED
-#define UART1_ENABLED 0
-#endif
-// </e>
-
-// </e>
 
 // <e> USBD_ENABLED - nrf_drv_usbd - USB driver
 //==========================================================
