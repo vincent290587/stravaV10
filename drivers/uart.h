@@ -8,7 +8,7 @@
 #ifndef SERIAL_H_
 #define SERIAL_H_
 
-#include "nrf_libuarte_async.h"
+#include "nrfx_uarte.h"
 
 #ifdef __cplusplus
 extern "C" {

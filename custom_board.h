@@ -64,6 +64,7 @@ extern "C" {
 
 #define SPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 24)
 #define SPI_SS_PIN       0xFF
+
 //#define SPI_MOSI_PIN     NRF_GPIO_PIN_MAP(1, 2)
 //#define SPI_SCK_PIN      NRF_GPIO_PIN_MAP(1, 3)
 

@@ -133,7 +133,7 @@ String _timemkstr(SDate& date_, char sep) {
 	uint32_t addition = ((millis() - date_.timestamp) / 1000.);
 	uint32_t value = date_.secj;
 
-	LOG_INFO("Addition to time: %lu\r\n", addition);
+	LOG_DEBUG("Addition to time: %lu", addition);
 
 	return _secjmkstr(value + addition, sep);
 }

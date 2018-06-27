@@ -21,6 +21,8 @@
 #include "nrf_log_default_backends.h"
 
 
+#define NRFX_UARTE_INDEX     0
+
 
 /*******************************************************************************
  * Variables
@@ -30,38 +32,54 @@ RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
 
 volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
 
+static const nrfx_uarte_t uart = NRFX_UARTE_INSTANCE(NRFX_UARTE_INDEX);
 
+static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI instance completed the transfer. */
 
-void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
+static uint8_t ch = 0;
+
+/**
+ *
+ * @param p_event
+ * @param p_context
+ */
+void uart_event_handler(nrfx_uarte_event_t const * p_event,
+        				void * p_context)
 {
     W_SYSVIEW_RecordEnterISR();
 
-	static uint8_t ch = 0;
-	ret_code_t ret;
-	switch (p_evt->type)
-	{
-	case NRF_LIBUARTE_ASYNC_EVT_ERROR:
-		break;
-	case NRF_LIBUARTE_ASYNC_EVT_RX_DATA:
-	{
-		ch = p_evt->data.rxtx.p_data[0];
-		nrf_libuarte_async_rx_free(p_evt->data.rxtx.p_data, p_evt->data.rxtx.length);
-		ret = nrf_libuarte_async_tx(&ch, 1);
-		APP_ERROR_CHECK(ret);
+    switch (p_event->type) {
+    case NRFX_UARTE_EVT_ERROR:
+    {
+    	APP_ERROR_CHECK(p_event->data.error.error_mask);
+    }
+    break;
+    case NRFX_UARTE_EVT_RX_DONE:
+    {
+    	if (p_event->data.rxtx.bytes) {
 
-		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
-			RING_BUFFER_ADD(uart0_rb1, ch);
-		} else {
-			NRF_LOG_ERROR("Ring buffer full");
-		}
+    		ch = p_event->data.rxtx.p_data[0];
 
-	}
-		break;
-	case NRF_LIBUARTE_ASYNC_EVT_TX_DONE:
-		break;
-	default:
-		break;
-	}
+    		//NRF_LOG_RAW_INFO("%c", ch);
+
+    		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
+    			RING_BUFFER_ADD(uart0_rb1, ch);
+    		} else {
+    			NRF_LOG_ERROR("Ring buffer full");
+    		}
+
+    	}
+
+    	nrfx_uarte_rx(&uart, &ch, 1);
+    }
+    break;
+    case NRFX_UARTE_EVT_TX_DONE:
+    {
+    	NRF_LOG_INFO("UART TX done");
+    	uart_xfer_done = true;
+    }
+    break;
+    }
 
     W_SYSVIEW_RecordExitISR();
 }
@@ -72,20 +90,21 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
  */
  void uart_init(nrf_uarte_baudrate_t baud)
 {
-	 nrf_libuarte_async_config_t nrf_libuarte_async_config = {
-			 .tx_pin     = TX_PIN_NUMBER,
-			 .rx_pin     = RX_PIN_NUMBER,
-			 .baudrate   = baud,
-			 .parity     = NRF_UARTE_PARITY_EXCLUDED,
-			 .hwfc       = NRF_UARTE_HWFC_DISABLED,
-			 .timeout_us = 100,
-	 };
+	 nrfx_uarte_config_t nrf_uarte_config = NRFX_UARTE_DEFAULT_CONFIG;
 
-	 ret_code_t err_code = nrf_libuarte_async_init(&nrf_libuarte_async_config, uart_event_handler);
+	 nrf_uarte_config.pseltxd    = TX_PIN_NUMBER;
+	 nrf_uarte_config.pselrxd    = RX_PIN_NUMBER;
+	 nrf_uarte_config.baudrate   = baud;
+	 nrf_uarte_config.parity     = NRF_UARTE_PARITY_EXCLUDED;
+	 nrf_uarte_config.hwfc       = NRF_UARTE_HWFC_DISABLED;
+
+	 ret_code_t err_code = nrfx_uarte_init(&uart, &nrf_uarte_config, uart_event_handler);
+
+	 NRF_LOG_INFO("UART configured baud=%u", (uint32_t)baud);
+
+	 nrfx_uarte_rx(&uart, &ch, 1);
 
 	 APP_ERROR_CHECK(err_code);
-
-	 nrf_libuarte_async_enable(1);
 
 }
 
@@ -94,17 +113,21 @@ void uart_event_handler(nrf_libuarte_async_evt_t * p_evt)
   */
  void uart_uninit(void) {
 
-	 nrf_libuarte_async_uninit();
+	 nrfx_uarte_uninit(&uart);
 
  }
 
 /**
  *
  */
- void uart_send(uint8_t * p_data, size_t length)
- {
-	 ret_code_t err_code = nrf_libuarte_async_tx(p_data, length);
+ void uart_send(uint8_t * p_data, size_t length) {
+
+	 NRF_LOG_DEBUG("UART TX...");
+
+	 ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
 	 APP_ERROR_CHECK(err_code);
+
+	 uart_xfer_done = false;
  }
 
 /**

@@ -13,7 +13,7 @@
 
 Vue::Vue() : Adafruit_GFX(LS027_HW_WIDTH, LS027_HW_HEIGHT) {
 
-	m_global_mode = eVueGlobalScreenFEC;
+	m_global_mode = VUE_DEFAULT_MODE;
 
 }
 
