@@ -48,6 +48,9 @@ typedef enum {
 
 #define LS027_BUFFER_SIZE          (LS027_DISPLAY_HW_NOF_ROWS*(((LS027_DISPLAY_HW_NOF_COLUMNS-1)/8)+1))
 
+#define LS027_PIX_TO_ADDR(x,y)     (2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y)
+
+
 /////////    FUNCTIONS
 
 #if defined(__cplusplus)

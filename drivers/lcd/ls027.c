@@ -16,6 +16,7 @@
 #include "segger_wrapper.h"
 
 #include "ls027.h"
+#include "ls027_splash.h"
 
 
 #define LS027_HW_SPI_BUFFER_SIZE   (1 + LS027_BUFFER_SIZE + (240*2) + 1)
@@ -189,11 +190,21 @@ void LS027_Init(void)
 	/* Set the vcom bit to a defined state */
 	LS027_sharpmem_vcom = LS027_BIT_VCOM;
 
-	ls027_spi_buffer_clear(0, NULL);
-
 	ls027_spi_init();
 
 	LS027_Clear();
+
+	// copy buffer
+	uint16_t offset = 0;
+	for (int i=0; i < LS027_BUFFER_SIZE; i++) {
+
+		offset = 2 * (8 * i / LS027_HW_WIDTH);
+
+		LS027_SpiBuf[2 + i + offset] = SPLASH_BMP[LS027_BUFFER_SIZE - i - 1];
+
+	}
+
+	LS027_UpdateFull();
 }
 
 void LS027_InvertColors(void)
