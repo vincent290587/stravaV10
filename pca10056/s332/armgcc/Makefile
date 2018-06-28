@@ -1,6 +1,7 @@
 PROJECT_NAME     := ble_app_lns_c_pca10052_s332
 TARGETS          := nrf52840_xxaa
 OUTPUT_DIRECTORY := _build
+SOFTDEVICE       := components/softdevice/s332_v5.0.0/hex/ANT_s332_nrf52_5.0.0.hex
 
 include Makefile.local
 
@@ -30,7 +31,8 @@ OPT = -O3 -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
-#CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0 -DUSE_SVIEW=1
+#CFLAGS += -DUSE_SVIEW=1
+CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF_USER
 CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DSOFTDEVICE_PRESENT
@@ -108,12 +110,21 @@ flash: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 # Flash softdevice
 flash_softdevice:
 	@echo Flashing
-	nrfjprog --program $(SDK_ROOT)/components/softdevice/s332_v5.0.0/hex/ANT_s332_nrf52_5.0.0.hex -f nrf52 --sectorerase 
+	nrfjprog --program $(SDK_ROOT)/$(SOFTDEVICE) -f nrf52 --sectorerase 
 #	nrfjprog --reset -f nrf52
+
+settings:
+	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
+
+dfu_softdevice:
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x9b --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
+	nrfutil pkg display stravaV10_soft.zip
+	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p COM8
 
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x9b --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
-	cp stravaV10.zip $(DROPBOX)
+	nrfutil pkg display stravaV10.zip
+	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
 
 dfu_send:
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
