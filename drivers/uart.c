@@ -14,6 +14,7 @@
 #include "nrf_soc.h"
 #include "GPSMGMT.h"
 #include "nrf_delay.h"
+#include "app_timer.h"
 #include "ring_buffer.h"
 
 #include "nrf_log.h"
@@ -23,12 +24,15 @@
 
 #define NRFX_UARTE_INDEX     0
 
+#define UART_RELOAD_DELAY           APP_TIMER_TICKS(2000)
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
 #define UART0_RB_SIZE         256
 RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
+
+APP_TIMER_DEF(m_uarte_timer);
 
 volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
 
@@ -37,6 +41,15 @@ static const nrfx_uarte_t uart = NRFX_UARTE_INSTANCE(NRFX_UARTE_INDEX);
 static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI instance completed the transfer. */
 
 static uint8_t ch = 0;
+
+
+/**
+ * @brief Handler for timer events.
+ */
+void timer_event_handler(void* p_context)
+{
+	nrfx_uarte_rx(&uart, &ch, 1);
+}
 
 /**
  *
@@ -84,6 +97,15 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     W_SYSVIEW_RecordExitISR();
 }
 
+/**
+ *
+ */
+void uart_timer_init(void) {
+
+	ret_code_t err_code = app_timer_create(&m_uarte_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
+	APP_ERROR_CHECK(err_code);
+
+}
 
 /**
  * @brief Function for initializing the UART.
@@ -104,6 +126,9 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
 
 	 nrfx_uarte_rx(&uart, &ch, 1);
 
+	 err_code = app_timer_start(m_uarte_timer, UART_RELOAD_DELAY, NULL);
+	 APP_ERROR_CHECK(err_code);
+
 	 APP_ERROR_CHECK(err_code);
 
 }
@@ -114,6 +139,9 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
  void uart_uninit(void) {
 
 	 nrfx_uarte_uninit(&uart);
+
+	 ret_code_t err_code = app_timer_stop(m_uarte_timer);
+	 APP_ERROR_CHECK(err_code);
 
  }
 

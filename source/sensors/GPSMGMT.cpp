@@ -22,7 +22,7 @@
 #include "parameters.h"
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_9600
 
 #if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD)
 #define GPS_BIN_CMD                PMTK_SET_BIN_BAUD_115200
@@ -52,6 +52,8 @@ static nrf_uarte_baudrate_t m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
 void gps_uart_start() {
 
 	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
+
+	uart_timer_init();
 
 	uart_init(m_uart_baud);
 
