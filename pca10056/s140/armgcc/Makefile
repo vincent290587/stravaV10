@@ -9,12 +9,16 @@ PROJ_DIR := ../../..
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := ble_app_lns_c_gcc_nrf52.ld
+  
+# Source files common to all targets
+SRC_FILES += \
+  $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
 
 include $(PROJ_DIR)/Makefile.files
 
 # Source files common to all targets
 SRC_FILES += \
-  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c
+  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   
 # Include folders common to all targets
 INC_FOLDERS += \
@@ -58,7 +62,6 @@ CFLAGS += -fno-builtin --short-enums -nostdlib -MMD -nostdlib
 CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 
 # Assembler flags common to all targets
-ASMFLAGS += -x assembler-with-cpp
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
