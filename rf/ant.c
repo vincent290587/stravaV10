@@ -42,6 +42,7 @@
 #include "app_timer.h"
 #include "nrf_drv_wdt.h"
 
+#ifdef ANT_STACK_SUPPORT_REQD
 #include "ant_key_manager.h"
 #include "ant_search_config.h"
 #include "ant_hrm.h"
@@ -49,6 +50,8 @@
 #include "ant_fec.h"
 #include "ant_glasses.h"
 #include "ant_interface.h"
+#endif
+
 #include "segger_wrapper.h"
 
 #include "glasses.h"

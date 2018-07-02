@@ -9,6 +9,7 @@
 #define DRIVERS_NEOPIXEL_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define WS_BLACK   0,0,0
 #define WS_RED     0xFF,0,0

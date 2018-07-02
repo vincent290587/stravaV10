@@ -8,8 +8,10 @@
 #ifndef FEC_H_
 #define FEC_H_
 
+#ifdef ANT_STACK_SUPPORT_REQD
 #include "ant_fec.h"
 #include "nrf_sdh_ant.h"
+#endif
 #include "mk64f_parser.h"
 
 /////////////  STRUCTS
@@ -18,11 +20,17 @@ extern sFecControl          fec_control;
 
 extern sFecInfo             fec_info;
 
+#ifdef ANT_STACK_SUPPORT_REQD
+
 extern ant_fec_profile_t        m_ant_fec;
 
 extern ant_fec_message_layout_t m_fec_message_payload;
 
+#endif
+
 /////////////  FUNCTIONS
+
+#ifdef ANT_STACK_SUPPORT_REQD
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +48,8 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif /* FEC_H_ */

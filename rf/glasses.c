@@ -1,3 +1,6 @@
+
+#ifdef ANT_STACK_SUPPORT_REQD
+
 #include <stdint.h>
 #include <string.h>
 #include "glasses.h"
@@ -22,3 +25,4 @@ void set_glasses_buffer (sGlassesOrders* orders) {
 
 }
 
+#endif

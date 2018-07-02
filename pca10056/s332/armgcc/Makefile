@@ -54,6 +54,8 @@ SRC_FILES += \
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
+  $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers \
+  $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers/nrf52 \
   
 # Libraries common to all targets
 LIB_FILES += -lm -lstdc++

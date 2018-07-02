@@ -80,7 +80,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ble.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c \
-  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ant.c \
   $(SDK_ROOT)/components/ble/common/ble_advdata.c \
   $(SDK_ROOT)/components/ble/ble_advertising/ble_advertising.c \
   $(SDK_ROOT)/components/ble/common/ble_conn_params.c \
@@ -129,8 +128,6 @@ INC_FOLDERS += \
   $(PROJ_DIR)/source/sensors \
   $(PROJ_DIR)/source/vue \
   $(SDK_ROOT)/components/softdevice/common \
-  $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers \
-  $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers/nrf52 \
   $(SDK_ROOT)/components \
   $(SDK_ROOT)/modules/nrfx/mdk \
   $(SDK_ROOT)/components/libraries/scheduler \

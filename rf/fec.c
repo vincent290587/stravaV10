@@ -5,6 +5,9 @@
  *      Author: Vincent
  */
 
+
+#ifdef ANT_STACK_SUPPORT_REQD
+
 #include "nrf_assert.h"
 #include "ant.h"
 #include "fec.h"
@@ -12,6 +15,7 @@
 #include "ant_fec_pages.h"
 #include "ant_fec_utils.h"
 #include "ant_interface.h"
+
 #include "app_timer.h"
 
 #include "nrf_log.h"
@@ -241,3 +245,5 @@ void fec_set_control(sFecControl* tbc) {
 	memcpy(&fec_control, tbc, sizeof(fec_control));
 
 }
+
+#endif
