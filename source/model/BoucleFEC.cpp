@@ -61,6 +61,7 @@ void BoucleFEC::run() {
 
 	LOG_INFO("Boucle FEC run\r\n");
 
+#ifdef ANT_STACK_SUPPORT_REQD
 	// add FEC point to record
 	attitude.addNewFECPoint(fec_info);
 
@@ -68,6 +69,7 @@ void BoucleFEC::run() {
 		m_pw_buffer.popLast();
 	}
 	m_pw_buffer.add(&fec_info.power);
+#endif
 
 	vue.refresh();
 

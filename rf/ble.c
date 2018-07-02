@@ -136,6 +136,16 @@ static const ble_gap_addr_t m_target_periph_addr =
 		.addr      = {0x8D, 0xFE, 0x23, 0x86, 0x77, 0xD9}
 };
 
+#if (NRF_SD_BLE_API_VERSION==6)
+static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
+
+/**@brief Pointer to the buffer where advertising reports will be stored by the SoftDevice. */
+static ble_data_t m_scan_buffer =
+{
+    m_scan_buffer_data,
+    BLE_GAP_SCAN_BUFFER_MIN
+};
+#endif
 
 static void scan_start(void);
 
@@ -316,9 +326,13 @@ static bool find_adv_name(const ble_gap_evt_adv_report_t *p_adv_report, const ch
 	data_t   dev_name;
 
 	// Initialize advertisement report for parsing
+#if (NRF_SD_BLE_API_VERSION==5)
 	adv_data.p_data     = (uint8_t *)p_adv_report->data;
 	adv_data.data_len   = p_adv_report->dlen;
-
+#else
+	adv_data.p_data     = (uint8_t *)p_adv_report->data.p_data;
+	adv_data.data_len   = p_adv_report->data.len;
+#endif
 
 	//search for advertising names
 	err_code = adv_report_parse(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME,
@@ -388,8 +402,13 @@ static bool find_adv_uuid(const ble_gap_evt_adv_report_t *p_adv_report, const ui
 	data_t   type_data;
 
 	// Initialize advertisement report for parsing.
+#if (NRF_SD_BLE_API_VERSION==5)
 	adv_data.p_data     = (uint8_t *)p_adv_report->data;
 	adv_data.data_len   = p_adv_report->dlen;
+#else
+	adv_data.p_data     = (uint8_t *)p_adv_report->data.p_data;
+	adv_data.data_len   = p_adv_report->data.len;
+#endif
 
 	err_code = adv_report_parse(BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE,
 			&adv_data,
@@ -497,7 +516,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 #if (NRF_SD_BLE_API_VERSION <= 2)
 			m_scan_param.selective = 0;
 #endif
-#if (NRF_SD_BLE_API_VERSION >= 3)
+#if (NRF_SD_BLE_API_VERSION == 5)
 			m_scan_param.use_whitelist = 0;
 #endif
 
@@ -982,7 +1001,7 @@ static void scan_start(void)
 		m_scan_param.selective   = 0;
 		m_scan_param.p_whitelist = NULL;
 #endif
-#if (NRF_SD_BLE_API_VERSION >= 3)
+#if (NRF_SD_BLE_API_VERSION == 5)
 		m_scan_param.use_whitelist  = 0;
 		m_scan_param.adv_dir_report = 0;
 #endif
@@ -997,7 +1016,7 @@ static void scan_start(void)
 		m_scan_param.selective   = 1;
 		m_scan_param.p_whitelist = &whitelist;
 #endif
-#if (NRF_SD_BLE_API_VERSION >= 3)
+#if (NRF_SD_BLE_API_VERSION == 5)
 		m_scan_param.use_whitelist  = 1;
 		m_scan_param.adv_dir_report = 0;
 #endif
@@ -1006,7 +1025,7 @@ static void scan_start(void)
 
 	NRF_LOG_INFO("Starting scan.");
 
-	ret = sd_ble_gap_scan_start(&m_scan_param);
+	ret = sd_ble_gap_scan_start(&m_scan_param, &m_scan_buffer);
 	APP_ERROR_CHECK(ret);
 
 }

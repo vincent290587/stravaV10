@@ -6,12 +6,13 @@
  */
 
 
-#ifdef ANT_STACK_SUPPORT_REQD
+
 
 #include "nrf_assert.h"
 #include "ant.h"
 #include "fec.h"
 #include "Model.h"
+#ifdef ANT_STACK_SUPPORT_REQD
 #include "ant_fec_pages.h"
 #include "ant_fec_utils.h"
 #include "ant_interface.h"
@@ -27,9 +28,13 @@
 
 ant_fec_profile_t        m_ant_fec;
 
+#endif
+
 sFecInfo             fec_info;
 
 sFecControl          fec_control;
+
+#ifdef ANT_STACK_SUPPORT_REQD
 
 APP_TIMER_DEF(m_fec_update);
 
