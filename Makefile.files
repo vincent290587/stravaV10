@@ -14,7 +14,6 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/source/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/*/*.c) \
   $(wildcard $(PROJ_DIR)/source/*/*.cpp) \
-  $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52.S \
   $(SDK_ROOT)/components/libraries/bsp/bsp.c \
   $(SDK_ROOT)/components/libraries/fds/fds.c \
   $(SDK_ROOT)/components/libraries/experimental_log/src/nrf_log_backend_rtt.c \

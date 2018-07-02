@@ -9,11 +9,11 @@ PROJ_DIR := ../../..
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := ble_app_lns_c_gcc_nrf52.ld
-
-include $(PROJ_DIR)/Makefile.files
-
+  
 # Source files common to all targets
 SRC_FILES += \
+  $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
+  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   $(SDK_ROOT)/components/ant/ant_channel_config/ant_channel_config.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/ant_hrm.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/pages/ant_hrm_page_0.c \
@@ -49,8 +49,9 @@ SRC_FILES += \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_80.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_81.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ant.c \
-  $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c
-  
+
+include $(PROJ_DIR)/Makefile.files
+
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \

@@ -8,13 +8,15 @@ PROJ_DIR := ../../..
 
 $(OUTPUT_DIRECTORY)/nrf52832_xxaa.out: \
   LINKER_SCRIPT  := ble_app_lns_c_gcc_nrf52.ld
-  
-include $(PROJ_DIR)/Makefile.files
+
 
 # Source files common to all targets
 SRC_FILES += \
+  $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52.c
-  
+
+include $(PROJ_DIR)/Makefile.files
+
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
