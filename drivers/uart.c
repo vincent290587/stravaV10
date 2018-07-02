@@ -48,7 +48,9 @@ static uint8_t ch = 0;
  */
 void timer_event_handler(void* p_context)
 {
-	nrfx_uarte_rx(&uart, &ch, 1);
+	nrfx_uarte_rx_abort(&uart);
+
+	APP_ERROR_CHECK(nrfx_uarte_rx(&uart, &ch, 1));
 }
 
 /**
@@ -73,7 +75,7 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
 
     		ch = p_event->data.rxtx.p_data[0];
 
-    		//NRF_LOG_RAW_INFO("%c", ch);
+    		NRF_LOG_RAW_INFO("%c", ch);
 
     		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
     			RING_BUFFER_ADD(uart0_rb1, ch);
@@ -83,7 +85,7 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
 
     	}
 
-    	nrfx_uarte_rx(&uart, &ch, 1);
+    	APP_ERROR_CHECK(nrfx_uarte_rx(&uart, &ch, 1));
     }
     break;
     case NRFX_UARTE_EVT_TX_DONE:
@@ -129,7 +131,7 @@ void uart_timer_init(void) {
 	 err_code = app_timer_start(m_uarte_timer, UART_RELOAD_DELAY, NULL);
 	 APP_ERROR_CHECK(err_code);
 
-	 APP_ERROR_CHECK(err_code);
+	 uart_xfer_done = true;
 
 }
 
@@ -150,7 +152,11 @@ void uart_timer_init(void) {
  */
  void uart_send(uint8_t * p_data, size_t length) {
 
-	 NRF_LOG_DEBUG("UART TX...");
+	 NRF_LOG_INFO("UART TX of %u bytes", length);
+
+	 while (!uart_xfer_done) {
+		 nrf_delay_ms(1);
+	 }
 
 	 ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
 	 APP_ERROR_CHECK(err_code);
@@ -164,7 +170,7 @@ void uart_timer_init(void) {
  void uart_tasks(void) {
 
 	 /* If ring buffer is not empty, parse data. */
-	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
+	 if (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
 	 {
 		 gps_encode_char(RING_BUFF_GET_ELEM(uart0_rb1));
 
