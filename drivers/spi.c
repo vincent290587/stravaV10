@@ -15,6 +15,7 @@
 #include "boards.h"
 #include "parameters.h"
 #include "spi.h"
+#include "segger_wrapper.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -40,6 +41,8 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
                        void *                  p_context)
 {
     spi_xfer_done = true;
+
+	W_SYSVIEW_OnTaskStopExec(SPI_TASK);
 
     NRF_LOG_DEBUG("SPI Xfer %u/%u byte", p_event->xfer_desc.tx_length, p_event->xfer_desc.rx_length);
 
@@ -143,6 +146,9 @@ void spi_schedule (sSpimConfig const * spi_config,
 		NRF_LOG_WARNING("SPI configuration changed");
 	}
 
+
+	W_SYSVIEW_OnTaskStartExec(SPI_TASK);
+
 	// Xfer bytes
 	spi_xfer_done = false;
 	APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
@@ -160,6 +166,8 @@ void spi_schedule (sSpimConfig const * spi_config,
 			}
 
 		} while (!spi_xfer_done);
+
+		W_SYSVIEW_OnTaskStopExec(SPI_TASK);
 	}
 }
 

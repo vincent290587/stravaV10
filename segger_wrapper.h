@@ -20,20 +20,22 @@
 #define USE_SVIEW         0
 #endif
 
+#if USE_SVIEW
+#include "SEGGER_SYSVIEW.h"
+#endif
+
 /////////    DEFINES
 
 #define RTT_LOG_CHANNEL   0
-
-#define USE_RTT           0
 
 #define EMPTY_MACRO                    do {} while (0)
 
 
 #if USE_SVIEW
-//#define LOG_INFO(...)                  SEGGER_SYSVIEW_PrintfHost(__VA_ARGS__)
 #define LOG_INFO(...)                  EMPTY_MACRO
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
+//#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
+#define LOG_ERROR(...)                 SEGGER_SYSVIEW_PrintfHost(__VA_ARGS__)
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                segger_init()
@@ -43,9 +45,9 @@
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 NRF_LOG_ERROR(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
-#define LOG_FLUSH(...)                 EMPTY_MACRO
+#define LOG_FLUSH(...)                 NRF_LOG_FLUSH();
 #define LOG_SET_TERM(X)                EMPTY_MACRO
-#define SVIEW_INIT(...)                  EMPTY_MACRO
+#define SVIEW_INIT(...)                EMPTY_MACRO
 #endif
 
 
@@ -80,7 +82,7 @@
 #define SD_ACCESS_TASK                 (TASK_BASE + 8u)
 #define SEG_PERF_TASK                  (TASK_BASE + 9u)
 #define NRF52_TASK                     (TASK_BASE + 10u)
-#define DISPLAY_TASK2                  (TASK_BASE + 11u)
+#define LCD_TASK                       (TASK_BASE + 11u)
 #define DISPLAY_TASK3                  (TASK_BASE + 12u)
 #define DISPLAY_TASK4                  (TASK_BASE + 13u)
 #define USB_VCOM_TASK                  (TASK_BASE + 14u)

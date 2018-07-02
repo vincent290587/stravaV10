@@ -151,10 +151,8 @@ void BoucleCRS::run() {
 
 	notifications_setNotify(&neopixel);
 
-	W_SYSVIEW_OnTaskStartExec(LCD_TASK);
 	vue.refresh();
 	m_last_refresh.setUpdateTime();
-	W_SYSVIEW_OnTaskStopExec(LCD_TASK);
 
 	W_SYSVIEW_OnIdle();
 }
