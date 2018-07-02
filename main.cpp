@@ -25,7 +25,7 @@
 #include "nrf_sdm.h"
 #include "nrf_pwr_mgmt.h"
 #include "nrf_drv_timer.h"
-#include "nrf_drv_wdt.h"
+#include "nrfx_wdt.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
@@ -51,7 +51,7 @@
 
 APP_TIMER_DEF(m_job_timer);
 
-nrf_drv_wdt_channel_id m_channel_id;
+nrfx_wdt_channel_id m_channel_id;
 
 extern "C" void ble_ant_init(void);
 
@@ -88,8 +88,9 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name)
     };
     app_error_fault_handler(NRF_FAULT_ID_SDK_ASSERT, 0, (uint32_t)(&assert_info));
 
-#ifndef DEBUG_NRF
+#ifndef DEBUG_NRF_USER
     NRF_LOG_WARNING("System reset");
+    NRF_LOG_FLUSH();
     NVIC_SystemReset();
 #else
     NRF_BREAKPOINT_COND;
@@ -131,8 +132,8 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         }
         case NRF_FAULT_ID_SDK_ERROR:
         {
-            error_info_t * p_info = (error_info_t *)info;
 #ifndef USE_SVIEW
+            error_info_t * p_info = (error_info_t *)info;
             NRF_LOG_ERROR("ERROR %u [%s] at %s:%u",
                           p_info->err_code,
 						  nrf_strerror_get(p_info->err_code),
@@ -145,6 +146,8 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
             NRF_LOG_ERROR("UNKNOWN FAULT at 0x%08X", pc);
             break;
     }
+
+    NRF_LOG_FLUSH();
 
 #ifdef DEBUG_NRF
     NRF_BREAKPOINT_COND;
@@ -272,31 +275,29 @@ int main(void)
 {
 	ret_code_t err_code;
 
+	log_init();
+
 	// TODO check nrf_power.h when S340 is ready
 
 	pins_init();
 
+	// Initialize timer module
+	millis_init();
+
 	// Initialize.
     //Configure WDT.
-    nrf_drv_wdt_config_t config = NRF_DRV_WDT_DEAFULT_CONFIG;
-    err_code = nrf_drv_wdt_init(&config, wdt_event_handler);
+    nrfx_wdt_config_t wdt_config = NRFX_WDT_DEAFULT_CONFIG;
+    err_code = nrfx_wdt_init(&wdt_config, wdt_event_handler);
     APP_ERROR_CHECK(err_code);
-    err_code = nrf_drv_wdt_channel_alloc(&m_channel_id);
+    err_code = nrfx_wdt_channel_alloc(&m_channel_id);
     APP_ERROR_CHECK(err_code);
-    nrf_drv_wdt_enable();
-
-	log_init();
+    nrfx_wdt_enable();
 
 	NRF_LOG_INFO("Init start");
 
 	nrf_pwr_mgmt_init();
 
 	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-
-	// Initialize timer module
-	millis_init();
-
-	nrf_delay_ms(2000);
 
 	// drivers
 	spi_init();
@@ -306,10 +307,8 @@ int main(void)
 	// LCD displayer
 	vue.init();
 
-	nrf_drv_wdt_channel_feed(m_channel_id);
-
 	// SD functions
-	NRF_LOG_FLUSH();
+	nrfx_wdt_channel_feed(m_channel_id);
 	sd_functions_init();
 
 	// timers
@@ -357,14 +356,13 @@ int main(void)
 			roller_manager_tasks();
 #endif
 
-
 			notifications_tasks();
 
 			backlighting_tasks();
 
 			boucle.tasks();
 
-			nrf_drv_wdt_channel_feed(m_channel_id);
+			nrfx_wdt_channel_feed(m_channel_id);
 
 		}
 
