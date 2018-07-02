@@ -43,7 +43,7 @@ void millis_init(void) {
  */
 uint32_t millis(void) {
 
-	// TODO check
+	// check
 	uint32_t ticks = app_timer_cnt_get();
 	return APP_TIMER_MS(ticks);
 }
