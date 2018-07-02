@@ -21,6 +21,10 @@
 #include "boards.h"
 #include "parameters.h"
 
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
 #define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_9600
 
@@ -89,12 +93,11 @@ void GPS_MGMT::init(void) {
 	// configure fix pin
 	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
 
+	SEND_TO_GPS(PMTK_AWAKE);
+
 #if GPS_USE_COLD_START
 	SEND_TO_GPS(PMTK_COLD);
 #endif
-
-	// go to default baudrate
-	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
 
 	if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD) {
 
