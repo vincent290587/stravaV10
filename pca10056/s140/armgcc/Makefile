@@ -1,7 +1,7 @@
 PROJECT_NAME     := ble_app_lns_c_pca10052_s332
 TARGETS          := nrf52840_xxaa
 OUTPUT_DIRECTORY := _build
-SOFTDEVICE       := components/softdevice/s332_v5.0.0/hex/ANT_s332_nrf52_5.0.0.hex
+SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.0.0_softdevice.hex
 
 include Makefile.local
 
@@ -14,41 +14,6 @@ include $(PROJ_DIR)/Makefile.files
 
 # Source files common to all targets
 SRC_FILES += \
-  $(SDK_ROOT)/components/ant/ant_channel_config/ant_channel_config.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/ant_hrm.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/pages/ant_hrm_page_0.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/pages/ant_hrm_page_1.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/pages/ant_hrm_page_2.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/pages/ant_hrm_page_3.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/pages/ant_hrm_page_4.c \
-  $(SDK_ROOT)/components/ant/ant_key_manager/ant_key_manager.c \
-  $(SDK_ROOT)/components/ant/ant_state_indicator/ant_state_indicator.c \
-  $(SDK_ROOT)/components/ant/ant_search_config/ant_search_config.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_glasses/ant_glasses.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/ant_bsc.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_combined_page_0.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_0.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_1.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_2.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_3.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_4.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_5.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/ant_fec.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/utils/ant_fec_utils.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_1.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_2.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_16.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_17.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_21.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_25.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_48.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_49.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_51.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_54.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_71.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_80.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_81.c \
-  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ant.c \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c
   
 # Include folders common to all targets
@@ -67,7 +32,7 @@ OPT = -O3 -g3
 # C flags common to all targets
 CFLAGS += $(OPT)
 #CFLAGS += -DUSE_SVIEW=1
-CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
+#CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF_USER
 CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DSOFTDEVICE_PRESENT
@@ -76,10 +41,9 @@ CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DNRF52840
 CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
-CFLAGS += -DANT_STACK_SUPPORT_REQD
-CFLAGS += -DNRF_SD_BLE_API_VERSION=5
+CFLAGS += -DNRF_SD_BLE_API_VERSION=6
 CFLAGS += -DSWI_DISABLE0
-CFLAGS += -DS332
+CFLAGS += -DS140
 CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
@@ -101,10 +65,10 @@ ASMFLAGS += -DBOARD_STRAVA5
 ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += -D__HEAP_SIZE=150000
-ASMFLAGS += -DBLE_STACK_SUPPORT_REQD -DANT_STACK_SUPPORT_REQD
-ASMFLAGS += -DNRF_SD_BLE_API_VERSION=5
+ASMFLAGS += -DBLE_STACK_SUPPORT_REQD
+ASMFLAGS += -DNRF_SD_BLE_API_VERSION=6
 ASMFLAGS += -DSWI_DISABLE0
-ASMFLAGS += -DS332
+ASMFLAGS += -DS140
 
 # Linker flags
 LDFLAGS += $(OPT)
@@ -152,12 +116,12 @@ settings:
 	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
 
 dfu_softdevice:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x9b --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
 	nrfutil pkg display stravaV10_soft.zip
 	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p COM8
 
 dfu:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x9b --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
 

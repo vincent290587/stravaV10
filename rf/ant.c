@@ -25,6 +25,8 @@
  * Notification Center Service Client.
  */
 
+
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -56,7 +58,6 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
-
 #define GPIO_BUTTON                     30
 
 #define ANT_DELAY                       APP_TIMER_TICKS(30000)
@@ -77,6 +78,13 @@
 #define CADENCE_COEFFICIENT         (BSC_EVT_TIME_FACTOR * BSC_RPM_TIME_FACTOR)                     /**< Coefficient for cadence value calculation */
 #define SPEED_COEFFICIENT           (WHEEL_CIRCUMFERENCE * BSC_EVT_TIME_FACTOR * BSC_MS_TO_KPH_NUM \
                                      / BSC_MS_TO_KPH_DEN)                      /**< Coefficient for speed value calculation */
+
+
+sHrmInfo hrm_info;
+sBscInfo bsc_info;
+
+
+#ifdef ANT_STACK_SUPPORT_REQD
 
 
 APP_TIMER_DEF(m_sec_hrm);
@@ -133,9 +141,6 @@ typedef struct
 
 static bsc_disp_calc_data_t m_speed_calc_data   = {0};
 static bsc_disp_calc_data_t m_cadence_calc_data = {0};
-
-sHrmInfo hrm_info;
-sBscInfo bsc_info;
 
 static uint8_t is_hrm_init = 0;
 static uint8_t is_cad_init = 0;
@@ -591,4 +596,4 @@ int ant_setup_start(void)
 }
 
 
-
+#endif

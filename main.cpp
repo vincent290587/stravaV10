@@ -312,7 +312,10 @@ int main(void)
 	NRF_LOG_FLUSH();
 	sd_functions_init();
 
+	// timers
+#ifdef ANT_STACK_SUPPORT_REQD
 	ant_timers_init();
+#endif
 
 	backlighting_init();
 
@@ -350,7 +353,9 @@ int main(void)
 
 			job_to_do = false;
 
+#ifdef ANT_STACK_SUPPORT_REQD
 			roller_manager_tasks();
+#endif
 
 
 			notifications_tasks();

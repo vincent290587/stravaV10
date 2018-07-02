@@ -1071,7 +1071,10 @@ static void gatt_init(void)
 void ble_ant_init(void)
 {
 	ble_stack_init();
+
+#ifdef ANT_STACK_SUPPORT_REQD
 	ant_stack_init();
+#endif
 
 	peer_manager_init();
 
@@ -1081,7 +1084,9 @@ void ble_ant_init(void)
 	lns_c_init();
 	bas_c_init();
 
+#ifdef ANT_STACK_SUPPORT_REQD
 	ant_setup_start();
+#endif
 
 	// Start scanning for peripherals and initiate connection
 	// with devices that advertise LNS UUID.
