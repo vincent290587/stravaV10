@@ -45,21 +45,13 @@
 // to generate your own sentences, check out the MTK command datasheet and use a checksum calculator
 // such as the awesome http://www.hhhh.org/wiml/proj/nmeaxor.html
 
-#define PMTK_LOCUS_STARTLOG  "$PMTK185,0*22\r\n"
-#define PMTK_LOCUS_STOPLOG "$PMTK185,1*23\r\n"
-#define PMTK_LOCUS_STARTSTOPACK "$PMTK001,185,3*3C\r\n"
-#define PMTK_LOCUS_QUERY_STATUS "$PMTK183*38\r\n"
-#define PMTK_LOCUS_ERASE_FLASH "$PMTK184,1*22\r\n"
-#define LOCUS_OVERLAP 0
-#define LOCUS_FULLSTOP 1
-
 #define PMTK_ENABLE_SBAS "$PMTK313,1*2E\r\n"
 #define PMTK_ENABLE_WAAS "$PMTK301,2*2E\r\n"
 
 // standby command & boot successful message
 #define PMTK_STANDBY "$PMTK161,0*28\r\n"
 #define PMTK_STANDBY_SUCCESS "$PMTK001,161,3*36"  // Not needed currently
-#define PMTK_AWAKE "$PMTK010,002*2D\r\n"
+#define PMTK_AWAKE "$PMTK000*32\r\n" // random sentence to wake
 
 #define PMTK_FULL_COLD "$PMTK104*37\r\n" // full cold start
 #define PMTK_COLD      "$PMTK103*30\r\n" // cold start
