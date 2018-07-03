@@ -48,8 +48,6 @@ static uint8_t ch = 0;
  */
 void timer_event_handler(void* p_context)
 {
-	nrfx_uarte_rx_abort(&uart);
-
 	APP_ERROR_CHECK(nrfx_uarte_rx(&uart, &ch, 1));
 }
 
