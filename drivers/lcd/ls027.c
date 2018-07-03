@@ -27,7 +27,16 @@ static uint8_t LS027_SpiBuf[LS027_HW_SPI_BUFFER_SIZE]; /* buffer for the display
 #define LS027_BIT_WRITECMD   (0x01)
 #define LS027_BIT_VCOM       (0x02)
 #define LS027_BIT_CLEAR      (0x04)
-#define LS027_TOGGLE_VCOM    do { LS027_sharpmem_vcom = LS027_sharpmem_vcom ? 0x00 : LS027_BIT_VCOM; } while(0);
+
+#define LS027_M0_L           (0x00)
+#define LS027_M0_H           (0x01)
+#define LS027_M1_L           (0x00)
+#define LS027_M1_H           (0x02)
+#define LS027_M2_L           (0x00)
+#define LS027_M2_H           (0x04)
+
+
+#define LS027_TOGGLE_VCOM    do { m_M1_bit = m_M1_bit ? 0x00 : LS027_BIT_VCOM; } while(0);
 #define adagfxswap(a, b) { int16_t t = a; a = b; b = t; }
 
 static const uint8_t set[] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
@@ -37,7 +46,7 @@ static const uint8_t clr[] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F };
  * Variables
  ******************************************************************************/
 
-static uint8_t LS027_sharpmem_vcom;
+static uint8_t m_M1_bit;
 
 static bool m_is_color_inverted = true;
 
@@ -85,7 +94,7 @@ static int ls027_prepare_buffer(void)
 {
 	uint16_t addr = 0;
 
-	LS027_SpiBuf[addr++] = (LS027_BIT_WRITECMD | LS027_sharpmem_vcom);
+	LS027_SpiBuf[addr++] = m_M1_bit | LS027_M0_H | LS027_M2_L;
 
 	LS027_TOGGLE_VCOM;
 
@@ -165,13 +174,17 @@ void LS027_Clear(void)
 {
 	static uint8_t ls027_clear_buffer[2];
 
-	ls027_clear_buffer[0] = LS027_sharpmem_vcom | LS027_BIT_CLEAR;
+	ls027_clear_buffer[0] = m_M1_bit | LS027_M0_L | LS027_M2_H;
 	ls027_clear_buffer[1] = 0x00;
 
 	LS027_TOGGLE_VCOM;
 
+	ls027_cs_on();
+
 	/* Start master transfer */
 	spi_schedule(&m_spi_ls027_cfg, ls027_clear_buffer, 2, NULL, 0);
+
+	ls027_cs_off(NULL, NULL);
 
 	return;
 }
@@ -188,11 +201,14 @@ void LS027_Clear(void)
 void LS027_Init(void)
 {
 	/* Set the vcom bit to a defined state */
-	LS027_sharpmem_vcom = LS027_BIT_VCOM;
+	m_M1_bit = LS027_BIT_VCOM;
 
 	ls027_spi_init();
 
 	LS027_Clear();
+
+	// TODO remove
+	nrf_delay_ms(700);
 
 	// copy buffer
 	uint16_t offset = 0;
@@ -239,13 +255,17 @@ void LS027_ToggleVCOM(void)
 	/* send toggle VCOM command */
 	static uint8_t ls027_vcom_buffer[2];
 
-	ls027_vcom_buffer[0] = LS027_sharpmem_vcom;
+	ls027_vcom_buffer[0] = m_M1_bit | LS027_M0_L | LS027_M2_L;
 	ls027_vcom_buffer[1] = 0x00;
 
 	LS027_TOGGLE_VCOM;
 
+	ls027_cs_on();
+
 	/* Start master transfer */
 	spi_schedule(&m_spi_ls027_cfg, ls027_vcom_buffer, 2, NULL, 0);
+
+	ls027_cs_off(NULL, NULL);
 
 	return;
 }
