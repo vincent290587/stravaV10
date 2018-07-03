@@ -94,7 +94,7 @@ String _fmkstr(float value, unsigned int nb_digits) {
 
 	if (nb_digits > 0) {
 		res += ".";
-		uint16_t dec_val = fabs(value - (float)ent_val) * pow(10, nb_digits);
+		uint32_t dec_val = fabs(value - (float)ent_val) * pow(10, nb_digits);
 		res += dec_val;
 	}
 

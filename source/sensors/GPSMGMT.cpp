@@ -355,6 +355,8 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 	String _lon = _fmkstr(loc_data.lon, 6U);
 	String _alt = _fmkstr(loc_data.alt, 0U);
 
+	NRF_LOG_INFO("Host aiding alt: %d", (int)loc_data.alt);
+
 	uint16_t _year  = 2000 + (loc_data.date % 100);
 	uint16_t _month = (loc_data.date / 100) % 100;
 	uint16_t _day   = (loc_data.date / 10000) % 100;
@@ -379,6 +381,8 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 	snprintf((char*)buffer + cmd.length(), sizeof(buffer) - cmd.length(), "*%02X\r\n", ret);
 
 	GPS_UART_SEND(buffer, cmd.length() + 5);
+
+	NRF_LOG_INFO("Host aiding: %s", (uint32_t)buffer);
 
 	vue.addNotif("EPO", "Host aiding sent", 5, eNotificationTypeComplete);
 }

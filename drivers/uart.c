@@ -75,7 +75,7 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
 
     		ch = p_event->data.rxtx.p_data[0];
 
-    		NRF_LOG_RAW_INFO("%c", ch);
+//    		NRF_LOG_RAW_INFO("%c", ch);
 
     		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
     			RING_BUFFER_ADD(uart0_rb1, ch);
@@ -170,7 +170,7 @@ void uart_timer_init(void) {
  void uart_tasks(void) {
 
 	 /* If ring buffer is not empty, parse data. */
-	 if (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
+	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
 	 {
 		 gps_encode_char(RING_BUFF_GET_ELEM(uart0_rb1));
 
