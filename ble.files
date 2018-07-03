@@ -1,0 +1,34 @@
+
+
+# Source files common to all targets
+SRC_FILES += \
+  $(wildcard $(PROJ_DIR)/rf/*.c) \
+  $(SDK_ROOT)/components/libraries/fstorage/nrf_fstorage_sd.c \
+  $(SDK_ROOT)/components/ble/common/ble_advdata.c \
+  $(SDK_ROOT)/components/ble/ble_advertising/ble_advertising.c \
+  $(SDK_ROOT)/components/ble/common/ble_conn_params.c \
+  $(SDK_ROOT)/components/ble/common/ble_conn_state.c \
+  $(SDK_ROOT)/components/ble/ble_db_discovery/ble_db_discovery.c \
+  $(SDK_ROOT)/components/ble/common/ble_srv_common.c \
+  $(SDK_ROOT)/components/ble/peer_manager/gatt_cache_manager.c \
+  $(SDK_ROOT)/components/ble/peer_manager/gatts_cache_manager.c \
+  $(SDK_ROOT)/components/ble/peer_manager/id_manager.c \
+  $(SDK_ROOT)/components/ble/nrf_ble_gatt/nrf_ble_gatt.c \
+  $(SDK_ROOT)/components/ble/nrf_ble_qwr/nrf_ble_qwr.c \
+  $(SDK_ROOT)/components/ble/peer_manager/peer_data_storage.c \
+  $(SDK_ROOT)/components/ble/peer_manager/peer_database.c \
+  $(SDK_ROOT)/components/ble/peer_manager/peer_id.c \
+  $(SDK_ROOT)/components/ble/peer_manager/peer_manager.c \
+  $(SDK_ROOT)/components/ble/peer_manager/pm_buffer.c \
+  $(SDK_ROOT)/components/ble/peer_manager/pm_mutex.c \
+  $(SDK_ROOT)/components/ble/peer_manager/security_dispatcher.c \
+  $(SDK_ROOT)/components/ble/peer_manager/security_manager.c \
+  $(SDK_ROOT)/components/ble/ble_radio_notification/ble_radio_notification.c \
+  $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_ancs_c/*.c) \
+  $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_bas_c/*.c) \
+  $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_lns_c/*.c) \
+  $(SDK_ROOT)/components/ble/ble_services/experimental_gatts_c/nrf_ble_gatts_c.c \
+  $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
+  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ble.c \
+  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c \
+  

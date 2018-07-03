@@ -19,7 +19,7 @@
 #include "spi.h"
 #include "i2c.h"
 #include "fec.h"
-#include "bsp_btn_ble.h"
+#include "bsp.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
@@ -32,6 +32,10 @@
 #include "Model.h"
 #include "sd_hal.h"
 #include "segger_wrapper.h"
+
+#ifdef USB_ENABLED
+#include "usb_cdc.h"
+#endif
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -282,6 +286,9 @@ int main(void)
 	pins_init();
 
 	// Initialize timer module
+#ifdef USB_ENABLED
+	usb_cdc_init();
+#endif
 	millis_init();
 
 	// Initialize.
@@ -323,7 +330,9 @@ int main(void)
 	notifications_init(NEO_PIN);
 
 	// init BLE + ANT
+#ifdef BLE_STACK_SUPPORT_REQD
 	ble_ant_init();
+#endif
 
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
 	APP_ERROR_CHECK(err_code);
@@ -368,6 +377,10 @@ int main(void)
 
 		// tasks
 		perform_system_tasks();
+
+#ifdef USB_ENABLED
+		usb_cdc_tasks();
+#endif
 
 		app_sched_execute();
 

@@ -28,14 +28,6 @@
 
 ant_fec_profile_t        m_ant_fec;
 
-#endif
-
-sFecInfo             fec_info;
-
-sFecControl          fec_control;
-
-#ifdef ANT_STACK_SUPPORT_REQD
-
 APP_TIMER_DEF(m_fec_update);
 
 static bool is_fec_init = false;

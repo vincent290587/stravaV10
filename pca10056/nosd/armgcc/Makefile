@@ -14,16 +14,27 @@ $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
 SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
-
-include $(PROJ_DIR)/Makefile.files
-
-include $(PROJ_DIR)/ble.files
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_core.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_serial_num.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_string_desc.c \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
+  $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
+  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
+  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_soc.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
-  $(SDK_ROOT)/components/softdevice/s140/headers \
-  $(SDK_ROOT)/components/softdevice/s140/headers/nrf52 \
+  $(PROJ_DIR)/source/usb \
+  $(SDK_ROOT)/components/drivers_nrf/usbd \
+  $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/ \
+  $(SDK_ROOT)/components/libraries/usbd \
+  $(SDK_ROOT)/components/libraries/usbd/config \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
+  
+include $(PROJ_DIR)/Makefile.files
   
 # Libraries common to all targets
 LIB_FILES += -lm -lstdc++
@@ -40,15 +51,12 @@ CFLAGS += $(OPT)
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF_USER
 CFLAGS += -DNRF52840_XXAA
-CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DCONFIG_NFCT_PINS_AS_GPIOS
 CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DNRF52840
-CFLAGS += -D__HEAP_SIZE=150000
-CFLAGS += -DBLE_STACK_SUPPORT_REQD
-CFLAGS += -DNRF_SD_BLE_API_VERSION=6
+CFLAGS += -DUSB_ENABLED
+CFLAGS += -D__HEAP_SIZE=100000
 CFLAGS += -DSWI_DISABLE0
-CFLAGS += -DS140
 CFLAGS += -mcpu=cortex-m4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
@@ -64,13 +72,10 @@ CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DBOARD_STRAVA5
 ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
-ASMFLAGS += -D__HEAP_SIZE=150000
-ASMFLAGS += -DBLE_STACK_SUPPORT_REQD
-ASMFLAGS += -DNRF_SD_BLE_API_VERSION=6
+ASMFLAGS += -D__HEAP_SIZE=100000
 ASMFLAGS += -DSWI_DISABLE0
 ASMFLAGS += -DS140
 
@@ -110,24 +115,13 @@ flash: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	nrfjprog --program $< -f nrf52 --sectorerase
 	nrfjprog --reset -f nrf52
 
-# Flash softdevice
-flash_softdevice:
-	@echo Flashing
-	nrfjprog --program $(SDK_ROOT)/$(SOFTDEVICE) -f nrf52 --sectorerase 
-#	nrfjprog --reset -f nrf52
-
 settings:
 	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
-
-dfu_softdevice:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
-	nrfutil pkg display stravaV10_soft.zip
-	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p COM8
 
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
+	nrfutil dfu usb_serial -pkg stravaV10.zip -p /dev/ttyS5
 
 dfu_send:
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8

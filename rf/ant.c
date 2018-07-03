@@ -83,10 +83,6 @@
                                      / BSC_MS_TO_KPH_DEN)                      /**< Coefficient for speed value calculation */
 
 
-sHrmInfo hrm_info;
-sBscInfo bsc_info;
-
-
 #ifdef ANT_STACK_SUPPORT_REQD
 
 

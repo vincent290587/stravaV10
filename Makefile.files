@@ -8,12 +8,26 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/drivers/lcd/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/*/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/*/*.cpp) \
-  $(wildcard $(PROJ_DIR)/rf/*.c) \
   $(wildcard $(PROJ_DIR)/sd/*.c) \
   $(wildcard $(PROJ_DIR)/sd/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/*.c) \
   $(wildcard $(PROJ_DIR)/source/*.cpp) \
-  $(wildcard $(PROJ_DIR)/source/*/*.c) \
-  $(wildcard $(PROJ_DIR)/source/*/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/display/*.c) \
+  $(wildcard $(PROJ_DIR)/source/display/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/model/*.c) \
+  $(wildcard $(PROJ_DIR)/source/model/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/parsers/*.c) \
+  $(wildcard $(PROJ_DIR)/source/parsers/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/routes/*.c) \
+  $(wildcard $(PROJ_DIR)/source/routes/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/scheduling/*.c) \
+  $(wildcard $(PROJ_DIR)/source/scheduling/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/sd/*.c) \
+  $(wildcard $(PROJ_DIR)/source/sd/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/sensors/*.c) \
+  $(wildcard $(PROJ_DIR)/source/sensors/*.cpp) \
+  $(wildcard $(PROJ_DIR)/source/vue/*.c) \
+  $(wildcard $(PROJ_DIR)/source/vue/*.cpp) \
   $(SDK_ROOT)/components/libraries/bsp/bsp.c \
   $(SDK_ROOT)/components/libraries/fds/fds.c \
   $(SDK_ROOT)/components/libraries/experimental_log/src/nrf_log_backend_rtt.c \
@@ -35,7 +49,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/atomic_fifo/nrf_atfifo.c \
   $(SDK_ROOT)/components/libraries/atomic_flags/nrf_atflags.c \
   $(SDK_ROOT)/components/libraries/fstorage/nrf_fstorage.c \
-  $(SDK_ROOT)/components/libraries/fstorage/nrf_fstorage_sd.c \
   $(SDK_ROOT)/components/libraries/balloc/nrf_balloc.c \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf.c \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf_format.c \
@@ -57,6 +70,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_clock.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_twi.c \
+  $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_power.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_ppi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_clock.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
@@ -76,33 +90,6 @@ SRC_FILES += \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c \
   $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c \
-  $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
-  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ble.c \
-  $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c \
-  $(SDK_ROOT)/components/ble/common/ble_advdata.c \
-  $(SDK_ROOT)/components/ble/ble_advertising/ble_advertising.c \
-  $(SDK_ROOT)/components/ble/common/ble_conn_params.c \
-  $(SDK_ROOT)/components/ble/common/ble_conn_state.c \
-  $(SDK_ROOT)/components/ble/ble_db_discovery/ble_db_discovery.c \
-  $(SDK_ROOT)/components/ble/common/ble_srv_common.c \
-  $(SDK_ROOT)/components/ble/peer_manager/gatt_cache_manager.c \
-  $(SDK_ROOT)/components/ble/peer_manager/gatts_cache_manager.c \
-  $(SDK_ROOT)/components/ble/peer_manager/id_manager.c \
-  $(SDK_ROOT)/components/ble/nrf_ble_gatt/nrf_ble_gatt.c \
-  $(SDK_ROOT)/components/ble/nrf_ble_qwr/nrf_ble_qwr.c \
-  $(SDK_ROOT)/components/ble/peer_manager/peer_data_storage.c \
-  $(SDK_ROOT)/components/ble/peer_manager/peer_database.c \
-  $(SDK_ROOT)/components/ble/peer_manager/peer_id.c \
-  $(SDK_ROOT)/components/ble/peer_manager/peer_manager.c \
-  $(SDK_ROOT)/components/ble/peer_manager/pm_buffer.c \
-  $(SDK_ROOT)/components/ble/peer_manager/pm_mutex.c \
-  $(SDK_ROOT)/components/ble/peer_manager/security_dispatcher.c \
-  $(SDK_ROOT)/components/ble/peer_manager/security_manager.c \
-  $(SDK_ROOT)/components/ble/ble_radio_notification/ble_radio_notification.c \
-  $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_ancs_c/*.c) \
-  $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_bas_c/*.c) \
-  $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_lns_c/*.c) \
-  $(SDK_ROOT)/components/ble/ble_services/experimental_gatts_c/nrf_ble_gatts_c.c \
 
 # Include folders common to all targets
 INC_FOLDERS += \
