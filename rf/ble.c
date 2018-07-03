@@ -39,6 +39,7 @@
 #include "nrf_ble_gatt.h"
 #include "helper.h"
 #include "ble_bas_c.h"
+#include "ble_advdata.h"
 #include "ble_lns_c.h"
 #include "ant.h"
 #include "glasses.h"
@@ -69,6 +70,8 @@
 
 #define SCAN_INTERVAL               0x00A0                              /**< Determines scan interval in units of 0.625 millisecond. */
 #define SCAN_WINDOW                 0x0050                              /**< Determines scan window in units of 0.625 millisecond. */
+#define SCAN_DURATION               0x0000                              /**< Duration of the scanning in units of 10 milliseconds. If set to 0x0000, scanning will continue until it is explicitly disabled. */
+#define SCAN_DURATION_WITELIST      3000                                /**< Duration of the scanning in units of 10 milliseconds. */
 
 #define MIN_CONNECTION_INTERVAL     MSEC_TO_UNITS(7.5, UNIT_1_25_MS)    /**< Determines minimum connection interval in millisecond. */
 #define MAX_CONNECTION_INTERVAL     MSEC_TO_UNITS(30, UNIT_1_25_MS)     /**< Determines maximum connection interval in millisecond. */
@@ -444,6 +447,59 @@ static bool find_adv_uuid(const ble_gap_evt_adv_report_t *p_adv_report, const ui
 }
 
 
+/**@brief Function for handling the advertising report BLE event.
+ *
+ * @param[in] p_adv_report  Advertising report from the SoftDevice.
+ */
+static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
+{
+	ret_code_t err_code;
+	ble_uuid_t target_uuid = {.uuid = TARGET_UUID, .type = BLE_UUID_TYPE_BLE};
+	bool do_connect = false;
+
+    if (is_connect_per_addr)
+    {
+        if (find_peer_addr(p_adv_report, &m_target_periph_addr))
+        {
+            NRF_LOG_INFO("Address match send connect_request.");
+            do_connect = true;
+        }
+    }
+    else
+    {
+        if (ble_advdata_uuid_find(p_adv_report->data.p_data, p_adv_report->data.len, &target_uuid))
+        {
+            do_connect = true;
+            NRF_LOG_INFO("UUID match send connect_request.");
+        }
+    }
+
+    if (do_connect)
+    {
+        // Stop scanning.
+        (void) sd_ble_gap_scan_stop();
+        m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL,
+
+        // Initiate connection.
+        err_code = sd_ble_gap_connect(&p_adv_report->peer_addr,
+                                      &m_scan_param,
+                                      &m_connection_param,
+                                      APP_BLE_CONN_CFG_TAG);
+
+        m_whitelist_disabled = false;
+
+        if (err_code != NRF_SUCCESS)
+        {
+            NRF_LOG_ERROR("Connection Request Failed, reason %d.", err_code);
+        }
+    }
+    else
+    {
+        err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+        APP_ERROR_CHECK(err_code);
+    }
+}
+
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -483,56 +539,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GAP_EVT_ADV_REPORT:
 	{
-		bool do_connect = false;
-		if (is_connect_per_addr)
-		{
-			if (find_peer_addr(&p_gap_evt->params.adv_report, &m_target_periph_addr))
-			{
-				NRF_LOG_INFO("Address match send connect_request.");
-				do_connect = true;
-			}
-		}
-		else if (strlen(m_target_periph_name) != 0)
-		{
-			if (find_adv_name(&p_gap_evt->params.adv_report, m_target_periph_name))
-			{
-				do_connect = true;
-				NRF_LOG_INFO("Name match send connect_request.");
-			}
-		}
-		else
-		{
-			if (find_adv_uuid(&p_gap_evt->params.adv_report, TARGET_UUID))
-			{
-				do_connect = true;
-				NRF_LOG_INFO("UUID match send connect_request.");
-			}
-		}
-		if (do_connect)
-		{
-			// Stop scanning.
-			(void) sd_ble_gap_scan_stop();
-
-#if (NRF_SD_BLE_API_VERSION <= 2)
-			m_scan_param.selective = 0;
-#endif
-#if (NRF_SD_BLE_API_VERSION == 5)
-			m_scan_param.use_whitelist = 0;
-#endif
-
-			// Initiate connection.
-			err_code = sd_ble_gap_connect(&p_gap_evt->params.adv_report.peer_addr,
-					&m_scan_param,
-					&m_connection_param,
-					APP_BLE_CONN_CFG_TAG);
-
-			m_whitelist_disabled = false;
-
-			if (err_code != NRF_SUCCESS)
-			{
-				NRF_LOG_ERROR("Connection Request Failed, reason %d.", err_code);
-			}
-		}
+		on_adv_report(&p_gap_evt->params.adv_report);
 	} break; // BLE_GAP_EVT_ADV_REPORT
 
 	case BLE_GAP_EVT_DISCONNECTED:
@@ -544,7 +551,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
 
 		// TODO
-		//if (ble_conn_state_n_centrals() < NRF_SDH_BLE_CENTRAL_LINK_COUNT)
+//		if (ble_conn_state_n_centrals() < NRF_SDH_BLE_CENTRAL_LINK_COUNT)
 		{
 			scan_start();
 		}
@@ -792,7 +799,7 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 
 		model_dispatch_lns_update(&lns_info);
 
-		NRF_LOG_INFO("Sec jour = %d %d %d\r\n", p_lns_c_evt->params.lns.utc_time.hours,
+		NRF_LOG_INFO("Sec jour = %d %d %d", p_lns_c_evt->params.lns.utc_time.hours,
 				p_lns_c_evt->params.lns.utc_time.minutes,
 				p_lns_c_evt->params.lns.utc_time.seconds);
 
@@ -961,25 +968,6 @@ static void scan_start(void)
 	uint32_t addr_cnt = (sizeof(whitelist_addrs) / sizeof(ble_gap_addr_t));
 	uint32_t irk_cnt  = (sizeof(whitelist_irks)  / sizeof(ble_gap_irk_t));
 
-#if (NRF_SD_BLE_API_VERSION <= 2)
-
-	ble_gap_addr_t * p_whitelist_addrs[8];
-	ble_gap_irk_t  * p_whitelist_irks[8];
-
-	for (uint32_t i = 0; i < 8; i++)
-	{
-		p_whitelist_addrs[i] = &whitelist_addrs[i];
-		p_whitelist_irks[i]  = &whitelist_irks[i];
-	}
-
-	ble_gap_whitelist_t whitelist =
-	{
-			.pp_addrs = p_whitelist_addrs,
-			.pp_irks  = p_whitelist_irks,
-	};
-
-#endif
-
 	// Reload the whitelist and whitelist all peers.
 	whitelist_load();
 
@@ -997,30 +985,16 @@ static void scan_start(void)
 			(m_whitelist_disabled))
 	{
 		// Don't use whitelist.
-#if (NRF_SD_BLE_API_VERSION <= 2)
-		m_scan_param.selective   = 0;
-		m_scan_param.p_whitelist = NULL;
-#endif
-#if (NRF_SD_BLE_API_VERSION == 5)
-		m_scan_param.use_whitelist  = 0;
-		m_scan_param.adv_dir_report = 0;
-#endif
-		m_scan_param.timeout  = 0x0000; // No timeout.
+		m_scan_param.timeout       = SCAN_DURATION;
+		m_scan_param.scan_phys     = BLE_GAP_PHY_1MBPS;
+		m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
 	}
 	else
 	{
 		// Use whitelist.
-#if (NRF_SD_BLE_API_VERSION <= 2)
-		whitelist.addr_count     = addr_cnt;
-		whitelist.irk_count      = irk_cnt;
-		m_scan_param.selective   = 1;
-		m_scan_param.p_whitelist = &whitelist;
-#endif
-#if (NRF_SD_BLE_API_VERSION == 5)
-		m_scan_param.use_whitelist  = 1;
-		m_scan_param.adv_dir_report = 0;
-#endif
-		m_scan_param.timeout  = 0x001E; // 30 seconds.
+		m_scan_param.scan_phys     = BLE_GAP_PHY_1MBPS;
+		m_scan_param.filter_policy = BLE_GAP_SCAN_FP_WHITELIST;
+		m_scan_param.timeout       = SCAN_DURATION_WITELIST;
 	}
 
 	NRF_LOG_INFO("Starting scan.");
