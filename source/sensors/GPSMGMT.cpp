@@ -26,13 +26,13 @@
 #include "nrf_log_default_backends.h"
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_9600
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
 
 #if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD)
-#define GPS_BIN_CMD                PMTK_SET_BIN_BAUD_115200
+#define GPS_BIN_CMD                PMTK_SET_BIN
 #define GPS_NMEA_CMD               PMTK_SET_NMEA_BAUD_115200
 #else
-#define GPS_BIN_CMD                PMTK_SET_BIN_BAUD_9600
+#define GPS_BIN_CMD                PMTK_SET_BIN
 #define GPS_NMEA_CMD               PMTK_SET_NMEA_BAUD_9600
 #endif
 
@@ -100,10 +100,6 @@ void GPS_MGMT::init(void) {
 #endif
 
 	if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD) {
-
-		gps_uart_stop();
-		delay_us(500);
-		gps_uart_resume();
 
 		// change GPS baudrate
 		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_115200);
@@ -357,6 +353,7 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 
 	String _lat = _fmkstr(loc_data.lat, 6U);
 	String _lon = _fmkstr(loc_data.lon, 6U);
+	String _alt = _fmkstr(loc_data.alt, 0U);
 
 	uint16_t _year  = 2000 + (loc_data.date % 100);
 	uint16_t _month = (loc_data.date / 100) % 100;
@@ -365,7 +362,7 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 	String _time = _secjmkstr(loc_data.utc_time + (age_ / 1000), ',');
 
 	String cmd = "$PMTK741," + _lat + "," + _lon;
-	cmd += "," + String((unsigned int)loc_data.alt);
+	cmd += "," + _alt;
 	cmd += "," + String(_year) + "," + String(_month) + "," + String(_day);
 	cmd += "," + _time;
 
@@ -384,4 +381,24 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 	GPS_UART_SEND(buffer, cmd.length() + 5);
 
 	vue.addNotif("EPO", "Host aiding sent", 5, eNotificationTypeComplete);
+}
+
+void GPS_MGMT::setFixInterval(uint16_t interval) {
+
+	String cmd = "$PMTK220," + interval;
+
+	memset(buffer, 0, sizeof(buffer));
+
+	cmd.toCharArray((char*)buffer, sizeof(buffer), 0);
+
+	// handle checksum
+	uint8_t ret = 0;
+	for (uint16_t i = 1; i < cmd.length(); i++) {
+		ret ^= buffer[i];
+	}
+
+	snprintf((char*)buffer + cmd.length(), sizeof(buffer) - cmd.length(), "*%02X\r\n", ret);
+
+	GPS_UART_SEND(buffer, cmd.length() + 5);
+
 }

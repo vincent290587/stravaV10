@@ -54,6 +54,7 @@ public:
 	void standby(void);
 	void awake(void);
 
+	void setFixInterval(uint16_t interval);
 	void startHostAidingEPO(sLocationData& loc_data, uint32_t age_);
 
 	void startEpoUpdate(void);

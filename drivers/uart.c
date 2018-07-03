@@ -154,14 +154,14 @@ void uart_timer_init(void) {
 
 	 NRF_LOG_INFO("UART TX of %u bytes", length);
 
-	 while (!uart_xfer_done) {
-		 nrf_delay_ms(1);
-	 }
-
 	 ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
 	 APP_ERROR_CHECK(err_code);
 
 	 uart_xfer_done = false;
+
+	 while (!uart_xfer_done) {
+		 nrf_delay_ms(1);
+	 }
  }
 
 /**
