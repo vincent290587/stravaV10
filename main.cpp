@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "hardfault.h"
 #include "ant.h"
 #include "i2c.h"
 #include "notifications.h"
@@ -24,7 +25,9 @@
 #include "app_timer.h"
 #include "nrf_sdm.h"
 #include "nrf_pwr_mgmt.h"
+#include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
+#include "nrf_drv_power.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
@@ -83,7 +86,7 @@ void timer_event_handler(void* p_context)
  * @param[in] line_num   Line number of the failing ASSERT call.
  * @param[in] file_name  File name of the failing ASSERT call.
  */
-void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name)
+extern "C" void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name)
 {
     assert_info_t assert_info =
     {
@@ -112,7 +115,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name)
  * @param pc
  * @param info
  */
-void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
@@ -136,7 +139,13 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         }
         case NRF_FAULT_ID_SDK_ERROR:
         {
-#ifndef USE_SVIEW
+#if USE_SVIEW
+            error_info_t * p_info = (error_info_t *)info;
+            SEGGER_SYSVIEW_PrintfHost("ERROR %u at %s:%u",
+                          p_info->err_code,
+                          p_info->p_file_name,
+                          p_info->line_num);
+#else
             error_info_t * p_info = (error_info_t *)info;
             NRF_LOG_ERROR("ERROR %u [%s] at %s:%u",
                           p_info->err_code,
@@ -158,6 +167,16 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     // On assert, the system can only recover with a reset.
 #endif
 
+}
+
+extern "C" void HardFault_process(HardFault_stack_t * p_stack)
+{
+#ifdef DEBUG_NRF
+    NRF_BREAKPOINT_COND;
+    // On hardfault, the system can only recover with a reset.
+#endif
+    // Restart the system by default
+    NVIC_SystemReset();
 }
 
 /**@brief Function for initializing the nrf log module.
@@ -213,7 +232,7 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 		return true;
 	}
 
-	NRF_LOG_INFO("Power management allowed to reset to DFU mode.");
+	LOG_INFO("Power management allowed to reset to DFU mode.");
 	return true;
 }
 
@@ -281,7 +300,8 @@ int main(void)
 
 	log_init();
 
-	// TODO check nrf_power.h when S340 is ready
+    err_code = nrf_drv_power_init(NULL);
+    APP_ERROR_CHECK(err_code);
 
 	pins_init();
 

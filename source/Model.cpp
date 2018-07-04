@@ -53,7 +53,7 @@ void model_dispatch_sensors_update(void) {
 
 	uint16_t light_level = veml.getRawVisComp();
 
-	NRF_LOG_INFO("Light level: %u", light_level);
+	LOG_INFO("Light level: %u", light_level);
 	NRF_LOG_DEBUG("Temperature: %ld", (int)ms5637.m_temperature);
 	NRF_LOG_DEBUG("Pressure: %ld", (int)ms5637.m_pressure);
 

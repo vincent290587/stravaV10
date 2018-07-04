@@ -186,12 +186,12 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 	{
 	case PM_EVT_BONDED_PEER_CONNECTED:
 	{
-		NRF_LOG_INFO("Connected to a previously bonded device.");
+		LOG_INFO("Connected to a previously bonded device.");
 	} break;
 
 	case PM_EVT_CONN_SEC_SUCCEEDED:
 	{
-		NRF_LOG_INFO("Connection secured: role: %d, conn_handle: 0x%x, procedure: %d.",
+		LOG_INFO("Connection secured: role: %d, conn_handle: 0x%x, procedure: %d.",
 				ble_conn_state_role(p_evt->conn_handle),
 				p_evt->conn_handle,
 				p_evt->params.conn_sec_succeeded.procedure);
@@ -461,7 +461,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     {
         if (find_peer_addr(p_adv_report, &m_target_periph_addr))
         {
-            NRF_LOG_INFO("Address match send connect_request.");
+            LOG_INFO("Address match send connect_request.");
             do_connect = true;
         }
     }
@@ -470,7 +470,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
         if (ble_advdata_uuid_find(p_adv_report->data.p_data, p_adv_report->data.len, &target_uuid))
         {
             do_connect = true;
-            NRF_LOG_INFO("UUID match send connect_request.");
+            LOG_INFO("UUID match send connect_request.");
         }
     }
 
@@ -515,14 +515,14 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 	case BLE_GAP_EVT_CONNECTED:
 	{
-		NRF_LOG_INFO("Connected.");
+		LOG_INFO("Connected.");
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
 		err_code = ble_db_discovery_start(&m_db_disc, m_pending_db_disc_conn);
 		if (err_code == NRF_ERROR_BUSY)
 		{
-			NRF_LOG_INFO("ble_db_discovery_start() returned busy, will retry later.");
+			LOG_INFO("ble_db_discovery_start() returned busy, will retry later.");
 			m_retry_db_disc = true;
 		}
 		else
@@ -544,7 +544,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GAP_EVT_DISCONNECTED:
 	{
-		NRF_LOG_INFO("Disconnected, reason 0x%x.",
+		LOG_INFO("Disconnected, reason 0x%x.",
 				p_ble_evt->evt.gap_evt.params.disconnected.reason);
 
 		// Reset DB discovery structure.
@@ -566,7 +566,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		}
 		else if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN)
 		{
-			NRF_LOG_INFO("Connection Request timed out.");
+			LOG_INFO("Connection Request timed out.");
 		}
 	} break;
 
@@ -770,10 +770,10 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 		lns_info.ele = 0;
 		lns_info.speed = 0;
 
-		NRF_LOG_INFO("Latitude  = %ld", p_lns_c_evt->params.lns.lat);
-		NRF_LOG_INFO("Longitude = %ld", p_lns_c_evt->params.lns.lon);
+		LOG_INFO("Latitude  = %ld", p_lns_c_evt->params.lns.lat);
+		LOG_INFO("Longitude = %ld", p_lns_c_evt->params.lns.lon);
 
-		NRF_LOG_INFO("Ele %ld", p_lns_c_evt->params.lns.ele);
+		LOG_INFO("Ele %ld", p_lns_c_evt->params.lns.ele);
 
 		lns_info.secj = p_lns_c_evt->params.lns.utc_time.seconds;
 		lns_info.secj += p_lns_c_evt->params.lns.utc_time.minutes * 60;
@@ -799,7 +799,7 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 
 		model_dispatch_lns_update(&lns_info);
 
-		NRF_LOG_INFO("Sec jour = %d %d %d", p_lns_c_evt->params.lns.utc_time.hours,
+		LOG_INFO("Sec jour = %d %d %d", p_lns_c_evt->params.lns.utc_time.hours,
 				p_lns_c_evt->params.lns.utc_time.minutes,
 				p_lns_c_evt->params.lns.utc_time.seconds);
 
@@ -847,11 +847,11 @@ static void bas_c_evt_handler(ble_bas_c_t * p_bas_c, ble_bas_c_evt_t * p_bas_c_e
 	} break;
 
 	case BLE_BAS_C_EVT_BATT_NOTIFICATION:
-		NRF_LOG_INFO("Battery Level received %d %%.\r\n", p_bas_c_evt->params.battery_level);
+		LOG_INFO("Battery Level received %d %%.\r\n", p_bas_c_evt->params.battery_level);
 		break;
 
 	case BLE_BAS_C_EVT_BATT_READ_RESP:
-		NRF_LOG_INFO("Battery Level Read as %d %%.\r\n", p_bas_c_evt->params.battery_level);
+		LOG_INFO("Battery Level Read as %d %%.\r\n", p_bas_c_evt->params.battery_level);
 		break;
 
 	default:
@@ -997,7 +997,7 @@ static void scan_start(void)
 		m_scan_param.timeout       = SCAN_DURATION_WITELIST;
 	}
 
-	NRF_LOG_INFO("Starting scan.");
+	LOG_INFO("Starting scan.");
 
 	ret = sd_ble_gap_scan_start(&m_scan_param, &m_scan_buffer);
 	APP_ERROR_CHECK(ret);
@@ -1013,14 +1013,14 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 	{
 	case NRF_BLE_GATT_EVT_ATT_MTU_UPDATED:
 	{
-		NRF_LOG_INFO("GATT ATT MTU on connection 0x%x changed to %d.",
+		LOG_INFO("GATT ATT MTU on connection 0x%x changed to %d.",
 				p_evt->conn_handle,
 				p_evt->params.att_mtu_effective);
 	} break;
 
 	case NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED:
 	{
-		NRF_LOG_INFO("Data length for connection 0x%x updated to %d.",
+		LOG_INFO("Data length for connection 0x%x updated to %d.",
 				p_evt->conn_handle,
 				p_evt->params.data_length);
 	} break;

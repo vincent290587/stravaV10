@@ -216,12 +216,12 @@ float compute2Complement(uint8_t msb, uint8_t lsb) {
 		val = (t & 0xFF00) | (tl & 0x00FF);
 		val -= 1;
 		val = ~(val | 0b1110000000000000);
-		//NRF_LOG_INFO("Raw 2c1: %u\r\n", val);
+		//LOG_INFO("Raw 2c1: %u\r\n", val);
 		ret = (float)val;
 	} else {
 		t = (th & 0xFF) << 8;
 		val = (t & 0xFF00) | (tl & 0x00FF);
-		//NRF_LOG_INFO("Raw 2c2: %u\r\n", val);
+		//LOG_INFO("Raw 2c2: %u\r\n", val);
 		ret = (float)-val;
 	}
 

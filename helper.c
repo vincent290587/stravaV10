@@ -114,12 +114,12 @@ float compute2Complement16_t(uint8_t msb, uint8_t lsb) {
 		val = (t & 0xFF00) | (tl & 0x00FF);
 		val -= 1;
 		val = ~(val | 0b1000000000000000);
-		//NRF_LOG_INFO("Raw 2c1: %u\r\n", val);
+		//LOG_INFO("Raw 2c1: %u\r\n", val);
 		ret = (float)val;
 	} else {
 		t = (th & 0xFF) << 8;
 		val = (t & 0xFF00) | (tl & 0x00FF);
-		//NRF_LOG_INFO("Raw 2c2: %u\r\n", val);
+		//LOG_INFO("Raw 2c2: %u\r\n", val);
 		ret = (float)-val;
 	}
 
@@ -135,11 +135,11 @@ float compute2Complement24_t(uint8_t msb, uint8_t csb, uint8_t lsb) {
 		val = (th << 16) | (tc << 8) | tl;
 		val -= 1;
 		val = ~(val | 0b100000000000000000000000);
-		//NRF_LOG_INFO("Raw 2c1: %u\r\n", val);
+		//LOG_INFO("Raw 2c1: %u\r\n", val);
 		ret = (float)val;
 	} else {
 		val = (th << 16) | (tc << 8) | tl;
-		//NRF_LOG_INFO("Raw 2c2: %u\r\n", val);
+		//LOG_INFO("Raw 2c2: %u\r\n", val);
 		ret = (float)-val;
 	}
 

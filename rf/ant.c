@@ -232,7 +232,7 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
 
 			if (pusDeviceNumber) is_hrm_init = 1;
 		}
-		NRF_LOG_INFO("HRM RX\r\n");
+		LOG_INFO("HRM RX\r\n");
 		ant_hrm_disp_evt_handler(p_ant_evt, &m_ant_hrm);
 		break;
 	case EVENT_RX_FAIL:
@@ -413,7 +413,7 @@ void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event)
 		bsc_info.speed = calculate_speed(p_profile->BSC_PROFILE_speed_rev_count, p_profile->BSC_PROFILE_speed_event_time);
 		bsc_info.cadence = calculate_cadence(p_profile->BSC_PROFILE_cadence_rev_count, p_profile->BSC_PROFILE_cadence_event_time);
 
-		NRF_LOG_INFO("Evenement BSC speed=%lu cad=%lu\n",
+		LOG_INFO("Evenement BSC speed=%lu cad=%lu\n",
 				bsc_info.cadence, bsc_info.speed);
 	}
 		break;
@@ -455,7 +455,7 @@ static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t eve
 
 	case ANT_HRM_PAGE_4_UPDATED:
 
-		NRF_LOG_INFO( "Evenement HR BPM=%u\n", hrm_info.bpm);
+		LOG_INFO( "Evenement HR BPM=%u\n", hrm_info.bpm);
 
 		// Ensure that there is only one beat between time intervals.
 		if ((beat_count - s_previous_beat_count) == 1)
@@ -467,7 +467,7 @@ static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t eve
 
 			// Subtracting the event time gives the R-R interval
 			//ble_hrs_rr_interval_add(&m_hrs, beat_time - prev_beat);
-			NRF_LOG_INFO( "Evenement HR RR=%u\n", hrm_info.rr);
+			LOG_INFO( "Evenement HR RR=%u\n", hrm_info.rr);
 
 		}
 

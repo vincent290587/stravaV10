@@ -533,7 +533,7 @@ size_t Adafruit_GFX::write(uint8_t c) {
 								(uint8_t)pgm_read_byte(&gfxFont->yAdvance);
 					}
 
-					//NRF_LOG_INFO("drawChar x=%d y=%d\r\n",cursor_x, cursor_y);
+					//LOG_INFO("drawChar x=%d y=%d\r\n",cursor_x, cursor_y);
 
 					drawChar(cursor_x, cursor_y, c, textcolor, textbgcolor, textsize);
 				}

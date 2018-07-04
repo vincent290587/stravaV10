@@ -105,12 +105,12 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 	{
 	case ANT_FEC_PAGE_1_UPDATED:
 		// calibration data received from sensor
-		NRF_LOG_INFO("Received calibration data");
+		LOG_INFO("Received calibration data");
 		break;
 
 	case ANT_FEC_PAGE_2_UPDATED:
 		// calibration data received from sensor
-		NRF_LOG_INFO("Updated calibration data");
+		LOG_INFO("Updated calibration data");
 		break;
 
 	case ANT_FEC_PAGE_16_UPDATED:
@@ -137,17 +137,17 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 		/* fall through */
 	case ANT_FEC_PAGE_81_UPDATED:
 		// data actualization
-		NRF_LOG_INFO("Page %u was updated", event);
+		LOG_INFO("Page %u was updated", event);
 		break;
 
 	case ANT_FEC_CALIB_TIMEOUT:
 		// calibration request time-out
-		NRF_LOG_INFO("ANT_FEC_CALIB_TIMEOUT");
+		LOG_INFO("ANT_FEC_CALIB_TIMEOUT");
 		break;
 
 	case ANT_FEC_CALIB_REQUEST_TX_FAILED:
 		// Please consider retrying the request.
-		NRF_LOG_INFO("ANT_FEC_CALIB_REQUEST_TX_FAILED");
+		LOG_INFO("ANT_FEC_CALIB_REQUEST_TX_FAILED");
 		break;
 
 	default:
@@ -206,7 +206,7 @@ void roller_manager_tasks(void) {
 		sd_ant_pending_transmit (m_ant_fec.channel_number, &is_pending);
 		if (!is_pending) {
 
-			NRF_LOG_INFO("Transmitting track simulation...");
+			LOG_INFO("Transmitting track simulation...");
 
 			uint32_t err_code = sd_ant_acknowledge_message_tx(m_ant_fec.channel_number,
 					sizeof (m_fec_message_payload),
@@ -237,7 +237,7 @@ void fec_init(void) {
 
 void fec_set_control(sFecControl* tbc) {
 
-	NRF_LOG_INFO("FEC control type %u", tbc->type);
+	LOG_INFO("FEC control type %u", tbc->type);
 
 	memcpy(&fec_control, tbc, sizeof(fec_control));
 

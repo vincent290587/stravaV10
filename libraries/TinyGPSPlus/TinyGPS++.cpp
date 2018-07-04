@@ -204,7 +204,7 @@ bool TinyGPSPlus::endOfTermHandler()
     else
     {
       ++failedChecksumCount;
-      LOG_ERROR(" -----> Wrong checksum !\r\n");
+      LOG_ERROR(" -----> Wrong checksum !");
     }
 
     return false;

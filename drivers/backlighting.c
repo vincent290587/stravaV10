@@ -76,12 +76,12 @@ void backlighting_set_control(sBacklightOrders* control) {
 	} else if (control->state) {
 
 		// turn on/off
-		NRF_LOG_INFO("Backlighting ON");
+		LOG_INFO("Backlighting ON");
 		nrf_gpio_pin_set(BCK_PIN);
 
 	} else {
 
-		NRF_LOG_INFO("Backlighting OFF");
+		LOG_INFO("Backlighting OFF");
 		nrf_gpio_pin_clear(BCK_PIN);
 
 	}

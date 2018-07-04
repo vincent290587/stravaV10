@@ -49,29 +49,29 @@ int sd_functions_init(void) {
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
 
-	NRF_LOG_INFO("Initializing disk 0 (SDC)...");
+	LOG_INFO("Initializing disk 0 (SDC)...");
 	for (uint32_t retries = 3; retries && disk_state; --retries)
 	{
 		disk_state = disk_initialize(0);
 	}
 	if (disk_state)
 	{
-		NRF_LOG_INFO("Disk initialization failed.");
+		LOG_INFO("Disk initialization failed.");
 		return -1;
 	}
 
 	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_size;
 	uint32_t capacity = m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_count / blocks_per_mb;
-	NRF_LOG_INFO("Capacity: %d MB", capacity);
+	LOG_INFO("Capacity: %d MB", capacity);
 
-	NRF_LOG_INFO("Mounting volume...");
+	LOG_INFO("Mounting volume...");
 	ff_result = f_mount(&fs, "", 1);
 	if (ff_result)
 	{
-		NRF_LOG_INFO("Mount failed.");
+		LOG_INFO("Mount failed.");
 		return -2;
 	}
-	NRF_LOG_INFO("Volume mounted");
+	LOG_INFO("Volume mounted");
 
 	return 0;
 }

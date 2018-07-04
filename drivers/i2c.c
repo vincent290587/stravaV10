@@ -76,21 +76,21 @@ void i2c_scan(void) {
     err_code = nrf_drv_twi_rx(&m_twi, 0x76, &sample_data, sizeof(sample_data));
     if (err_code == NRF_SUCCESS)
     {
-    	NRF_LOG_INFO("TWI device detected at address 0x%X", 0x76);
+    	LOG_INFO("TWI device detected at address 0x%X", 0x76);
     }
     NRF_LOG_FLUSH();
 
     err_code = nrf_drv_twi_rx(&m_twi, 0x10, &sample_data, sizeof(sample_data));
     if (err_code == NRF_SUCCESS)
     {
-    	NRF_LOG_INFO("TWI device detected at address 0x%X", 0x10);
+    	LOG_INFO("TWI device detected at address 0x%X", 0x10);
     }
     NRF_LOG_FLUSH();
 
     err_code = nrf_drv_twi_rx(&m_twi, 0x1E, &sample_data, sizeof(sample_data));
     if (err_code == NRF_SUCCESS)
     {
-    	NRF_LOG_INFO("TWI device detected at address 0x%X", 0x1E);
+    	LOG_INFO("TWI device detected at address 0x%X", 0x1E);
     }
     NRF_LOG_FLUSH();
 #endif
@@ -142,7 +142,7 @@ bool i2c_read8(uint8_t address, uint8_t *val) {
 
 	uint32_t err_code = nrf_drv_twi_rx(i2c_get_ref(), address, val, 1);
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI read8 problem at address 0x%x.", address);
+		LOG_INFO("TWI read8 problem at address 0x%x.", address);
 		NRF_LOG_FLUSH();
 		return false;
 	}
@@ -155,7 +155,7 @@ bool i2c_read_n(uint8_t address, uint8_t *val, unsigned int len) {
 
 	uint32_t err_code = nrf_drv_twi_rx(i2c_get_ref(), address, val, len);
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI readn error 0x%X at address 0x%x.", err_code, address);
+		LOG_INFO("TWI readn error 0x%X at address 0x%x.", err_code, address);
 		NRF_LOG_FLUSH();
 		return false;
 	}
@@ -175,7 +175,7 @@ bool i2c_write8(uint8_t address, uint8_t val) {
 
 	uint32_t err_code = nrf_drv_twi_tx(i2c_get_ref(), address, &sample_data, 1, true);
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI write8 error 0x%X at address 0x%x value= 0x%x.", err_code, address, val);
+		LOG_INFO("TWI write8 error 0x%X at address 0x%x value= 0x%x.", err_code, address, val);
 		NRF_LOG_FLUSH();
 		return false;
 	}
@@ -189,7 +189,7 @@ bool i2c_write8_cont(uint8_t address, uint8_t val) {
 
 	uint32_t err_code = nrf_drv_twi_tx(i2c_get_ref(), address, &sample_data, 1, false);
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI write8_c problem at address 0x%x.", address);
+		LOG_INFO("TWI write8_c problem at address 0x%x.", address);
 		NRF_LOG_FLUSH();
 		return false;
 	}
@@ -212,7 +212,7 @@ bool i2c_write_n(uint8_t address, uint8_t *val, unsigned int len) {
 	ret_code_t err_code = nrf_drv_twi_tx(i2c_get_ref(), address, val, len, true);
 
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI i2c_write_n problem at address 0x%x.", address);
+		LOG_INFO("TWI i2c_write_n problem at address 0x%x.", address);
 		NRF_LOG_FLUSH();
 		return false;
 	}
@@ -234,7 +234,7 @@ bool i2c_write_reg_8(uint8_t address, uint8_t reg, uint8_t val) {
 
 	uint32_t err_code = nrf_drv_twi_tx(i2c_get_ref(), address, sample_data, 2, true);
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI write_reg_8 error 0x%X @ 0x%x reg=0x%x val=0x%x.", err_code, address, reg, val);
+		LOG_INFO("TWI write_reg_8 error 0x%X @ 0x%x reg=0x%x val=0x%x.", err_code, address, reg, val);
 		NRF_LOG_FLUSH();
 		return false;
 	}
@@ -257,7 +257,7 @@ bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
 	// read from I2C
 	err_code |= nrf_drv_twi_rx(i2c_get_ref(), address, val, 1);
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI read_reg_8 problem at address 0x%x.", address);
+		LOG_INFO("TWI read_reg_8 problem at address 0x%x.", address);
 		NRF_LOG_FLUSH();
 		return false;
 	}
@@ -280,7 +280,7 @@ bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len
 	// read from I2C
 	err_code |= nrf_drv_twi_rx(i2c_get_ref(), address, val, len);
 	if (err_code != NRF_SUCCESS) {
-		NRF_LOG_INFO("TWI read_reg_n error 0x%X at address 0x%x.", err_code, address);
+		LOG_INFO("TWI read_reg_n error 0x%X at address 0x%x.", err_code, address);
 		NRF_LOG_FLUSH();
 		return false;
 	}

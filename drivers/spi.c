@@ -32,6 +32,8 @@ static volatile bool spi_xfer_done = true;  /**< Flag used to indicate that SPI 
 
 static nrfx_spim_config_t m_spi_config = NRFX_SPIM_DEFAULT_CONFIG;
 
+static bool m_is_started = false;
+
 /**
  *
  * @param p_event
@@ -73,7 +75,17 @@ void spi_init(void)
 
 	p_spi_config[0] = NULL;
 
-	NRF_LOG_INFO("SPI configured");
+	LOG_INFO("SPI configured");
+}
+
+/**
+ *
+ */
+static void _spi_start(void)
+{
+	APP_ERROR_CHECK(nrfx_spim_init(&spi, &m_spi_config, spim_event_handler, (void*)p_spi_config));
+
+	m_is_started = true;
 }
 
 /**
@@ -81,8 +93,10 @@ void spi_init(void)
  */
 void spi_uninit(void)
 {
-	NRF_LOG_INFO("SPI uninit");
+	LOG_INFO("SPI uninit");
 	nrfx_spim_uninit(&spi);
+
+	m_is_started = false;
 }
 
 /**
@@ -131,21 +145,20 @@ void spi_schedule (sSpimConfig const * spi_config,
 			m_spi_config.bit_order      = spi_config->bit_order;
 			m_spi_config.frequency      = spi_config->frequency;
 
-			APP_ERROR_CHECK(nrfx_spim_init(&spi, &m_spi_config, spim_event_handler, (void*)p_spi_config));
-
 		} else {
 			// first transfer ever: configure
 			m_spi_config.bit_order      = spi_config->bit_order;
 			m_spi_config.frequency      = spi_config->frequency;
-
-			APP_ERROR_CHECK(nrfx_spim_init(&spi, &m_spi_config, spim_event_handler, (void*)p_spi_config));
 		}
+
+		_spi_start();
 
 		p_spi_config[0] = spi_config;
 
 		NRF_LOG_WARNING("SPI configuration changed");
 	}
 
+	ASSERT(m_is_started);
 
 	W_SYSVIEW_OnTaskStartExec(SPI_TASK);
 

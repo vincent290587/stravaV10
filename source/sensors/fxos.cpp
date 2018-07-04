@@ -568,6 +568,6 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 
 	g_Yaw_LP += (g_Yaw - g_Yaw_LP) * 0.01;
 
-	NRF_LOG_INFO("Compass Angle: %d", (int)g_Yaw);
+	LOG_INFO("Compass Angle: %d", (int)g_Yaw);
 
 }

@@ -15,6 +15,9 @@
 
 /////////    PARAMETERS
 
+#ifndef USE_VCOM_LOGS
+#define USE_VCOM_LOGS     0
+#endif
 
 #ifndef USE_SVIEW
 #define USE_SVIEW         0
@@ -38,11 +41,23 @@
 #if USE_SVIEW
 #define LOG_INFO(...)                  EMPTY_MACRO
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-//#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
-#define LOG_ERROR(...)                 SEGGER_SYSVIEW_PrintfHost(__VA_ARGS__)
+#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
+//#define LOG_ERROR(...)                 SEGGER_SYSVIEW_PrintfHost(__VA_ARGS__)
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                segger_init()
+#elif USE_VCOM_LOGS
+#include "usb_cdc.h"
+#define LOG_INFO(...)                  usb_printf(__VA_ARGS__)
+#define LOG_WARNING(...)               usb_printf(__VA_ARGS__)
+#define LOG_DEBUG(...)                 EMPTY_MACRO
+#define LOG_ERROR(...)                 usb_printf(__VA_ARGS__)
+#define LOG_GRAPH(...)                 EMPTY_MACRO
+#define LOG_FLUSH(...)                 EMPTY_MACRO
+#define LOG_SET_TERM(X)                EMPTY_MACRO
+#define SVIEW_INIT(...)                EMPTY_MACRO
+//#undef NRF_LOG_BACKEND_RTT_ENABLED
+//#define NRF_LOG_BACKEND_RTT_ENABLED 0
 #elif NRF_LOG_BACKEND_RTT_ENABLED
 #define LOG_INFO(...)                  NRF_LOG_INFO(__VA_ARGS__)
 #define LOG_WARNING(...)               NRF_LOG_WARNING(__VA_ARGS__)
@@ -109,13 +124,9 @@
 extern "C" {
 #endif /* _cplusplus */
 
+
 void segger_init(void);
 
-//void segger_update_clocks(void);
-//
-//void segger_send(UART_Type *base, const uint8_t *buffer, size_t length);
-//
-//status_t segger_recv(UART_Type *base, uint8_t *buffer, size_t length);
 
 #if defined(__cplusplus)
 }
