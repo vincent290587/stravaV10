@@ -26,13 +26,14 @@
  * Code
  ******************************************************************************/
 
-
 /**
  *
  */
 void millis_init(void) {
 
-	uint32_t err_code = app_timer_init();
+	uint32_t err_code;
+
+	err_code = app_timer_init();
 	APP_ERROR_CHECK(err_code);
 
 }

@@ -20,6 +20,10 @@
 #define USE_SVIEW         0
 #endif
 
+#ifndef NRF_LOG_BACKEND_RTT_ENABLED
+#define NRF_LOG_BACKEND_RTT_ENABLED 1
+#endif
+
 #if USE_SVIEW
 #include "SEGGER_SYSVIEW.h"
 #endif
@@ -39,13 +43,22 @@
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                segger_init()
-#else
+#elif NRF_LOG_BACKEND_RTT_ENABLED
 #define LOG_INFO(...)                  NRF_LOG_INFO(__VA_ARGS__)
 #define LOG_WARNING(...)               NRF_LOG_WARNING(__VA_ARGS__)
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 NRF_LOG_ERROR(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 NRF_LOG_FLUSH();
+#define LOG_SET_TERM(X)                EMPTY_MACRO
+#define SVIEW_INIT(...)                EMPTY_MACRO
+#else
+#define LOG_INFO(...)                  EMPTY_MACRO
+#define LOG_WARNING(...)               EMPTY_MACRO
+#define LOG_DEBUG(...)                 EMPTY_MACRO
+#define LOG_ERROR(...)                 EMPTY_MACRO
+#define LOG_GRAPH(...)                 EMPTY_MACRO
+#define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                EMPTY_MACRO
 #endif

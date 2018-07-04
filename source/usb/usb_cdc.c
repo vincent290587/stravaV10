@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 
@@ -18,6 +19,7 @@
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
 
+#include "millis.h"
 #include "app_error.h"
 #include "app_util.h"
 #include "app_timer.h"
@@ -53,6 +55,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 #define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
 #define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
 
+#define CDC_X_BUFFERS           (0b111)
 
 /**
  * @brief CDC_ACM class instance
@@ -69,10 +72,17 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
 
 #define READ_SIZE 1
 
-static char m_rx_buffer[READ_SIZE];
-static char m_tx_buffer[NRF_DRV_USBD_EPSIZE];
-static bool m_send_flag = 0;
+static char m_usb_char_buffer[256];
 
+static char m_rx_buffer[READ_SIZE];
+
+static char m_tx_buffer[CDC_X_BUFFERS+1][NRF_DRV_USBD_EPSIZE];
+static uint16_t m_tx_buffer_bytes_nb[CDC_X_BUFFERS+1];
+static uint8_t m_tx_buffer_index = 0;
+
+static volatile bool m_is_xfer_done = true;
+
+static uint32_t m_last_buffered = 0;
 
 /**
  * @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t (headphones)
@@ -97,8 +107,9 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
             break;
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
-
-            break;
+        {
+        	m_is_xfer_done = true;
+        } break;
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
         {
             ret_code_t ret;
@@ -113,9 +124,10 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
                 ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
                                             m_rx_buffer,
                                             READ_SIZE);
-            } while (ret == NRF_SUCCESS);
 
-            m_send_flag = 1;
+                // TODO parse chars
+
+            } while (ret == NRF_SUCCESS);
 
             break;
         }
@@ -177,9 +189,12 @@ void usb_cdc_init(void)
 
     nrf_drv_clock_lfclk_request(NULL);
 
+    NRF_LOG_INFO("Starting LF clock");
     while(!nrf_drv_clock_lfclk_is_running())
     {
         /* Just waiting */
+    	NRF_LOG_RAW_INFO(".");
+    	nrf_delay_ms(1);
     }
 
     ret = app_timer_init();
@@ -189,7 +204,7 @@ void usb_cdc_init(void)
 
     ret = app_usbd_init(&usbd_config);
     APP_ERROR_CHECK(ret);
-    NRF_LOG_INFO("USBD CDC ACM example started.");
+    NRF_LOG_INFO("USBD CDC ACM started.");
 
     app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     ret = app_usbd_class_append(class_cdc_acm);
@@ -210,6 +225,69 @@ void usb_cdc_init(void)
 
 }
 
+/**
+ *
+ */
+void usb_cdc_trigger_xfer(void) {
+
+	ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
+			m_tx_buffer[m_tx_buffer_index],
+			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
+	APP_ERROR_CHECK(ret);
+
+	m_is_xfer_done = false;
+
+	// switch buffers
+	m_tx_buffer_index++;
+	m_tx_buffer_index = m_tx_buffer_index & CDC_X_BUFFERS;
+
+	// reset current buffer
+	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
+}
+
+
+/**
+ * Prints a char* to VCOM printf style
+ * @param format
+ */
+void usb_printf(const char *format, ...) {
+
+	va_list args;
+	va_start(args, format);
+
+	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
+
+	int length = vsnprintf(m_usb_char_buffer,
+			sizeof(m_usb_char_buffer),
+			format, args);
+
+	for (int i=0; i < length; i++) {
+
+		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+
+		if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
+			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
+		} else {
+			// buffer full: trigger xfer to switch buffers
+			usb_cdc_trigger_xfer();
+
+			// refrsh index
+			ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+			// store bytes
+			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
+		}
+
+	}
+
+	//LOG_INFO("Filling USB ringbuffer\r\n");
+
+	m_last_buffered = millis();
+
+}
+
+/**
+ *
+ */
 void usb_cdc_tasks(void) {
 
 	while (app_usbd_event_queue_process())
@@ -217,23 +295,13 @@ void usb_cdc_tasks(void) {
 		/* Nothing to do */
 	}
 
-	if(m_send_flag)
-	{
-		static int  frame_counter;
+	// send if inactive and data is waiting in buffer or if the buffer is almost full
+	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] > NRF_DRV_USBD_EPSIZE - 5 ||
+			(m_tx_buffer_bytes_nb[m_tx_buffer_index] && millis() - m_last_buffered > 50)) {
 
-		size_t size = sprintf(m_tx_buffer, "Hello USB CDC FA demo: %u\r\n", frame_counter);
+		usb_cdc_trigger_xfer();
 
-		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm, m_tx_buffer, size);
-		if (ret == NRF_SUCCESS)
-		{
-			++frame_counter;
-		}
 	}
 
-
 }
-
-/** @} */
-
-
 

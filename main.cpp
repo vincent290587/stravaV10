@@ -288,8 +288,10 @@ int main(void)
 	// Initialize timer module
 #ifdef USB_ENABLED
 	usb_cdc_init();
+#else
+	err_code = app_timer_init();
+    APP_ERROR_CHECK(err_code);
 #endif
-	millis_init();
 
 	// Initialize.
     //Configure WDT.
