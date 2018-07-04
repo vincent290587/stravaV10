@@ -54,6 +54,23 @@ uint32_t locator_encode_char(char c) {
 	return 0;
 }
 
+/**
+ *
+ */
+void locator_dispatch_lns_update(sLnsInfo *lns_info) {
+
+	// convert data
+	locator.nrf_loc.data.alt = (float)(lns_info->ele / 100.);
+	locator.nrf_loc.data.lat = (float)(lns_info->lat / 10000000.);
+	locator.nrf_loc.data.lon = (float)(lns_info->lon / 10000000.);
+	locator.nrf_loc.data.speed = (float)(lns_info->speed / 10.);
+
+	locator.nrf_loc.data.utc_time = lns_info->secj;
+	locator.nrf_loc.data.date = lns_info->date;
+
+	locator.nrf_loc.setIsUpdated();
+}
+
 
 Locator::Locator() {
 	m_is_updated = false;
@@ -141,6 +158,8 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 
 	eLocationSource res = this->getUpdateSource();
 
+	LOG_INFO("Locator update source: %u", (uint8_t)res);
+
 	switch (res) {
 	case eLocationSourceSimu:
 	{
@@ -174,6 +193,8 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	break;
 	case eLocationSourceGPS:
 	{
+		LOG_INFO("Lat: %d", (int)(gps_loc.data.lat*1000));
+
 		loc_.lat = gps_loc.data.lat;
 		loc_.lon = gps_loc.data.lon;
 		loc_.speed = gps_loc.data.speed;

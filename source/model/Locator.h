@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "mk64f_parser.h"
 
 #define MAX_SATELLITES     40
 #define ACTIVE_VAL         5
@@ -47,6 +48,8 @@ extern "C" {
 #endif /* _cplusplus */
 
 uint32_t locator_encode_char(char c);
+
+void locator_dispatch_lns_update(sLnsInfo *lns_info);
 
 #if defined(__cplusplus)
 }

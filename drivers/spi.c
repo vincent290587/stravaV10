@@ -160,11 +160,16 @@ void spi_schedule (sSpimConfig const * spi_config,
 
 	ASSERT(m_is_started);
 
-	W_SYSVIEW_OnTaskStartExec(SPI_TASK);
+	ret_code_t err = nrfx_spim_xfer(&spi, &xfer_desc, 0);
+	APP_ERROR_CHECK(err);
 
-	// Xfer bytes
-	spi_xfer_done = false;
-	APP_ERROR_CHECK(nrfx_spim_xfer(&spi, &xfer_desc, 0));
+	if (!err) {
+
+		W_SYSVIEW_OnTaskStartExec(SPI_TASK);
+
+		// Xfer bytes
+		spi_xfer_done = false;
+	}
 
 	if (spi_config->blocking) {
 		// wait for last transfer to finish

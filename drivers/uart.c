@@ -1,7 +1,7 @@
 /*
  * serial_handling.c
  *
- *  Created on: 9 août 2017
+ *  Created on: 9 aoÃ»t 2017
  *      Author: Vincent
  */
 
@@ -43,6 +43,7 @@ static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI
 static uint8_t m_uart_rx_buffer[4];
 
 
+
 /**
  * @brief Handler for timer events.
  */
@@ -63,10 +64,16 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     switch (p_event->type) {
     case NRFX_UARTE_EVT_ERROR:
     {
-    	//APP_ERROR_CHECK(p_event->data.error.error_mask);
-    	NRF_LOG_ERROR("UARTE error: 0x%X", p_event->data.error.error_mask);
+    	if ((UARTE_ERRORSRC_FRAMING_Msk | p_event->data.error.error_mask) ||
+    			(NRF_UARTE_ERROR_PARITY_MASK | p_event->data.error.error_mask)) {
 
-    	nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
+    		NRF_LOG_ERROR("UART restarted");
+
+    		// restart UART at last baud
+    		 uart_uninit();
+    		 nrf_delay_us(100);
+    		 uart_init(m_baud);
+    	}
     }
     break;
     case NRFX_UARTE_EVT_RX_DONE:
@@ -114,6 +121,8 @@ void uart_timer_init(void) {
  */
  void uart_init(nrf_uarte_baudrate_t baud)
 {
+	 m_baud = baud;
+
 	 nrfx_uarte_config_t nrf_uarte_config = NRFX_UARTE_DEFAULT_CONFIG;
 
 	 nrf_uarte_config.pseltxd    = TX_PIN_NUMBER;
@@ -158,7 +167,7 @@ void uart_timer_init(void) {
 	 ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
 	 APP_ERROR_CHECK(err_code);
 
-	 uart_xfer_done = false;
+	 if (!err_code) uart_xfer_done = false;
 
 	 while (!uart_xfer_done) {
 		 nrf_delay_ms(1);
