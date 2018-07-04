@@ -49,8 +49,8 @@ OPT = -O3 -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
-#CFLAGS += -DUSB_ENABLED
-#CFLAGS += -DUSE_VCOM_LOGS=1
+CFLAGS += -DUSB_ENABLED
+CFLAGS += -DUSE_VCOM_LOGS=1
 #CFLAGS += -DUSE_SVIEW=1
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
@@ -117,6 +117,7 @@ flash: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	@echo Flashing: $<
 	nrfjprog --program $< -f nrf52 --sectorerase
 	nrfjprog --reset -f nrf52
+	nrfjprog --run
 
 settings:
 	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex

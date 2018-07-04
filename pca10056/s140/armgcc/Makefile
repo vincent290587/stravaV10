@@ -43,7 +43,6 @@ CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DCONFIG_NFCT_PINS_AS_GPIOS
 CFLAGS += -DBOARD_CUSTOM
-CFLAGS += -DNRF52840
 CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DNRF_SD_BLE_API_VERSION=6
@@ -66,7 +65,6 @@ ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DBOARD_STRAVA5
-ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += -D__HEAP_SIZE=150000
 ASMFLAGS += -DBLE_STACK_SUPPORT_REQD
@@ -109,6 +107,7 @@ flash: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	@echo Flashing: $<
 	nrfjprog --program $< -f nrf52 --sectorerase
 	nrfjprog --reset -f nrf52
+	nrfjprog --run
 
 # Flash softdevice
 flash_softdevice:
