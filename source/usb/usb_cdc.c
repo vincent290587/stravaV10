@@ -18,6 +18,8 @@
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
+#include "usb_parser.h"
+#include "segger_wrapper.h"
 
 #include "millis.h"
 #include "app_error.h"
@@ -55,7 +57,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 #define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
 #define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
 
-#define CDC_X_BUFFERS           (0b111)
+#define CDC_X_BUFFERS           (0b11)
 
 /**
  * @brief CDC_ACM class instance
@@ -125,9 +127,12 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
                                             m_rx_buffer,
                                             READ_SIZE);
 
-                // TODO parse chars
+                // parse chars
+                //usb_cdc_decoder(m_rx_buffer[0]);
 
             } while (ret == NRF_SUCCESS);
+
+            LOG_INFO("Bytes waiting: %d", app_usbd_cdc_acm_bytes_stored(p_cdc_acm));
 
             break;
         }
@@ -172,6 +177,40 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
             break;
     }
 }
+
+
+/**
+ *
+ */
+static void usb_cdc_trigger_xfer(void) {
+
+	NRF_LOG_INFO("VCOM Xfer triggered index %u with %u bytes",
+			m_tx_buffer_index,
+			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
+
+	if (nrf_drv_usbd_is_started()) {
+
+//		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
+//				m_tx_buffer[m_tx_buffer_index],
+//				m_tx_buffer_bytes_nb[m_tx_buffer_index]);
+//		APP_ERROR_CHECK(ret);
+//
+//		m_is_xfer_done = false;
+
+	} else {
+		NRF_LOG_INFO("Waiting for VCOM connection")
+	}
+
+	// switch buffers
+	m_tx_buffer_index++;
+	m_tx_buffer_index = m_tx_buffer_index & CDC_X_BUFFERS;
+
+	NRF_LOG_INFO("VCOM new index %u", m_tx_buffer_index);
+
+	// reset new buffer
+	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
+}
+
 
 
 /**
@@ -228,66 +267,6 @@ void usb_cdc_init(void)
 /**
  *
  */
-void usb_cdc_trigger_xfer(void) {
-
-	ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
-			m_tx_buffer[m_tx_buffer_index],
-			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
-	APP_ERROR_CHECK(ret);
-
-	m_is_xfer_done = false;
-
-	// switch buffers
-	m_tx_buffer_index++;
-	m_tx_buffer_index = m_tx_buffer_index & CDC_X_BUFFERS;
-
-	// reset current buffer
-	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
-}
-
-
-/**
- * Prints a char* to VCOM printf style
- * @param format
- */
-void usb_printf(const char *format, ...) {
-
-	va_list args;
-	va_start(args, format);
-
-	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
-
-	int length = vsnprintf(m_usb_char_buffer,
-			sizeof(m_usb_char_buffer),
-			format, args);
-
-	for (int i=0; i < length; i++) {
-
-		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-
-		if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
-			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
-		} else {
-			// buffer full: trigger xfer to switch buffers
-			usb_cdc_trigger_xfer();
-
-			// refrsh index
-			ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-			// store bytes
-			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
-		}
-
-	}
-
-	//LOG_INFO("Filling USB ringbuffer\r\n");
-
-	m_last_buffered = millis();
-
-}
-
-/**
- *
- */
 void usb_cdc_tasks(void) {
 
 	while (app_usbd_event_queue_process())
@@ -305,3 +284,52 @@ void usb_cdc_tasks(void) {
 
 }
 
+
+/**
+ * Prints a char* to VCOM printf style
+ * @param format
+ */
+void usb_printf(const char *format, ...) {
+
+	va_list args;
+	va_start(args, format);
+
+	return;
+
+	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
+
+	int length = vsnprintf(m_usb_char_buffer,
+			sizeof(m_usb_char_buffer),
+			format, args);
+
+	NRF_LOG_INFO("Printing %d bytes to VCOM", length);
+
+	for (int i=0; i < length; i++) {
+
+		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+
+		if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
+			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
+		} else {
+			// buffer full: trigger xfer to switch buffers
+			usb_cdc_trigger_xfer();
+
+			// process queue
+			usb_cdc_tasks();
+
+			ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
+
+			// refrsh index
+			ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+			// store bytes
+			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
+		}
+
+		// increase index
+		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
+
+	}
+
+	m_last_buffered = millis();
+
+}

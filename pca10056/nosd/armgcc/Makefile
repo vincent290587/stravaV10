@@ -15,6 +15,7 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   $(wildcard $(PROJ_DIR)/source/usb/*.c) \
+  $(wildcard $(PROJ_DIR)/source/usb/*.cpp) \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd.c \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_core.c \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_serial_num.c \
@@ -48,14 +49,15 @@ OPT = -O3 -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
+#CFLAGS += -DUSB_ENABLED
+#CFLAGS += -DUSE_VCOM_LOGS=1
 #CFLAGS += -DUSE_SVIEW=1
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
-CFLAGS += -DDEBUG -DDEBUG_NRF_USER
+CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DCONFIG_NFCT_PINS_AS_GPIOS
 CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DNRF52840
-CFLAGS += -DUSB_ENABLED
 CFLAGS += -D__HEAP_SIZE=100000
 CFLAGS += -DSWI_DISABLE0
 CFLAGS += -mcpu=cortex-m4
