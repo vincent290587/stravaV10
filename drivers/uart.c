@@ -40,7 +40,7 @@ static const nrfx_uarte_t uart = NRFX_UARTE_INSTANCE(NRFX_UARTE_INDEX);
 
 static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI instance completed the transfer. */
 
-static uint8_t ch = 0;
+static uint8_t m_uart_rx_buffer[4];
 
 
 /**
@@ -48,7 +48,6 @@ static uint8_t ch = 0;
  */
 void timer_event_handler(void* p_context)
 {
-	APP_ERROR_CHECK(nrfx_uarte_rx(&uart, &ch, 1));
 }
 
 /**
@@ -64,31 +63,34 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     switch (p_event->type) {
     case NRFX_UARTE_EVT_ERROR:
     {
-    	APP_ERROR_CHECK(p_event->data.error.error_mask);
+    	//APP_ERROR_CHECK(p_event->data.error.error_mask);
+    	NRF_LOG_ERROR("UARTE error: 0x%X", p_event->data.error.error_mask);
+
+    	nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
     }
     break;
     case NRFX_UARTE_EVT_RX_DONE:
     {
-    	if (p_event->data.rxtx.bytes) {
+    	for (uint16_t i=0; i < p_event->data.rxtx.bytes; i++) {
 
-    		ch = p_event->data.rxtx.p_data[0];
+    		char c = p_event->data.rxtx.p_data[i];
 
-//    		NRF_LOG_RAW_INFO("%c", ch);
+    		//NRF_LOG_RAW_INFO("%c", c);
 
     		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
-    			RING_BUFFER_ADD(uart0_rb1, ch);
+    			RING_BUFFER_ADD(uart0_rb1, c);
     		} else {
     			NRF_LOG_ERROR("Ring buffer full");
     		}
 
     	}
 
-    	APP_ERROR_CHECK(nrfx_uarte_rx(&uart, &ch, 1));
+    	nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
     }
     break;
     case NRFX_UARTE_EVT_TX_DONE:
     {
-    	NRF_LOG_INFO("UART TX done");
+    	LOG_INFO("UART TX done");
     	uart_xfer_done = true;
     }
     break;
@@ -121,10 +123,11 @@ void uart_timer_init(void) {
 	 nrf_uarte_config.hwfc       = NRF_UARTE_HWFC_DISABLED;
 
 	 ret_code_t err_code = nrfx_uarte_init(&uart, &nrf_uarte_config, uart_event_handler);
+	 APP_ERROR_CHECK(err_code);
 
-	 NRF_LOG_INFO("UART configured baud=%u", (uint32_t)baud);
+	 LOG_INFO("UART configured baud=%u", (uint32_t)baud);
 
-	 nrfx_uarte_rx(&uart, &ch, 1);
+	 nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
 
 	 err_code = app_timer_start(m_uarte_timer, UART_RELOAD_DELAY, NULL);
 	 APP_ERROR_CHECK(err_code);
