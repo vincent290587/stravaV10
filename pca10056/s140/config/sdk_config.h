@@ -5065,7 +5065,7 @@
 // <e> USBD_ENABLED - nrf_drv_usbd - USB driver
 //==========================================================
 #ifndef USBD_ENABLED
-#define USBD_ENABLED 0
+#define USBD_ENABLED 1
 #endif
 // <o> USBD_CONFIG_IRQ_PRIORITY  - Interrupt priority
  
@@ -5289,13 +5289,13 @@
  
 
 #ifndef APP_USBD_CDC_ACM_ENABLED
-#define APP_USBD_CDC_ACM_ENABLED 0
+#define APP_USBD_CDC_ACM_ENABLED 1
 #endif
 
 // <e> APP_USBD_ENABLED - app_usbd - USB Device library
 //==========================================================
 #ifndef APP_USBD_ENABLED
-#define APP_USBD_ENABLED 0
+#define APP_USBD_ENABLED 1
 #endif
 // <o> APP_USBD_VID - Vendor ID  <0x0000-0xFFFF> 
 
@@ -5303,7 +5303,7 @@
 // <i> Vendor ID ordered from USB IF: http://www.usb.org/developers/vendor/
 
 #ifndef APP_USBD_VID
-#define APP_USBD_VID 0
+#define APP_USBD_VID 0x1915
 #endif
 
 // <o> APP_USBD_PID - Product ID  <0x0000-0xFFFF> 
@@ -5312,7 +5312,7 @@
 // <i> Selected Product ID
 
 #ifndef APP_USBD_PID
-#define APP_USBD_PID 0
+#define APP_USBD_PID 0x520F
 #endif
 
 // <o> APP_USBD_DEVICE_VER_MAJOR - Device version, major part  <0-99> 
@@ -5353,7 +5353,7 @@
 // <i> Enable processing power events in USB event handler.
 
 #ifndef APP_USBD_CONFIG_POWER_EVENTS_PROCESS
-#define APP_USBD_CONFIG_POWER_EVENTS_PROCESS 0
+#define APP_USBD_CONFIG_POWER_EVENTS_PROCESS 1
 #endif
 
 // <e> APP_USBD_CONFIG_EVENT_QUEUE_ENABLE - Enable event queue

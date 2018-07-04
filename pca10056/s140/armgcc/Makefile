@@ -14,6 +14,14 @@ $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
 SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
+  $(wildcard $(PROJ_DIR)/source/usb/*.c) \
+  $(wildcard $(PROJ_DIR)/source/usb/*.cpp) \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_core.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_serial_num.c \
+  $(SDK_ROOT)/components/libraries/usbd/app_usbd_string_desc.c \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
+  $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
 
 include $(PROJ_DIR)/Makefile.files
 
@@ -24,6 +32,12 @@ INC_FOLDERS += \
   ../config \
   $(SDK_ROOT)/components/softdevice/s140/headers \
   $(SDK_ROOT)/components/softdevice/s140/headers/nrf52 \
+  $(PROJ_DIR)/source/usb \
+  $(SDK_ROOT)/components/drivers_nrf/usbd \
+  $(SDK_ROOT)/components/libraries/usbd \
+  $(SDK_ROOT)/components/libraries/usbd/config \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc \
+  $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   
 # Libraries common to all targets
 LIB_FILES += -lm -lstdc++
@@ -36,6 +50,8 @@ OPT = -O3 -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
+CFLAGS += -DUSB_ENABLED
+CFLAGS += -DUSE_VCOM_LOGS=1
 #CFLAGS += -DUSE_SVIEW=1
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF_USER

@@ -188,14 +188,15 @@ static void usb_cdc_trigger_xfer(void) {
 			m_tx_buffer_index,
 			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
 
-	if (nrf_drv_usbd_is_started()) {
+	if (nrf_drv_usbd_is_started())
+	{
 
-//		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
-//				m_tx_buffer[m_tx_buffer_index],
-//				m_tx_buffer_bytes_nb[m_tx_buffer_index]);
-//		APP_ERROR_CHECK(ret);
-//
-//		m_is_xfer_done = false;
+		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
+				m_tx_buffer[m_tx_buffer_index],
+				m_tx_buffer_bytes_nb[m_tx_buffer_index]);
+		APP_ERROR_CHECK(ret);
+
+		m_is_xfer_done = false;
 
 	} else {
 		NRF_LOG_INFO("Waiting for VCOM connection")
