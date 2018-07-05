@@ -295,13 +295,19 @@ void usb_printf(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 
-	return;
+	static char m_usb_char_buffer[256];
 
 	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
 
 	int length = vsnprintf(m_usb_char_buffer,
 			sizeof(m_usb_char_buffer),
 			format, args);
+
+	// add a newline
+	if (length+2 < NRF_DRV_USBD_EPSIZE) {
+		m_usb_char_buffer[length++] = '\r';
+		m_usb_char_buffer[length++] = '\n';
+	}
 
 	NRF_LOG_INFO("Printing %d bytes to VCOM", length);
 
