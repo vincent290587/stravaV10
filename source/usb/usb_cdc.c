@@ -57,7 +57,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 #define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
 #define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
 
-#define CDC_X_BUFFERS           (0b11)
+#define CDC_X_BUFFERS           (0b1)
 
 /**
  * @brief CDC_ACM class instance
@@ -190,10 +190,8 @@ static void usb_cdc_trigger_xfer(void) {
 			m_tx_buffer_index,
 			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
 
-	if (m_is_port_open)
+	if (m_is_port_open && m_is_xfer_done)
 	{
-		while (!m_is_xfer_done);
-
 		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
 				m_tx_buffer[m_tx_buffer_index],
 				m_tx_buffer_bytes_nb[m_tx_buffer_index]);
@@ -201,18 +199,24 @@ static void usb_cdc_trigger_xfer(void) {
 
 		if (!ret) m_is_xfer_done = false;
 
+	} else if (!m_is_xfer_done) {
+		NRF_LOG_WARNING("VCOM bytes dropped");
 	} else {
-		NRF_LOG_INFO("Waiting for VCOM connection")
+		NRF_LOG_INFO("Waiting for VCOM connection");
 	}
+
+	// reset old buffer
+	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
 
 	// switch buffers
 	m_tx_buffer_index++;
 	m_tx_buffer_index = m_tx_buffer_index & CDC_X_BUFFERS;
 
-	NRF_LOG_INFO("VCOM new index %u", m_tx_buffer_index);
-
+	// TODO we don't reset the new buffer
 	// reset new buffer
 	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
+
+	NRF_LOG_INFO("VCOM new index %u", m_tx_buffer_index);
 }
 
 
@@ -279,68 +283,12 @@ void usb_cdc_tasks(void) {
 	}
 
 	// send if inactive and data is waiting in buffer or if the buffer is almost full
-	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] > NRF_DRV_USBD_EPSIZE - 5 ||
+	if ((m_tx_buffer_bytes_nb[m_tx_buffer_index] > (NRF_DRV_USBD_EPSIZE * 3 /4)) ||
 			(m_tx_buffer_bytes_nb[m_tx_buffer_index] && millis() - m_last_buffered > 50)) {
 
 		usb_cdc_trigger_xfer();
 
 	}
-
-}
-
-
-/**
- * Prints a char* to VCOM printf style
- * @param format
- */
-void usb_printf(const char *format, ...) {
-
-	va_list args;
-	va_start(args, format);
-
-	static char m_usb_char_buffer[256];
-
-	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
-
-	int length = vsnprintf(m_usb_char_buffer,
-			sizeof(m_usb_char_buffer),
-			format, args);
-
-	// add a newline
-	if (length+2 < NRF_DRV_USBD_EPSIZE) {
-		m_usb_char_buffer[length++] = '\r';
-		m_usb_char_buffer[length++] = '\n';
-	}
-
-	NRF_LOG_INFO("Printing %d bytes to VCOM", length);
-
-	for (int i=0; i < length; i++) {
-
-		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-
-		if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
-			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
-		} else {
-			// buffer full: trigger xfer to switch buffers
-			usb_cdc_trigger_xfer();
-
-			// process queue
-			usb_cdc_tasks();
-
-			ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
-
-			// refrsh index
-			ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-			// store bytes
-			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
-		}
-
-		// increase index
-		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
-
-	}
-
-	m_last_buffered = millis();
 
 }
 
@@ -363,7 +311,7 @@ void usb_print(char c) {
 
 		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
 
-		// refrsh index
+		// refresh index
 		ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
 		// store bytes
 		m_tx_buffer[m_tx_buffer_index][ind] = c;
@@ -371,6 +319,60 @@ void usb_print(char c) {
 
 	// increase index
 	m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
+
+	m_last_buffered = millis();
+
+}
+
+/**
+ * Prints a char* to VCOM printf style
+ * @param format
+ */
+void usb_printf(const char *format, ...) {
+
+	va_list args;
+	va_start(args, format);
+
+	static char m_usb_char_buffer[256];
+
+	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
+
+	int length = vsnprintf(m_usb_char_buffer,
+			sizeof(m_usb_char_buffer),
+			format, args);
+
+	NRF_LOG_INFO("Printing %d bytes to VCOM", length);
+
+	for (int i=0; i < length; i++) {
+
+		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+
+		ASSERT(ind <= NRF_DRV_USBD_EPSIZE);
+
+		if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
+			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
+		} else {
+			// buffer full: trigger xfer to switch buffers
+			usb_cdc_trigger_xfer();
+
+			// process queue
+			usb_cdc_tasks();
+
+			ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE);
+
+			// refresh index
+			ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+			// store bytes
+			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
+		}
+
+		// increase index
+		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
+
+	}
+
+	usb_print('\r');
+	usb_print('\n');
 
 	m_last_buffered = millis();
 
