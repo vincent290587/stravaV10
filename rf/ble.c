@@ -797,7 +797,7 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 			lns_info.heading = -1;
 		}
 
-		model_dispatch_lns_update(&lns_info);
+		locator_dispatch_lns_update(&lns_info);
 
 		LOG_INFO("Sec jour = %d %d %d", p_lns_c_evt->params.lns.utc_time.hours,
 				p_lns_c_evt->params.lns.utc_time.minutes,

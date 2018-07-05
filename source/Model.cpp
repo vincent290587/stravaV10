@@ -73,23 +73,6 @@ void model_dispatch_sensors_update(void) {
 /**
  *
  */
-void model_dispatch_lns_update(sLnsInfo *lns_info) {
-
-	// convert data
-	locator.nrf_loc.data.alt = (float)(lns_info->ele / 100.);
-	locator.nrf_loc.data.lat = (float)(lns_info->lat / 10000000.);
-	locator.nrf_loc.data.lon = (float)(lns_info->lon / 10000000.);
-	locator.nrf_loc.data.speed = (float)(lns_info->speed / 10.);
-
-	locator.nrf_loc.data.utc_time = lns_info->secj;
-	locator.nrf_loc.data.date = lns_info->date;
-
-	locator.nrf_loc.setIsUpdated();
-}
-
-/**
- *
- */
 void perform_system_tasks(void) {
 
 	gps_mgmt.tasks();
