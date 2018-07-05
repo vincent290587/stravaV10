@@ -48,6 +48,12 @@ typedef struct {
 #define RING_BUFF_IS_NOT_EMPTY(_rb_name) \
 		(((_rb_name.txIndex + 0) % _rb_name##_size) != _rb_name.rxIndex)
 
+#define RING_BUFF_EMPTY(_rb_name) \
+		{                                       \
+			_rb_name.txIndex=0;					\
+			_rb_name.rxIndex=0;                 \
+		}
+
 #define RING_BUFFER_POP(_rb_name) \
 		if (RING_BUFF_IS_NOT_EMPTY(_rb_name)) {                                       \
 			_rb_name.txIndex++;														  \
