@@ -84,6 +84,8 @@ static uint8_t m_tx_buffer_index = 0;
 
 static volatile bool m_is_xfer_done = true;
 
+static volatile bool m_is_port_open = false;
+
 static uint32_t m_last_buffered = 0;
 
 /**
@@ -98,6 +100,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
     {
         case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
         {
+        	m_is_port_open = true;
             /*Setup first transfer*/
             ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
                                                    m_rx_buffer,
@@ -106,7 +109,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
             break;
         }
         case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
-
+        	m_is_port_open = false;
             break;
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
         {
@@ -188,7 +191,7 @@ static void usb_cdc_trigger_xfer(void) {
 			m_tx_buffer_index,
 			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
 
-	if (nrf_drv_usbd_is_started())
+	if (m_is_port_open)
 	{
 
 		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
