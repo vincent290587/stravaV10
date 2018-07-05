@@ -21,11 +21,12 @@ TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
 TinyGPSCustom vdop(gps, "GPGSA", 17);       // $GPGSA sentence, 17th element
 
-TinyGPSCustom totalGPGSVMessages(gps, "GPGSV", 1); // $GPGSV sentence, first element
-TinyGPSCustom messageNumber(gps, "GPGSV", 2);      // $GPGSV sentence, second element
+TinyGPSCustom totalGLGSVMessages(gps, "GLGSV", 1); // $GLGSV sentence, first element
+TinyGPSCustom messageNumber(gps, "GLGSV", 2);      // $GLGSV sentence, second element
 
-TinyGPSCustom satsInView(gps, "GPGSV", 3);  // $GPGSV sentence, third element
-TinyGPSCustom satsInUse(gps, "GPGGA", 7);  // $GPGSV sentence, 7th element
+TinyGPSCustom satsInView(gps, "GLGSV", 3);  // $GLGSV sentence, third element
+
+TinyGPSCustom satsInUse(gps, "GNGGA", 7);  // $GLGSV sentence, 7th element
 
 TinyGPSCustom satNumber[4]; // to be initialized later
 TinyGPSCustom elevation[4];
@@ -82,10 +83,10 @@ Locator::Locator() {
 	// Initialize all the uninitialized TinyGPSCustom objects
 	for (int i = 0; i < 4; ++i)
 	{
-	    satNumber[i].begin(gps, "GPGSV", 4 + 4 * i); // offsets 4, 8, 12, 16
-	    elevation[i].begin(gps, "GPGSV", 5 + 4 * i); // offsets 5, 9, 13, 17
-	    azimuth[i].begin(  gps, "GPGSV", 6 + 4 * i); // offsets 6, 10, 14, 18
-	    snr[i].begin(      gps, "GPGSV", 7 + 4 * i); // offsets 7, 11, 15, 19
+	    satNumber[i].begin(gps, "GLGSV", 4 + 4 * i); // offsets 4, 8, 12, 16
+	    elevation[i].begin(gps, "GLGSV", 5 + 4 * i); // offsets 5, 9, 13, 17
+	    azimuth[i].begin(  gps, "GLGSV", 6 + 4 * i); // offsets 6, 10, 14, 18
+	    snr[i].begin(      gps, "GLGSV", 7 + 4 * i); // offsets 7, 11, 15, 19
 	}
 }
 
@@ -305,7 +306,7 @@ void Locator::tasks() {
 			gps_loc.data.utc_time -= (LNS_OVER_GPS_DTIME_S + 3);
 		}
 
-		if (totalGPGSVMessages.isUpdated()) {
+		if (totalGLGSVMessages.isUpdated()) {
 
 			for (int i=0; i<4; ++i) {
 
@@ -340,11 +341,15 @@ void Locator::displayGPS2(void) {
 	vue.println(satsInView.value());
 	vue.println("");
 
+	uint8_t nb_activ = 0;
+
 	for (int i=0; i<MAX_SATELLITES; ++i) {
 
 		if (sats[i].active) {
 
 			sats[i].active--;
+
+			nb_activ++;
 
 			// i+1 is here also the satellite number
 			vue.print(i+1);
@@ -360,6 +365,30 @@ void Locator::displayGPS2(void) {
 			vue.println(F("dBi"));
 
 		}
+	}
+
+	if (!nb_activ) {
+		for (int i=0; i<MAX_SATELLITES; ++i) {
+
+			if (sats[i].snr && nb_activ++ < 10) {
+
+				// i+1 is here also the satellite number
+				vue.print(i+1);
+				vue.print(F(": "));
+
+				vue.print(sats[i].elevation);
+				vue.print(F("el "));
+
+				vue.print(sats[i].azimuth);
+				vue.print(F("az "));
+
+				vue.print(sats[i].snr);
+				vue.println(F("dBi"));
+			}
+
+		}
+
+		vue.println("All inactive");
 	}
 
 
