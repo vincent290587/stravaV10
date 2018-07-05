@@ -32,8 +32,6 @@
 #define UART0_RB_SIZE         256
 RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
 
-APP_TIMER_DEF(m_uarte_timer);
-
 volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
 
 static const nrfx_uarte_t uart = NRFX_UARTE_INSTANCE(NRFX_UARTE_INDEX);
@@ -83,7 +81,8 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
 
     		char c = p_event->data.rxtx.p_data[i];
 
-//    		NRF_LOG_RAW_INFO("%c", ch);
+//    		LOG_RAW_INFO("%c", ch);
+    		LOG_RAW_INFO(c);
 
     		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
     			RING_BUFFER_ADD(uart0_rb1, c);
@@ -111,9 +110,6 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
  *
  */
 void uart_timer_init(void) {
-
-	ret_code_t err_code = app_timer_create(&m_uarte_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
-	APP_ERROR_CHECK(err_code);
 
 }
 
@@ -145,8 +141,6 @@ void uart_timer_init(void) {
 
 	 nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
 
-	 err_code = app_timer_start(m_uarte_timer, UART_RELOAD_DELAY, NULL);
-	 APP_ERROR_CHECK(err_code);
 
 	 uart_xfer_done = true;
 
@@ -159,9 +153,6 @@ void uart_timer_init(void) {
 
 	 nrfx_uarte_uninit(&uart);
 
-	 ret_code_t err_code = app_timer_stop(m_uarte_timer);
-	 APP_ERROR_CHECK(err_code);
-
  }
 
 /**
@@ -169,7 +160,7 @@ void uart_timer_init(void) {
  */
  void uart_send(uint8_t * p_data, size_t length) {
 
-	 NRF_LOG_INFO("UART TX of %u bytes", length);
+	 LOG_INFO("UART TX of %u bytes", length);
 
 	 ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
 	 APP_ERROR_CHECK(err_code);

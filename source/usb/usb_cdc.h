@@ -16,6 +16,8 @@ void usb_cdc_init(void);
 
 void usb_cdc_tasks(void);
 
+void usb_print(char c);
+
 void usb_printf(const char *format, ...);
 
 #ifdef __cplusplus

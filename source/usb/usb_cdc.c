@@ -74,8 +74,6 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
 
 #define READ_SIZE 1
 
-static char m_usb_char_buffer[256];
-
 static char m_rx_buffer[READ_SIZE];
 
 static char m_tx_buffer[CDC_X_BUFFERS+1][NRF_DRV_USBD_EPSIZE];
@@ -110,6 +108,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         }
         case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
         	m_is_port_open = false;
+        	m_is_xfer_done = true;
             break;
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
         {
@@ -193,13 +192,14 @@ static void usb_cdc_trigger_xfer(void) {
 
 	if (m_is_port_open)
 	{
+		while (!m_is_xfer_done);
 
 		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
 				m_tx_buffer[m_tx_buffer_index],
 				m_tx_buffer_bytes_nb[m_tx_buffer_index]);
 		APP_ERROR_CHECK(ret);
 
-		m_is_xfer_done = false;
+		if (!ret) m_is_xfer_done = false;
 
 	} else {
 		NRF_LOG_INFO("Waiting for VCOM connection")
@@ -339,6 +339,38 @@ void usb_printf(const char *format, ...) {
 		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
 
 	}
+
+	m_last_buffered = millis();
+
+}
+
+/**
+ * Prints a single char to VCOM
+ * @param c
+ */
+void usb_print(char c) {
+
+	uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+
+	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
+		m_tx_buffer[m_tx_buffer_index][ind] = c;
+	} else {
+		// buffer full: trigger xfer to switch buffers
+		usb_cdc_trigger_xfer();
+
+		// process queue
+		usb_cdc_tasks();
+
+		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
+
+		// refrsh index
+		ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+		// store bytes
+		m_tx_buffer[m_tx_buffer_index][ind] = c;
+	}
+
+	// increase index
+	m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
 
 	m_last_buffered = millis();
 
