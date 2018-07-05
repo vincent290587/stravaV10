@@ -122,6 +122,8 @@ void uart_timer_init(void) {
  */
  void uart_init(nrf_uarte_baudrate_t baud)
 {
+	 ret_code_t err_code;
+
 	 m_baud = baud;
 
 	 nrfx_uarte_config_t nrf_uarte_config = NRFX_UARTE_DEFAULT_CONFIG;
@@ -132,8 +134,12 @@ void uart_timer_init(void) {
 	 nrf_uarte_config.parity     = NRF_UARTE_PARITY_EXCLUDED;
 	 nrf_uarte_config.hwfc       = NRF_UARTE_HWFC_DISABLED;
 
-	 ret_code_t err_code = nrfx_uarte_init(&uart, &nrf_uarte_config, uart_event_handler);
-	 APP_ERROR_CHECK(err_code);
+	 do {
+
+		 err_code = nrfx_uarte_init(&uart, &nrf_uarte_config, uart_event_handler);
+		 APP_ERROR_CHECK(err_code);
+
+	 } while (err_code);
 
 	 LOG_INFO("UART configured baud=%u", (uint32_t)baud);
 

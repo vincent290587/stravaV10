@@ -83,7 +83,14 @@ void spi_init(void)
  */
 static void _spi_start(void)
 {
-	APP_ERROR_CHECK(nrfx_spim_init(&spi, &m_spi_config, spim_event_handler, (void*)p_spi_config));
+	ret_code_t err_code;
+
+	do {
+
+		err_code = nrfx_spim_init(&spi, &m_spi_config, spim_event_handler, (void*)p_spi_config);
+		APP_ERROR_CHECK(err_code);
+
+	} while (err_code);
 
 	m_is_started = true;
 }
