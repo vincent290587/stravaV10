@@ -113,6 +113,8 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
         {
         	m_is_xfer_done = true;
+
+			W_SYSVIEW_OnTaskStopExec(USB_VCOM_TASK);
         } break;
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
         {
@@ -197,7 +199,11 @@ static void usb_cdc_trigger_xfer(void) {
 				m_tx_buffer_bytes_nb[m_tx_buffer_index]);
 		APP_ERROR_CHECK(ret);
 
-		if (!ret) m_is_xfer_done = false;
+		if (!ret) {
+			m_is_xfer_done = false;
+
+			W_SYSVIEW_OnTaskStartExec(USB_VCOM_TASK);
+		}
 
 	} else if (!m_is_xfer_done) {
 		NRF_LOG_WARNING("VCOM bytes dropped");
@@ -300,6 +306,8 @@ void usb_print(char c) {
 
 	uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
 
+	ASSERT(ind <= NRF_DRV_USBD_EPSIZE);
+
 	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
 		m_tx_buffer[m_tx_buffer_index][ind] = c;
 	} else {
@@ -333,7 +341,7 @@ void usb_printf(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 
-	static char m_usb_char_buffer[256];
+	static char m_usb_char_buffer[128];
 
 	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
 
@@ -341,36 +349,15 @@ void usb_printf(const char *format, ...) {
 			sizeof(m_usb_char_buffer),
 			format, args);
 
-	NRF_LOG_INFO("Printing %d bytes to VCOM", length);
+	NRF_LOG_INFO("Printfing %d bytes to VCOM", length);
 
 	for (int i=0; i < length; i++) {
 
-		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-
-		ASSERT(ind <= NRF_DRV_USBD_EPSIZE);
-
-		if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
-			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
-		} else {
-			// buffer full: trigger xfer to switch buffers
-			usb_cdc_trigger_xfer();
-
-			// process queue
-			usb_cdc_tasks();
-
-			ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE);
-
-			// refresh index
-			ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-			// store bytes
-			m_tx_buffer[m_tx_buffer_index][ind] = m_usb_char_buffer[i];
-		}
-
-		// increase index
-		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
+		usb_print(m_usb_char_buffer[i]);
 
 	}
 
+	// newline
 	usb_print('\r');
 	usb_print('\n');
 
