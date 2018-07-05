@@ -174,6 +174,9 @@ extern "C" void HardFault_process(HardFault_stack_t * p_stack)
 #ifdef DEBUG_NRF
     NRF_BREAKPOINT_COND;
     // On hardfault, the system can only recover with a reset.
+
+    bool loop = true;
+    while (loop) ;
 #endif
     // Restart the system by default
     NVIC_SystemReset();
