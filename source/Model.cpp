@@ -36,7 +36,9 @@ VEML6075      veml;
 
 MS5637        ms5637;
 
-GPS_MGMT           gps_mgmt;
+GPS_MGMT      gps_mgmt;
+
+VParser       vparser;
 
 sBacklightOrders     backlight;
 

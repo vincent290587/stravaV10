@@ -21,12 +21,14 @@ TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
 TinyGPSCustom vdop(gps, "GPGSA", 17);       // $GPGSA sentence, 17th element
 
-TinyGPSCustom totalGLGSVMessages(gps, "GLGSV", 1); // $GLGSV sentence, first element
-TinyGPSCustom messageNumber(gps, "GLGSV", 2);      // $GLGSV sentence, second element
+TinyGPSCustom totalGPGSVMessages(gps, "GPGSV", 1); // $GPGSV sentence, first element
+TinyGPSCustom messageNumber(gps, "GPGSV", 2);      // $GPGSV sentence, second element
 
-TinyGPSCustom satsInView(gps, "GLGSV", 3);  // $GLGSV sentence, third element
+TinyGPSCustom satsInView(gps, "GPGSV", 3);  // $GPGSV sentence, third element
 
-TinyGPSCustom satsInUse(gps, "GNGGA", 7);  // $GLGSV sentence, 7th element
+TinyGPSCustom satsInUse(gps, "GNGGA", 7);  // $GPGSV sentence, 7th element
+
+TinyGPSCustom gps_ack(gps, "PMKT001", 2);  // ACK, second element
 
 TinyGPSCustom satNumber[4]; // to be initialized later
 TinyGPSCustom elevation[4];
@@ -83,11 +85,12 @@ Locator::Locator() {
 	// Initialize all the uninitialized TinyGPSCustom objects
 	for (int i = 0; i < 4; ++i)
 	{
-	    satNumber[i].begin(gps, "GLGSV", 4 + 4 * i); // offsets 4, 8, 12, 16
-	    elevation[i].begin(gps, "GLGSV", 5 + 4 * i); // offsets 5, 9, 13, 17
-	    azimuth[i].begin(  gps, "GLGSV", 6 + 4 * i); // offsets 6, 10, 14, 18
-	    snr[i].begin(      gps, "GLGSV", 7 + 4 * i); // offsets 7, 11, 15, 19
+	    satNumber[i].begin(gps, "GPGSV", 4 + 4 * i); // offsets 4, 8, 12, 16
+	    elevation[i].begin(gps, "GPGSV", 5 + 4 * i); // offsets 5, 9, 13, 17
+	    azimuth[i].begin(  gps, "GPGSV", 6 + 4 * i); // offsets 6, 10, 14, 18
+	    snr[i].begin(      gps, "GPGSV", 7 + 4 * i); // offsets 7, 11, 15, 19
 	}
+
 }
 
 /**
@@ -106,12 +109,10 @@ eLocationSource Locator::getUpdateSource() {
 		return eLocationSourceGPS;
 	}
 
-	// NRF has newer data (> LNS_OVER_GPS_DTIME_S) than GPS
-	if (nrf_loc.isUpdated() &&
-			millis() - gps_loc.getLastUpdateTime() > S_TO_MS(LNS_OVER_GPS_DTIME_S)) {
+	if (nrf_loc.isUpdated() && !gps_mgmt.isFix()) {
 		return eLocationSourceNRF;
 	} else if (nrf_loc.isUpdated()) {
-		LOG_INFO("LNS data refused: GPS data too recent\r\n");
+		LOG_INFO("LNS data refused: GPS data valid");
 	}
 
 	return eLocationSourceNone;
@@ -274,6 +275,10 @@ eLocationSource Locator::getDate(SDate& date_) {
  */
 void Locator::tasks() {
 
+	if (gps_ack.isUpdated()) {
+		gps_mgmt.getAckResult(gps_ack.value());
+	}
+
 	if (m_is_updated) {
 		m_is_updated = false;
 
@@ -306,7 +311,7 @@ void Locator::tasks() {
 			gps_loc.data.utc_time -= (LNS_OVER_GPS_DTIME_S + 3);
 		}
 
-		if (totalGLGSVMessages.isUpdated()) {
+		if (totalGPGSVMessages.isUpdated()) {
 
 			for (int i=0; i<4; ++i) {
 

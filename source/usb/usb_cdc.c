@@ -122,21 +122,15 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
             NRF_LOG_INFO("Bytes waiting: %d", app_usbd_cdc_acm_bytes_stored(p_cdc_acm));
             do
             {
-                /*Get amount of data transfered*/
-                size_t size = app_usbd_cdc_acm_rx_size(p_cdc_acm);
-                NRF_LOG_INFO("RX: size: %lu char: %c", size, m_rx_buffer[0]);
-
                 /* Fetch data until internal buffer is empty */
                 ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
                                             m_rx_buffer,
                                             READ_SIZE);
 
                 // parse chars
-                //usb_cdc_decoder(m_rx_buffer[0]);
+                usb_cdc_decoder(m_rx_buffer[0]);
 
             } while (ret == NRF_SUCCESS);
-
-            LOG_INFO("Bytes waiting: %d", app_usbd_cdc_acm_bytes_stored(p_cdc_acm));
 
             break;
         }
@@ -188,7 +182,7 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
  */
 static void usb_cdc_trigger_xfer(void) {
 
-	NRF_LOG_INFO("VCOM Xfer triggered index %u with %u bytes",
+	NRF_LOG_DEBUG("VCOM Xfer triggered index %u with %u bytes",
 			m_tx_buffer_index,
 			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
 
@@ -208,7 +202,7 @@ static void usb_cdc_trigger_xfer(void) {
 	} else if (!m_is_xfer_done) {
 		NRF_LOG_WARNING("VCOM bytes dropped");
 	} else {
-		NRF_LOG_INFO("Waiting for VCOM connection");
+		NRF_LOG_DEBUG("Waiting for VCOM connection");
 	}
 
 	// reset old buffer
@@ -218,11 +212,10 @@ static void usb_cdc_trigger_xfer(void) {
 	m_tx_buffer_index++;
 	m_tx_buffer_index = m_tx_buffer_index & CDC_X_BUFFERS;
 
-	// TODO we don't reset the new buffer
 	// reset new buffer
 	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
 
-	NRF_LOG_INFO("VCOM new index %u", m_tx_buffer_index);
+	NRF_LOG_DEBUG("VCOM new index %u", m_tx_buffer_index);
 }
 
 
@@ -314,10 +307,10 @@ void usb_print(char c) {
 		// buffer full: trigger xfer to switch buffers
 		usb_cdc_trigger_xfer();
 
+		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
+
 		// process queue
 		usb_cdc_tasks();
-
-		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
 
 		// refresh index
 		ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
@@ -349,7 +342,7 @@ void usb_printf(const char *format, ...) {
 			sizeof(m_usb_char_buffer),
 			format, args);
 
-	NRF_LOG_INFO("Printfing %d bytes to VCOM", length);
+	NRF_LOG_DEBUG("Printfing %d bytes to VCOM", length);
 
 	for (int i=0; i < length; i++) {
 

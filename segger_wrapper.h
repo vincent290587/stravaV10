@@ -42,8 +42,8 @@
 #define LOG_INFO(...)                  EMPTY_MACRO
 #define LOG_RAW_INFO(X)                EMPTY_MACRO
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
-//#define LOG_ERROR(...)                 SEGGER_SYSVIEW_PrintfHost(__VA_ARGS__)
+//#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
+#define LOG_ERROR(...)                 SEGGER_SYSVIEW_PrintfHost(__VA_ARGS__)
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                segger_init()
@@ -70,6 +70,8 @@
 #define LOG_FLUSH(...)                 NRF_LOG_FLUSH();
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                EMPTY_MACRO
+#define USB_PRINTF(...)                EMPTY_MACRO
+#define USB_PRINT(...)                 EMPTY_MACRO
 #else
 #define LOG_INFO(...)                  EMPTY_MACRO
 #define LOG_RAW_INFO(X)                EMPTY_MACRO

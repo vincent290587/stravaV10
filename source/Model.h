@@ -27,6 +27,7 @@
 #include "VEML6075.h"
 #include "MS5637.h"
 #include "Attitude.h"
+#include "VParser.h"
 #include "mk64f_parser.h"
 
 
@@ -57,6 +58,8 @@ extern VEML6075      veml;
 extern MS5637        ms5637;
 
 extern GPS_MGMT      gps_mgmt;
+
+extern VParser       vparser;
 
 extern sFecControl   fec_control;
 
