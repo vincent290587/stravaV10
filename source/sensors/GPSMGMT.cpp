@@ -51,27 +51,34 @@ static eGPSMgmtEPOState   m_epo_state  = eGPSMgmtEPOIdle;
 
 static MTK m_rec_packet;
 
+static bool m_is_uart_on = false;
+
 static nrf_uarte_baudrate_t m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
 
+
+/**
+ *
+ */
 void gps_uart_start() {
 
 	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
-
 	uart_timer_init();
-
 	uart_init(m_uart_baud);
+	m_is_uart_on = true;
 
 }
 
 void gps_uart_stop() {
 
-	uart_uninit();
+	if (m_is_uart_on) uart_uninit();
+	m_is_uart_on = false;
 
 }
 
 void gps_uart_resume() {
 
-	uart_init(m_uart_baud);
+	if (!m_is_uart_on) uart_init(m_uart_baud);
+	m_is_uart_on = true;
 
 }
 
@@ -85,18 +92,19 @@ GPS_MGMT::GPS_MGMT() {
 
 void GPS_MGMT::init(void) {
 
+	gps_uart_stop();
 	gps_uart_start();
-
-	// configure PPS pin
-	nrf_gpio_cfg_input(PPS_PIN, NRF_GPIO_PIN_NOPULL);
+	// the baud is here always 9600
 
 	// configure fix pin
 	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
 
 	SEND_TO_GPS(PMTK_AWAKE);
+	delay_us(500);
 
 #if GPS_USE_COLD_START
 	SEND_TO_GPS(PMTK_COLD);
+	delay_us(500);
 #endif
 
 	if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD) {
@@ -105,10 +113,10 @@ void GPS_MGMT::init(void) {
 		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_115200);
 
 		// go to final baudrate
-		delay_us(500);
-		m_uart_baud = GPS_FAST_SPEED_BAUD;
+		delay_ms(100);
 		gps_uart_stop();
 		delay_us(500);
+		m_uart_baud = GPS_FAST_SPEED_BAUD;
 		gps_uart_resume();
 
 	}
@@ -128,6 +136,12 @@ void GPS_MGMT::standby(void) {
 	m_power_state = eGPSMgmtPowerOff;
 
 	SEND_TO_GPS(PMTK_STANDBY);
+
+	delay_ms(10);
+	gps_uart_stop();
+	delay_us(500);
+	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
+	gps_uart_resume();
 }
 
 void GPS_MGMT::awake(void) {
@@ -149,6 +163,22 @@ void GPS_MGMT::startEpoUpdate(void) {
 	m_epo_state = eGPSMgmtEPOStart;
 
 	this->awake();
+}
+
+/**
+ *
+ * @param result
+ */
+void GPS_MGMT::getAckResult(const char *result) {
+
+	int int_res = atoi(result);
+
+	if (int_res == 3) {
+		vue.addNotif("GPSMGMT: ", "Result: success", 4, eNotificationTypeComplete);
+	} else {
+		vue.addNotif("GPSMGMT: ", "Result: failure", 4, eNotificationTypeComplete);
+	}
+
 }
 
 void GPS_MGMT::tasks(void) {
@@ -349,6 +379,11 @@ uint32_t gps_encode_char(char c) {
 	return 0;
 }
 
+/**
+ *
+ * @param loc_data
+ * @param age_
+ */
 void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 
 	String _lat = _fmkstr(loc_data.lat, 6U);
@@ -387,6 +422,10 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 	vue.addNotif("EPO", "Host aiding sent", 5, eNotificationTypeComplete);
 }
 
+/**
+ *
+ * @param interval
+ */
 void GPS_MGMT::setFixInterval(uint16_t interval) {
 
 	String cmd = "$PMTK220," + interval;
