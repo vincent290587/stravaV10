@@ -139,9 +139,9 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 		}
 		case eButtonsEventCenter:
 		{
-			if (m_selec_en && !m_s_parcours) {
+			if (m_parcours_sel && m_selec_en && !m_s_parcours) {
 				m_start_loading = true;
-			} else if (!m_selec_en) {
+			} else if (!m_parcours_sel || !m_selec_en) {
 				pass_event_menu = true;
 			}
 
