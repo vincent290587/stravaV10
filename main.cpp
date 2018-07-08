@@ -27,6 +27,7 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
+#include "nrf_drv_clock.h"
 #include "nrf_drv_power.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
@@ -301,21 +302,6 @@ int main(void)
 {
 	ret_code_t err_code;
 
-	log_init();
-
-    err_code = nrf_drv_power_init(NULL);
-    APP_ERROR_CHECK(err_code);
-
-	pins_init();
-
-	// Initialize timer module
-#ifdef USB_ENABLED
-	usb_cdc_init();
-#else
-	err_code = app_timer_init();
-    APP_ERROR_CHECK(err_code);
-#endif
-
 	// Initialize.
     //Configure WDT.
     nrfx_wdt_config_t wdt_config = NRFX_WDT_DEAFULT_CONFIG;
@@ -325,34 +311,66 @@ int main(void)
     APP_ERROR_CHECK(err_code);
     nrfx_wdt_enable();
 
-	NRF_LOG_INFO("Init start");
+	log_init();
 
-	nrf_pwr_mgmt_init();
+    err_code = nrf_drv_power_init(NULL);
+    APP_ERROR_CHECK(err_code);
 
-	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+	pins_init();
+
+	// errata 20 RTC
+	NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
+	NRF_CLOCK->TASKS_LFCLKSTART     = 1;
+	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
+	NRF_RTC0->TASKS_STOP = 0;
+
+	// clocks init
+	err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+    nrf_drv_clock_lfclk_request(NULL);
+    NRF_LOG_INFO("Starting LF clock");
+    while(!nrf_drv_clock_lfclk_is_running())
+    {
+        /* Just waiting */
+    	NRF_LOG_RAW_INFO(".");
+    	nrf_delay_ms(1);
+    }
+
+    err_code = app_timer_init();
+    APP_ERROR_CHECK(err_code);
+
+	LOG_INFO("Init start");
 
 	// drivers
 	spi_init();
 	i2c_init();
-	//// uart is started later
 
 	// LCD displayer
 	vue.init();
 
 	// SD functions
-	nrfx_wdt_channel_feed(m_channel_id);
 	sd_functions_init();
+
+	// Initialize timer module
+#ifdef USB_ENABLED
+	// apply correction 0x20 line 97 nrf_drv_usbd_errata.h
+	usb_cdc_init();
+#endif
+
+	nrf_pwr_mgmt_init();
+
+//	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
 
 	// timers
 #ifdef ANT_STACK_SUPPORT_REQD
 	ant_timers_init();
 #endif
 
-	backlighting_init();
+//	backlighting_init();
 
 	buttons_leds_init();
 
-	notifications_init(NEO_PIN);
+//	notifications_init(NEO_PIN);
 
 	// init BLE + ANT
 #ifdef BLE_STACK_SUPPORT_REQD
