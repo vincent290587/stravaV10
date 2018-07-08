@@ -144,12 +144,13 @@ int load_segment(Segment& seg) {
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
-	String fat_name = String("/") + seg.getName();
+	String fat_name = seg.getName();
 
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
-		LOG_INFO("Open file failed.");
+		NRF_LOG_ERROR("Open file failed. (error %u)", error);
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
@@ -172,7 +173,7 @@ int load_segment(Segment& seg) {
 	error = f_close (&g_fileObject);
 	if (error)
 	{
-		LOG_INFO("Close file failed.");
+		NRF_LOG_ERROR("Close file failed. (error %u)", error);
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
@@ -197,11 +198,12 @@ int load_parcours(Parcours& mon_parcours) {
 	// clear list
 	mon_parcours.desallouerPoints();
 
-	String fat_name = String("/") + mon_parcours.getName();
+	String fat_name = mon_parcours.getName();
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -338,11 +340,11 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 int epo_file_size(void) {
 
 	FRESULT error;
-	const char* fname = "/MTK14.EPO";
+	const char* fname = "MTK14.EPO";
 
 	FILINFO file_info;
 	error = f_stat (fname, &file_info);
-
+	if (error) error = f_stat (fname, &file_info);
 	if (error) {
 		LOG_INFO("Stat file failed.");
 		return -1;
@@ -358,9 +360,10 @@ int epo_file_size(void) {
 int epo_file_start(void) {
 
 	FRESULT error;
-	const char* fname = "/MTK14.EPO";
+	const char* fname = "MTK14.EPO";
 
 	error = f_open(&g_EpoFileObject, fname, FA_READ);
+	if (error) error = f_open(&g_EpoFileObject, fname, FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -383,6 +386,12 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
 
 	UINT size_read = 0;
 	FRESULT error = f_read (
+			&g_EpoFileObject, 	/* Pointer to the file object */
+			g_bufferRead,	    /* Pointer to data buffer */
+			MTK_EPO_SAT_DATA_SIZE,/* Number of bytes to read */
+			&size_read	        /* Pointer to number of bytes read */
+	);
+	if (error) error = f_read (
 			&g_EpoFileObject, 	/* Pointer to the file object */
 			g_bufferRead,	    /* Pointer to data buffer */
 			MTK_EPO_SAT_DATA_SIZE,/* Number of bytes to read */
@@ -420,7 +429,7 @@ int epo_file_stop(bool toBeDeleted) {
 
 #ifndef DEBUG_CONFIG
 	if (toBeDeleted) {
-		error = f_unlink("/MTK14.EPO");
+		error = f_unlink("MTK14.EPO");
 		if (error)
 		{
 			LOG_INFO("Unlink file failed.");

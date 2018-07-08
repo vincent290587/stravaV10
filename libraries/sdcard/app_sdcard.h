@@ -204,6 +204,7 @@ ret_code_t app_sdc_block_write(uint8_t const * p_buf, uint32_t block_address, ui
  */
 app_sdc_info_t const * app_sdc_info_get(void);
 
+void app_sdc_spi_reconfigure(void);
 
 #endif //APP_SDC_H_
 /** @} */

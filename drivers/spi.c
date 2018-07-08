@@ -42,9 +42,10 @@ static bool m_is_started = false;
 static void spim_event_handler(nrfx_spim_evt_t const * p_event,
                        void *                  p_context)
 {
-    spi_xfer_done = true;
 
 	W_SYSVIEW_OnTaskStopExec(SPI_TASK);
+
+    spi_xfer_done = true;
 
     NRF_LOG_DEBUG("SPI Xfer %u/%u byte", p_event->xfer_desc.tx_length, p_event->xfer_desc.rx_length);
 
@@ -55,6 +56,7 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
     if (spi_config[0]) {
 
     	if (spi_config[0]->handler) {
+    		//NRF_LOG_INFO("SPI handler");
     		spi_config[0]->handler(p_event, p_context);
     	}
     }
@@ -75,7 +77,7 @@ void spi_init(void)
 
 	p_spi_config[0] = NULL;
 
-	LOG_INFO("SPI configured");
+	LOG_INFO("SPI init");
 }
 
 /**
@@ -93,6 +95,10 @@ static void _spi_start(void)
 	} while (err_code);
 
 	m_is_started = true;
+	spi_xfer_done = true;
+
+	nrf_delay_us(800);
+
 }
 
 /**
@@ -100,15 +106,72 @@ static void _spi_start(void)
  */
 void spi_uninit(void)
 {
-	LOG_INFO("SPI uninit");
+	LOG_DEBUG("SPI uninit");
 	nrfx_spim_uninit(&spi);
 
 	m_is_started = false;
+
+	nrf_delay_us(200);
 }
 
 /**
  *
  * @param p_transaction
+ */
+void spi_reconfigure (sSpimConfig const * spi_config) {
+
+	ASSERT(spi_config);
+
+	// Adapt the configuration to the current transfer
+	if (spi_config != p_spi_config[0]) {
+
+		if (!spi_xfer_done) {
+			NRF_LOG_WARNING("SPI Waiting...");
+			uint32_t millis_ = millis();
+			do {
+				NRF_LOG_PROCESS();
+
+				if (millis() - millis_ > 500) {
+					NRF_LOG_ERROR("SPI timeout");
+					nrfx_spim_abort(&spi);
+					spi_xfer_done = true;
+					break;
+				}
+
+			} while (!spi_xfer_done);
+
+		}
+
+		// not first transfer
+		if (m_is_started) spi_uninit();
+
+		if (!p_spi_config[0]) {
+			NRF_LOG_WARNING("SPI configuration set");
+		} else {
+			NRF_LOG_WARNING("SPI configuration changed");
+		}
+
+		// reconfigure
+		m_spi_config.bit_order      = spi_config->bit_order;
+		m_spi_config.frequency      = spi_config->frequency;
+
+		_spi_start();
+
+		p_spi_config[0] = spi_config;
+	}
+
+	ASSERT(m_is_started);
+
+}
+
+
+/**
+ *
+ * @param spi_config Can be NULL or a pointer to reconfigure
+ * @param p_tx_buffer
+ * @param tx_length
+ * @param p_rx_buffer
+ * @param rx_length
  */
 void spi_schedule (sSpimConfig const * spi_config,
 		uint8_t const * p_tx_buffer,
@@ -137,32 +200,15 @@ void spi_schedule (sSpimConfig const * spi_config,
 //		} while (!spi_xfer_done);
 //	}
 
-	ASSERT(spi_config);
+	// potential reconfiguration
+	if (spi_config) {
+		// reconfiguration
+		spi_reconfigure(spi_config);
+	}
 
-	// Adapt the configuration to the current transfer
-	if (spi_config != p_spi_config[0]) {
-
-		if (p_spi_config[0]) {
-			// not first transfer
-			spi_uninit();
-
-			nrf_delay_us(200);
-
-			// reconfigure
-			m_spi_config.bit_order      = spi_config->bit_order;
-			m_spi_config.frequency      = spi_config->frequency;
-
-		} else {
-			// first transfer ever: configure
-			m_spi_config.bit_order      = spi_config->bit_order;
-			m_spi_config.frequency      = spi_config->frequency;
-		}
-
+	if (!m_is_started) {
+		// first ever transfer
 		_spi_start();
-
-		p_spi_config[0] = spi_config;
-
-		NRF_LOG_WARNING("SPI configuration changed");
 	}
 
 	ASSERT(m_is_started);
@@ -178,22 +224,24 @@ void spi_schedule (sSpimConfig const * spi_config,
 		spi_xfer_done = false;
 	}
 
-	if (spi_config->blocking) {
-		// wait for last transfer to finish
-		uint32_t millis_ = millis();
-		do {
-			NRF_LOG_PROCESS();
+	if (p_spi_config[0])
+		if (p_spi_config[0]->blocking) {
+			// wait for last transfer to finish
+			uint32_t millis_ = millis();
+			do {
+				NRF_LOG_PROCESS();
 
-			if (millis() - millis_ > 500) {
-				NRF_LOG_ERROR("SPI timeout");
-				// TODO cancel transfer
-				break;
-			}
+				if (millis() - millis_ > 150) {
+					NRF_LOG_ERROR("SPI timeout");
+					nrfx_spim_abort(&spi);
+					spi_xfer_done = true;
+					break;
+				}
 
-		} while (!spi_xfer_done);
+			} while (!spi_xfer_done);
 
-		W_SYSVIEW_OnTaskStopExec(SPI_TASK);
-	}
+			W_SYSVIEW_OnTaskStopExec(SPI_TASK);
+		}
 }
 
 

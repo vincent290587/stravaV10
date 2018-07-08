@@ -48,6 +48,12 @@
 
 #include "nrf_pt.h"
 
+#include "segger_wrapper.h"
+
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
 #define CMD_MASK  0x40
 #define ACMD_MASK 0x80
 #define CMD0    (CMD_MASK | 0)                  /**< SDC/MMC command 0:  GO_IDLE_STATE. */
@@ -234,6 +240,7 @@ __STATIC_INLINE void sdc_spi_transfer(uint8_t const * const p_txb,
                                       uint8_t * const p_rxb,
 									  size_t rx_len)
 {
+	spi_reconfigure (&spim_sdc_config);
     SDC_CS_ASSERT();
     spi_schedule(&spim_sdc_config, p_txb, tx_len, p_rxb, rx_len);
 }
@@ -1137,6 +1144,7 @@ ret_code_t app_sdc_init(app_sdc_config_t const * const p_config, sdc_event_handl
 
     // Send 80 clocks with CS inactive to switch into SPI mode.
     m_cb.cmd_buf[0] = 0xFF;
+    spi_reconfigure(&spim_sdc_config);
     spi_schedule(&spim_sdc_config, m_cb.cmd_buf, 1, m_cb.rsp_buf, 10);
 
     return NRF_SUCCESS;
@@ -1161,6 +1169,11 @@ ret_code_t app_sdc_uninit(void)
     m_cb.state.op = SDC_UNINITIALIZED;
 
     return NRF_SUCCESS;
+}
+
+void app_sdc_spi_reconfigure(void)
+{
+	spi_reconfigure (&spim_sdc_config);
 }
 
 

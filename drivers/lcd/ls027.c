@@ -58,6 +58,8 @@ static sSpimConfig m_spi_ls027_cfg;
 
 static void ls027_cs_on() {
 
+	spi_reconfigure(&m_spi_ls027_cfg);
+
 	nrf_gpio_pin_set(LS027_CS_PIN);
 
 }
