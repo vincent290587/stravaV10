@@ -36,6 +36,8 @@ volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
 
 static const nrfx_uarte_t uart = NRFX_UARTE_INSTANCE(NRFX_UARTE_INDEX);
 
+static volatile uint32_t m_error_mask;
+
 static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI instance completed the transfer. */
 
 nrf_uarte_baudrate_t m_baud;
@@ -63,15 +65,12 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     switch (p_event->type) {
     case NRFX_UARTE_EVT_ERROR:
     {
-    	if ((UARTE_ERRORSRC_FRAMING_Msk | p_event->data.error.error_mask) ||
-    			(NRF_UARTE_ERROR_PARITY_MASK | p_event->data.error.error_mask)) {
-
-    		NRF_LOG_ERROR("UART restarted");
-
-    		// restart UART at last baud
-    		 uart_uninit();
-    		 nrf_delay_us(100);
-    		 uart_init(m_baud);
+    	if ((NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) ||
+    			(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask)) {
+   		 uart_uninit();
+     	 m_error_mask = p_event->data.error.error_mask;
+   		 // empty ring buffer
+   		 RING_BUFF_EMPTY(uart0_rb1);
     	}
     }
     break;
@@ -116,11 +115,13 @@ void uart_timer_init(void) {
 /**
  * @brief Function for initializing the UART.
  */
- void uart_init(nrf_uarte_baudrate_t baud)
+ void uart_init_tx_only(nrf_uarte_baudrate_t baud)
 {
 	 ret_code_t err_code;
 
 	 m_baud = baud;
+
+	 m_error_mask = 0;
 
 	 nrfx_uarte_config_t nrf_uarte_config = NRFX_UARTE_DEFAULT_CONFIG;
 
@@ -130,21 +131,25 @@ void uart_timer_init(void) {
 	 nrf_uarte_config.parity     = NRF_UARTE_PARITY_EXCLUDED;
 	 nrf_uarte_config.hwfc       = NRF_UARTE_HWFC_DISABLED;
 
-	 do {
+	 err_code = nrfx_uarte_init(&uart, &nrf_uarte_config, uart_event_handler);
+	 APP_ERROR_CHECK(err_code);
 
-		 err_code = nrfx_uarte_init(&uart, &nrf_uarte_config, uart_event_handler);
-		 APP_ERROR_CHECK(err_code);
-
-	 } while (err_code);
-
-	 LOG_INFO("UART configured baud=%u", (uint32_t)baud);
-
-	 nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
-
+	 LOG_DEBUG("UART configured baud=%u", (uint32_t)baud);
 
 	 uart_xfer_done = true;
 
 }
+
+ /**
+  * @brief Function for initializing the UART.
+  */
+ void uart_init(nrf_uarte_baudrate_t baud)
+ {
+	 uart_init_tx_only(baud);
+
+	 nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
+
+ }
 
  /**
   *
@@ -153,6 +158,7 @@ void uart_timer_init(void) {
 
 	 nrfx_uarte_uninit(&uart);
 
+	 nrf_delay_us(500);
  }
 
 /**
@@ -176,6 +182,24 @@ void uart_timer_init(void) {
  *
  */
  void uart_tasks(void) {
+
+	 if (NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) {
+
+		 NRF_LOG_ERROR("UART restarted 1");
+
+		 // restart UART at default baud
+		 nrf_delay_us(100);
+		 uart_init(NRFX_UARTE_DEFAULT_CONFIG_BAUDRATE);
+
+	 } else if(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask) {
+
+		 NRF_LOG_ERROR("UART restarted 2");
+
+		 // restart UART at last baud
+		 nrf_delay_us(100);
+		 uart_init(m_baud);
+
+	 }
 
 	 /* If ring buffer is not empty, parse data. */
 	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))

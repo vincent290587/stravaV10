@@ -18,6 +18,8 @@ void uart_timer_init(void);
 
 void uart_init(nrf_uarte_baudrate_t baud);
 
+void uart_init_tx_only(nrf_uarte_baudrate_t baud);
+
 void uart_uninit(void);
 
 void uart_tasks(void);
