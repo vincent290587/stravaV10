@@ -124,7 +124,7 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 		{
 			if (m_s_parcours) this->decreaseZoom();
 
-			if (!m_selec_en) pass_event_menu = true;
+			if (!m_parcours_sel || !m_selec_en) pass_event_menu = true;
 			else             m_parcours_sel--;
 			break;
 		}
@@ -132,7 +132,7 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 		{
 			if (m_s_parcours) this->increaseZoom();
 
-			if (!m_selec_en) pass_event_menu = true;
+			if (!m_parcours_sel || !m_selec_en) pass_event_menu = true;
 			else             m_parcours_sel++;
 
 			break;
