@@ -68,7 +68,7 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     	if ((NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) ||
     			(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask)) {
    		 uart_uninit();
-     	 m_error_mask = p_event->data.error.error_mask;
+     	         m_error_mask = p_event->data.error.error_mask;
    		 // empty ring buffer
    		 RING_BUFF_EMPTY(uart0_rb1);
     	}
@@ -149,7 +149,7 @@ void uart_timer_init(void) {
 
 	 nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
 
- }
+}
 
  /**
   *
