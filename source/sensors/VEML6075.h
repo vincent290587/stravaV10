@@ -102,7 +102,8 @@ class VEML6075 {
 public:
 
 	VEML6075();
-	bool init(uint16_t dev_id=0);
+	bool init(uint16_t dev_id=0x26);
+	void reset(void);
 	void on();
 	void off();
 	uint16_t getConf();

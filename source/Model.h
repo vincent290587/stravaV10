@@ -14,6 +14,7 @@
 
 #if defined(__cplusplus)
 
+#include "fxos.h"
 #include "ListePoints.h"
 #include "Segment.h"
 #include "Parcours.h"

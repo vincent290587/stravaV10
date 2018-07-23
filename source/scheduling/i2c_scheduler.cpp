@@ -15,14 +15,17 @@
 #include "app_timer.h"
 #include "Model.h"
 
+
+
+#ifndef _DEBUG_TWI
+
 static uint32_t m_last_polled_index = 0;
 
 // Buffer for data read from sensors.
 static uint8_t m_veml_buffer[10];
 static tSTC31000Data m_stc_buffer;
-static ms5637_handle_t m_ms5637_handle;
 static fxos_handle_t m_fxos_handle;
-
+static ms5637_handle_t m_ms5637_handle;
 
 static void read_ms(void);
 
@@ -63,7 +66,7 @@ static void _i2c_scheduling_sensors_init() {
 	};
 	i2c_perform(NULL, sensors_init_transfers, sizeof(sensors_init_transfers) / sizeof(sensors_init_transfers[0]), NULL);
 
-	// init sensors configuration
+	// TODO init sensors configuration
 	fxos_init();
 
 	// init configuration
@@ -283,6 +286,8 @@ static void timer_handler(void * p_context)
     W_SYSVIEW_RecordEnterISR();
 }
 
+#endif
+
 /**
  *
  */
@@ -308,5 +313,7 @@ void i2c_scheduling_init(void) {
     //stc.init(100);
     veml.init();
     ms5637.init();
+
+    fxos_init();
 #endif
 }

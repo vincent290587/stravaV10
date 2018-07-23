@@ -48,7 +48,7 @@
 
 /*=========================================================================*/
 
-void fxos_init(void);
+bool fxos_init(void);
 
 void fxos_tasks(fxos_handle_t *g_fxosHandle);
 
