@@ -36,30 +36,42 @@ using namespace std;
 #define SEG_START   1
 #define SEG_ON      2
 
+typedef struct {
+    float _elevTot;
+    float _monStart;
+    float _monCur;
+    float _monAvance;
+    float _monElev0;
+    float _monPElev;
+    float _monPDist;
+    ListePoints _lpts;
+} sSegmentData;
 
 
 class Segment {
   public:
     Segment(void);
+    ~Segment(void);
     Segment(const char *nom_seg);
 
-    void init(void);
+    bool init(void);
+    void uninit(void);
 
     const char* getName();
     void setSegmentName(const char *name_);
     void emptyName();
 
     void desallouerPoints(void);
-    int  longueur() {return _lpts.size();}
+    int longueur();
     int isValid();
     static bool nomCorrect(const char *name);
 
     int8_t getStatus() {return _actif;}
     void setStatus(int8_t act) {_actif = act; return;}
 
-    float getAvance() {return _monAvance;}
-    float getCur() {return _monCur;}
-    float getTempsTot() {return _lpts.getTempsTot();}
+    float getAvance();
+    float getCur();
+    float getTempsTot();
 
     void ajouterPointFin(float lat, float lon, float alt, float msec);
     void ajouterPointDebutIso(float lat, float lon, float alt, float msec);
@@ -70,26 +82,19 @@ class Segment {
     int testActivation(ListePoints& liste);
     int testDesactivation(ListePoints& liste);
 
-    ListePoints *getListePoints() {return &_lpts;}
+    ListePoints *getListePoints();
 
     void majPerformance(ListePoints& mes_points);
 
     Point *getFirstPoint();
-    float dist(Point *p) {return _lpts.dist(p);}
-    Vecteur deltaListe() {return _lpts.getDeltaListe();}
-    Point2D centerListe() {return _lpts.getCenterListe();}
+    float dist(Point *p);
+    Vecteur deltaListe();
+    Point2D centerListe();
 
   private:
     String _nomFichier; // contient la pos du 1er point et le nom
     int8_t _actif;
-    float _elevTot;
-    float _monStart;
-    float _monCur;
-    float _monAvance;
-    float _monElev0;
-    float _monPElev;
-    float _monPDist;
-    ListePoints _lpts;
+    sSegmentData *data;
 };
 
 /**

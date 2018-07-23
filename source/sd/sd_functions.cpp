@@ -157,6 +157,9 @@ int load_segment(Segment& seg) {
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
+	// allocate segment memory
+	if (!seg.init()) return -1;
+
 	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_fileObject)) {
 
 		if (strstr(g_bufferRead, "<")) {
@@ -274,6 +277,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
 				mon_seg.desallouerPoints();
 				mon_seg.setStatus(SEG_OFF);
+				mon_seg.uninit();
 			}
 		}
 		else {
