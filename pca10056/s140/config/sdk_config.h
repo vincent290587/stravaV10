@@ -5453,7 +5453,7 @@
  
 
 #ifndef APP_USBD_MSC_ENABLED
-#define APP_USBD_MSC_ENABLED 0
+#define APP_USBD_MSC_ENABLED 1
 #endif
 
 // <q> CRC16_ENABLED  - crc16 - CRC16 calculation routines

@@ -1,4 +1,4 @@
-PROJECT_NAME     := ble_app_lns_c_pca10052_s332
+PROJECT_NAME     := strava10_pca10052_s140
 TARGETS          := nrf52840_xxaa
 OUTPUT_DIRECTORY := _build
 SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.0.0_softdevice.hex
@@ -21,6 +21,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_serial_num.c \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_string_desc.c \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
+  $(SDK_ROOT)/components/libraries/usbd/class/msc/app_usbd_msc.c \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
 
 include $(PROJ_DIR)/Makefile.files
@@ -38,6 +39,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/usbd/config \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
+  $(SDK_ROOT)/components/libraries/usbd/class/msc \
   
 # Libraries common to all targets
 LIB_FILES += -lm -lstdc++
@@ -51,10 +53,11 @@ OPT = -O3 -g3
 # C flags common to all targets
 CFLAGS += $(OPT)
 CFLAGS += -DUSB_ENABLED
+CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 CFLAGS += -DUSE_VCOM_LOGS=1
-#CFLAGS += -DUSE_SVIEW=1
+#CFLAGS += -DUSE_SVIEW=0
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
-CFLAGS += -DDEBUG -DDEBUG_NRF_USER
+CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DSOFTDEVICE_PRESENT

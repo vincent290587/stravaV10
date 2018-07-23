@@ -13,12 +13,18 @@
 #include <stdio.h>
 
 #include "nrf.h"
+#include "boards.h"
 #include "nrf_drv_usbd.h"
-#include "nrf_drv_clock.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
 #include "usb_parser.h"
+#include "usb_cdc.h"
+#include "ring_buffer.h"
+
+#include "ff.h"
+#include "diskio_blkdev.h"
+#include "nrf_block_dev_sdc.h"
 #include "segger_wrapper.h"
 
 #include "millis.h"
@@ -29,6 +35,7 @@
 #include "app_usbd.h"
 #include "app_usbd_string_desc.h"
 #include "app_usbd_cdc_acm.h"
+#include "app_usbd_msc.h"
 #include "app_usbd_serial_num.h"
 
 
@@ -46,6 +53,8 @@
 #define USBD_POWER_DETECTION true
 #endif
 
+static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
+                                app_usbd_msc_user_event_t     event);
 
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
                                     app_usbd_cdc_acm_user_event_t event);
@@ -72,9 +81,54 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
                             APP_USBD_CDC_COMM_PROTOCOL_AT_V250
 );
 
-#define READ_SIZE 1
+/**
+ * @brief Endpoint list passed to @ref APP_USBD_MSC_GLOBAL_DEF
+ */
+#define ENDPOINT_LIST() APP_USBD_MSC_ENDPOINT_LIST(1, 1)
+
+/**
+ * @brief Mass storage class work buffer size
+ */
+#define MSC_WORKBUFFER_SIZE (1024)
+
+/**
+ * @brief  SDC block device definition
+ * */
+NRF_BLOCK_DEV_SDC_DEFINE(
+        m_block_dev_sdc,
+        NRF_BLOCK_DEV_SDC_CONFIG(
+                SDC_SECTOR_SIZE,
+                APP_SDCARD_CONFIG(SPI_MOSI_PIN, SPI_MISO_PIN, SPI_SCK_PIN, SDC_CS_PIN)
+         ),
+         NFR_BLOCK_DEV_INFO_CONFIG("Nordic", "SDC", "1.00")
+);
+
+/**
+ * @brief Block devices list passed to @ref APP_USBD_MSC_GLOBAL_DEF
+
+ */
+#define BLOCKDEV_LIST() (                                   \
+    NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev),    \
+)
+
+/**
+ * @brief Mass storage class instance
+ */
+APP_USBD_MSC_GLOBAL_DEF(m_app_msc,
+                        0,
+                        msc_user_ev_handler,
+                        ENDPOINT_LIST(),
+                        BLOCKDEV_LIST(),
+                        MSC_WORKBUFFER_SIZE);
+
+
+#define READ_SIZE 64
 
 static char m_rx_buffer[READ_SIZE];
+
+
+#define CDC_RB_SIZE         1024
+RING_BUFFER_DEF(cdc_rb1, CDC_RB_SIZE);
 
 static char m_tx_buffer[CDC_X_BUFFERS+1][NRF_DRV_USBD_EPSIZE];
 static uint16_t m_tx_buffer_bytes_nb[CDC_X_BUFFERS+1];
@@ -85,6 +139,25 @@ static volatile bool m_is_xfer_done = true;
 static volatile bool m_is_port_open = false;
 
 static uint32_t m_last_buffered = 0;
+
+static FATFS fs;
+
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
+
+/**
+ * @brief Class specific event handler.
+ *
+ * @param p_inst    Class instance.
+ * @param event     Class specific event.
+ */
+static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
+                                app_usbd_msc_user_event_t     event)
+{
+    UNUSED_PARAMETER(p_inst);
+    UNUSED_PARAMETER(event);
+}
 
 /**
  * @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t (headphones)
@@ -100,9 +173,10 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         {
         	m_is_port_open = true;
             /*Setup first transfer*/
-            ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
-                                                   m_rx_buffer,
-                                                   READ_SIZE);
+            ret_code_t ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
+                    m_rx_buffer,
+                    READ_SIZE);
+
             UNUSED_VARIABLE(ret);
             break;
         }
@@ -118,22 +192,24 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         } break;
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
         {
-            ret_code_t ret;
-            NRF_LOG_INFO("Bytes waiting: %d", app_usbd_cdc_acm_bytes_stored(p_cdc_acm));
-            do
-            {
-                /* Fetch data until internal buffer is empty */
-                ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
-                                            m_rx_buffer,
-                                            READ_SIZE);
 
-                // parse chars
-                usb_cdc_decoder(m_rx_buffer[0]);
+        	// parse chars
+        	size_t bytes_read = app_usbd_cdc_acm_rx_size(&m_app_cdc_acm);
 
-            } while (ret == NRF_SUCCESS);
+        	LOG_INFO("Bytes RCV: %u", bytes_read);
 
-            break;
-        }
+        	size_t ind = 0;
+        	while (bytes_read--) {
+        		usb_cdc_decoder(m_rx_buffer[ind++]);
+        	}
+
+        	/* Fetch data until internal buffer is empty */
+        	ret_code_t ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
+        			m_rx_buffer,
+					READ_SIZE);
+
+
+        } break;
         default:
             break;
     }
@@ -218,6 +294,49 @@ static void usb_cdc_trigger_xfer(void) {
 	NRF_LOG_DEBUG("VCOM new index %u", m_tx_buffer_index);
 }
 
+/**
+ *
+ * @return
+ */
+int sd_functions_init(void) {
+
+	FRESULT ff_result;
+	DSTATUS disk_state = STA_NOINIT;
+
+	// Initialize FATFS disk I/O interface by providing the block device.
+	static diskio_blkdev_t drives[] =
+	{
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev), NULL)
+	};
+
+	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
+
+	LOG_INFO("Initializing disk 0 (SDC)...");
+	for (uint32_t retries = 3; retries && disk_state; --retries)
+	{
+		disk_state = disk_initialize(0);
+	}
+	if (disk_state)
+	{
+		LOG_INFO("Disk initialization failed.");
+		return -1;
+	}
+
+	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_size;
+	uint32_t capacity = m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_count / blocks_per_mb;
+	LOG_INFO("Capacity: %d MB", capacity);
+
+	LOG_INFO("Mounting volume...");
+	ff_result = f_mount(&fs, "", 1);
+	if (ff_result)
+	{
+		LOG_INFO("Mount failed.");
+		return -2;
+	}
+	LOG_INFO("Volume mounted");
+
+	return 0;
+}
 
 
 /**
@@ -230,27 +349,15 @@ void usb_cdc_init(void)
         .ev_state_proc = usbd_user_ev_handler
     };
 
-    ret = nrf_drv_clock_init();
-    APP_ERROR_CHECK(ret);
-
-    nrf_drv_clock_lfclk_request(NULL);
-
-    NRF_LOG_INFO("Starting LF clock");
-    while(!nrf_drv_clock_lfclk_is_running())
-    {
-        /* Just waiting */
-    	NRF_LOG_RAW_INFO(".");
-    	nrf_delay_ms(1);
-    }
-
-    ret = app_timer_init();
-    APP_ERROR_CHECK(ret);
-
     app_usbd_serial_num_generate();
 
     ret = app_usbd_init(&usbd_config);
     APP_ERROR_CHECK(ret);
-    NRF_LOG_INFO("USBD CDC ACM started.");
+    NRF_LOG_INFO("USBD CDC / MSC started.");
+
+//    app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
+//    ret = app_usbd_class_append(class_inst_msc);
+//    APP_ERROR_CHECK(ret);
 
     app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     ret = app_usbd_class_append(class_cdc_acm);
@@ -276,19 +383,34 @@ void usb_cdc_init(void)
  */
 void usb_cdc_tasks(void) {
 
-	while (app_usbd_event_queue_process())
+	/* If ring buffer is not empty, parse data. */
+	while (m_is_xfer_done &&
+			RING_BUFF_IS_NOT_EMPTY(cdc_rb1) &&
+			m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE)
 	{
-		/* Nothing to do */
+		char c = RING_BUFF_GET_ELEM(cdc_rb1);
+
+		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+		m_tx_buffer[m_tx_buffer_index][ind] = c;
+
+		// increase index
+		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
+
+		RING_BUFFER_POP(cdc_rb1);
 	}
 
 	// send if inactive and data is waiting in buffer or if the buffer is almost full
 	if ((m_tx_buffer_bytes_nb[m_tx_buffer_index] > (NRF_DRV_USBD_EPSIZE * 3 /4)) ||
-			(m_tx_buffer_bytes_nb[m_tx_buffer_index] && millis() - m_last_buffered > 50)) {
+			(m_tx_buffer_bytes_nb[m_tx_buffer_index] && millis() - m_last_buffered > 1)) {
 
 		usb_cdc_trigger_xfer();
 
 	}
 
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
 }
 
 /**
@@ -297,31 +419,40 @@ void usb_cdc_tasks(void) {
  */
 void usb_print(char c) {
 
-	uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+	if (m_is_port_open &&
+			RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
+		RING_BUFFER_ADD(cdc_rb1, c);
 
-	ASSERT(ind <= NRF_DRV_USBD_EPSIZE);
-
-	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
-		m_tx_buffer[m_tx_buffer_index][ind] = c;
+		m_last_buffered = millis();
 	} else {
-		// buffer full: trigger xfer to switch buffers
-		usb_cdc_trigger_xfer();
 
-		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
-
-		// process queue
-		usb_cdc_tasks();
-
-		// refresh index
-		ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-		// store bytes
-		m_tx_buffer[m_tx_buffer_index][ind] = c;
 	}
-
-	// increase index
-	m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
-
-	m_last_buffered = millis();
+//
+//	uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+//
+//	ASSERT(ind <= NRF_DRV_USBD_EPSIZE);
+//
+//	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
+//		m_tx_buffer[m_tx_buffer_index][ind] = c;
+//	} else {
+//		// buffer full: trigger xfer to switch buffers
+//		usb_cdc_trigger_xfer();
+//
+//		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
+//
+//		// process queue
+//		usb_cdc_tasks();
+//
+//		// refresh index
+//		ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+//		// store bytes
+//		m_tx_buffer[m_tx_buffer_index][ind] = c;
+//	}
+//
+//	// increase index
+//	m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
+//
+//	m_last_buffered = millis();
 
 }
 

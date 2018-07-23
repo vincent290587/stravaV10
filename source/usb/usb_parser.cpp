@@ -35,8 +35,6 @@ void usb_cdc_decoder(char c) {
 
 		locator.sim_loc.setIsUpdated();
 
-		USB_PRINTF("New simulation LOC received \r\n");
-
 		break;
 	default:
 		break;
