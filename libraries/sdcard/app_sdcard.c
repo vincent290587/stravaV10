@@ -898,6 +898,9 @@ static void spi_handler(nrfx_spim_evt_t const * p_event,
             // Command response missing.
             sdc_evt_t evt;
             evt.result = SDC_ERROR_NOT_RESPONDING;
+
+            APP_ERROR_CHECK(evt.result);
+
             switch (m_cb.state.op)
             {
                 case SDC_OP_RESET:
@@ -951,6 +954,7 @@ static void spi_handler(nrfx_spim_evt_t const * p_event,
             {
                 evt.type      = SDC_EVT_INIT;
                 evt.result    = exit_code;
+                APP_ERROR_CHECK(exit_code);
                 m_cb.state.op = SDC_OP_IDLE;
                 SDC_CS_DEASSERT();
                 if (exit_code != SDC_SUCCESS)
@@ -967,6 +971,8 @@ static void spi_handler(nrfx_spim_evt_t const * p_event,
             {
                 evt.type      = SDC_EVT_READ;
                 evt.result    = exit_code;
+                // TODO investigate
+//                APP_ERROR_CHECK(exit_code);
                 m_cb.state.op = SDC_OP_IDLE;
                 m_cb.state.rw_op.block_count = 0;
                 m_cb.state.rw_op.blocks_left = 0;
@@ -980,6 +986,7 @@ static void spi_handler(nrfx_spim_evt_t const * p_event,
             {
                 evt.type      = SDC_EVT_WRITE;
                 evt.result    = exit_code;
+                APP_ERROR_CHECK(exit_code);
                 m_cb.state.op = SDC_OP_IDLE;
                 m_cb.state.bus_state = SDC_BUS_IDLE;
                 m_cb.state.rw_op.block_count = 0;

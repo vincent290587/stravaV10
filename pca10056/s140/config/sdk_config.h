@@ -1220,43 +1220,6 @@
 // </h> 
 //==========================================================
 
-// <h> nRF_Drivers 
-
-//==========================================================
-// <e> CLOCK_ENABLED - nrf_drv_clock - CLOCK peripheral driver - legacy layer
-//==========================================================
-#ifndef CLOCK_ENABLED
-#define CLOCK_ENABLED 1
-#endif
-// <o> CLOCK_CONFIG_LF_SRC  - LF Clock Source
- 
-// <0=> RC 
-// <1=> XTAL 
-// <2=> Synth 
-
-#ifndef CLOCK_CONFIG_LF_SRC
-#define CLOCK_CONFIG_LF_SRC 1
-#endif
-
-// <o> CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef CLOCK_CONFIG_IRQ_PRIORITY
-#define CLOCK_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// </e>
-
 // <e> COMP_ENABLED - nrf_drv_comp - COMP peripheral driver - legacy layer
 //==========================================================
 #ifndef COMP_ENABLED
@@ -1672,7 +1635,7 @@
 // <2=> Synth
 
 #ifndef CLOCK_CONFIG_LF_SRC
-#define CLOCK_CONFIG_LF_SRC 0
+#define CLOCK_CONFIG_LF_SRC USER_CLOCK_SOURCE
 #endif
 
 // <o> NRFX_CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -1702,7 +1665,7 @@
 // <2=> Synth 
 
 #ifndef NRFX_CLOCK_CONFIG_LF_SRC
-#define NRFX_CLOCK_CONFIG_LF_SRC 0
+#define NRFX_CLOCK_CONFIG_LF_SRC USER_CLOCK_SOURCE
 #endif
 
 // <o> NRFX_CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -11134,12 +11097,12 @@
 // <2=> NRF_CLOCK_LF_SRC_SYNTH 
 
 #ifndef NRF_SDH_CLOCK_LF_SRC
-#define NRF_SDH_CLOCK_LF_SRC 0
+#define NRF_SDH_CLOCK_LF_SRC USER_CLOCK_SOURCE
 #endif
 
 // <o> NRF_SDH_CLOCK_LF_RC_CTIV - SoftDevice calibration timer interval. 
 #ifndef NRF_SDH_CLOCK_LF_RC_CTIV
-#define NRF_SDH_CLOCK_LF_RC_CTIV 16
+#define NRF_SDH_CLOCK_LF_RC_CTIV USER_CLOCK_CTIV
 #endif
 
 // <o> NRF_SDH_CLOCK_LF_RC_TEMP_CTIV - SoftDevice calibration timer interval under constant temperature. 
@@ -11147,7 +11110,7 @@
 // <i>  if the temperature has not changed.
 
 #ifndef NRF_SDH_CLOCK_LF_RC_TEMP_CTIV
-#define NRF_SDH_CLOCK_LF_RC_TEMP_CTIV 2
+#define NRF_SDH_CLOCK_LF_RC_TEMP_CTIV USER_CLOCK_TTIV
 #endif
 
 // <o> NRF_SDH_CLOCK_LF_ACCURACY  - External clock accuracy used in the LL to compute timing.
@@ -11166,7 +11129,7 @@
 // <11=> NRF_CLOCK_LF_ACCURACY_1_PPM 
 
 #ifndef NRF_SDH_CLOCK_LF_ACCURACY
-#define NRF_SDH_CLOCK_LF_ACCURACY 7
+#define NRF_SDH_CLOCK_LF_ACCURACY USER_CLOCK_ACCURACY
 #endif
 
 // </h> 

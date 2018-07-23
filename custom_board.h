@@ -71,12 +71,6 @@ extern "C" {
 #define SPI_MOSI_PIN     NRF_GPIO_PIN_MAP(0, 22)
 #define SPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 20)
 
-// Low frequency clock source to be used by the SoftDevice
-#define NRF_CLOCK_LFCLKSRC      {.source       = NRF_CLOCK_LF_SRC_XTAL,      \
-                                 .rc_ctiv      = 0,                          \
-                                 .rc_temp_ctiv = 0,                          \
-                                 .accuracy     = NRF_CLOCK_LF_ACCURACY_20_PPM}
-
 
 #define FXOS_INT1         NRF_GPIO_PIN_MAP(0, 31)
 #define FXOS_INT2         NRF_GPIO_PIN_MAP(0, 29)
@@ -92,15 +86,11 @@ extern "C" {
 
 #define SPK_IN            NRF_GPIO_PIN_MAP(0, 26)
 
-#define PPS_PIN           NRF_GPIO_PIN_MAP(0, 6)
-
 #define FIX_PIN           NRF_GPIO_PIN_MAP(0, 8)
 
-// map (SPK_IN ?)
-#define KILL_PIN          SST_CS
+#define KILL_PIN          NRF_GPIO_PIN_MAP(1, 10)
 
-// map (SST_CS ?)
-#define NEO_PIN           SPK_IN
+#define NEO_PIN           NRF_GPIO_PIN_MAP(0, 4)
 
 #ifdef __cplusplus
 }

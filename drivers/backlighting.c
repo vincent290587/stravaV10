@@ -11,6 +11,7 @@
 #include "app_timer.h"
 #include "app_error.h"
 #include "backlighting.h"
+#include "segger_wrapper.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"

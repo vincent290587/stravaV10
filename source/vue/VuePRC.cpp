@@ -13,6 +13,10 @@
 #include <vue/Screenutils.h>
 #include <vue/VuePRC.h>
 
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
 
 #define VUE_PRC_NB_LINES         7
 
@@ -24,7 +28,7 @@ VuePRC::VuePRC() : Adafruit_GFX(0, 0) {
 
 	m_distance_prc = 0.;
 
-	m_parcours_sel = 10 * mes_parcours.size();
+	m_parcours_sel = 0;
 
 	m_s_parcours = nullptr;
 
@@ -124,24 +128,23 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 		{
 			if (m_s_parcours) this->decreaseZoom();
 
-			if (!m_parcours_sel || !m_selec_en) pass_event_menu = true;
-			else             m_parcours_sel--;
+			if (!m_selec_en) pass_event_menu = true;
+			else             m_parcours_sel += mes_parcours.size() - 1;
 			break;
 		}
 		case eButtonsEventRight:
 		{
 			if (m_s_parcours) this->increaseZoom();
 
-			if (!m_parcours_sel || !m_selec_en) pass_event_menu = true;
+			if (!m_selec_en) pass_event_menu = true;
 			else             m_parcours_sel++;
-
 			break;
 		}
 		case eButtonsEventCenter:
 		{
-			if (m_parcours_sel && m_selec_en && !m_s_parcours) {
+			if (m_selec_en && !m_s_parcours) {
 				m_start_loading = true;
-			} else if (!m_parcours_sel || !m_selec_en) {
+			} else if (!m_selec_en) {
 				pass_event_menu = true;
 			}
 

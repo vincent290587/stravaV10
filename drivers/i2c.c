@@ -13,6 +13,7 @@
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "Model.h"
+#include "segger_wrapper.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"

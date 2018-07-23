@@ -240,6 +240,8 @@ void spi_schedule (sSpimConfig const * spi_config,
 
 			} while (!spi_xfer_done);
 
+			LOG_DEBUG("Xfer took %ums", millis() - millis_);
+
 			W_SYSVIEW_OnTaskStopExec(SPI_TASK);
 		}
 }

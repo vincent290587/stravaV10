@@ -23,6 +23,7 @@
 #define USE_SVIEW         0
 #endif
 
+
 #ifndef NRF_LOG_BACKEND_RTT_ENABLED
 #define NRF_LOG_BACKEND_RTT_ENABLED 1
 #endif
@@ -57,12 +58,14 @@
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
+#define USB_PRINTF(...)                usb_printf(__VA_ARGS__)
+#define USB_PRINT(X)                   usb_print(X)
 #define SVIEW_INIT(...)                EMPTY_MACRO
 //#undef NRF_LOG_BACKEND_RTT_ENABLED
 //#define NRF_LOG_BACKEND_RTT_ENABLED 0
 #elif NRF_LOG_BACKEND_RTT_ENABLED
 #define LOG_INFO(...)                  NRF_LOG_INFO(__VA_ARGS__)
-#define LOG_RAW_INFO(X)                EMPTY_MACRO
+#define LOG_RAW_INFO(X)                NRF_LOG_RAW_INFO("%c", X)
 #define LOG_WARNING(...)               NRF_LOG_WARNING(__VA_ARGS__)
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 NRF_LOG_ERROR(__VA_ARGS__)

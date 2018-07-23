@@ -55,7 +55,6 @@ SRC_FILES += \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf_format.c \
   $(SDK_ROOT)/external/fatfs/port/diskio_blkdev.c \
   $(SDK_ROOT)/external/fatfs/src/ff.c \
-  $(SDK_ROOT)/components/libraries/gfx/nrf_gfx.c \
   $(SDK_ROOT)/components/libraries/block_dev/empty/nrf_block_dev_empty.c \
   $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_block_dev_qspi.c \
   $(SDK_ROOT)/components/libraries/block_dev/ram/nrf_block_dev_ram.c \
