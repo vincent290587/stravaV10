@@ -3017,13 +3017,13 @@
 // <e> NRFX_RTC_ENABLED - nrfx_rtc - RTC peripheral driver
 //==========================================================
 #ifndef NRFX_RTC_ENABLED
-#define NRFX_RTC_ENABLED 0
+#define NRFX_RTC_ENABLED 1
 #endif
 // <q> NRFX_RTC0_ENABLED  - Enable RTC0 instance
  
 
 #ifndef NRFX_RTC0_ENABLED
-#define NRFX_RTC0_ENABLED 1
+#define NRFX_RTC0_ENABLED 0
 #endif
 
 // <q> NRFX_RTC1_ENABLED  - Enable RTC1 instance
@@ -3049,7 +3049,7 @@
 
 
 #ifndef NRFX_RTC_DEFAULT_CONFIG_FREQUENCY
-#define NRFX_RTC_DEFAULT_CONFIG_FREQUENCY 32768
+#define NRFX_RTC_DEFAULT_CONFIG_FREQUENCY 1024
 #endif
 
 // <q> NRFX_RTC_DEFAULT_CONFIG_RELIABLE  - Ensures safe compare event triggering
@@ -5094,7 +5094,7 @@
 // <e> APP_SCHEDULER_ENABLED - app_scheduler - Events scheduler
 //==========================================================
 #ifndef APP_SCHEDULER_ENABLED
-#define APP_SCHEDULER_ENABLED 1
+#define APP_SCHEDULER_ENABLED 0
 #endif
 // <q> APP_SCHEDULER_WITH_PAUSE  - Enabling pause feature
  
@@ -5172,7 +5172,7 @@
 // <31=> 1024 Hz 
 
 #ifndef APP_TIMER_CONFIG_RTC_FREQUENCY
-#define APP_TIMER_CONFIG_RTC_FREQUENCY 0
+#define APP_TIMER_CONFIG_RTC_FREQUENCY 31
 #endif
 
 // <o> APP_TIMER_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -5199,7 +5199,7 @@
 // <i> will fail.
 
 #ifndef APP_TIMER_CONFIG_OP_QUEUE_SIZE
-#define APP_TIMER_CONFIG_OP_QUEUE_SIZE 15
+#define APP_TIMER_CONFIG_OP_QUEUE_SIZE 20
 #endif
 
 // <q> APP_TIMER_CONFIG_USE_SCHEDULER  - Enable scheduling app_timer events to app_scheduler
