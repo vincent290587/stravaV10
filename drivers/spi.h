@@ -31,7 +31,7 @@ void spi_uninit(void);
 
 void spi_reconfigure (sSpimConfig const * spi_config);
 
-void spi_schedule(sSpimConfig const * spi_config,
+int spi_schedule(sSpimConfig const * spi_config,
 		uint8_t const * p_tx_buffer,
 		size_t          tx_length,
 		uint8_t       * p_rx_buffer,

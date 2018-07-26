@@ -256,7 +256,7 @@
 // <16384=> 16384
 
 #ifndef NRF_LOG_BUFSIZE
-#define NRF_LOG_BUFSIZE 512
+#define NRF_LOG_BUFSIZE 1024
 #endif
 
 // <q> NRF_LOG_ALLOW_OVERFLOW  - Configures behavior when circular buffer is full.
@@ -278,7 +278,7 @@
 #endif
 // <o> NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY - Default frequency of the timestamp (in Hz)
 #ifndef NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY
-#define NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY 32768
+#define NRF_LOG_TIMESTAMP_DEFAULT_FREQUENCY 1000
 #endif
 
 // </e>

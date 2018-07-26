@@ -104,6 +104,8 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/VParser \
   $(PROJ_DIR)/libraries/utils \
   $(PROJ_DIR)/libraries/sdcard \
+  $(PROJ_DIR)/libraries/spiffs \
+  $(PROJ_DIR)/libraries/SST \
   $(PROJ_DIR)/rf \
   $(PROJ_DIR)/source \
   $(PROJ_DIR)/source/display \
