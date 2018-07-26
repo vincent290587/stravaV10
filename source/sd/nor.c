@@ -126,22 +126,22 @@ void nor_test(void) {
 		return;
 	}
 
-//	char buf[12] = {0};
-//
-//	// Surely, I've mounted spiffs before entering here
-//
-//	spiffs_file fd = SPIFFS_open(&fs, "my_file", SPIFFS_APPEND | SPIFFS_CREAT | SPIFFS_RDWR, 0);
-//	if (SPIFFS_write(&fs, fd, (u8_t *)"Hello world", 12) < 0) {
-//		LOG_INFO("errno %i\n", SPIFFS_errno(&fs));
-//	} else {
-//		LOG_INFO("File created %i\n", SPIFFS_errno(&fs));
-//	}
-//	SPIFFS_close(&fs, fd);
-//
-//	fd = SPIFFS_open(&fs, "my_file", SPIFFS_RDWR, 0);
-//	if (SPIFFS_read(&fs, fd, (u8_t *)buf, 12) < 0) LOG_INFO("errno %i\n", SPIFFS_errno(&fs));
-//	SPIFFS_close(&fs, fd);
-//
-//	LOG_INFO("--> %s <--\n", buf);
+	char buf[12] = {0};
+
+	// Surely, I've mounted spiffs before entering here
+
+	spiffs_file fd = SPIFFS_open(&fs, "my_file", SPIFFS_APPEND | SPIFFS_CREAT | SPIFFS_RDWR, 0);
+	if (SPIFFS_write(&fs, fd, (u8_t *)"Hello world", 12) < 0) {
+		LOG_INFO("errno %i\n", SPIFFS_errno(&fs));
+	} else {
+		LOG_INFO("File created %i\n", SPIFFS_errno(&fs));
+	}
+	SPIFFS_close(&fs, fd);
+
+	fd = SPIFFS_open(&fs, "my_file", SPIFFS_RDWR, 0);
+	if (SPIFFS_read(&fs, fd, (u8_t *)buf, 12) < 0) LOG_INFO("errno %i\n", SPIFFS_errno(&fs));
+	SPIFFS_close(&fs, fd);
+
+	LOG_INFO("--> %s <--\n", buf);
 
 }

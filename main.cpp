@@ -458,6 +458,12 @@ int main(void)
 			roller_manager_tasks();
 #endif
 
+#ifdef _DEBUG_TWI
+			veml.refresh(nullptr);
+			fxos_tasks(nullptr);
+			ms5637.refresh(nullptr);
+#endif
+
 			notifications_tasks();
 
 			backlighting_tasks();
