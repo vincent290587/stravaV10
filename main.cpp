@@ -285,13 +285,36 @@ static void pins_init(void)
 //	nrf_gpio_cfg_output(SDA_PIN_NUMBER);
 //	nrf_gpio_pin_set(SDA_PIN_NUMBER);
 
-	// PPS_PIN is configured later
 	// FIX_PIN is configured later
 
 	nrf_gpio_cfg_output(NEO_PIN);
 	nrf_gpio_pin_clear(NEO_PIN);
+
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
+}
+
+void wdt_reload() {
+	nrfx_wdt_channel_feed(m_channel_id);
+}
+
+static void clock_handler(nrf_drv_clock_evt_type_t event) {
+
+	switch (event) {
+	case NRF_DRV_CLOCK_EVT_LFCLK_STARTED:
+		LOG_INFO("LFCLK started");
+		break;
+	case NRF_DRV_CLOCK_EVT_HFCLK_STARTED:
+		LOG_INFO("HFCLK started");
+		break;
+	case NRF_DRV_CLOCK_EVT_CAL_DONE:
+		LOG_INFO("CAL done");
+		break;
+	case NRF_DRV_CLOCK_EVT_CAL_ABORTED:
+		LOG_INFO("CAL aborted");
+		break;
+	}
+
 }
 
 /**
@@ -301,6 +324,13 @@ static void pins_init(void)
 int main(void)
 {
 	ret_code_t err_code;
+
+	// errata 20 RTC
+//	NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
+//	NRF_CLOCK->TASKS_LFCLKSTART     = 1;
+//	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
+//	NRF_RTC0->TASKS_STOP = 0;
+//	NRF_RTC1->TASKS_STOP = 0;
 
 	// Initialize.
     //Configure WDT.
@@ -313,32 +343,49 @@ int main(void)
 
 	log_init();
 
-    err_code = nrf_drv_power_init(NULL);
-    APP_ERROR_CHECK(err_code);
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = 0xffffffff;
+	NRF_LOG_WARNING("Reset_reason: 0x%08x.\n", reset_reason);
+
+    char buff[100];
+    memset(buff, 0, sizeof(buff));
+    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
+    		reset_reason);
+    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
+
+	if (reset_reason == 0)
+	{
+		// watchdog reset
+		//while(1) ;
+		NVIC_SystemReset();
+	}
+
+//    err_code = nrf_drv_power_init(NULL);
+//    APP_ERROR_CHECK(err_code);
 
 	pins_init();
-
-	// errata 20 RTC
-	NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
-	NRF_CLOCK->TASKS_LFCLKSTART     = 1;
-	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
-	NRF_RTC0->TASKS_STOP = 0;
 
 	// clocks init
 	err_code = nrf_drv_clock_init();
     APP_ERROR_CHECK(err_code);
-    nrf_drv_clock_lfclk_request(NULL);
-    NRF_LOG_INFO("Starting LF clock");
+
+    nrf_drv_clock_handler_item_s clock_h = {
+    		.p_next = NULL,
+    		.event_handler = clock_handler,
+    };
+
+    LOG_INFO("Starting LF clock");
+    nrf_drv_clock_lfclk_request(&clock_h);
     while(!nrf_drv_clock_lfclk_is_running())
     {
         /* Just waiting */
-    	NRF_LOG_RAW_INFO(".");
     	nrf_delay_ms(1);
     }
 
     err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
 
+    nrf_delay_ms(5);
 	LOG_INFO("Init start");
 
 	// drivers
@@ -355,6 +402,7 @@ int main(void)
 #ifdef USB_ENABLED
 	// apply correction 0x20 line 97 nrf_drv_usbd_errata.h
 	usb_cdc_init();
+	usb_cdc_tasks();
 #endif
 
 	nrf_pwr_mgmt_init();
@@ -404,6 +452,8 @@ int main(void)
 
 			job_to_do = false;
 
+			LOG_INFO("Task %u", millis());
+
 #ifdef ANT_STACK_SUPPORT_REQD
 			roller_manager_tasks();
 #endif
@@ -414,23 +464,13 @@ int main(void)
 
 			boucle.tasks();
 
-			nrfx_wdt_channel_feed(m_channel_id);
+			wdt_reload();
 
+			if (!millis()) NRF_LOG_WARNING("No millis");
 		}
 
 		// tasks
 		perform_system_tasks();
-
-#ifdef USB_ENABLED
-		usb_cdc_tasks();
-#endif
-
-		app_sched_execute();
-
-		if (NRF_LOG_PROCESS() == false)
-		{
-			nrf_pwr_mgmt_run();
-		}
 
 	}
 }

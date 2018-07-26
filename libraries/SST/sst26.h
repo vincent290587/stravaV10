@@ -17,8 +17,8 @@
  * Transfer results
  */
 typedef enum {
-    SST26_OP_ERROR = 0,
-    SST26_OP_DONE,
+    SST26_OP_DONE = 0,
+    SST26_OP_ERROR,
     SST26_OP_INCOMPLETE,
     SST26_OP_SPI_BUSY
 } sst26_op_t;
@@ -88,7 +88,7 @@ sst26_op_t sst26_chip_erase();
  *
  * @returns operation result. SST26_OP_DONE expected if successful.
  */
-sst26_op_t sst26_write(int address, const uint32_t *data, size_t length);
+sst26_op_t sst26_write(int address, const uint8_t *data, size_t length);
 
 /**
  * Puts in the data buffer the length bytes read from memory.
@@ -99,6 +99,6 @@ sst26_op_t sst26_write(int address, const uint32_t *data, size_t length);
  *
  * @returns operation result. SST26_OP_DONE expected if successful.
  */
-sst26_op_t sst26_read(int address, uint32_t *data, size_t length);
+sst26_op_t sst26_read(int address, uint8_t *data, size_t length);
 
 #endif /* _SST26VF064B_H_ */

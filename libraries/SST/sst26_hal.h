@@ -132,11 +132,11 @@ void _chip_enable_low();
 
 void _chip_enable_high();
 
-bool spi_send_sync(uint8_t *data, size_t data_nb);
+bool spi_send_sync(const uint8_t *data, size_t data_nb);
 
 bool spi_receive_sync(uint8_t *data, size_t data_nb);
 
-bool spi_transceive_sync(uint8_t *data_in, size_t data_in_nb, uint8_t *data_out, size_t data_out_nb);
+bool spi_transceive_sync(const uint8_t *data_in, size_t data_in_nb, uint8_t *data_out, size_t data_out_nb);
 
 void sst_init_spi(void);
 

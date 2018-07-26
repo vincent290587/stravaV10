@@ -13,6 +13,7 @@
 #include "nrf_assert.h"
 #include "nrf_delay.h"
 #include "boards.h"
+#include "Model.h"
 #include "parameters.h"
 #include "spi.h"
 #include "segger_wrapper.h"
@@ -172,8 +173,9 @@ void spi_reconfigure (sSpimConfig const * spi_config) {
  * @param tx_length
  * @param p_rx_buffer
  * @param rx_length
+ * @return 0 if success
  */
-void spi_schedule (sSpimConfig const * spi_config,
+int spi_schedule (sSpimConfig const * spi_config,
 		uint8_t const * p_tx_buffer,
 		size_t          tx_length,
 		uint8_t       * p_rx_buffer,
@@ -224,18 +226,22 @@ void spi_schedule (sSpimConfig const * spi_config,
 		spi_xfer_done = false;
 	}
 
-	if (p_spi_config[0])
+	wdt_reload();
+
+	if (p_spi_config[0]) {
 		if (p_spi_config[0]->blocking) {
 			// wait for last transfer to finish
 			uint32_t millis_ = millis();
 			do {
-				NRF_LOG_PROCESS();
+				// perform system tasks
+				perform_system_tasks();
 
-				if (millis() - millis_ > 150) {
-					NRF_LOG_ERROR("SPI timeout");
+				if (millis() - millis_ > 200) {
+					LOG_ERROR("SPI timeout TX=%u RX=%u",
+							tx_length, rx_length);
 					nrfx_spim_abort(&spi);
 					spi_xfer_done = true;
-					break;
+					return 1;
 				}
 
 			} while (!spi_xfer_done);
@@ -244,6 +250,9 @@ void spi_schedule (sSpimConfig const * spi_config,
 
 			W_SYSVIEW_OnTaskStopExec(SPI_TASK);
 		}
+	}
+
+	return 0;
 }
 
 

@@ -6,11 +6,19 @@
  */
 
 #include "Model.h"
+#include "nrf_pwr_mgmt.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
 #include "uart.h"
 
+#ifdef USB_ENABLED
+#include "usb_cdc.h"
+#endif
+
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
 SAtt att;
 
@@ -83,6 +91,16 @@ void perform_system_tasks(void) {
 
 	uart_tasks();
 
+#ifdef USB_ENABLED
+	usb_cdc_tasks();
+#endif
+
+	//		app_sched_execute();
+
+	if (NRF_LOG_PROCESS() == false)
+	{
+		nrf_pwr_mgmt_run();
+	}
 }
 
 /**

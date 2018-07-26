@@ -80,6 +80,7 @@ void perform_system_tasks(void);
 
 bool check_memory_exception(void);
 
+void wdt_reload(void);
 
 #if defined(__cplusplus)
 }

@@ -25,18 +25,19 @@ static u8_t spiffs_work_buf[LOG_PAGE_SIZE*2];
 static u8_t spiffs_fds[32*4];
 static u8_t spiffs_cache_buf[(LOG_PAGE_SIZE+32)*4];
 static spiffs fs;
+static bool m_is_spiffs_started = false;
 
 
 static s32_t my_spiffs_read(u32_t addr, u32_t size, u8_t *dst) {
-	//my_spi_read(addr, size, dst);
-	sst26_read(addr, (uint32_t*)dst, size);
+
+	while (SST26_OP_DONE != sst26_read(addr, dst, size));
 
 	return SPIFFS_OK;
 }
 
 static s32_t my_spiffs_write(u32_t addr, u32_t size, u8_t *src) {
-	//my_spi_write(addr, size, src);
-	sst26_write(addr, (uint32_t*)src, size);
+
+	sst26_write(addr, src, size);
 
 	return SPIFFS_OK;
 }
@@ -66,44 +67,81 @@ static void _my_spiffs_mount() {
 	sst26_validate_id();
 
 	spiffs_config cfg;
-	cfg.phys_size = SST26_NSECTORS*SST26_SECTOR_SIZE; // use all spi flash
-	cfg.phys_addr = 0; // start spiffs at start of spi flash
-	cfg.phys_erase_block = SST26_SECTOR_SIZE; // according to datasheet
-	cfg.log_block_size   = SST26_SECTOR_SIZE; // let us not complicate things
-	cfg.log_page_size = LOG_PAGE_SIZE; // as we said
 
-	cfg.hal_read_f = my_spiffs_read;
+	cfg.hal_read_f  = my_spiffs_read;
 	cfg.hal_write_f = my_spiffs_write;
 	cfg.hal_erase_f = my_spiffs_erase;
 
 	int res = SPIFFS_mount(&fs,
-			&cfg,
-			spiffs_work_buf,
-			spiffs_fds,
-			sizeof(spiffs_fds),
-			spiffs_cache_buf,
-			sizeof(spiffs_cache_buf),
-			0);
-	printf("mount res: %i\n", res);
+				&cfg,
+				spiffs_work_buf,
+				spiffs_fds,
+				sizeof(spiffs_fds),
+				spiffs_cache_buf,
+				sizeof(spiffs_cache_buf),
+				0);
+
+	if (res != 0) {
+
+		LOG_INFO("SPIFFS Mount fail, formatting");
+
+		SPIFFS_unmount(&fs);
+
+		res = sst26_chip_erase();
+
+		sst26_global_block_unlock();
+
+		LOG_INFO("Chip erase res: %i", res);
+
+		res = SPIFFS_format(&fs);
+
+		LOG_INFO("SPIFFS format res: %i", res);
+
+		res = SPIFFS_mount(&fs,
+					&cfg,
+					spiffs_work_buf,
+					spiffs_fds,
+					sizeof(spiffs_fds),
+					spiffs_cache_buf,
+					sizeof(spiffs_cache_buf),
+					0);
+	}
+
+	LOG_INFO("SPIFFS Mount res: %i\n", res);
+
+	if (res == 0) m_is_spiffs_started = true;
 }
 
 
-void nor_test(void) {
-
-	char buf[12];
+void nor_init(void) {
 
 	_my_spiffs_mount();
 
-	// Surely, I've mounted spiffs before entering here
+}
 
-	spiffs_file fd = SPIFFS_open(&fs, "my_file", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
-	if (SPIFFS_write(&fs, fd, (u8_t *)"Hello world", 12) < 0) printf("errno %i\n", SPIFFS_errno(&fs));
-	SPIFFS_close(&fs, fd);
+void nor_test(void) {
 
-	fd = SPIFFS_open(&fs, "my_file", SPIFFS_RDWR, 0);
-	if (SPIFFS_read(&fs, fd, (u8_t *)buf, 12) < 0) printf("errno %i\n", SPIFFS_errno(&fs));
-	SPIFFS_close(&fs, fd);
+	if (!m_is_spiffs_started) {
+		_my_spiffs_mount();
+		return;
+	}
 
-	LOG_INFO("--> %s <--\n", buf);
+//	char buf[12] = {0};
+//
+//	// Surely, I've mounted spiffs before entering here
+//
+//	spiffs_file fd = SPIFFS_open(&fs, "my_file", SPIFFS_APPEND | SPIFFS_CREAT | SPIFFS_RDWR, 0);
+//	if (SPIFFS_write(&fs, fd, (u8_t *)"Hello world", 12) < 0) {
+//		LOG_INFO("errno %i\n", SPIFFS_errno(&fs));
+//	} else {
+//		LOG_INFO("File created %i\n", SPIFFS_errno(&fs));
+//	}
+//	SPIFFS_close(&fs, fd);
+//
+//	fd = SPIFFS_open(&fs, "my_file", SPIFFS_RDWR, 0);
+//	if (SPIFFS_read(&fs, fd, (u8_t *)buf, 12) < 0) LOG_INFO("errno %i\n", SPIFFS_errno(&fs));
+//	SPIFFS_close(&fs, fd);
+//
+//	LOG_INFO("--> %s <--\n", buf);
 
 }

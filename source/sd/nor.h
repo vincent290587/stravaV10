@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+void nor_init(void);
+
 void nor_test(void);
 
 #ifdef __cplusplus
