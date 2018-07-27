@@ -27,7 +27,7 @@
 #ifdef _DEBUG_TWI
 
 #define FLAG_NO_STOP       true
-#define FLAG_REP_START     false
+#define FLAG_REP_STOP     false
 
 /* Number of possible TWI addresses. */
 #define TWI_ADDRESSES      127
@@ -72,7 +72,7 @@ void i2c_init(void) {
 			.sda                = SDA_PIN_NUMBER,
 			.frequency          = NRF_TWIM_FREQ_100K,
 			.interrupt_priority = APP_IRQ_PRIORITY_LOWEST,
-			.hold_bus_uninit    = false
+			.hold_bus_uninit    = true
     };
 
     err_code = nrfx_twim_init(&m_twi, &config, NULL, NULL);
@@ -92,21 +92,21 @@ void i2c_scan(void) {
 
     uint8_t sample_data = 0x1;
 
-    err_code = nrfx_twim_rx(&m_twi, 0x76, &sample_data, sizeof(sample_data));
+    err_code = nrfx_twim_tx(&m_twi, 0x76, &sample_data, sizeof(sample_data), FLAG_REP_STOP);
     if (err_code == NRF_SUCCESS)
     {
     	LOG_INFO("TWI device detected at address 0x%X", 0x76);
     }
     NRF_LOG_FLUSH();
 
-    err_code = nrfx_twim_rx(&m_twi, 0x10, &sample_data, sizeof(sample_data));
+    err_code = nrfx_twim_tx(&m_twi, 0x10, &sample_data, sizeof(sample_data), FLAG_REP_STOP);
     if (err_code == NRF_SUCCESS)
     {
     	LOG_INFO("TWI device detected at address 0x%X", 0x10);
     }
     NRF_LOG_FLUSH();
 
-    err_code = nrfx_twim_rx(&m_twi, 0x1E, &sample_data, sizeof(sample_data));
+    err_code = nrfx_twim_tx(&m_twi, 0x1E, &sample_data, sizeof(sample_data), FLAG_REP_STOP);
     if (err_code == NRF_SUCCESS)
     {
     	LOG_INFO("TWI device detected at address 0x%X", 0x1E);
@@ -179,7 +179,6 @@ bool i2c_read_n(uint8_t address, uint8_t *val, unsigned int len) {
 	uint32_t err_code = nrfx_twim_rx(i2c_get_ref(), address, val, len);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI readn error 0x%X at address 0x%x.", err_code, address);
-		NRF_LOG_FLUSH();
 		return false;
 	}
 
@@ -196,10 +195,9 @@ bool i2c_write8(uint8_t address, uint8_t val) {
 
 	uint8_t sample_data = val;
 
-	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &sample_data, 1, FLAG_REP_START);
+	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &sample_data, 1, FLAG_REP_STOP);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI write8 error 0x%X at address 0x%x value= 0x%x.", err_code, address, val);
-		NRF_LOG_FLUSH();
 		return false;
 	}
 
@@ -213,7 +211,6 @@ bool i2c_write8_cont(uint8_t address, uint8_t val) {
 	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &sample_data, 1, FLAG_NO_STOP);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI write8_c problem at address 0x%x.", address);
-		NRF_LOG_FLUSH();
 		return false;
 	}
 
@@ -232,11 +229,10 @@ bool i2c_write8_cont(uint8_t address, uint8_t val) {
 bool i2c_write_n(uint8_t address, uint8_t *val, unsigned int len) {
 
 	/* Indicate which register we want to write from */
-	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, val, len, FLAG_REP_START);
+	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, val, len, FLAG_REP_STOP);
 
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI i2c_write_n problem at address 0x%x.", address);
-		NRF_LOG_FLUSH();
 		return false;
 	}
 
@@ -255,10 +251,9 @@ bool i2c_write_reg_8(uint8_t address, uint8_t reg, uint8_t val) {
 
 	uint8_t sample_data[2] = {reg, val};
 
-	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, sample_data, 2, FLAG_REP_START);
+	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, sample_data, 2, FLAG_REP_STOP);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI write_reg_8 error 0x%X @ 0x%x reg=0x%x val=0x%x.", err_code, address, reg, val);
-		NRF_LOG_FLUSH();
 		return false;
 	}
 
@@ -281,7 +276,6 @@ bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
 	err_code |= nrfx_twim_rx(i2c_get_ref(), address, val, 1);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI read_reg_8 problem at address 0x%x.", address);
-		NRF_LOG_FLUSH();
 		return false;
 	}
 
@@ -304,7 +298,6 @@ bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len
 	err_code |= nrfx_twim_rx(i2c_get_ref(), address, val, len);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI read_reg_n error 0x%X at address 0x%x.", err_code, address);
-		NRF_LOG_FLUSH();
 		return false;
 	}
 

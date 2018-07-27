@@ -7,6 +7,9 @@
 
 #include "i2c.h"
 #include "fsl_fxos.h"
+#include "nrf_gpio.h"
+#include "nrf_delay.h"
+#include "boards.h"
 #include "parameters.h"
 #include "segger_wrapper.h"
 #include <sensors/fxos.h>
@@ -23,18 +26,10 @@ ret_code_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_
 	ret_code_t status = NRF_SUCCESS;
 
 #ifdef _DEBUG_TWI
-	if (!i2c_write8(FXOS_7BIT_ADDRESS, reg)) {
+	if (!i2c_read_reg_n(FXOS_7BIT_ADDRESS, reg, val, bytesNumber)) {
 		LOG_ERROR("FXOS Error 1");
 		status = 1;
 	}
-
-	// repeated start
-	if (!i2c_read_n(FXOS_7BIT_ADDRESS, val, bytesNumber)) {
-		LOG_ERROR("FXOS Error 2");
-		status += 1;
-	}
-#else
-
 #endif
 
 	return status;
@@ -59,7 +54,7 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
  * Definitions
  ******************************************************************************/
 
-#define MAX_ACCEL_AVG_COUNT 25U
+#define MAX_ACCEL_AVG_COUNT 1U
 
 /* multiplicative conversion constants */
 #define DegToRad 0.017453292
@@ -135,12 +130,22 @@ static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *A
 {
 	fxos_data_t fxos_data;
 #ifdef _DEBUG_TWI
-	if (FXOS_ReadReg(nullptr, M_OUT_X_MSB_REG, &fxos_data.magXMSB, 6)) {
-		return;
-	}
 	if (FXOS_ReadReg(nullptr, OUT_X_MSB_REG, &fxos_data.accelXMSB, 6)) {
+		LOG_ERROR("Error reading OUT_X_MSB_REG");
 		return;
 	}
+	if (FXOS_ReadReg(nullptr, M_OUT_X_MSB_REG, &fxos_data.magXMSB, 6)) {
+		LOG_ERROR("Error reading M_OUT_X_MSB_REG");
+		return;
+	}
+	uint8_t temp = 0;
+	if (FXOS_ReadReg(nullptr, TEMP_REG, &temp, 1)) {
+		LOG_ERROR("Error reading TEMP_REG");
+		return;
+	} else {
+		LOG_INFO("FXOS temp: %u", temp);
+	}
+
 #else
 	ASSERT(g_fxosHandle);
 	memcpy(&fxos_data.accelXMSB, g_fxosHandle->acc_buffer, 6);

@@ -5,8 +5,6 @@
  *      Author: Vincent
  */
 
-#define USE_RTT 0
-
 
 #include "millis.h"
 #include "helper.h"
@@ -117,6 +115,10 @@ bool STC3100::refresh(tSTC31000Data *_data)
 {
 	memcpy(&_stc_data, _data, sizeof(_stc_data));
 
+#ifdef _DEBUG_TWI
+	this->readChip();
+#endif
+
 	this->computeVoltage ();
 	this->computeCharge  ();
 	this->computeCurrent ();
@@ -129,6 +131,8 @@ bool STC3100::refresh(tSTC31000Data *_data)
 		this->reset();
 		m_soft_reset = true;
 	}
+
+	LOG_INFO("Voltage %dmV", (int) (_voltage*1000));
 
 	return true;
 }

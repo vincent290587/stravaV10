@@ -87,7 +87,7 @@ void VEML6075::refresh(uint8_t *_data) {
 #else
 
 	this->config = this->read16(VEML6075_REG_CONF);
-	LOG_INFO("Config: %u", this->config);
+	LOG_DEBUG("Config: %u", this->config);
 	if (!this->config) {
 		this->reset();
 		return;
@@ -103,6 +103,7 @@ void VEML6075::refresh(uint8_t *_data) {
 
 	LOG_INFO("Raw IR : %u", this->raw_ir);
 	LOG_INFO("Raw VIS: %u", this->raw_vis);
+	LOG_INFO("Raw UVA: %u", this->raw_uva);
 }
 
 uint16_t VEML6075::getRawUVA() {
@@ -189,7 +190,7 @@ uint16_t VEML6075::read16(uint8_t reg) {
 uint16_t VEML6075::read16_raw(uint8_t reg) {
 	uint16_t res = 0;
 #ifdef _DEBUG_TWI
-	if (!i2c_write8(VEML6075_ADDR, reg)) {
+	if (!i2c_write8_cont(VEML6075_ADDR, reg)) {
 		return 0xFFFF;
 	}
 

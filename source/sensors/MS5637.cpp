@@ -206,8 +206,8 @@ uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample
 
 	delay_ms(sampling_delay);
 
-	uint8_t adc[4];
-	if (!this->wireReadDataBlock(CMD_READ_ADC, adc, 3)) {
+	uint8_t adc[3];
+	if (!this->wireReadDataBlock(CMD_READ_ADC, adc, sizeof(adc))) {
 		return 0;
 	}
 
@@ -269,6 +269,7 @@ bool MS5637::computeTempAndPressure(int32_t d1, int32_t d2) {
 	m_pressure = (float) p / 100;
 
 	LOG_INFO("Pressure: %d mbar", (int) (m_pressure));
+	LOG_INFO("Temperature: %d°", (int) (m_temperature));
 
 	return true;
 }
@@ -302,6 +303,7 @@ bool MS5637::wireWriteByte(uint8_t val) {
 int MS5637::wireReadDataBlock(uint8_t reg, uint8_t *val, unsigned int len) {
 #ifdef _DEBUG_TWI
 	i2c_write8(MS5637_ADDR, reg);
+	// repeated stop
 	// repeated start
 	if (!i2c_read_n(MS5637_ADDR, val, len)) {
 		return 0;
