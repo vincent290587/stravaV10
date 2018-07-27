@@ -21,6 +21,7 @@
 #include "i2c.h"
 #include "fec.h"
 #include "bsp.h"
+#include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
@@ -64,7 +65,7 @@ nrfx_wdt_channel_id m_channel_id;
 extern "C" void ble_ant_init(void);
 
 
-static volatile bool job_to_do = false;
+static volatile bool job_to_do = true;
 
 
 /**
@@ -360,8 +361,10 @@ int main(void)
 		NVIC_SystemReset();
 	}
 
-//    err_code = nrf_drv_power_init(NULL);
-//    APP_ERROR_CHECK(err_code);
+#ifndef USB_ENABLED
+    err_code = nrf_drv_power_init(NULL);
+    APP_ERROR_CHECK(err_code);
+#endif
 
 	pins_init();
 
@@ -398,6 +401,11 @@ int main(void)
 	// SD functions
 	sd_functions_init();
 
+	// SPI flash init
+	nor_init();
+
+	LOG_FLUSH();
+
 	// Initialize timer module
 #ifdef USB_ENABLED
 	// apply correction 0x20 line 97 nrf_drv_usbd_errata.h
@@ -414,11 +422,11 @@ int main(void)
 	ant_timers_init();
 #endif
 
-//	backlighting_init();
+	backlighting_init();
 
 	buttons_leds_init();
 
-//	notifications_init(NEO_PIN);
+	notifications_init(NEO_PIN);
 
 	// init BLE + ANT
 #ifdef BLE_STACK_SUPPORT_REQD
@@ -452,13 +460,16 @@ int main(void)
 
 			job_to_do = false;
 
-			LOG_INFO("Task %u", millis());
+			LOG_INFO("\r\nTask %u", millis());
+
+			wdt_reload();
 
 #ifdef ANT_STACK_SUPPORT_REQD
 			roller_manager_tasks();
 #endif
 
 #ifdef _DEBUG_TWI
+			stc.refresh(nullptr);
 			veml.refresh(nullptr);
 			fxos_tasks(nullptr);
 			ms5637.refresh(nullptr);
@@ -469,8 +480,6 @@ int main(void)
 			backlighting_tasks();
 
 			boucle.tasks();
-
-			wdt_reload();
 
 			if (!millis()) NRF_LOG_WARNING("No millis");
 		}

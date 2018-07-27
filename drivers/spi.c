@@ -130,7 +130,8 @@ void spi_reconfigure (sSpimConfig const * spi_config) {
 			NRF_LOG_WARNING("SPI Waiting...");
 			uint32_t millis_ = millis();
 			do {
-				NRF_LOG_PROCESS();
+				// perform system tasks
+				perform_system_tasks();
 
 				if (millis() - millis_ > 500) {
 					NRF_LOG_ERROR("SPI timeout");
