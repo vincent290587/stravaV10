@@ -21,6 +21,7 @@
 #include "usb_parser.h"
 #include "usb_cdc.h"
 #include "ring_buffer.h"
+#include "Model.h"
 
 #include "ff.h"
 #include "diskio_blkdev.h"
@@ -381,10 +382,25 @@ void usb_cdc_init(void)
 /**
  *
  */
+void usb_flush(void) {
+
+	/* If ring buffer is not empty, parse data. */
+	while (m_is_port_open &&
+			RING_BUFF_IS_NOT_EMPTY(cdc_rb1))
+	{
+		perform_system_tasks();
+	}
+
+}
+
+/**
+ *
+ */
 void usb_cdc_tasks(void) {
 
 	/* If ring buffer is not empty, parse data. */
-	while (m_is_xfer_done &&
+	while (m_is_port_open &&
+			m_is_xfer_done &&
 			RING_BUFF_IS_NOT_EMPTY(cdc_rb1) &&
 			m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE)
 	{
@@ -419,8 +435,7 @@ void usb_cdc_tasks(void) {
  */
 void usb_print(char c) {
 
-	if (m_is_port_open &&
-			RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
+	if (RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
 		RING_BUFFER_ADD(cdc_rb1, c);
 
 		m_last_buffered = millis();

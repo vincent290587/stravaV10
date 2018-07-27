@@ -56,7 +56,7 @@
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 usb_printf(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
-#define LOG_FLUSH(...)                 EMPTY_MACRO
+#define LOG_FLUSH(...)                 usb_flush();
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define USB_PRINTF(...)                usb_printf(__VA_ARGS__)
 #define USB_PRINT(X)                   usb_print(X)

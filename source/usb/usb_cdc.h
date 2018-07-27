@@ -14,6 +14,8 @@ extern "C" {
 
 void usb_cdc_init(void);
 
+void usb_flush(void);
+
 void usb_cdc_tasks(void);
 
 void usb_print(char c);
