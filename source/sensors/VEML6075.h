@@ -74,13 +74,6 @@ enum veml6075_int_time {
 typedef enum veml6075_int_time veml6075_int_time_t;
 
 
-#define VEML_READ_REG_REP_START(_reg_def, p_buffer, byte_cnt) \
-		NRF_TWI_MNGR_WRITE(VEML6075_ADDR, _reg_def, 1, 0), \
-		NRF_TWI_MNGR_READ (VEML6075_ADDR, p_buffer, byte_cnt, 0)
-
-#define VEML_WRITE_REG(p_buffer, byte_cnt) \
-		NRF_TWI_MNGR_WRITE(VEML6075_ADDR, p_buffer, byte_cnt, 0)
-
 #define VEML_READ_ALL_REGS \
 {                                          \
 	VEML6075_REG_UVA,                      \
@@ -89,6 +82,13 @@ typedef enum veml6075_int_time veml6075_int_time_t;
 	VEML6075_REG_UVCOMP1,                  \
 	VEML6075_REG_UVCOMP2                   \
 }
+
+#define VEML_READ_REG_REP_START(_reg_def, p_buffer, byte_cnt) \
+		I2C_READ_REG(VEML6075_ADDR, _reg_def, p_buffer, byte_cnt)
+
+#define VEML_WRITE_REG(p_buffer) \
+		I2C_WRITE(VEML6075_ADDR, p_buffer, 3)
+
 
 #define VEML6075_READ_ALL(r_buffer, p_buffer) \
 		VEML_READ_REG_REP_START(r_buffer  , p_buffer  , 2), \

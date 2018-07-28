@@ -10,15 +10,16 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "parameters.h"
 
 #ifndef _DEBUG_TWI
 #include "nrf_twi_mngr.h"
 
-#define I2C_READ_REG_NO_STOP(addr, p_reg_addr, p_buffer, byte_cnt) \
+#define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
     NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
     NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
 
-#define I2C_READ_REG_REP_START(addr, p_reg_addr, p_buffer, byte_cnt) \
+#define I2C_READ_REG_REP_STOP(addr, p_reg_addr, p_buffer, byte_cnt) \
     NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, 0), \
     NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
 
@@ -29,6 +30,9 @@
 #define I2C_WRITE(addr, p_data, byte_cnt) \
     NRF_TWI_MNGR_WRITE(addr, p_data, byte_cnt, 0)
 
+#define I2C_WRITE_CONT(addr, p_data, byte_cnt) \
+    NRF_TWI_MNGR_WRITE(addr, p_data, byte_cnt, NRF_TWI_MNGR_NO_STOP)
+
 #else
 #include "nrfx_twim.h"
 
@@ -37,7 +41,7 @@
     0                                  \
 }
 
-#define I2C_READ_REG_REP_START(addr, p_reg_addr, p_buffer, byte_cnt) \
+#define I2C_READ_REG_REP_STOP(addr, p_reg_addr, p_buffer, byte_cnt) \
 {                                      \
     0                                  \
 }

@@ -40,13 +40,13 @@ void VEML6075::reset(void) {
 
 bool VEML6075::init(uint16_t dev_id) {
 
+#ifdef _DEBUG_TWI
 	this->off();
 
 	nrf_delay_ms(5);
 
 	this->on();
 
-#ifdef _DEBUG_TWI
 	nrf_delay_ms(1);
 	dev_id = this->getDevID();
 #endif
@@ -66,6 +66,8 @@ void VEML6075::on() {
 	// Write config to make sure device is enabled
 	this->write16(VEML6075_REG_CONF, this->config & 0b11111110);
 	nrf_delay_ms(1);
+#else
+	this->config &= ~VEML6075_CONF_PW_OFF;
 #endif
 }
 
@@ -73,6 +75,8 @@ void VEML6075::off() {
 #ifdef _DEBUG_TWI
 	// Write config to make sure device is disabled
 	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_OFF);
+#else
+	this->config |= VEML6075_CONF_PW_OFF;
 #endif
 }
 

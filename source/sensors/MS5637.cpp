@@ -182,7 +182,7 @@ void MS5637::refresh(ms5637_handle_t *_handle) {
 
 	int32_t d1 = temp;
 
-	NRF_LOG_DEBUG("Calculating d1: %d", d1);
+	LOG_DEBUG("Calculating d1: %d", d1);
 
 	temp = (uint32_t) _handle->press_adc[0] << 16;
 	temp |= (uint32_t) _handle->press_adc[1] << 8;
@@ -190,7 +190,7 @@ void MS5637::refresh(ms5637_handle_t *_handle) {
 
 	int32_t d2 = temp;
 
-	NRF_LOG_DEBUG("Calculating d2: %d", d2);
+	LOG_DEBUG("Calculating d2: %d", d2);
 
 	this->computeTempAndPressure(d1, d2);
 }

@@ -97,7 +97,7 @@ typedef struct {
 }
 
 #define STC3100_READ_ALL(p_reg, p_buffer) \
-		I2C_READ_REG_NO_STOP(STC3100_ADDRESS, p_reg, p_buffer, 10)
+		I2C_READ_REG(STC3100_ADDRESS, p_reg, p_buffer, 10)
 
 
 /*=========================================================================*/
