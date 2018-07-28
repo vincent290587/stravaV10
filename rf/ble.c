@@ -7,11 +7,6 @@
  *
  */
 
-/**
- * @brief BLE Heart Rate Collector application main file.
- *
- * This file contains the source code for a sample heart rate collector.
- */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -44,6 +39,7 @@
 #include "ant.h"
 #include "glasses.h"
 #include "Model.h"
+#include "Locator.h"
 #include "neopixel.h"
 #include "segger_wrapper.h"
 
@@ -71,7 +67,7 @@
 #define SCAN_INTERVAL               0x00A0                              /**< Determines scan interval in units of 0.625 millisecond. */
 #define SCAN_WINDOW                 0x0050                              /**< Determines scan window in units of 0.625 millisecond. */
 #define SCAN_DURATION               0x0000                              /**< Duration of the scanning in units of 10 milliseconds. If set to 0x0000, scanning will continue until it is explicitly disabled. */
-#define SCAN_DURATION_WITELIST      3000                                /**< Duration of the scanning in units of 10 milliseconds. */
+#define SCAN_DURATION_WITELIST      600                                /**< Duration of the scanning in units of 10 milliseconds. */
 
 #define MIN_CONNECTION_INTERVAL     MSEC_TO_UNITS(7.5, UNIT_1_25_MS)    /**< Determines minimum connection interval in millisecond. */
 #define MAX_CONNECTION_INTERVAL     MSEC_TO_UNITS(30, UNIT_1_25_MS)     /**< Determines maximum connection interval in millisecond. */
@@ -105,7 +101,10 @@ BLE_BAS_C_DEF(m_ble_bas_c);                                             /**< Str
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
 
-static ble_gap_scan_params_t m_scan_param;                 /**< Scan parameters requested for scanning and connection. */
+
+/** @brief Parameters used when scanning. */
+static ble_gap_scan_params_t m_scan_param;
+
 //static uint16_t              m_conn_handle;                /**< Current connection handle. */
 static bool                  m_whitelist_disabled;         /**< True if whitelist has been temporarily disabled. */
 static bool                  m_memory_access_in_progress;  /**< Flag to keep track of ongoing operations on persistent memory. */
@@ -126,18 +125,8 @@ static ble_gap_conn_params_t const m_connection_param =
 /**@brief Names which the central applications will scan for, and which will be advertised by the peripherals.
  *  if these are set to empty strings, the UUIDs defined below will be used
  */
-static const char m_target_periph_name[] = "";          /**< If you want to connect to a peripheral using a given advertising name, type its name here. */
-static bool  is_connect_per_addr = false;               /**< If you want to connect to a peripheral with a given address, set this to true and put the correct address in the variable below. */
-static const ble_gap_addr_t m_target_periph_addr =
-{
-		/* Possible values for addr_type:
-       BLE_GAP_ADDR_TYPE_PUBLIC,
-       BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
-       BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE,
-       BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE. */
-		.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
-		.addr      = {0x8D, 0xFE, 0x23, 0x86, 0x77, 0xD9}
-};
+static const char m_target_periph_name[] = "LeGPS";          /**< If you want to connect to a peripheral using a given advertising name, type its name here. */
+
 
 #if (NRF_SD_BLE_API_VERSION==6)
 static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
@@ -343,7 +332,7 @@ static bool find_adv_name(const ble_gap_evt_adv_report_t *p_adv_report, const ch
 			&dev_name);
 	if (err_code == NRF_SUCCESS)
 	{
-		if (memcmp(name_to_find, dev_name.p_data, dev_name.data_len )== 0)
+		if (memcmp(name_to_find, dev_name.p_data, dev_name.data_len)== 0)
 		{
 			return true;
 		}
@@ -366,87 +355,6 @@ static bool find_adv_name(const ble_gap_evt_adv_report_t *p_adv_report, const ch
 	return false;
 }
 
-
-/**@brief Function for searching a given addr in the advertisement packets.
- *
- * @details Use this function to parse received advertising data and to find a given
- * addr in them.
- *
- * @param[in]   p_adv_report   advertising data to parse.
- * @param[in]   p_addr   name to search.
- * @return   true if the given name was found, false otherwise.
- */
-static bool find_peer_addr(const ble_gap_evt_adv_report_t *p_adv_report, const ble_gap_addr_t * p_addr)
-{
-	if (p_addr->addr_type == p_adv_report->peer_addr.addr_type)
-	{
-		if (memcmp(p_addr->addr, p_adv_report->peer_addr.addr, sizeof(p_adv_report->peer_addr.addr)) == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
-/**@brief Function for searching a UUID in the advertisement packets.
- *
- * @details Use this function to parse received advertising data and to find a given
- * UUID in them.
- *
- * @param[in]   p_adv_report   advertising data to parse.
- * @param[in]   uuid_to_find   UUIID to search.
- * @return   true if the given UUID was found, false otherwise.
- */
-static bool find_adv_uuid(const ble_gap_evt_adv_report_t *p_adv_report, const uint16_t uuid_to_find)
-{
-	uint32_t err_code;
-	data_t   adv_data;
-	data_t   type_data;
-
-	// Initialize advertisement report for parsing.
-#if (NRF_SD_BLE_API_VERSION==5)
-	adv_data.p_data     = (uint8_t *)p_adv_report->data;
-	adv_data.data_len   = p_adv_report->dlen;
-#else
-	adv_data.p_data     = (uint8_t *)p_adv_report->data.p_data;
-	adv_data.data_len   = p_adv_report->data.len;
-#endif
-
-	err_code = adv_report_parse(BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE,
-			&adv_data,
-			&type_data);
-
-	if (err_code != NRF_SUCCESS)
-	{
-		// Look for the services in 'complete' if it was not found in 'more available'.
-		err_code = adv_report_parse(BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE,
-				&adv_data,
-				&type_data);
-
-		if (err_code != NRF_SUCCESS)
-		{
-			// If we can't parse the data, then exit.
-			return false;
-		}
-	}
-
-	// Verify if any UUID match the given UUID.
-	for (uint32_t u_index = 0; u_index < (type_data.data_len / sizeof(uint16_t)); u_index++)
-	{
-		uint16_t extracted_uuid;
-
-		UUID16_EXTRACT(&extracted_uuid, &type_data.p_data[u_index * sizeof(uint16_t)]);
-
-		if (extracted_uuid == uuid_to_find)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
 /**@brief Function for handling the advertising report BLE event.
  *
  * @param[in] p_adv_report  Advertising report from the SoftDevice.
@@ -457,34 +365,38 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 	ble_uuid_t target_uuid = {.uuid = TARGET_UUID, .type = BLE_UUID_TYPE_BLE};
 	bool do_connect = false;
 
-    if (is_connect_per_addr)
-    {
-        if (find_peer_addr(p_adv_report, &m_target_periph_addr))
-        {
-            LOG_INFO("Address match send connect_request.");
-            do_connect = true;
-        }
-    }
-    else
-    {
-        if (ble_advdata_uuid_find(p_adv_report->data.p_data, p_adv_report->data.len, &target_uuid))
-        {
-            do_connect = true;
-            LOG_INFO("UUID match send connect_request.");
-        }
-    }
+	LOG_DEBUG("Scanning %02x%02x%02x%02x%02x%02x",
+                     p_adv_report->peer_addr.addr[0],
+                     p_adv_report->peer_addr.addr[1],
+                     p_adv_report->peer_addr.addr[2],
+                     p_adv_report->peer_addr.addr[3],
+                     p_adv_report->peer_addr.addr[4],
+                     p_adv_report->peer_addr.addr[5]
+                     );
+
+	if (ble_advdata_uuid_find(p_adv_report->data.p_data, p_adv_report->data.len, &target_uuid))
+	{
+		do_connect = true;
+		LOG_INFO("UUID match");
+	}
+
+
+	if (find_adv_name(p_adv_report, m_target_periph_name)) {
+		do_connect = true;
+		LOG_INFO("Name match");
+	}
 
     if (do_connect)
     {
-        // Stop scanning.
-        (void) sd_ble_gap_scan_stop();
-        m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL,
+        m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
 
         // Initiate connection.
         err_code = sd_ble_gap_connect(&p_adv_report->peer_addr,
                                       &m_scan_param,
                                       &m_connection_param,
                                       APP_BLE_CONN_CFG_TAG);
+
+        // scan is automatically stopped by the connect
 
         m_whitelist_disabled = false;
 
@@ -1013,9 +925,7 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 	{
 	case NRF_BLE_GATT_EVT_ATT_MTU_UPDATED:
 	{
-		LOG_INFO("GATT ATT MTU on connection 0x%x changed to %d.",
-				p_evt->conn_handle,
-				p_evt->params.att_mtu_effective);
+        LOG_INFO("ATT MTU exchange completed.");
 	} break;
 
 	case NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED:
