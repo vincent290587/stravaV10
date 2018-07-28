@@ -382,6 +382,16 @@ void usb_cdc_init(void)
 /**
  *
  */
+void usb_cdc_close(void) {
+
+    app_usbd_disable();
+    app_usbd_stop();
+
+}
+
+/**
+ *
+ */
 void usb_flush(void) {
 
 	/* If ring buffer is not empty, parse data. */

@@ -121,6 +121,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/modules/nrfx/mdk \
   $(SDK_ROOT)/components/libraries/scheduler \
   $(SDK_ROOT)/components/libraries/atomic_fifo \
+  $(SDK_ROOT)/components/libraries/bootloader \
   $(SDK_ROOT)/components/libraries/block_dev \
   $(SDK_ROOT)/components/libraries/block_dev/empty \
   $(SDK_ROOT)/components/libraries/block_dev/qspi \

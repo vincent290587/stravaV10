@@ -8,6 +8,7 @@
 #include "segger_wrapper.h"
 #include "usb_parser.h"
 #include "Model.h"
+#include "nrf_pwr_mgmt.h"
 
 
 #include "nrf_log.h"
@@ -34,6 +35,14 @@ void usb_cdc_decoder(char c) {
 		locator.sim_loc.data.utc_time = vparser.getSecJ();
 
 		locator.sim_loc.setIsUpdated();
+
+		break;
+
+	case _SENTENCE_PC:
+
+		if (vparser.getPC() == 17) {
+			nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_GOTO_DFU);
+		}
 
 		break;
 	default:

@@ -30,6 +30,7 @@
 #include "nrf_drv_timer.h"
 #include "nrf_drv_clock.h"
 #include "nrf_drv_power.h"
+#include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
@@ -98,8 +99,8 @@ extern "C" void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name
     app_error_fault_handler(NRF_FAULT_ID_SDK_ASSERT, 0, (uint32_t)(&assert_info));
 
 #ifndef DEBUG_NRF_USER
-    NRF_LOG_WARNING("System reset");
-    NRF_LOG_FLUSH();
+    LOG_WARNING("System reset");
+    LOG_FLUSH();
     NVIC_SystemReset();
 #else
     NRF_BREAKPOINT_COND;
@@ -134,7 +135,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ASSERT:
         {
             assert_info_t * p_info = (assert_info_t *)info;
-            NRF_LOG_ERROR("ASSERTION FAILED at %s:%u",
+            LOG_ERROR("ASSERTION FAILED at %s:%u",
                           p_info->p_file_name,
                           p_info->line_num);
             break;
@@ -149,7 +150,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
                           p_info->line_num);
 #else
             error_info_t * p_info = (error_info_t *)info;
-            NRF_LOG_ERROR("ERROR %u [%s] at %s:%u",
+            LOG_ERROR("ERROR %u [%s] at %s:%u",
                           p_info->err_code,
 						  nrf_strerror_get(p_info->err_code),
                           p_info->p_file_name,
@@ -235,9 +236,18 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 	if (NRF_PWR_MGMT_EVT_PREPARE_SYSOFF == event) {
 		nrf_gpio_pin_set(KILL_PIN);
 		return true;
+	} else if (NRF_PWR_MGMT_EVT_PREPARE_DFU == event) {
+		ret_code_t err_code = sd_power_gpregret_set(0, BOOTLOADER_DFU_START);
+		APP_ERROR_CHECK(err_code);
+
+		// stop USB
+		usb_cdc_close();
+
+		LOG_INFO("Power management allowed to reset to DFU mode.");
+
+		return true;
 	}
 
-	LOG_INFO("Power management allowed to reset to DFU mode.");
 	return true;
 }
 
