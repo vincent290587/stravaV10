@@ -140,15 +140,15 @@ settings:
 dfu_softdevice:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
 	nrfutil pkg display stravaV10_soft.zip
-	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p COM8
+	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p $(COM_PORT)
 
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
+	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
 
 dfu_send:
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
+	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
 
 
 SDK_CONFIG_FILE := ../config/sdk_config.h
