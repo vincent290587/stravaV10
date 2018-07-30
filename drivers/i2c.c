@@ -27,7 +27,7 @@
 #ifdef _DEBUG_TWI
 
 #define FLAG_NO_STOP       true
-#define FLAG_REP_STOP     false
+#define FLAG_REP_STOP      false
 
 /* Number of possible TWI addresses. */
 #define TWI_ADDRESSES      127

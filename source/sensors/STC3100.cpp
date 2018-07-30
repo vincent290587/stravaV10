@@ -58,8 +58,6 @@ bool STC3100::init(uint32_t r_sens, stc3100_res_t res) {
 	// read device ID
 	i2c_read_reg_8(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID);
 	LOG_INFO("Device ID: %x\r\n", _deviceID);
-
-	LOG_INFO("Device ID: %x\r\n", _deviceID);
 #endif
 
 	/* Set the mode indicator */

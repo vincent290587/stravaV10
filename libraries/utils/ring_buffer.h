@@ -33,17 +33,25 @@ typedef struct {
 #define RING_BUFF_GET_ELEM(_rb_name) \
 		(_rb_name.p_buffer[_rb_name.txIndex])
 
+#define RING_BUFF_GET_P_ELEM(_rb_name) \
+		(&_rb_name.p_buffer[_rb_name.txIndex])
 
-#define RING_BUFF_IS_NOT_FULL(_rb_name) \
-		(((_rb_name.rxIndex + 1) % _rb_name##_size) != _rb_name.txIndex)
-
-#define RING_BUFFER_ADD(_rb_name, _elem) \
+#define RING_BUFFER_ADD_ATOMIC(_rb_name, _elem) \
 		{                                                                             \
 			_rb_name.p_buffer[_rb_name.rxIndex] = _elem;                              \
 			_rb_name.rxIndex++;														  \
 			_rb_name.rxIndex %= _rb_name##_size;                                      \
 		}
 
+#define RING_BUFFER_ADD(_rb_name, _p_elem, _size) \
+		{                                                                             \
+			memcpy(&_rb_name.p_buffer[_rb_name.rxIndex], _p_elem, _size);             \
+			_rb_name.rxIndex++;														  \
+			_rb_name.rxIndex %= _rb_name##_size;                                      \
+		}
+
+#define RING_BUFF_IS_NOT_FULL(_rb_name) \
+		(((_rb_name.rxIndex + 1) % _rb_name##_size) != _rb_name.txIndex)
 
 #define RING_BUFF_IS_NOT_EMPTY(_rb_name) \
 		(((_rb_name.txIndex + 0) % _rb_name##_size) != _rb_name.rxIndex)

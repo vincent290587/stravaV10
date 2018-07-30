@@ -23,10 +23,6 @@
     NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, 0), \
     NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
 
-#define I2C_WRITE_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
-    NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
-    NRF_TWI_MNGR_WRITE(addr, p_buffer, byte_cnt, 0)
-
 #define I2C_WRITE(addr, p_data, byte_cnt) \
     NRF_TWI_MNGR_WRITE(addr, p_data, byte_cnt, 0)
 

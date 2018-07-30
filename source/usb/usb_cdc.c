@@ -446,7 +446,7 @@ void usb_cdc_tasks(void) {
 void usb_print(char c) {
 
 	if (RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
-		RING_BUFFER_ADD(cdc_rb1, c);
+		RING_BUFFER_ADD_ATOMIC(cdc_rb1, c);
 
 		m_last_buffered = millis();
 	} else {
