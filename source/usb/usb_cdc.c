@@ -21,6 +21,7 @@
 #include "usb_parser.h"
 #include "usb_cdc.h"
 #include "ring_buffer.h"
+#include "sd_hal.h"
 #include "Model.h"
 
 #include "ff.h"
@@ -67,6 +68,8 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 #define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
 #define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
 
+#define MSC_DATA_INTERFACE      2
+
 #define CDC_X_BUFFERS           (0b1)
 
 /**
@@ -79,13 +82,13 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
                             CDC_ACM_COMM_EPIN,
                             CDC_ACM_DATA_EPIN,
                             CDC_ACM_DATA_EPOUT,
-                            APP_USBD_CDC_COMM_PROTOCOL_AT_V250
+							APP_USBD_CDC_COMM_PROTOCOL_NONE
 );
 
 /**
  * @brief Endpoint list passed to @ref APP_USBD_MSC_GLOBAL_DEF
  */
-#define ENDPOINT_LIST() APP_USBD_MSC_ENDPOINT_LIST(1, 1)
+#define ENDPOINT_LIST() APP_USBD_MSC_ENDPOINT_LIST(3, 2)
 
 /**
  * @brief Mass storage class work buffer size
@@ -116,11 +119,11 @@ NRF_BLOCK_DEV_SDC_DEFINE(
  * @brief Mass storage class instance
  */
 APP_USBD_MSC_GLOBAL_DEF(m_app_msc,
-                        0,
-                        msc_user_ev_handler,
-                        ENDPOINT_LIST(),
-                        BLOCKDEV_LIST(),
-                        MSC_WORKBUFFER_SIZE);
+		MSC_DATA_INTERFACE,
+		msc_user_ev_handler,
+		ENDPOINT_LIST(),
+		BLOCKDEV_LIST(),
+		MSC_WORKBUFFER_SIZE);
 
 
 #define READ_SIZE 64
@@ -205,7 +208,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         	}
 
         	/* Fetch data until internal buffer is empty */
-        	ret_code_t ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
+        	(void)app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
         			m_rx_buffer,
 					READ_SIZE);
 
@@ -229,6 +232,7 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         case APP_USBD_EVT_STARTED:
             break;
         case APP_USBD_EVT_STOPPED:
+        	//fatfs_init();
             app_usbd_disable();
 
             break;
@@ -237,6 +241,8 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 
             if (!nrf_drv_usbd_is_enabled())
             {
+            	//LOG_INFO("Un-initializing disk 0...");
+            	//UNUSED_RETURN_VALUE(disk_uninitialize(0));
                 app_usbd_enable();
             }
             break;
@@ -299,11 +305,12 @@ static void usb_cdc_trigger_xfer(void) {
  *
  * @return
  */
-int sd_functions_init(void) {
+int fatfs_init(void) {
 
 	FRESULT ff_result;
 	DSTATUS disk_state = STA_NOINIT;
 
+    memset(&fs, 0, sizeof(FATFS));
 	// Initialize FATFS disk I/O interface by providing the block device.
 	static diskio_blkdev_t drives[] =
 	{
@@ -354,14 +361,14 @@ void usb_cdc_init(void)
 
     ret = app_usbd_init(&usbd_config);
     APP_ERROR_CHECK(ret);
-    NRF_LOG_INFO("USBD CDC / MSC started.");
-
-//    app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
-//    ret = app_usbd_class_append(class_inst_msc);
-//    APP_ERROR_CHECK(ret);
+    LOG_INFO("USBD CDC / MSC started.");
 
     app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     ret = app_usbd_class_append(class_cdc_acm);
+    APP_ERROR_CHECK(ret);
+
+    app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
+    ret = app_usbd_class_append(class_inst_msc);
     APP_ERROR_CHECK(ret);
 
     if (USBD_POWER_DETECTION)

@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-int sd_functions_init(void);
+int fatfs_init(void);
 
 #ifdef	__cplusplus
 }

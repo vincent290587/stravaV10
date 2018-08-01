@@ -409,7 +409,7 @@ int main(void)
 	vue.init();
 
 	// SD functions
-	sd_functions_init();
+	fatfs_init();
 
 	// SPI flash init
 	nor_init();
