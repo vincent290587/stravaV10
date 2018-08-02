@@ -15,6 +15,8 @@ extern "C" {
 
 int fatfs_init(void);
 
+int fatfs_uninit(void);
+
 #ifdef	__cplusplus
 }
 #endif

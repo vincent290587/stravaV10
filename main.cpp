@@ -408,8 +408,8 @@ int main(void)
 	// LCD displayer
 	vue.init();
 
-	// SD functions
-	fatfs_init();
+	// diskio + fatfs init
+	usb_cdc_diskio_init();
 
 	// SPI flash init
 	nor_init();

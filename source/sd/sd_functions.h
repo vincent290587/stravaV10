@@ -26,8 +26,6 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1);
 extern "C" {
 #endif /* _cplusplus */
 
-int fatfs_init(void);
-
 int init_liste_segments(void);
 
 int epo_file_size(void);

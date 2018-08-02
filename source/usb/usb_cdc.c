@@ -24,9 +24,9 @@
 #include "sd_hal.h"
 #include "Model.h"
 
-#include "ff.h"
 #include "diskio_blkdev.h"
 #include "nrf_block_dev_sdc.h"
+#include "nrf_block_dev_ram.h"
 #include "segger_wrapper.h"
 
 #include "millis.h"
@@ -61,14 +61,14 @@ static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
                                     app_usbd_cdc_acm_user_event_t event);
 
-#define CDC_ACM_COMM_INTERFACE  0
-#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN2
+#define CDC_ACM_COMM_INTERFACE  1
+#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN3
 
-#define CDC_ACM_DATA_INTERFACE  1
-#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
-#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
+#define CDC_ACM_DATA_INTERFACE  2
+#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN2
+#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT2
 
-#define MSC_DATA_INTERFACE      2
+#define MSC_DATA_INTERFACE      0
 
 #define CDC_X_BUFFERS           (0b1)
 
@@ -88,7 +88,7 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
 /**
  * @brief Endpoint list passed to @ref APP_USBD_MSC_GLOBAL_DEF
  */
-#define ENDPOINT_LIST() APP_USBD_MSC_ENDPOINT_LIST(3, 2)
+#define ENDPOINT_LIST() APP_USBD_MSC_ENDPOINT_LIST(1, 1)
 
 /**
  * @brief Mass storage class work buffer size
@@ -143,8 +143,6 @@ static volatile bool m_is_xfer_done = true;
 static volatile bool m_is_port_open = false;
 
 static uint32_t m_last_buffered = 0;
-
-static FATFS fs;
 
 /*******************************************************************************
  * Code
@@ -230,20 +228,19 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 
             break;
         case APP_USBD_EVT_STARTED:
+        	fatfs_uninit();
             break;
         case APP_USBD_EVT_STOPPED:
-        	//fatfs_init();
+        	fatfs_init();
             app_usbd_disable();
-
             break;
         case APP_USBD_EVT_POWER_DETECTED:
             NRF_LOG_INFO("USB power detected");
 
             if (!nrf_drv_usbd_is_enabled())
             {
-            	//LOG_INFO("Un-initializing disk 0...");
-            	//UNUSED_RETURN_VALUE(disk_uninitialize(0));
-                app_usbd_enable();
+            	fatfs_uninit();
+            	app_usbd_enable();
             }
             break;
         case APP_USBD_EVT_POWER_REMOVED:
@@ -303,15 +300,11 @@ static void usb_cdc_trigger_xfer(void) {
 
 /**
  *
- * @return
  */
-int fatfs_init(void) {
+void usb_cdc_diskio_init(void) {
 
-	FRESULT ff_result;
-	DSTATUS disk_state = STA_NOINIT;
-
-    memset(&fs, 0, sizeof(FATFS));
 	// Initialize FATFS disk I/O interface by providing the block device.
+    // TODO wait function
 	static diskio_blkdev_t drives[] =
 	{
 			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev), NULL)
@@ -319,33 +312,12 @@ int fatfs_init(void) {
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
 
-	LOG_INFO("Initializing disk 0 (SDC)...");
-	for (uint32_t retries = 3; retries && disk_state; --retries)
-	{
-		disk_state = disk_initialize(0);
-	}
-	if (disk_state)
-	{
-		LOG_INFO("Disk initialization failed.");
-		return -1;
-	}
-
 	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_size;
 	uint32_t capacity = m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_count / blocks_per_mb;
 	LOG_INFO("Capacity: %d MB", capacity);
 
-	LOG_INFO("Mounting volume...");
-	ff_result = f_mount(&fs, "", 1);
-	if (ff_result)
-	{
-		LOG_INFO("Mount failed.");
-		return -2;
-	}
-	LOG_INFO("Volume mounted");
-
-	return 0;
+	fatfs_init();
 }
-
 
 /**
  *
@@ -357,18 +329,16 @@ void usb_cdc_init(void)
         .ev_state_proc = usbd_user_ev_handler
     };
 
-    app_usbd_serial_num_generate();
-
     ret = app_usbd_init(&usbd_config);
     APP_ERROR_CHECK(ret);
     LOG_INFO("USBD CDC / MSC started.");
 
-    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
-    ret = app_usbd_class_append(class_cdc_acm);
-    APP_ERROR_CHECK(ret);
-
     app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
     ret = app_usbd_class_append(class_inst_msc);
+    APP_ERROR_CHECK(ret);
+
+    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+    ret = app_usbd_class_append(class_cdc_acm);
     APP_ERROR_CHECK(ret);
 
     if (USBD_POWER_DETECTION)
