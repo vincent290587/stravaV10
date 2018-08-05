@@ -51,6 +51,7 @@
 
 #define SENSORS_REFRESH_FREQ           2
 
+#define ATT_BUFFER_NB_ELEM             20
 
 ///// CODE FLAGS
 

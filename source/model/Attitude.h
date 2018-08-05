@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "fec.h"
+#include "RingBuffer.h"
+#include "parameters.h"
 
 typedef struct {
 	float lat;
@@ -25,6 +27,12 @@ typedef struct {
 	uint32_t date;
 	uint32_t timestamp;
 } SDate;
+
+typedef struct {
+	SLoc  loc;
+	SDate date;
+	int16_t pwr;
+} SAttTime;
 
 typedef struct {
 	SLoc  loc;
@@ -53,6 +61,10 @@ private:
 	float m_last_save_dist;
 
 	bool m_is_init;
+
+	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
+	uint16_t m_st_buffer_nb_elem;
+
 };
 
 #endif /* SOURCE_MODEL_ATTITUDE_H_ */

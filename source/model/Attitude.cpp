@@ -7,11 +7,13 @@
 
 #include <Attitude.h>
 #include "Model.h"
-#include "parameters.h"
+#include "sd_functions.h"
 
 
 Attitude::Attitude() {
 	m_last_save_dist = 0.;
+
+	m_st_buffer_nb_elem = 0;
 
 	m_is_init = false;
 }
@@ -48,7 +50,22 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_) {
 
 		m_last_save_dist = att.dist;
 
-		// TODO save position on SD card
+		// save position on queue
+		if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
+
+			// save on SD
+			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+
+			m_st_buffer_nb_elem = 0;
+
+		}
+
+		// save on buffer
+		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
+		memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
+		m_st_buffer[m_st_buffer_nb_elem].pwr = att.pwr;
+
+		m_st_buffer_nb_elem++;
 
 	} else if (att.dist > m_last_save_dist + 25) {
 		// first position

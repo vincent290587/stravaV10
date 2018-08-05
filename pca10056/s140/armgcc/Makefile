@@ -99,7 +99,7 @@ LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # let linker to dump unused sections
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
-LDFLAGS += --specs=nano.specs
+LDFLAGS += --specs=nano.specs -u _printf_float
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
