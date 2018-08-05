@@ -6,7 +6,6 @@
  */
 
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 #include "boards.h"
 #include "segger_wrapper.h"

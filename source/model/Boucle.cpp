@@ -28,6 +28,15 @@ void Boucle::init(void) {
 	m_global_mode = BOUCLE_DEFAULT_MODE;
 }
 
+void Boucle::uninit(void) {
+
+	LOG_INFO("Boucle uninit");
+
+	uninit_liste_segments();
+
+	m_global_mode = eBoucleGlobalModesMSC;
+}
+
 bool Boucle::isTime(void) {
 
 	switch (m_global_mode) {

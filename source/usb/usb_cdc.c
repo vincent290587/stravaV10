@@ -228,10 +228,8 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 
             break;
         case APP_USBD_EVT_STARTED:
-        	fatfs_uninit();
             break;
         case APP_USBD_EVT_STOPPED:
-        	fatfs_init();
             app_usbd_disable();
             break;
         case APP_USBD_EVT_POWER_DETECTED:
@@ -239,7 +237,6 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 
             if (!nrf_drv_usbd_is_enabled())
             {
-            	fatfs_uninit();
             	app_usbd_enable();
             }
             break;
@@ -307,7 +304,7 @@ void usb_cdc_diskio_init(void) {
     // TODO wait function
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev), NULL)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev), perform_system_tasks_light)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
@@ -333,10 +330,6 @@ void usb_cdc_init(void)
     APP_ERROR_CHECK(ret);
     LOG_INFO("USBD CDC / MSC started.");
 
-    app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
-    ret = app_usbd_class_append(class_inst_msc);
-    APP_ERROR_CHECK(ret);
-
     app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     ret = app_usbd_class_append(class_cdc_acm);
     APP_ERROR_CHECK(ret);
@@ -354,6 +347,57 @@ void usb_cdc_init(void)
         app_usbd_start();
     }
 
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
+}
+
+void usb_cdc_start_msc(void) {
+
+	ret_code_t ret;
+
+	fatfs_uninit();
+
+	LOG_FLUSH();
+
+	app_usbd_stop();
+
+	// disable is event based, done automatically
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
+
+	// remove segments and go to the proper mode
+	model_go_to_msc_mode();
+
+	// prevent cdc from sending bytes
+	m_is_port_open = false;
+
+	ret = app_usbd_class_remove_all();
+	APP_ERROR_CHECK(ret);
+
+	app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
+	ret = app_usbd_class_append(class_inst_msc);
+	APP_ERROR_CHECK(ret);
+
+    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+    ret = app_usbd_class_append(class_cdc_acm);
+    APP_ERROR_CHECK(ret);
+
+    if (USBD_POWER_DETECTION)
+    {
+    	ret = app_usbd_power_events_enable();
+    	APP_ERROR_CHECK(ret);
+    }
+    else
+    {
+    	NRF_LOG_INFO("No USB power detection enabled\r\nStarting USB now");
+
+    	app_usbd_enable();
+    	app_usbd_start();
+    }
 }
 
 /**
@@ -361,8 +405,13 @@ void usb_cdc_init(void)
  */
 void usb_cdc_close(void) {
 
-    app_usbd_disable();
-    app_usbd_stop();
+	app_usbd_stop();
+
+	// disable is event based, done automatically
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
 
 }
 
@@ -429,32 +478,6 @@ void usb_print(char c) {
 	} else {
 
 	}
-//
-//	uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-//
-//	ASSERT(ind <= NRF_DRV_USBD_EPSIZE);
-//
-//	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
-//		m_tx_buffer[m_tx_buffer_index][ind] = c;
-//	} else {
-//		// buffer full: trigger xfer to switch buffers
-//		usb_cdc_trigger_xfer();
-//
-//		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
-//
-//		// process queue
-//		usb_cdc_tasks();
-//
-//		// refresh index
-//		ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-//		// store bytes
-//		m_tx_buffer[m_tx_buffer_index][ind] = c;
-//	}
-//
-//	// increase index
-//	m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
-//
-//	m_last_buffered = millis();
 
 }
 

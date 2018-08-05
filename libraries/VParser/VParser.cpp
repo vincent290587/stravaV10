@@ -57,6 +57,7 @@ uint8_t VParser::encode(char c) {
       // no break;
     case '\r':
     case '\n':
+    case '*':
       if (_started == true) {
         if (_term_offset < sizeof (_term) - 1) {
           _term[_term_offset] = 0;
