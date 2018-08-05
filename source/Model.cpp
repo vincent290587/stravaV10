@@ -7,6 +7,7 @@
 
 #include "Model.h"
 #include "nrf_pwr_mgmt.h"
+#include "sdk_config.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -95,12 +96,40 @@ void perform_system_tasks(void) {
 	usb_cdc_tasks();
 #endif
 
-	//		app_sched_execute();
+#if APP_SCHEDULER_ENABLED
+	app_sched_execute();
+#endif
 
 	if (NRF_LOG_PROCESS() == false)
 	{
 		nrf_pwr_mgmt_run();
 	}
+}
+
+/**
+ *
+ */
+void perform_system_tasks_light(void) {
+
+	uart_tasks();
+
+#if APP_SCHEDULER_ENABLED
+	app_sched_execute();
+#endif
+
+	if (NRF_LOG_PROCESS() == false)
+	{
+		nrf_pwr_mgmt_run();
+	}
+}
+
+/**
+ *
+ */
+void model_go_to_msc_mode(void) {
+
+	boucle.uninit();
+
 }
 
 /**

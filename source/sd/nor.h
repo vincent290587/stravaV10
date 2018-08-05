@@ -14,6 +14,10 @@ extern "C" {
 
 void nor_init(void);
 
+void nor_read_error(void);
+
+void nor_save_error(uint32_t id, uint32_t pc, uint32_t info);
+
 void nor_test(void);
 
 #ifdef __cplusplus

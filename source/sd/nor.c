@@ -15,6 +15,7 @@
 #include "sst26.h"
 #include "sst26_hal.h"
 #include "spiffs.h"
+#include "Model.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -122,6 +123,81 @@ void nor_init(void) {
 
 }
 
+/**
+ *
+ * @param id
+ * @param pc
+ * @param info
+ */
+void nor_save_error(uint32_t id, uint32_t pc, uint32_t info) {
+
+	if (!m_is_spiffs_started) return;
+
+	int size_ = 0;
+	char buf[256];
+
+	memset(buf, 0, sizeof(buf));
+
+	if (NRF_FAULT_ID_SDK_ASSERT == id) {
+
+		assert_info_t * p_info = (assert_info_t *)info;
+
+		size_ = snprintf(buf, sizeof(buf), "ASSERTION FAILED at %s:%u\r\n",
+                p_info->p_file_name,
+                p_info->line_num);
+	}
+	else if (NRF_FAULT_ID_SDK_ERROR == id) {
+
+		error_info_t * p_info = (error_info_t *)info;
+
+		size_ = snprintf(buf, sizeof(buf), "ERROR %u [%s] at %s:%u\r\n",
+				p_info->err_code,
+				nrf_strerror_get(p_info->err_code),
+				p_info->p_file_name,
+				p_info->line_num);
+	}
+
+	spiffs_file fd = SPIFFS_open(&fs, "errors", SPIFFS_CREAT | SPIFFS_WRONLY | SPIFFS_APPEND, 0);
+	if (SPIFFS_write(&fs, fd, (u8_t *)buf, size_) < 0) {
+		LOG_INFO("errno %i\n", SPIFFS_errno(&fs));
+	} else {
+		LOG_DEBUG("File created %i", SPIFFS_errno(&fs));
+
+		wdt_reload();
+	}
+	SPIFFS_close(&fs, fd);
+
+}
+
+/**
+ *
+ */
+void nor_read_error(void) {
+
+	if (!m_is_spiffs_started) return;
+
+	char buf[256];
+
+	spiffs_file fd = SPIFFS_open(&fs, "errors", SPIFFS_O_RDONLY, 0);
+	s32_t nb_bytes = SPIFFS_read(&fs, fd, (u8_t *)buf, sizeof(buf));
+	if (nb_bytes < 0) {
+		LOG_INFO("No error file");
+	} else {
+		LOG_INFO("Error file:");
+
+		for (int i = 0; i < sizeof(buf) && i < nb_bytes; i++) {
+			if (buf[i] == 0) break;
+			LOG_RAW_INFO(buf[i]);
+		}
+	}
+	SPIFFS_close(&fs, fd);
+
+	SPIFFS_remove(&fs, "errors");
+}
+
+/**
+ *
+ */
 void nor_test(void) {
 
 	if (!m_is_spiffs_started) {
