@@ -28,6 +28,8 @@
 
 #define STC3100_CUR_SENS_RES_MO        100
 
+#define FXOS_MEAS_CAL_LIM_MS           60000
+
 #define SEG_OFF_NB_POINTS              30
 
 #define VH_RATIO                       0.8

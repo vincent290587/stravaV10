@@ -13,6 +13,7 @@
 #include "parameters.h"
 #include "segger_wrapper.h"
 #include <sensors/fxos.h>
+#include "Model.h"
 #include <math.h>
 #include <millis.h>
 
@@ -60,13 +61,6 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
 #define DegToRad 0.017453292
 #define RadToDeg 57.295779
 
-/*******************************************************************************
- * Prototypes
- ******************************************************************************/
-
-static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz);
-
-static void Magnetometer_Calibrate(fxos_handle_t *g_fxosHandle);
 
 /*******************************************************************************
  * Variables
@@ -110,6 +104,8 @@ double g_Pitch = 0;
 double g_Roll = 0;
 
 bool g_FirstRun = true;
+
+bool g_Calibration_Done = false;
 
 /*******************************************************************************
  * Code
@@ -165,32 +161,30 @@ static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *A
 
 }
 
-static void Magnetometer_Calibrate(fxos_handle_t *g_fxosHandle)
+static int Magnetometer_Calibrate(void)
 {
-	int16_t Mx_max = 0;
-	int16_t My_max = 0;
-	int16_t Mz_max = 0;
-	int16_t Mx_min = 0;
-	int16_t My_min = 0;
-	int16_t Mz_min = 0;
+	static int16_t Mx_max = 0;
+	static int16_t My_max = 0;
+	static int16_t Mz_max = 0;
+	static int16_t Mx_min = 0;
+	static int16_t My_min = 0;
+	static int16_t Mz_min = 0;
 
-	uint32_t times = 0;
-	LOG_INFO("\r\nCalibrating magnetometer...");
-	LOG_INFO("\r\n3");
-	delay_ms(1000);
-	LOG_INFO("\r\n2");
-	delay_ms(1000);
-	LOG_INFO("\r\n1");
-	delay_ms(1000);
+	static uint32_t times = 0;
 
-	while (times < 400)
+	if (1)
 	{
-		Sensor_ReadData(g_fxosHandle, &g_Ax_Raw, &g_Ay_Raw, &g_Az_Raw, &g_Mx_Raw, &g_My_Raw, &g_Mz_Raw);
 		if (times == 0)
 		{
 			Mx_max = Mx_min = g_Mx_Raw;
 			My_max = My_min = g_My_Raw;
 			Mz_max = Mz_min = g_Mz_Raw;
+
+			LOG_INFO("Calibrating magnetometer...");
+
+			times = 1;
+
+			vue.addNotif("Event", "Calibrating magnetometer...", 4, eNotificationTypeComplete);
 		}
 		if (g_Mx_Raw > Mx_max)
 		{
@@ -216,21 +210,41 @@ static void Magnetometer_Calibrate(fxos_handle_t *g_fxosHandle)
 		{
 			Mz_min = g_Mz_Raw;
 		}
-		if ((times % (8000 / 50)) == 0)
+
+		g_Mx_Offset = (Mx_max + Mx_min) / 2;
+		g_My_Offset = (My_max + My_min) / 2;
+		g_Mz_Offset = (Mz_max + Mz_min) / 2;
+
+		if (g_Calibration_Done) return 0;
+
+		if (millis() > FXOS_MEAS_CAL_LIM_MS &&
+				(Mx_max > (Mx_min + 500)) && (My_max > (My_min + 500)) && (Mz_max > (Mz_min + 500)))
 		{
-			if ((Mx_max > (Mx_min + 500)) && (My_max > (My_min + 500)) && (Mz_max > (Mz_min + 500)))
-			{
-				g_Mx_Offset = (Mx_max + Mx_min) / 2;
-				g_My_Offset = (My_max + My_min) / 2;
-				g_Mz_Offset = (Mz_max + Mz_min) / 2;
-				LOG_INFO("\r\nCalibrate magnetometer successfully!");
-				LOG_INFO("\r\nMagnetometer offset Mx: %d - My: %d - Mz: %d \r\n", g_Mx_Offset, g_My_Offset, g_Mz_Offset);
-				break;
-			}
+			LOG_INFO("\r\nCalibrate magnetometer successfully!");
+			LOG_INFO("Magnetometer offset Mx: %d - My: %d - Mz: %d", g_Mx_Offset, g_My_Offset, g_Mz_Offset);
+			LOG_INFO("Magnetometer diff Mx: %d - My: %d - Mz: %d",
+					Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+
+			char buff[128];
+			memset(buff, 0, sizeof(buff));
+			snprintf(buff, sizeof(buff), "Mag cal OK: Mx: %d - My: %d - Mz: %d",
+					Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+			vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
+
+			g_Calibration_Done = true;
+
+		} else if (millis() > FXOS_MEAS_CAL_LIM_MS) {
+
+			LOG_INFO("Mag cal failure");
+			LOG_INFO("Magnetometer diff Mx: %d - My: %d - Mz: %d",
+					Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+		} else {
+			return -1;
 		}
-		times++;
-		delay_ms(50);
+
 	}
+
+	return 0;
 }
 
 /**
@@ -539,27 +553,6 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 	double Bx = 0;
 	double By = 0;
 
-	if (g_FirstRun) {
-
-		if(g_sensorRange == 0x00)
-		{
-			g_dataScale = 2U;
-		}
-		else if(g_sensorRange == 0x01)
-		{
-			g_dataScale = 4U;
-		}
-		else if(g_sensorRange == 0x10)
-		{
-			g_dataScale = 8U;
-		}
-		else
-		{
-		}
-
-		// TODO if (g_fxosHandle) Magnetometer_Calibrate(g_fxosHandle);
-	}
-
 	SampleEventFlag = 0;
 	g_Ax_Raw = 0;
 	g_Ay_Raw = 0;
@@ -602,6 +595,30 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 
 	LOG_INFO("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
 
+	if (g_FirstRun) {
+
+		if(g_sensorRange == 0x00)
+		{
+			g_dataScale = 2U;
+		}
+		else if(g_sensorRange == 0x01)
+		{
+			g_dataScale = 4U;
+		}
+		else if(g_sensorRange == 0x10)
+		{
+			g_dataScale = 8U;
+		}
+		else
+		{
+		}
+
+	}
+
+	LOG_INFO("Mag: %d %d %d", (int)g_Mx_Raw, (int)g_My_Raw, (int)g_Mz_Raw);
+
+	if (!Magnetometer_Calibrate()) return;
+
 	if(g_FirstRun)
 	{
 		g_Mx_LP = g_Mx_Raw;
@@ -640,6 +657,7 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 	g_Yaw = atan2(-By, Bx) * RadToDeg;
 	if(g_FirstRun)
 	{
+		// TODO we want north
 		g_Yaw_LP = g_Yaw;
 		g_FirstRun = false;
 	}
