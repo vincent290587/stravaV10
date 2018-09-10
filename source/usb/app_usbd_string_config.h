@@ -81,7 +81,7 @@
  * List of product names defined the same way like in @ref APP_USBD_STRINGS_MANUFACTURER
  */
 #define APP_USBD_STRINGS_PRODUCT \
-    APP_USBD_STRING_DESC('n', 'R', 'F', '5', '2', ' ', 'U', 'S', 'B', ' ', 'C', 'D', 'C', ' ', 'D', 'e', 'm', 'o')
+    APP_USBD_STRING_DESC('s', 'T', 'r', 'a', 'v', 'a', 'V', '1', '0')
 
 
 /**
@@ -99,13 +99,14 @@
  * @note
  * There is only one SERIAL number inside the library and it is Language independent.
  */
-#define APP_USBD_STRING_SERIAL g_extern_serial_number
+#define APP_USBD_STRING_SERIAL \
+		APP_USBD_STRING_DESC('0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1')
 
 /**
  * @brief Define whether @ref APP_USBD_STRING_SERIAL is created by @ref APP_USBD_STRING_DESC
  * or declared as global variable.
  * */
-#define APP_USBD_STRING_SERIAL_EXTERN 1
+#define APP_USBD_STRING_SERIAL_EXTERN 0
 
 /**
  * @brief User strings default values

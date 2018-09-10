@@ -14,6 +14,10 @@ extern "C" {
 
 void usb_cdc_init(void);
 
+void usb_cdc_diskio_init(void);
+
+void usb_cdc_start_msc(void);
+
 void usb_cdc_close(void);
 
 void usb_flush(void);

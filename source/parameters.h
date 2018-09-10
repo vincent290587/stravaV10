@@ -28,6 +28,10 @@
 
 #define STC3100_CUR_SENS_RES_MO        100
 
+#define FXOS_MEAS_CAL_LIM_MS           60000
+
+#define FXOS_MAG_FILTER_COEFF          0.5
+
 #define SEG_OFF_NB_POINTS              30
 
 #define VH_RATIO                       0.8
@@ -51,6 +55,7 @@
 
 #define SENSORS_REFRESH_FREQ           2
 
+#define ATT_BUFFER_NB_ELEM             20
 
 ///// CODE FLAGS
 

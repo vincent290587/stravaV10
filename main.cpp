@@ -122,6 +122,8 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
+    nor_save_error(id, pc, info);
+
     switch (id)
     {
 #if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
@@ -408,11 +410,12 @@ int main(void)
 	// LCD displayer
 	vue.init();
 
-	// SD functions
-	sd_functions_init();
+	// diskio + fatfs init
+	usb_cdc_diskio_init();
 
 	// SPI flash init
 	nor_init();
+	nor_read_error();
 
 	LOG_FLUSH();
 
@@ -425,7 +428,9 @@ int main(void)
 
 	nrf_pwr_mgmt_init();
 
-//	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+#if APP_SCHEDULER_ENABLED
+	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+#endif
 
 	// timers
 #ifdef ANT_STACK_SUPPORT_REQD

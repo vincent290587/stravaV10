@@ -81,7 +81,7 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     		char c = p_event->data.rxtx.p_data[i];
 
     		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
-    			RING_BUFFER_ADD(uart0_rb1, c);
+    			RING_BUFFER_ADD_ATOMIC(uart0_rb1, c);
     		} else {
     			NRF_LOG_ERROR("Ring buffer full");
 
@@ -96,7 +96,7 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     break;
     case NRFX_UARTE_EVT_TX_DONE:
     {
-    	NRF_LOG_INFO("UART TX done");
+    	NRF_LOG_DEBUG("UART TX done");
     	uart_xfer_done = true;
     }
     break;
@@ -166,7 +166,7 @@ void uart_timer_init(void) {
  */
  void uart_send(uint8_t * p_data, size_t length) {
 
-	 LOG_INFO("UART TX of %u bytes", length);
+	 LOG_DEBUG("UART TX of %u bytes", length);
 
 	 ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
 	 APP_ERROR_CHECK(err_code);

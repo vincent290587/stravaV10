@@ -188,20 +188,23 @@ int spi_schedule (sSpimConfig const * spi_config,
 
 	NRF_LOG_DEBUG("SPI Xfer %u/%u byte", tx_length, rx_length);
 
-//	if (!spi_xfer_done) {
-//		NRF_LOG_WARNING("SPI Waiting...");
-//		millis_ = millis();
-//		do {
-//			NRF_LOG_PROCESS();
-//
-//			if (millis() - millis_ > 500) {
-//				NRF_LOG_ERROR("SPI timeout");
-//				// TODO cancel transfer
-//				break;
-//			}
-//
-//		} while (!spi_xfer_done);
-//	}
+	uint32_t millis_ = millis();
+	if (!spi_xfer_done) {
+		NRF_LOG_WARNING("SPI Waiting...");
+		millis_ = millis();
+		do {
+			NRF_LOG_PROCESS();
+
+			if (millis() - millis_ > 200) {
+				LOG_ERROR("SPI timeout1 TX=%u RX=%u",
+						tx_length, rx_length);
+				nrfx_spim_abort(&spi);
+				spi_xfer_done = true;
+				return 1;
+			}
+
+		} while (!spi_xfer_done);
+	}
 
 	// potential reconfiguration
 	if (spi_config) {
@@ -229,16 +232,16 @@ int spi_schedule (sSpimConfig const * spi_config,
 
 	wdt_reload();
 
+	 millis_ = millis();
 	if (p_spi_config[0]) {
 		if (p_spi_config[0]->blocking) {
 			// wait for last transfer to finish
-			uint32_t millis_ = millis();
 			do {
 				// perform system tasks
 				perform_system_tasks();
 
-				if (millis() - millis_ > 200) {
-					LOG_ERROR("SPI timeout TX=%u RX=%u",
+				if (millis() - millis_ > 400) {
+					LOG_ERROR("SPI timeout2 TX=%u RX=%u",
 							tx_length, rx_length);
 					nrfx_spim_abort(&spi);
 					spi_xfer_done = true;

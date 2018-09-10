@@ -21,11 +21,12 @@
 #include "usb_parser.h"
 #include "usb_cdc.h"
 #include "ring_buffer.h"
+#include "sd_hal.h"
 #include "Model.h"
 
-#include "ff.h"
 #include "diskio_blkdev.h"
 #include "nrf_block_dev_sdc.h"
+#include "nrf_block_dev_ram.h"
 #include "segger_wrapper.h"
 
 #include "millis.h"
@@ -60,12 +61,14 @@ static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
                                     app_usbd_cdc_acm_user_event_t event);
 
-#define CDC_ACM_COMM_INTERFACE  0
-#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN2
+#define CDC_ACM_COMM_INTERFACE  1
+#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN3
 
-#define CDC_ACM_DATA_INTERFACE  1
-#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
-#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
+#define CDC_ACM_DATA_INTERFACE  2
+#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN2
+#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT2
+
+#define MSC_DATA_INTERFACE      0
 
 #define CDC_X_BUFFERS           (0b1)
 
@@ -79,7 +82,7 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
                             CDC_ACM_COMM_EPIN,
                             CDC_ACM_DATA_EPIN,
                             CDC_ACM_DATA_EPOUT,
-                            APP_USBD_CDC_COMM_PROTOCOL_AT_V250
+							APP_USBD_CDC_COMM_PROTOCOL_NONE
 );
 
 /**
@@ -116,11 +119,11 @@ NRF_BLOCK_DEV_SDC_DEFINE(
  * @brief Mass storage class instance
  */
 APP_USBD_MSC_GLOBAL_DEF(m_app_msc,
-                        0,
-                        msc_user_ev_handler,
-                        ENDPOINT_LIST(),
-                        BLOCKDEV_LIST(),
-                        MSC_WORKBUFFER_SIZE);
+		MSC_DATA_INTERFACE,
+		msc_user_ev_handler,
+		ENDPOINT_LIST(),
+		BLOCKDEV_LIST(),
+		MSC_WORKBUFFER_SIZE);
 
 
 #define READ_SIZE 64
@@ -140,8 +143,6 @@ static volatile bool m_is_xfer_done = true;
 static volatile bool m_is_port_open = false;
 
 static uint32_t m_last_buffered = 0;
-
-static FATFS fs;
 
 /*******************************************************************************
  * Code
@@ -205,7 +206,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         	}
 
         	/* Fetch data until internal buffer is empty */
-        	ret_code_t ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
+        	(void)app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
         			m_rx_buffer,
 					READ_SIZE);
 
@@ -230,14 +231,13 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
             break;
         case APP_USBD_EVT_STOPPED:
             app_usbd_disable();
-
             break;
         case APP_USBD_EVT_POWER_DETECTED:
             NRF_LOG_INFO("USB power detected");
 
             if (!nrf_drv_usbd_is_enabled())
             {
-                app_usbd_enable();
+            	app_usbd_enable();
             }
             break;
         case APP_USBD_EVT_POWER_REMOVED:
@@ -297,48 +297,24 @@ static void usb_cdc_trigger_xfer(void) {
 
 /**
  *
- * @return
  */
-int sd_functions_init(void) {
-
-	FRESULT ff_result;
-	DSTATUS disk_state = STA_NOINIT;
+void usb_cdc_diskio_init(void) {
 
 	// Initialize FATFS disk I/O interface by providing the block device.
+    // TODO wait function
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev), NULL)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev), perform_system_tasks_light)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
-
-	LOG_INFO("Initializing disk 0 (SDC)...");
-	for (uint32_t retries = 3; retries && disk_state; --retries)
-	{
-		disk_state = disk_initialize(0);
-	}
-	if (disk_state)
-	{
-		LOG_INFO("Disk initialization failed.");
-		return -1;
-	}
 
 	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_size;
 	uint32_t capacity = m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_count / blocks_per_mb;
 	LOG_INFO("Capacity: %d MB", capacity);
 
-	LOG_INFO("Mounting volume...");
-	ff_result = f_mount(&fs, "", 1);
-	if (ff_result)
-	{
-		LOG_INFO("Mount failed.");
-		return -2;
-	}
-	LOG_INFO("Volume mounted");
-
-	return 0;
+	fatfs_init();
 }
-
 
 /**
  *
@@ -350,15 +326,9 @@ void usb_cdc_init(void)
         .ev_state_proc = usbd_user_ev_handler
     };
 
-    app_usbd_serial_num_generate();
-
     ret = app_usbd_init(&usbd_config);
     APP_ERROR_CHECK(ret);
-    NRF_LOG_INFO("USBD CDC / MSC started.");
-
-//    app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
-//    ret = app_usbd_class_append(class_inst_msc);
-//    APP_ERROR_CHECK(ret);
+    LOG_INFO("USBD CDC / MSC started.");
 
     app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     ret = app_usbd_class_append(class_cdc_acm);
@@ -377,6 +347,57 @@ void usb_cdc_init(void)
         app_usbd_start();
     }
 
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
+}
+
+void usb_cdc_start_msc(void) {
+
+	ret_code_t ret;
+
+	fatfs_uninit();
+
+	LOG_FLUSH();
+
+	app_usbd_stop();
+
+	// disable is event based, done automatically
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
+
+	// remove segments and go to the proper mode
+	model_go_to_msc_mode();
+
+	// prevent cdc from sending bytes
+	m_is_port_open = false;
+
+	ret = app_usbd_class_remove_all();
+	APP_ERROR_CHECK(ret);
+
+	app_usbd_class_inst_t const * class_inst_msc = app_usbd_msc_class_inst_get(&m_app_msc);
+	ret = app_usbd_class_append(class_inst_msc);
+	APP_ERROR_CHECK(ret);
+
+    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+    ret = app_usbd_class_append(class_cdc_acm);
+    APP_ERROR_CHECK(ret);
+
+    if (USBD_POWER_DETECTION)
+    {
+    	ret = app_usbd_power_events_enable();
+    	APP_ERROR_CHECK(ret);
+    }
+    else
+    {
+    	NRF_LOG_INFO("No USB power detection enabled\r\nStarting USB now");
+
+    	app_usbd_enable();
+    	app_usbd_start();
+    }
 }
 
 /**
@@ -384,8 +405,13 @@ void usb_cdc_init(void)
  */
 void usb_cdc_close(void) {
 
-    app_usbd_disable();
-    app_usbd_stop();
+	app_usbd_stop();
+
+	// disable is event based, done automatically
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
 
 }
 
@@ -446,38 +472,12 @@ void usb_cdc_tasks(void) {
 void usb_print(char c) {
 
 	if (RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
-		RING_BUFFER_ADD(cdc_rb1, c);
+		RING_BUFFER_ADD_ATOMIC(cdc_rb1, c);
 
 		m_last_buffered = millis();
 	} else {
 
 	}
-//
-//	uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-//
-//	ASSERT(ind <= NRF_DRV_USBD_EPSIZE);
-//
-//	if (m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE) {
-//		m_tx_buffer[m_tx_buffer_index][ind] = c;
-//	} else {
-//		// buffer full: trigger xfer to switch buffers
-//		usb_cdc_trigger_xfer();
-//
-//		ASSERT(m_tx_buffer_bytes_nb[m_tx_buffer_index] == 0);
-//
-//		// process queue
-//		usb_cdc_tasks();
-//
-//		// refresh index
-//		ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-//		// store bytes
-//		m_tx_buffer[m_tx_buffer_index][ind] = c;
-//	}
-//
-//	// increase index
-//	m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
-//
-//	m_last_buffered = millis();
 
 }
 

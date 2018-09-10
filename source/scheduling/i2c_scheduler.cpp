@@ -48,6 +48,9 @@ static void _i2c_scheduling_sensors_post_init(void) {
  */
 static void _i2c_scheduling_sensors_init() {
 
+	// Init sensors configuration
+	fxos_init();
+
 	// Reset sensors
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config[2] = STC_RESET_REGS;
 
@@ -63,13 +66,10 @@ static void _i2c_scheduling_sensors_init() {
 	static nrf_twi_mngr_transfer_t const sensors_init_transfers[] =
 	{
 		I2C_WRITE     (VEML6075_ADDR  , veml_config, sizeof(veml_config)),
-		I2C_WRITE     (MS5637_ADDR    , ms_config, sizeof(ms_config))
-//		I2C_WRITE     (STC3100_ADDRESS, stc_config, sizeof(stc_config))
+		I2C_WRITE     (MS5637_ADDR    , ms_config, sizeof(ms_config)),
+		I2C_WRITE     (STC3100_ADDRESS, stc_config, sizeof(stc_config))
 	};
 	i2c_perform(NULL, sensors_init_transfers, sizeof(sensors_init_transfers) / sizeof(sensors_init_transfers[0]), NULL);
-
-	// Init sensors configuration
-	fxos_init();
 
 	veml.on();
 
@@ -81,13 +81,12 @@ static void _i2c_scheduling_sensors_init() {
 	// Init sensors
 	static uint8_t raw_data[2];
 
-//	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config2[2];
-//	stc_config2[0] = REG_MODE;
-//	stc_config2[1] = stc._stc3100Mode;
-//
-//	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config3[1];
-//	stc_config3[0] = REG_DEVICE_ID;
-//	static uint8_t raw_data_stc[1];
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config2[2];
+	stc_config2[0] = REG_MODE;
+	stc_config2[1] = stc._stc3100Mode;
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config3[1];
+	stc_config3[0] = REG_DEVICE_ID;
 
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config2[4];
@@ -107,15 +106,24 @@ static void _i2c_scheduling_sensors_init() {
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND ms_config3[1] = MS5637_CMD_TEMP_REG;
 
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_ctrl1[4];
+	fxos_ctrl1[0] = CTRL_REG1;
+
+	static uint8_t raw_data_stc[1];
+	static uint8_t raw_data_fxos[1];
 
 	static nrf_twi_mngr_transfer_t const sensors_init_transfers3[] =
 	{
 			MS5637_INIT         (ms_config2, m_ms5637_handle.cx_data),
-			MS5637_CMD_TEMP     (ms_config3)
-//			I2C_READ_REG_NO_STOP(STC3100_ADDRESS, stc_config3, raw_data_stc, 1),
-//			I2C_WRITE           (STC3100_ADDRESS, stc_config2, sizeof(stc_config2))
+			MS5637_CMD_TEMP     (ms_config3),
+			I2C_READ_REG        (STC3100_ADDRESS, stc_config3, raw_data_stc, 1),
+			I2C_WRITE           (STC3100_ADDRESS, stc_config2, sizeof(stc_config2)),
+			I2C_READ_REG        (FXOS_7BIT_ADDRESS, fxos_ctrl1, raw_data_fxos, 1),
 	};
 	i2c_perform(NULL, sensors_init_transfers3, sizeof(sensors_init_transfers3) / sizeof(sensors_init_transfers3[0]), NULL);
+
+	LOG_INFO("STC dev ID: 0x%02X", raw_data_stc[0]);
+	LOG_INFO("FXOS CTRL1: 0x%02X", raw_data_fxos[0]);
 
 	uint16_t res = raw_data[1] << 8;
 	res |= raw_data[0];
@@ -142,7 +150,7 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	fxos_tasks(&m_fxos_handle);
 
-//	stc.refresh(&m_stc_buffer);
+	stc.refresh(&m_stc_buffer);
 
 	veml.refresh(m_veml_buffer);
 
@@ -170,7 +178,7 @@ static void read_all(void)
 
     static nrf_twi_mngr_transfer_t const transfers[] =
     {
-//    	STC3100_READ_ALL (&stc_regs[0] , &m_stc_buffer.array[0]),
+    	STC3100_READ_ALL (&stc_regs[0] , &m_stc_buffer.array[0]),
 		VEML6075_READ_ALL(&veml_regs[0], &m_veml_buffer[0]),
 		FXOS_READ_ALL    (&fxos_regs[0], &m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
     };

@@ -71,12 +71,15 @@ extern sNeopixelOrders      neopixel;
 extern "C" {
 #endif // defined C++
 
+void model_go_to_msc_mode(void);
 
 void model_dispatch_sensors_update(void);
 
 void model_dispatch_lns_update(sLnsInfo *lns_info);
 
 void perform_system_tasks(void);
+
+void perform_system_tasks_light(void);
 
 bool check_memory_exception(void);
 

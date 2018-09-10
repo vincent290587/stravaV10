@@ -1,6 +1,6 @@
 PROJECT_NAME     := strava10_pca10052_s140
 TARGETS          := nrf52840_xxaa
-OUTPUT_DIRECTORY := _build
+OUTPUT_DIRECTORY := _build.$(OS)
 SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.0.0_softdevice.hex
 
 include Makefile.local
@@ -56,6 +56,7 @@ CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 #CFLAGS += -DUSE_SVIEW=0
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
+#CFLAGS += -DNRF_LOG_BACKEND_UART_ENABLED=1 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840_XXAA
@@ -150,6 +151,9 @@ dfu:
 dfu_send:
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
 
+jumper: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
+	mergehex -m $(SDK_ROOT)/$(SOFTDEVICE) $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex -o $(OUTPUT_DIRECTORY)/merged.hex
+	jumper run -g --fw $(OUTPUT_DIRECTORY)/merged.hex --gpio --platform nrf52840
 
 SDK_CONFIG_FILE := ../config/sdk_config.h
 SDK_CONFIG_FILE_ANT := ../config/sdk_config_ant.h

@@ -12,6 +12,7 @@
 #include "millis.h"
 #include "file_parser.h"
 #include "nrf_delay.h"
+#include "sd_hal.h"
 #include "WString.h"
 #include "segger_wrapper.h"
 
@@ -41,7 +42,6 @@ static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
 
-
 /*!
  * @brief Main function
  */
@@ -51,6 +51,8 @@ int init_liste_segments(void)
 	DIR directory; /* Directory object */
 	FILINFO fileInformation;
 	uint16_t nb_files_errors = 0;
+
+	if (!is_fat_init()) return -2;
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
@@ -129,6 +131,20 @@ int init_liste_segments(void)
 	return 0;
 }
 
+
+/*!
+ * @brief Main function
+ */
+void uninit_liste_segments(void)
+{
+
+	mes_segments._segs.clear();
+
+	mes_parcours._parcs.clear();
+
+	return;
+}
+
 /**
  * Loads a segment from the SD card
  * @param seg The reference of this segment
@@ -139,6 +155,8 @@ int load_segment(Segment& seg) {
 	int res = 0;
 	FRESULT error;
 	float time_start = 0.;
+
+	if (!is_fat_init()) return -2;
 
 	time_start = 0.;
 
@@ -197,6 +215,8 @@ int load_parcours(Parcours& mon_parcours) {
 
 	int res = 0;
 	FRESULT error;
+
+	if (!is_fat_init()) return -2;
 
 	// clear list
 	mon_parcours.desallouerPoints();
@@ -260,6 +280,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 	static float tmp_lat = 0.;
 	static float tmp_lon = 0.;
 	float ret_val = 5000;
+
+	if (!is_fat_init()) return ret_val;
 
 	// le segment est rempli
 	if (mon_seg.isValid() && mon_seg.getStatus() == SEG_OFF) {
@@ -339,12 +361,50 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
 /**
  *
+ * @param att
+ * @param nb_pos
+ */
+void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
+
+	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	if (error)
+	{
+		LOG_INFO("Open file failed.");
+		return;
+	}
+
+	for (size_t i=0; i< nb_pos; i++) {
+		// TODO print histo
+		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
+				att[i].loc.lat, att[i].loc.lon,
+				att[i].loc.alt, att[i].date.secj,
+				att[i].pwr);
+
+		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
+	}
+
+	error = f_close(&g_fileObject);
+	if (error)
+	{
+		LOG_INFO("Close file failed.");
+		return;
+	} else {
+		LOG_INFO("Points added to histo: %u", nb_pos);
+	}
+
+}
+
+/**
+ *
  * @return The size of the EPO file
  */
 int epo_file_size(void) {
 
 	FRESULT error;
 	const char* fname = "MTK14.EPO";
+
+	if (!is_fat_init()) return -1;
 
 	FILINFO file_info;
 	error = f_stat (fname, &file_info);
@@ -365,6 +425,8 @@ int epo_file_start(void) {
 
 	FRESULT error;
 	const char* fname = "MTK14.EPO";
+
+	if (!is_fat_init()) return -1;
 
 	error = f_open(&g_EpoFileObject, fname, FA_READ);
 	if (error) error = f_open(&g_EpoFileObject, fname, FA_READ);
@@ -387,6 +449,8 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
 	ASSERT(sat_data);
+
+	if (!is_fat_init()) return -1;
 
 	UINT size_read = 0;
 	FRESULT error = f_read (
@@ -423,6 +487,8 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
  * @return
  */
 int epo_file_stop(bool toBeDeleted) {
+
+	if (!is_fat_init()) return -3;
 
 	FRESULT error = f_close (&g_EpoFileObject);
 	if (error)

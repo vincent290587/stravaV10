@@ -18,6 +18,7 @@ typedef enum {
 	eBoucleGlobalModesCRS,
 	eBoucleGlobalModesFEC,
 	eBoucleGlobalModesPRC,
+	eBoucleGlobalModesMSC,
 } eBoucleGlobalModes;
 
 
@@ -31,6 +32,7 @@ public:
 	Boucle();
 
 	void init(void);
+	void uninit(void);
 
 	bool isTime();
 

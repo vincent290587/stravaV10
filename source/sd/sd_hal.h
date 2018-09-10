@@ -8,12 +8,17 @@
 #ifndef SOURCE_SD_SD_HAL_H_
 #define SOURCE_SD_SD_HAL_H_
 
+#include <stdbool.h>
 
 #ifdef	__cplusplus
 extern "C" {
 #endif
 
-int sd_functions_init(void);
+int fatfs_init(void);
+
+bool is_fat_init(void);
+
+int fatfs_uninit(void);
 
 #ifdef	__cplusplus
 }

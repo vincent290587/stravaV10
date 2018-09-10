@@ -123,7 +123,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/atomic_fifo \
   $(SDK_ROOT)/components/libraries/bootloader \
   $(SDK_ROOT)/components/libraries/block_dev \
-  $(SDK_ROOT)/components/libraries/block_dev/empty \
+  $(SDK_ROOT)/components/libraries/block_dev/ram \
   $(SDK_ROOT)/components/libraries/block_dev/qspi \
   $(SDK_ROOT)/components/libraries/block_dev/sdc \
   $(SDK_ROOT)/components/libraries/experimental_log \
