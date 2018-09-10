@@ -615,9 +615,7 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 
 	}
 
-	LOG_INFO("Mag: %d %d %d", (int)g_Mx_Raw, (int)g_My_Raw, (int)g_Mz_Raw);
-
-	if (!Magnetometer_Calibrate()) return;
+	if (Magnetometer_Calibrate()) return;
 
 	if(g_FirstRun)
 	{
@@ -626,14 +624,17 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 		g_Mz_LP = g_Mz_Raw;
 	}
 
-	g_Mx_LP += ((double)g_Mx_Raw - g_Mx_LP) * 0.01;
-	g_My_LP += ((double)g_My_Raw - g_My_LP) * 0.01;
-	g_Mz_LP += ((double)g_Mz_Raw - g_Mz_LP) * 0.01;
+	// filtre ?
+	g_Mx_LP += ((double)g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
+	g_My_LP += ((double)g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
+	g_Mz_LP += ((double)g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
 
 	/* Calculate magnetometer values */
 	g_Mx = g_Mx_LP - g_Mx_Offset;
 	g_My = g_My_LP - g_My_Offset;
 	g_Mz = g_Mz_LP - g_Mz_Offset;
+
+	LOG_INFO("Mag: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
 
 	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
 	g_Roll = atan2(g_Ay, g_Az) * RadToDeg;
@@ -657,13 +658,13 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 	g_Yaw = atan2(-By, Bx) * RadToDeg;
 	if(g_FirstRun)
 	{
-		// TODO we want north
 		g_Yaw_LP = g_Yaw;
 		g_FirstRun = false;
 	}
 
-	g_Yaw_LP += (g_Yaw - g_Yaw_LP) * 0.01;
+	g_Yaw_LP += (g_Yaw - g_Yaw_LP) * FXOS_MAG_FILTER_COEFF;
 
-	LOG_INFO("Compass Angle: %d", (int)g_Yaw);
+	LOG_INFO("Compass Angle raw   : %d", (int)g_Yaw);
+	LOG_INFO("Compass Angle filtered: %d", (int)g_Yaw_LP);
 
 }

@@ -30,6 +30,8 @@
 
 #define FXOS_MEAS_CAL_LIM_MS           60000
 
+#define FXOS_MAG_FILTER_COEFF          0.5
+
 #define SEG_OFF_NB_POINTS              30
 
 #define VH_RATIO                       0.8
