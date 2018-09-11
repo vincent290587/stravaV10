@@ -20,7 +20,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/ble/peer_manager/peer_id.c \
   $(SDK_ROOT)/components/ble/peer_manager/peer_manager.c \
   $(SDK_ROOT)/components/ble/peer_manager/pm_buffer.c \
-  $(SDK_ROOT)/components/ble/peer_manager/pm_mutex.c \
   $(SDK_ROOT)/components/ble/peer_manager/security_dispatcher.c \
   $(SDK_ROOT)/components/ble/peer_manager/security_manager.c \
   $(SDK_ROOT)/components/ble/ble_radio_notification/ble_radio_notification.c \

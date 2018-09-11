@@ -112,7 +112,7 @@
 #endif
 // <o> NRF_LOG_BACKEND_UART_TX_PIN - UART TX pin
 #ifndef NRF_LOG_BACKEND_UART_TX_PIN
-#define NRF_LOG_BACKEND_UART_TX_PIN 3
+#define NRF_LOG_BACKEND_UART_TX_PIN 26
 #endif
 
 // <o> NRF_LOG_BACKEND_UART_BAUDRATE  - Default Baudrate
@@ -288,6 +288,34 @@
 
 #ifndef NRF_LOG_FILTERS_ENABLED
 #define NRF_LOG_FILTERS_ENABLED 0
+#endif
+
+// <o> NRF_LOG_STR_PUSH_BUFFER_SIZE  - Size of the buffer dedicated for strings stored using @ref NRF_LOG_PUSH.
+
+// <16=> 16
+// <32=> 32
+// <64=> 64
+// <128=> 128
+// <256=> 256
+// <512=> 512
+// <1024=> 1024
+
+#ifndef NRF_LOG_STR_PUSH_BUFFER_SIZE
+#define NRF_LOG_STR_PUSH_BUFFER_SIZE 128
+#endif
+
+// <o> NRF_LOG_STR_PUSH_BUFFER_SIZE  - Size of the buffer dedicated for strings stored using @ref NRF_LOG_PUSH.
+
+// <16=> 16
+// <32=> 32
+// <64=> 64
+// <128=> 128
+// <256=> 256
+// <512=> 512
+// <1024=> 1024
+
+#ifndef NRF_LOG_STR_PUSH_BUFFER_SIZE
+#define NRF_LOG_STR_PUSH_BUFFER_SIZE 128
 #endif
 
 // <q> NRF_LOG_CLI_CMDS  - Enable CLI commands for the module.

@@ -46,6 +46,10 @@
 #include "sdk_config_ant.h"
 #include "sdk_config_rtt.h"
 
+#if (USB_ENABLED==1)
+#include "app_usbd_string_config.h"
+#endif
+
 // <<< Use Configuration Wizard in Context Menu >>>\n
 #ifdef USE_APP_CONFIG
 #include "app_config.h"
@@ -1623,23 +1627,27 @@
 
 // </e>
 
-// <e> NRFX_CLOCK_ENABLED - nrfx_clock - CLOCK peripheral driver
+// <e> NRF_CLOCK_ENABLED - nrf_drv_clock - CLOCK peripheral driver - legacy layer
 //==========================================================
-#ifndef CLOCK_ENABLED
-#define CLOCK_ENABLED 1
+#ifndef NRF_CLOCK_ENABLED
+#define NRF_CLOCK_ENABLED 1
 #endif
-// <o> NRFX_CLOCK_CONFIG_LF_SRC  - LF Clock Source
+// <o> CLOCK_CONFIG_LF_SRC  - LF Clock Source
 
 // <0=> RC
 // <1=> XTAL
 // <2=> Synth
+// <131073=> External Low Swing
+// <196609=> External Full Swing
 
 #ifndef CLOCK_CONFIG_LF_SRC
-#define CLOCK_CONFIG_LF_SRC USER_CLOCK_SOURCE
+#define CLOCK_CONFIG_LF_SRC 1
 #endif
 
-// <o> NRFX_CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
 
+
+// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
 // <0=> 0 (highest)
 // <1=> 1
 // <2=> 2
@@ -1653,6 +1661,9 @@
 #define CLOCK_CONFIG_IRQ_PRIORITY 7
 #endif
 
+// </e>
+
+
 // <e> NRFX_CLOCK_ENABLED - nrfx_clock - CLOCK peripheral driver
 //==========================================================
 #ifndef NRFX_CLOCK_ENABLED
@@ -1663,6 +1674,8 @@
 // <0=> RC 
 // <1=> XTAL 
 // <2=> Synth 
+// <131073=> External Low Swing
+// <196609=> External Full Swing
 
 #ifndef NRFX_CLOCK_CONFIG_LF_SRC
 #define NRFX_CLOCK_CONFIG_LF_SRC USER_CLOCK_SOURCE
@@ -5056,6 +5069,29 @@
 #define USBD_CONFIG_DMASCHEDULER_MODE 0
 #endif
 
+// <q> USBD_CONFIG_DMASCHEDULER_ISO_BOOST  - Give priority to isochronous transfers
+
+
+// <i> This option gives priority to isochronous transfers.
+// <i> Enabling it assures that isochronous transfers are always processed,
+// <i> even if multiple other transfers are pending.
+// <i> Isochronous endpoints are prioritized before the usbd_dma_scheduler_algorithm
+// <i> function is called, so the option is independent of the algorithm chosen.
+
+#ifndef USBD_CONFIG_DMASCHEDULER_ISO_BOOST
+#define USBD_CONFIG_DMASCHEDULER_ISO_BOOST 1
+#endif
+
+// <q> USBD_CONFIG_ISO_IN_ZLP  - Respond to an IN token on ISO IN endpoint with ZLP when no data is ready
+
+
+// <i> If set, ISO IN endpoint will respond to an IN token with ZLP when no data is ready to be sent.
+// <i> Else, there will be no response.
+
+#ifndef USBD_CONFIG_ISO_IN_ZLP
+#define USBD_CONFIG_ISO_IN_ZLP 0
+#endif
+
 // </e>
 
 // </h> 
@@ -5219,6 +5255,19 @@
 #define APP_TIMER_KEEPS_RTC_ACTIVE 1
 #endif
 
+
+// <o> APP_TIMER_SAFE_WINDOW_MS - Maximum possible latency (in milliseconds) of handling app_timer event.
+// <i> Maximum possible timeout that can be set is reduced by safe window.
+// <i> Example: RTC frequency 16384 Hz, maximum possible timeout 1024 seconds - APP_TIMER_SAFE_WINDOW_MS.
+// <i> Since RTC is not stopped when processor is halted in debugging session, this value
+// <i> must cover it if debugging is needed. It is possible to halt processor for APP_TIMER_SAFE_WINDOW_MS
+// <i> without corrupting app_timer behavior.
+
+#ifndef APP_TIMER_SAFE_WINDOW_MS
+#define APP_TIMER_SAFE_WINDOW_MS 300000
+#endif
+
+
 // <h> App Timer Legacy configuration - Legacy configuration.
 
 //==========================================================
@@ -5253,6 +5302,16 @@
 
 #ifndef APP_USBD_CDC_ACM_ENABLED
 #define APP_USBD_CDC_ACM_ENABLED 1
+#endif
+
+// <q> APP_USBD_CDC_ACM_ZLP_ON_EPSIZE_WRITE  - Send ZLP on write with same size as endpoint
+
+
+// <i> If enabled, CDC ACM class will automatically send a zero length packet after transfer which has the same size as endpoint.
+// <i> This may limit throughput if a lot of binary data is sent, but in terminal mode operation it makes sure that the data is always displayed right after it is sent.
+
+#ifndef APP_USBD_CDC_ACM_ZLP_ON_EPSIZE_WRITE
+#define APP_USBD_CDC_ACM_ZLP_ON_EPSIZE_WRITE 1
 #endif
 
 // <e> APP_USBD_ENABLED - app_usbd - USB Device library
@@ -5351,6 +5410,22 @@
 
 #ifndef APP_USBD_CONFIG_SOF_HANDLING_MODE
 #define APP_USBD_CONFIG_SOF_HANDLING_MODE 1
+#endif
+
+// <i> 31 characters can be stored in the internal USB buffer used for transfers.
+// <i> Any value higher than 31 creates an additional buffer just for descriptor strings.
+
+#ifndef APP_USBD_CONFIG_DESC_STRING_SIZE
+#define APP_USBD_CONFIG_DESC_STRING_SIZE 31
+#endif
+
+// <q> APP_USBD_CONFIG_DESC_STRING_UTF_ENABLED  - Enable UTF8 conversion.
+
+
+// <i> Enable UTF8-encoded characters. In normal processing, only ASCII characters are available.
+
+#ifndef APP_USBD_CONFIG_DESC_STRING_UTF_ENABLED
+#define APP_USBD_CONFIG_DESC_STRING_UTF_ENABLED 0
 #endif
 
 // </e>
@@ -6367,6 +6442,12 @@
 
 #ifndef NRF_CLI_WILDCARD_ENABLED
 #define NRF_CLI_WILDCARD_ENABLED 0
+#endif
+
+// <q> NRF_CLI_METAKEYS_ENABLED  - Enable additional control keys for CLI commands like ctrl+a, ctrl+e, ctrl+w, ctrl+u
+
+#ifndef NRF_CLI_METAKEYS_ENABLED
+#define NRF_CLI_METAKEYS_ENABLED 0
 #endif
 
 // <o> NRF_CLI_PRINTF_BUFF_SIZE - Maximum print buffer size. 
