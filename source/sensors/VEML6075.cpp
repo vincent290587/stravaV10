@@ -105,9 +105,10 @@ void VEML6075::refresh(uint8_t *_data) {
 
 #endif
 
-	LOG_INFO("Raw IR : %u", this->raw_ir);
-	LOG_INFO("Raw VIS: %u", this->raw_vis);
-	LOG_INFO("Raw UVA: %u", this->raw_uva);
+	LOG_DEBUG("Raw IR : %u", this->raw_ir);
+	LOG_INFO ("Raw VIS: %u", this->raw_vis);
+	LOG_DEBUG("Raw UVA: %u", this->raw_uva);
+	LOG_INFO ("UV index: %d", (int)this->getUVIndex());
 }
 
 uint16_t VEML6075::getRawUVA() {

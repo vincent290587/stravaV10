@@ -36,7 +36,6 @@ INC_FOLDERS += \
   $(PROJ_DIR)/source/usb \
   $(SDK_ROOT)/components/drivers_nrf/usbd \
   $(SDK_ROOT)/components/libraries/usbd \
-  $(SDK_ROOT)/components/libraries/usbd/config \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/libraries/usbd/class/msc \

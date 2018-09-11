@@ -150,7 +150,7 @@ void nor_save_error(uint32_t id, uint32_t pc, uint32_t info) {
 
 		error_info_t * p_info = (error_info_t *)info;
 
-		size_ = snprintf(buf, sizeof(buf), "ERROR %u [%s] at %s:%u\r\n",
+		size_ = snprintf(buf, sizeof(buf), "ERROR %lu [%s] at %s:%lu\r\n",
 				p_info->err_code,
 				nrf_strerror_get(p_info->err_code),
 				p_info->p_file_name,
