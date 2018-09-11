@@ -3,6 +3,9 @@
 #include "Segment.h"
 #include "segger_wrapper.h"
 
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
 
 static bool _nomCorrect(String nom) {
@@ -39,24 +42,31 @@ static bool _nomCorrect(String nom) {
 }
 
 
+
+sSegmentData::sSegmentData(void) {
+}
+
+sSegmentData::~sSegmentData(void) {
+	_lpts.removeAll();
+	LOG_DEBUG("List emptied");
+}
+
 bool Segment::nomCorrect(const char *chaine) {
 
 	String nom = chaine;
 	return _nomCorrect(nom);
 }
 
-
 Segment::Segment(void) {
 
-	data = nullptr;
+	m_p_data = nullptr;
 
 }
 
 Segment::~Segment(void) {
 
-	this->desallouerPoints();
-	if (data) delete[] data;
-	data = nullptr;
+	if (m_p_data) delete m_p_data;
+	m_p_data = nullptr;
 
 }
 
@@ -73,9 +83,9 @@ Segment::Segment(const char *nom_seg) : Segment() {
  */
 bool Segment::init(void) {
 
-	if (!data) data = new sSegmentData();
+	if (!m_p_data) m_p_data = new sSegmentData();
 
-	if (data) data->_lpts.updateDelta();
+	if (m_p_data) m_p_data->_lpts.updateDelta();
 	else return false;
 
 	return true;
@@ -83,9 +93,8 @@ bool Segment::init(void) {
 
 void Segment::uninit(void) {
 
-	this->desallouerPoints();
-	if (data) delete[] data;
-	data = nullptr;
+    if (m_p_data) delete m_p_data;
+    m_p_data = nullptr;
 
 }
 
@@ -97,7 +106,7 @@ int Segment::longueur() {
 
 	int ret = 0;
 
-	if (data) ret = data->_lpts.size();
+	if (m_p_data) ret = m_p_data->_lpts.size();
 
 	return ret;
 }
@@ -106,7 +115,7 @@ float Segment::getAvance() {
 
 	float ret = 0;
 
-	if (data) ret = data->_monAvance;
+	if (m_p_data) ret = m_p_data->_monAvance;
 
 	return ret;
 }
@@ -115,7 +124,7 @@ float Segment::getCur() {
 
 	float ret = 0;
 
-	if (data) ret = data->_monCur;
+	if (m_p_data) ret = m_p_data->_monCur;
 
 	return ret;
 }
@@ -124,7 +133,7 @@ float Segment::getTempsTot() {
 
 	float ret = 0;
 
-	if (data) ret = data->_lpts.getTempsTot();
+	if (m_p_data) ret = m_p_data->_lpts.getTempsTot();
 
 	return ret;
 }
@@ -133,7 +142,7 @@ float Segment::dist(Point* p) {
 
 	float ret = 0;
 
-	if (data) ret = data->_lpts.dist(p);
+	if (m_p_data) ret = m_p_data->_lpts.dist(p);
 
 	return ret;
 }
@@ -142,32 +151,32 @@ ListePoints* Segment::getListePoints() {
 
 	ListePoints* ret = nullptr;
 
-	if (data) ret = &data->_lpts;
+	if (m_p_data) ret = &m_p_data->_lpts;
 
 	return ret;
 }
 
 Point *Segment::getFirstPoint() {
 
-	if (!data) return nullptr;
+	if (!m_p_data) return nullptr;
 
-	return data->_lpts.getFirstPoint();
+	return m_p_data->_lpts.getFirstPoint();
 }
 
 Vecteur Segment::deltaListe() {
 
 	Vecteur ret;
 
-	if (data) ret = data->_lpts.getDeltaListe();
+	if (m_p_data) ret = m_p_data->_lpts.getDeltaListe();
 
-	return data->_lpts.getDeltaListe();
+	return m_p_data->_lpts.getDeltaListe();
 }
 
 Point2D Segment::centerListe() {
 
 	Point2D ret;
 
-	if (data) ret = data->_lpts.getCenterListe();
+	if (m_p_data) ret = m_p_data->_lpts.getCenterListe();
 
 	return ret;
 }
@@ -201,7 +210,7 @@ int Segment::isValid() {
 
 void Segment::desallouerPoints() {
 
-	if (data) data->_lpts.removeAll();
+	if (m_p_data) m_p_data->_lpts.removeAll();
 
 	return;
 }
@@ -209,15 +218,15 @@ void Segment::desallouerPoints() {
 
 void Segment::ajouterPointFin(float lat, float lon, float alt, float msec) {
 
-	if (data) data->_lpts.ajouteFin(lat, lon, alt, msec);
+	if (m_p_data) m_p_data->_lpts.ajouteFin(lat, lon, alt, msec);
 
 	return;
 }
 
 void Segment::ajouterPointDebutIso(float lat, float lon, float alt, float msec) {
 
-	if (data) data->_lpts.ajouteDebut(lat, lon, alt, msec);
-	if (data) data->_lpts.removeLast();
+	if (m_p_data) m_p_data->_lpts.ajouteDebut(lat, lon, alt, msec);
+	if (m_p_data) m_p_data->_lpts.removeLast();
 
 }
 
@@ -226,15 +235,15 @@ void Segment::ajouterPointDebutIso(float lat, float lon, float alt, float msec) 
 void Segment::toString() {
 
 	//printf("Segment:\nName: %s\nSize: %d\n", _nomFichier.c_str(), data->_lpts.longueur());
-	if (data) data->_lpts.toString();
+	if (m_p_data) m_p_data->_lpts.toString();
 
 }
 
 Vecteur Segment::posAuSegment(Point point) {
 
-	ASSERT(data);
+	ASSERT(m_p_data);
 
-	return data->_lpts.computePosRelative(point);
+	return m_p_data->_lpts.computePosRelative(point);
 }
 
 int Segment::testActivation(ListePoints& liste) {
@@ -243,23 +252,23 @@ int Segment::testActivation(ListePoints& liste) {
 	Point P1, P2, PPc, PPp;
 	Vecteur PC, PS;
 
-	ASSERT(data);
+	ASSERT(m_p_data);
 
-	if (data->_lpts.size() <= 3 || liste.size() <= 2) {
+	if (m_p_data->_lpts.size() <= 3 || liste.size() <= 2) {
 		return 0;
 	}
 
 	// position courante / premier point
 	Point *test = liste.getFirstPoint();
 	PPc = test;
-	P1 = data->_lpts.getFirstPoint();
+	P1 = m_p_data->_lpts.getFirstPoint();
 
 	distQuad = P1.dist(&PPc);
 	if (distQuad > DIST_ACT) return 0;
 
 	// second point
 	PPp = liste.getPointAt(1);
-	P2 = data->_lpts.getPointAt(1);
+	P2 = m_p_data->_lpts.getPointAt(1);
 
 	distP1 = P1.dist(&PPc);
 	distP2 = P2.dist(&PPc);
@@ -295,9 +304,9 @@ int Segment::testDesactivation(ListePoints& liste) {
 	float distP1P2, distP1, distP2;
 	Point *P1, *P2, *PPc;
 
-	ASSERT(data);
+	ASSERT(m_p_data);
 
-	if (data->_lpts.size() <= 3 || liste.size() <= 2) {
+	if (m_p_data->_lpts.size() <= 3 || liste.size() <= 2) {
 		return 0;
 	}
 
@@ -305,9 +314,9 @@ int Segment::testDesactivation(ListePoints& liste) {
 	PPc = liste.getFirstPoint();
 
 	// avant-dernier point
-	P1 = data->_lpts.getPointAt(-2);
+	P1 = m_p_data->_lpts.getPointAt(-2);
 	// dernier point
-	P2 = data->_lpts.getPointAt(-1);
+	P2 = m_p_data->_lpts.getPointAt(-1);
 
 	distP2 = P2->dist(PPc);
 
@@ -351,12 +360,12 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 	activable = testActivation(mes_points);
 
-	ASSERT(data);
+	ASSERT(m_p_data);
 
-	Vecteur& delta = data->_lpts.getDeltaListe();
+	Vecteur& delta = m_p_data->_lpts.getDeltaListe();
 
 	// update the relative position of our last point on the segment
-	data->_lpts.updateRelativePosition(pc);
+	m_p_data->_lpts.updateRelativePosition(pc);
 
 	if (_actif == SEG_OFF) {
 		if (activable > 0) {
@@ -364,13 +373,13 @@ void Segment::majPerformance(ListePoints& mes_points) {
 			pc = this->getFirstPoint();
 			vect = mes_points.computePosRelative(pc);
 
-			data->_monStart = vect._t;
-			data->_monCur = vect._t;
+			m_p_data->_monStart = vect._t;
+			m_p_data->_monCur = vect._t;
 
-			data->_monElev0 = vect._z;
-			data->_monPElev = 0.;
-			data->_elevTot = delta._z;
-			data->_monAvance = 0.;
+			m_p_data->_monElev0 = vect._z;
+			m_p_data->_monPElev = 0.;
+			m_p_data->_elevTot = delta._z;
+			m_p_data->_monAvance = 0.;
 			_actif = SEG_START;
 
 		}
@@ -384,19 +393,19 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 		if (desactivable == 0) {
 
-			vect = data->_lpts.getPosRelative();
+			vect = m_p_data->_lpts.getPosRelative();
 
 			if (fabs(vect._y) < MARGE_ACT * DIST_ACT) {
 
-				data->_monCur = vect._t;
-				data->_monAvance = data->_monStart + vect._t - pc._rtime;
+				m_p_data->_monCur = vect._t;
+				m_p_data->_monAvance = m_p_data->_monStart + vect._t - pc._rtime;
 
-				data->_monElev0 = data->_lpts.getFirstPoint()->_alt;
+				m_p_data->_monElev0 = m_p_data->_lpts.getFirstPoint()->_alt;
 
-				if (data->_elevTot > 5.) {
-					data->_monPElev = vect._z;
-					data->_monPElev -= pc._alt;
-					data->_monPElev /= data->_elevTot;
+				if (m_p_data->_elevTot > 5.) {
+					m_p_data->_monPElev = vect._z;
+					m_p_data->_monPElev -= pc._alt;
+					m_p_data->_monPElev /= m_p_data->_elevTot;
 				}
 
 			} else {
@@ -411,7 +420,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 		} else {
 			// on doit desactiver
 
-			Point lp = *data->_lpts.getLastPoint();
+			Point lp = *m_p_data->_lpts.getLastPoint();
 
 			if (!lp.isValid()) {
 				//        loggerMsg("Dernier point invalide !!!!!");
@@ -426,8 +435,8 @@ void Segment::majPerformance(ListePoints& mes_points) {
 			// position relative du dernier point segment / mes points
 			vect = mes_points.computePosRelative(lp);
 
-			data->_monCur = vect._t - data->_monStart;
-			data->_monAvance = delta._t - data->_monCur;
+			m_p_data->_monCur = vect._t - m_p_data->_monStart;
+			m_p_data->_monAvance = delta._t - m_p_data->_monCur;
 
 			_actif = SEG_FIN;
 

@@ -36,7 +36,10 @@ using namespace std;
 #define SEG_START   1
 #define SEG_ON      2
 
-typedef struct {
+class sSegmentData {
+public:
+	sSegmentData(void);
+	~sSegmentData(void);
     float _elevTot;
     float _monStart;
     float _monCur;
@@ -45,7 +48,7 @@ typedef struct {
     float _monPElev;
     float _monPDist;
     ListePoints _lpts;
-} sSegmentData;
+};
 
 
 class Segment {
@@ -94,7 +97,7 @@ class Segment {
   private:
     String _nomFichier; // contient la pos du 1er point et le nom
     int8_t _actif;
-    sSegmentData *data;
+    sSegmentData *m_p_data = nullptr;
 };
 
 /**

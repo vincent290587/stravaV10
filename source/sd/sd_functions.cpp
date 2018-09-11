@@ -297,7 +297,6 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 				// on desalloue
 				LOG_INFO("Unallocate %s", mon_seg.getName());
 
-				mon_seg.desallouerPoints();
 				mon_seg.setStatus(SEG_OFF);
 				mon_seg.uninit();
 			}
@@ -366,6 +365,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  */
 void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
+	uint32_t millis_ = millis();
+
 	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
 	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
 	if (error)
@@ -382,6 +383,8 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 				att[i].pwr);
 
 		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
+
+		perform_system_tasks_light();
 	}
 
 	error = f_close(&g_fileObject);
@@ -390,7 +393,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 		LOG_INFO("Close file failed.");
 		return;
 	} else {
-		LOG_INFO("Points added to histo: %u", nb_pos);
+		LOG_INFO("Points added to histo: %u %u", nb_pos, millis() - millis_);
 	}
 
 }
