@@ -239,9 +239,12 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 		nrf_gpio_pin_set(KILL_PIN);
 		return true;
 	} else if (NRF_PWR_MGMT_EVT_PREPARE_DFU == event) {
+
+#if 0
+		// TODO add flag
 		ret_code_t err_code = sd_power_gpregret_set(0, BOOTLOADER_DFU_START);
 		APP_ERROR_CHECK(err_code);
-
+#endif
 		// stop USB
 		usb_cdc_close();
 
