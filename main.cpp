@@ -245,8 +245,11 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 		ret_code_t err_code = sd_power_gpregret_set(0, BOOTLOADER_DFU_START);
 		APP_ERROR_CHECK(err_code);
 #endif
+
+#ifdef USB_ENABLED
 		// stop USB
 		usb_cdc_close();
+#endif
 
 		LOG_INFO("Power management allowed to reset to DFU mode.");
 
@@ -413,8 +416,13 @@ int main(void)
 	// LCD displayer
 	vue.init();
 
+#ifdef USB_ENABLED
 	// diskio + fatfs init
 	usb_cdc_diskio_init();
+#else
+	// TODO disk init
+	fatfs_init();
+#endif
 
 	// SPI flash init
 	nor_init();
