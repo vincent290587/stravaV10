@@ -125,6 +125,10 @@
 #define EMPTY2                         (TASK_BASE + 16u)
 
 
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
 /////////    FUNCTIONS
 
 #if defined(__cplusplus)

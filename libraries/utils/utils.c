@@ -10,7 +10,8 @@
 #include <math.h>
 #include <string.h>
 #include "utils.h"
-#include "parameters.h"
+
+#define BATT_INT_RES                   0.155
 
 /* Useful constants.  */
 

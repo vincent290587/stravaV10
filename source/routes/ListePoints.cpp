@@ -5,11 +5,11 @@
  * Created on October 15, 2015, 3:30 PM
  */
 
-#include "ListePoints.h"
-#include "segger_wrapper.h"
-#include "nrf_assert.h"
 #include "utils.h"
 #include <math.h>
+#include "ListePoints.h"
+#include "assert_wrapper.h"
+#include "segger_wrapper.h"
 
 /**
  *

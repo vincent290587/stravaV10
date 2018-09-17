@@ -1,11 +1,8 @@
-#include "nrf_assert.h"
+
+#include "assert_wrapper.h"
 #include "math.h"
 #include "Segment.h"
 #include "segger_wrapper.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 
 static bool _nomCorrect(String nom) {

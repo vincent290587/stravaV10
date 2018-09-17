@@ -27,14 +27,20 @@
 /*********************************************/
 
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
 
 #define DTOA_UPPER 0x04
+#ifndef TDD
 #define isnanf(X)      __isnanf(X)
 #define isinff(X)      __isinff(X)
-
 char * fcvtf(float, int, int *, int *);
+#else
+#define isnanf(X)      false
+#define isinff(X)      false
+#endif
+
 
 void reverse(char* begin, char* end) {
     char *is = begin;
@@ -142,9 +148,9 @@ char * ltoa(long val, char *buf, int radix)
 }
 
 
-//
-//char * dtostrf(float val, int width, unsigned int precision, char *buf)
-//{
+#ifdef TDD
+char * dtostrf(float val, int width, unsigned int precision, char *buf)
+{
 //	int decpt, sign, reqd, pad;
 //	const char *s, *e;
 //	char *p;
@@ -280,13 +286,23 @@ char * ltoa(long val, char *buf, int radix)
 //		while (pad-- > 0) *p++ = ' ';
 //	}
 //	*p = 0;
-//
-//	//char format[20];
-//	//sprintf(format, "%%%d.%df", width, precision);
-//	//sprintf(buf, format, val);
-//	return buf;
-//}
 
+	String res;
+
+	int ent_val = (int) val;
+	res = String(ent_val);
+
+	if (width > 0) {
+		res += ".";
+		uint32_t dec_val = fabs(val - (float)ent_val) * pow(10, width);
+		res += dec_val;
+	}
+
+	res.toCharArray(buf, 512);
+
+	return buf;
+}
+#endif
 
 String::String(const char *cstr)
 {

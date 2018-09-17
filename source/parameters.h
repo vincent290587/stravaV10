@@ -24,8 +24,6 @@
 
 #define BACKLIGHT_AUTO_START_RAW_VIS   5
 
-#define BATT_INT_RES                   0.155
-
 #define STC3100_CUR_SENS_RES_MO        100
 
 #define FXOS_MEAS_CAL_LIM_MS           60000

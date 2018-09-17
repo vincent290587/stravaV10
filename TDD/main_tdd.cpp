@@ -8,10 +8,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "main_tdd.h"
-
-
+#include "../source/routes/Points.h"
 #include "segger_wrapper.h"
+
+// init counters
+int Point2D::objectCount2D = 0;
+int Point::objectCount = 0;
+
 
 /**
  *
