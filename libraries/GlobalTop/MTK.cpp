@@ -8,7 +8,7 @@
 #include <MTK.h>
 #include <string.h>
 #include <utils.h>
-#include "nrf_assert.h"
+#include "assert_wrapper.h"
 #include "segger_wrapper.h"
 
 MTK::MTK(void) {

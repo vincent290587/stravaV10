@@ -33,10 +33,12 @@ include_directories(
 	TDD/DB
 	TDD/DB/fatfs/src
 	TDD/drivers
+	TDD/timer
 	TDD/vue
 	libraries/GlobalTop
 	libraries/utils
 	libraries/TinyGPSPlus
+	rf
     source
     source/routes
 	source/model
@@ -50,14 +52,20 @@ include_directories(
 set(SRCS
     main_tdd.cpp
 	Model_tdd.cpp
+	millis_tdd.c
 	DB/sd_functions.cpp
 	DB/sd_hal.c
+	timer/timer.c
     sensors/GPSMGMT.cpp
 	drivers/uart_tdd.c
+	drivers/neopixel_tdd.c
 	vue/Vue_TDD.cpp
 	libraries/utils/WString.cpp
 	libraries/utils/utils.c
+	libraries/GlobalTop/MTK.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
+	source/display/SegmentManager.cpp
+	source/display/notifications.c
     source/routes/ListePoints.cpp
 	source/routes/Parcours.cpp
 	source/routes/Points.cpp
@@ -66,7 +74,9 @@ set(SRCS
 	source/model/Attitude.cpp
 	source/model/Boucle.cpp
 	source/model/BoucleCRS.cpp
+	source/model/BoucleFEC.cpp
 	source/model/Locator.cpp
+	source/vue/Screenutils.cpp
     )
     
 set(HEADERS
