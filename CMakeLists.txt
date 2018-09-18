@@ -15,7 +15,7 @@ add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
 
 set(CMAKE_C_FLAGS  "-fno-builtin --short-enums -nostdlib -MMD -nostdlib -ffunction-sections -fdata-sections -fno-strict-aliasing")
-set(CMAKE_CXX_FLAGS  "-std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti")
+set(CMAKE_CXX_FLAGS  "-std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti -fpermissive")
 
 
 # configure a header file to pass some of the CMake settings
@@ -35,6 +35,7 @@ include_directories(
 	TDD/drivers
 	TDD/timer
 	TDD/vue
+	libraries/AdafruitGFX
 	libraries/GlobalTop
 	libraries/utils
 	libraries/TinyGPSPlus
@@ -59,9 +60,11 @@ set(SRCS
 	timer/timer.c
     sensors/GPSMGMT.cpp
 	drivers/uart_tdd.c
+	drivers/ls027_tdd.cpp
 	drivers/neopixel_tdd.c
-	vue/Vue_TDD.cpp
 	libraries/utils/WString.cpp
+	libraries/AdafruitGFX/Adafruit_GFX.cpp
+	libraries/AdafruitGFX/Print.cpp
 	libraries/utils/utils.c
 	libraries/GlobalTop/MTK.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
@@ -79,6 +82,11 @@ set(SRCS
 	source/model/BoucleFEC.cpp
 	source/model/Locator.cpp
 	source/vue/Screenutils.cpp
+	source/vue/Menuable.cpp
+	source/vue/Vue.cpp
+	source/vue/VueCRS.cpp
+	source/vue/VuePRC.cpp
+	source/vue/VueFEC.cpp
     )
     
 set(HEADERS

@@ -6,6 +6,7 @@
  */
 
 #include "Vue_TDD.h"
+
 #include "parameters.h"
 #include "assert_wrapper.h"
 #include "WString.h"
@@ -63,4 +64,13 @@ void Vue_TDD::HistoH(uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_co
 void Vue_TDD::Histo(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, sVueHistoConfiguration& h_config_) {
 
 
+}
+
+void Vue_TDD::clearDisplay(void) {
+}
+
+void Vue_TDD::invertDisplay(void) {
+}
+
+void Vue_TDD::writeWhole(void) {
 }
