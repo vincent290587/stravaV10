@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "sd_hal.h"
-#include "Model.h"
+#include "sd_functions.h"
+#include "Simulator.h"
+#include "Model_tdd.h"
 #include "segger_wrapper.h"
 
 
@@ -22,11 +24,15 @@ int main(void)
 {
 	LOG_INFO("Program init");
 
+	simulator_init();
+
 	millis_init();
 
 	fatfs_init();
 
 	boucle.init();
+
+	load_segment(mes_segments._segs.front());
 
 	delay_ms(1);
 
@@ -36,6 +42,8 @@ int main(void)
 
 		// tasks
 		perform_system_tasks();
+
+		simulator_tasks();
 
 	}
 }

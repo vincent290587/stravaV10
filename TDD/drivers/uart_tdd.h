@@ -86,6 +86,8 @@ void uart_tasks(void);
 
 void uart_send(uint8_t * p_data, size_t length);
 
+void uart_rx_handler(char c);
+
 #ifdef __cplusplus
 }
 #endif

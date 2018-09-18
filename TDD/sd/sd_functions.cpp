@@ -30,8 +30,8 @@
 static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
-static FIL g_fileObject;   /* File object */
-static FIL g_EpoFileObject;   /* File object */
+static FIL* g_fileObject;   /* File object */
+static FIL* g_EpoFileObject;   /* File object */
 
 /*!
  * @brief Main function
@@ -154,7 +154,6 @@ void uninit_liste_segments(void)
 int load_segment(Segment& seg) {
 
 	int res = 0;
-	FRESULT error;
 	float time_start = 0.;
 
 	if (!is_fat_init()) return -2;
@@ -163,13 +162,16 @@ int load_segment(Segment& seg) {
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
-	String fat_name = seg.getName();
+	String fat_name = "./DB/";
+	fat_name += seg.getName();
 
-	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error)
+	//error = f_open(g_fileObject, _T(fat_name.c_str()), FA_READ);
+	g_fileObject = fopen(_T(fat_name.c_str()), "r");
+
+	//if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	if (!g_fileObject)
 	{
-		NRF_LOG_ERROR("Open file failed. (error %u)", error);
+		LOG_ERROR("Open file failed");
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
@@ -179,7 +181,7 @@ int load_segment(Segment& seg) {
 	// allocate segment memory
 	if (!seg.init()) return -1;
 
-	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_fileObject)) {
+	while (fgets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
 
 		if (strstr(g_bufferRead, "<")) {
 			// meta data
@@ -187,12 +189,14 @@ int load_segment(Segment& seg) {
 			// on est pret a charger le point
 			if (!chargerPointSeg(g_bufferRead, seg, time_start))
 				res++;
+
+			memset(g_bufferRead, 0, sizeof(g_bufferRead));
 		}
 
 		if (check_memory_exception()) return -1;
 	}
 
-	error = f_close (&g_fileObject);
+	int error = fclose (g_fileObject);
 	if (error)
 	{
 		NRF_LOG_ERROR("Close file failed. (error %u)", error);
@@ -215,20 +219,22 @@ int load_segment(Segment& seg) {
 int load_parcours(Parcours& mon_parcours) {
 
 	int res = 0;
-	FRESULT error;
 
 	if (!is_fat_init()) return -2;
 
 	// clear list
 	mon_parcours.desallouerPoints();
 
-	String fat_name = mon_parcours.getName();
+	String fat_name = "./DB/";
+	fat_name += mon_parcours.getName();
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
-	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error)
+//	error = f_open(g_fileObject, _T(fat_name.c_str()), FA_READ);
+//	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	g_fileObject = fopen(_T(fat_name.c_str()), "r");
+
+	if (!g_fileObject)
 	{
 		LOG_INFO("Open file failed.");
 		return -1;
@@ -236,7 +242,7 @@ int load_parcours(Parcours& mon_parcours) {
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
-	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_fileObject)) {
+	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
 
 		// on se met au bon endroit
 		if (strstr(g_bufferRead, "<")) {
@@ -254,7 +260,7 @@ int load_parcours(Parcours& mon_parcours) {
 
 	} // fin du fichier
 
-	error = f_close(&g_fileObject);
+	int error = fclose(g_fileObject);
 	if (error)
 	{
 		LOG_INFO("Close file failed.");
@@ -368,9 +374,11 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 	uint32_t millis_ = millis();
 
-	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-	if (error)
+//	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+//	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	g_fileObject = fopen("DB/histo.txt", "rw");
+
+	if (!g_fileObject)
 	{
 		LOG_INFO("Open file failed.");
 		return;
@@ -383,12 +391,12 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 				att[i].loc.alt, att[i].date.secj,
 				att[i].pwr);
 
-		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
+		(void)fwrite(g_bufferWrite, to_wr, 1, g_fileObject);
 
 		perform_system_tasks_light();
 	}
 
-	error = f_close(&g_fileObject);
+	int error = fclose(g_fileObject);
 	if (error)
 	{
 		LOG_INFO("Close file failed.");

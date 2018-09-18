@@ -52,6 +52,7 @@ include_directories(
 set(SRCS
     main_tdd.cpp
 	Model_tdd.cpp
+    Simulator.cpp
 	millis_tdd.c
 	sd/sd_functions.cpp
 	sd/sd_hal.c
@@ -82,6 +83,7 @@ set(SRCS
     
 set(HEADERS
     main_tdd.h
+    Simulator.h
     )
  
 # add the executable
