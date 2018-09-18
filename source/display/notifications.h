@@ -3,7 +3,6 @@
 #define NOTIFICATIONS_H_
 
 #include <stdint.h>
-#include "neopixel.h"
 #include "mk64f_parser.h"
 
 typedef enum {

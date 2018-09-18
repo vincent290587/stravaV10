@@ -79,11 +79,14 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_) {
 	memcpy(&att.date, &date_, sizeof(SDate));
 }
 
+
 /**
  *
  */
+#ifdef ANT_STACK_SUPPORT_REQD
 void Attitude::addNewFECPoint(sFecInfo& fec_) {
 
 	// TODO
 
 }
+#endif

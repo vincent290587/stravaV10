@@ -21,9 +21,6 @@
 #include "nrf_block_dev_sdc.h"
 #include "sd_functions.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 /*******************************************************************************
  * Definitions

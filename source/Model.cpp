@@ -17,10 +17,6 @@
 #include "usb_cdc.h"
 #endif
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
 SAtt att;
 
 Attitude      attitude;

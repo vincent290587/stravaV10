@@ -8,12 +8,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "../source/routes/Points.h"
+#include "Model.h"
 #include "segger_wrapper.h"
 
-// init counters
-int Point2D::objectCount2D = 0;
-int Point::objectCount = 0;
 
 
 /**
@@ -23,7 +20,7 @@ int Point::objectCount = 0;
 int main(void)
 {
 
-	//boucle.init();
+	boucle.init();
 
 	for (;;)
 	{

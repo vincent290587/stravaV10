@@ -10,9 +10,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "fec.h"
 #include "RingBuffer.h"
 #include "parameters.h"
+
+#ifdef ANT_STACK_SUPPORT_REQD
+#include "fec.h"
+#endif
 
 typedef struct {
 	float lat;
@@ -55,7 +58,10 @@ public:
 
 	void addNewDate(SDate &date_);
 	void addNewLocation(SLoc& loc_, SDate &date_);
+
+#ifdef ANT_STACK_SUPPORT_REQD
 	void addNewFECPoint(sFecInfo& fec_);
+#endif
 
 private:
 	float m_last_save_dist;

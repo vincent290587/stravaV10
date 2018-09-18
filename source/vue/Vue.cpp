@@ -8,6 +8,7 @@
 #include <vue/Vue.h>
 #include "nordic_common.h"
 #include "nrf_assert.h"
+#include "ls027.h"
 #include "WString.h"
 #include "segger_wrapper.h"
 

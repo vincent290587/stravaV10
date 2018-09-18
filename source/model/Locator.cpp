@@ -333,6 +333,7 @@ void Locator::tasks() {
 /**
  *
  */
+#ifndef TDD
 void Locator::displayGPS2(void) {
 
 //	int totalMessages = atoi(totalGPGSVMessages.value());
@@ -398,3 +399,8 @@ void Locator::displayGPS2(void) {
 
 
 }
+#else
+void Locator::displayGPS2(void) {
+
+}
+#endif

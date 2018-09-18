@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 
+#define M_TWOPI         (M_PI * 2.0)
 
 #ifdef	__cplusplus
 extern "C" {

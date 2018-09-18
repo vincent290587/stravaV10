@@ -5,15 +5,11 @@
  *      Author: Vincent
  */
 
-#ifndef SOURCE_VUE_VUE_H_
-#define SOURCE_VUE_VUE_H_
+#ifndef SOURCE_VUE_TDD_H_
+#define SOURCE_VUE_TDD_H_
 
 #include <vue/VueCommon.h>
 #include <vue/Notif.h>
-#include <vue/VueCRS.h>
-#include <vue/VueFEC.h>
-#include <vue/VuePRC.h>
-#include <vue/Menuable.h>
 #include <button.h>
 
 typedef enum {
@@ -22,9 +18,9 @@ typedef enum {
 	eVueGlobalScreenPRC,
 } eVueGlobalScreenModes;
 
-class Vue: public VueCRS, public VueFEC, public VuePRC, public NotifiableDevice, public Menuable {
+class Vue_TDD: public NotifiableDevice {
 public:
-	Vue();
+	Vue_TDD();
 
 	void init(void);
 
@@ -43,14 +39,14 @@ public:
 	void HistoH (uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_);
 
 	void clearDisplay(void) {
-		LS027_Clear();
+		//LS027_Clear();
 	}
 	void invertDisplay(void) {
-		LS027_InvertColors();
+		//LS027_InvertColors();
 	}
 	void writeWhole(void)
 	{
-		LS027_UpdateFull();
+		//LS027_UpdateFull();
 	}
 private:
 	eVueGlobalScreenModes m_global_mode;

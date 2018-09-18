@@ -8,7 +8,9 @@
 #ifndef SOURCE_MODEL_H_
 #define SOURCE_MODEL_H_
 
+#ifndef TDD
 
+#include <stdbool.h>
 #include "notifications.h"
 #include "parameters.h"
 
@@ -41,8 +43,6 @@ extern ListeSegments mes_segments;
 extern ListePoints   mes_points;
 
 extern ListeParcours mes_parcours;
-
-extern ListePoints   mes_points;
 
 extern Locator       locator;
 
@@ -88,5 +88,11 @@ void wdt_reload(void);
 #if defined(__cplusplus)
 }
 #endif // defined C++
+
+#else /* TDD */
+
+#include "Model_tdd.h"
+
+#endif /* TDD */
 
 #endif /* SOURCE_MODEL_H_ */
