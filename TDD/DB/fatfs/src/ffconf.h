@@ -39,7 +39,7 @@
 /  f_findnext(). (0:Disable, 1:Enable 2:Enable with matching altname[] too) */
 
 
-#define	_USE_MKFS		1
+#define	_USE_MKFS		0
 /* This option switches f_mkfs() function. (0:Disable or 1:Enable) */
 
 

@@ -414,7 +414,7 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 
 	GPS_UART_SEND(buffer, cmd.length() + 5);
 
-	LOG_INFO("Host aiding: %s", (uint32_t)buffer);
+	LOG_INFO("Host aiding: %s", (char*)buffer);
 
 //	vue.addNotif("EPO", "Host aiding sent", 5, eNotificationTypeComplete);
 }

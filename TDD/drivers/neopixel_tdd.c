@@ -45,7 +45,7 @@
 	- Do not use neopixel_set_color_and_show(...) with BLE, instead use uint8_t neopixel_set_color(...);
  */
 
-
+#include <stddef.h>
 #include "neopixel.h"
 
 #define NRF_RADIO_NOTIFICATION_DISTANCE_NEOPIXEL_US

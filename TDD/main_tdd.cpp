@@ -20,17 +20,16 @@
 int main(void)
 {
 
+	LOG_INFO("Program init");
+
 	boucle.init();
 
 	for (;;)
 	{
-		//boucle.tasks();
-
-		//if (!millis()) LOG_INFO("No millis");
-
+		boucle.tasks();
 
 		// tasks
-		//perform_system_tasks();
+		perform_system_tasks();
 
 	}
 }

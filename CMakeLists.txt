@@ -4,7 +4,7 @@ project (stravaV10)
 
 # On inclut notre bibliothèque dans le processus de CMake
 # add_subdirectory(source/routes)
-# add_subdirectory(libraries/utils)
+add_subdirectory(TDD/DB/fatfs)
 
 # The version number.
 set (Tutorial_VERSION_MAJOR 1)
@@ -71,6 +71,7 @@ set(SRCS
 	source/routes/Points.cpp
 	source/routes/Segment.cpp
 	source/routes/Vecteur.cpp
+	source/parsers/file_parser.cpp
 	source/model/Attitude.cpp
 	source/model/Boucle.cpp
 	source/model/BoucleCRS.cpp
@@ -87,5 +88,5 @@ set(HEADERS
 add_executable(StravaV10 ${SRCS} ${HEADERS})
 
 # Et pour que l'exécutable fonctionne, il faut lui indiquer la bibliothèque dont il dépend
-# target_link_libraries(StravaV10 libs)
+target_link_libraries(StravaV10 fatfs)
 # target_link_libraries(StravaV10 routes)

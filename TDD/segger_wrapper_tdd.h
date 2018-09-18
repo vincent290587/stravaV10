@@ -8,12 +8,13 @@
 #ifndef SEGGER_WRAPPER_TDD_H_
 #define SEGGER_WRAPPER_TDD_H_
 
+#include <stdio.h>
 
-#define LOG_INFO(...)                  EMPTY_MACRO
+#define LOG_INFO(...)                  printf(__VA_ARGS__);printf("\n")
 #define LOG_RAW_INFO(X)                EMPTY_MACRO
-#define LOG_WARNING(...)               EMPTY_MACRO
+#define LOG_WARNING(...)               printf(__VA_ARGS__);printf("\n")
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 EMPTY_MACRO
+#define LOG_ERROR(...)                 printf(__VA_ARGS__);printf("\n")
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
