@@ -27,7 +27,7 @@ BoucleCRS::BoucleCRS() : BoucleInterface() {
 bool BoucleCRS::isTime() {
 
 	if (locator.isUpdated()) {
-		LOG_INFO("Locator updated\r\n");
+		LOG_INFO("Locator updated");
 		return true;
 	}
 

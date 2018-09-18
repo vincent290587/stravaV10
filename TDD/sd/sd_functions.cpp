@@ -11,6 +11,8 @@
 #include "file_parser.h"
 #include "WString.h"
 #include "ff.h"
+#include <dirent.h>
+#include <stdio.h>
 #include "sd_hal.h"
 #include "sd_functions.h"
 
@@ -38,7 +40,7 @@ static FIL* g_EpoFileObject;   /* File object */
  */
 int init_liste_segments(void)
 {
-	FRESULT error;
+	FRESULT error = FR_OK;
 	FILINFO* fileInformation;
 	uint16_t nb_files_errors = 0;
 
@@ -171,7 +173,7 @@ int load_segment(Segment& seg) {
 	//if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (!g_fileObject)
 	{
-		LOG_ERROR("Open file failed");
+		LOG_ERROR("Open file %s failed", _T(fat_name.c_str()));
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
@@ -236,13 +238,13 @@ int load_parcours(Parcours& mon_parcours) {
 
 	if (!g_fileObject)
 	{
-		LOG_INFO("Open file failed.");
+		LOG_INFO("Open PRC %s failed", _T(fat_name.c_str()));
 		return -1;
 	}
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
-	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
+	while (fgets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
 
 		// on se met au bon endroit
 		if (strstr(g_bufferRead, "<")) {
@@ -376,11 +378,11 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 //	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
 //	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-	g_fileObject = fopen("DB/histo.txt", "rw");
+	g_fileObject = fopen("DB/histo.txt", "a+");
 
 	if (!g_fileObject)
 	{
-		LOG_INFO("Open file failed.");
+		LOG_INFO("Open histo failed");
 		return;
 	}
 
@@ -404,7 +406,6 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 	} else {
 		LOG_INFO("Points added to histo: %u %u", nb_pos, millis() - millis_);
 	}
-	LOG_INFO("Points added to histo: %u", nb_pos);
 }
 
 /**

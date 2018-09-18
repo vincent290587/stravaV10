@@ -31,7 +31,7 @@ static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 
 static FIL* g_fileObject;   /* File object */
 
-#define NEW_POINT_PERIOD_MS       500
+#define NEW_POINT_PERIOD_MS       10
 
 static uint32_t last_point_ms = 0;
 
@@ -79,11 +79,14 @@ void simulator_tasks(void) {
 			uart_rx_handler(g_bufferWrite[i]);
 
 	} else {
-		rewind(g_fileObject);
+		fclose(g_fileObject);
 
 		LOG_WARNING("Reached end of simulation file");
-	}
 
+		mes_segments._segs.empty();
+
+		exit(0);
+	}
 
 }
 
@@ -151,7 +154,7 @@ int GPRMC::toString(char *buffer_, size_t max_size_) {
 
 	int sum = 0;
 	for (int i = 1; i < res.length(); i++) {
-		sum ^= (byte) res[i];
+		sum ^= (uint8_t) res[i];
 	}
 
 	sprintf(x, "*%02X\r\n", sum);

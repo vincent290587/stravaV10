@@ -127,7 +127,7 @@ bool Locator::isUpdated()      {
 	eLocationSource source = this->getUpdateSource();
 
 	if (eLocationSourceNone != source) {
-		LOG_DEBUG("Locator source: %u\r\n", source);
+		LOG_DEBUG("Locator source: %u", source);
 		return true;
 	}
 	return false;
@@ -301,12 +301,12 @@ void Locator::tasks() {
 
 			gps_loc.data.course = gps.course.deg();
 
-			LOG_INFO("GPS location set\r\n");
+			LOG_INFO("GPS location set");
 
 			gps_loc.setIsUpdated();
 
 		} else if (gps.time.isValid()) {
-			LOG_DEBUG("GPS location invalid\r\n");
+			LOG_DEBUG("GPS location invalid !");
 			// trick to force taking LNS data
 			gps_loc.data.utc_time -= (LNS_OVER_GPS_DTIME_S + 3);
 		}
