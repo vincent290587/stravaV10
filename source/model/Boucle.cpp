@@ -23,7 +23,9 @@ void Boucle::init(void) {
 
 	LOG_INFO("Boucle init...");
 
-	init_liste_segments();
+	if (init_liste_segments()) {
+		LOG_ERROR("Boucle init fail");
+	}
 
 	m_global_mode = BOUCLE_DEFAULT_MODE;
 }

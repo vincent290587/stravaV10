@@ -33,7 +33,7 @@ bool BoucleCRS::isTime() {
 
 	if (m_needs_init ||
 			m_last_refresh.getAge() > 1200) {
-		LOG_DEBUG("Auto refresh");
+		LOG_INFO("Auto refresh %u", millis());
 		return true;
 	}
 

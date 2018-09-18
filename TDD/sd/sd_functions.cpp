@@ -39,8 +39,7 @@ static FIL g_EpoFileObject;   /* File object */
 int init_liste_segments(void)
 {
 	FRESULT error;
-	DIR directory; /* Directory object */
-	FILINFO fileInformation;
+	FILINFO* fileInformation;
 	uint16_t nb_files_errors = 0;
 
 	if (!is_fat_init()) return -2;
@@ -60,47 +59,56 @@ int init_liste_segments(void)
 #endif
 
 	LOG_INFO("List the file in the root directory......");
-	if (f_opendir(&directory, "/"))
+
+	struct dirent *de;  // Pointer for directory entry
+
+	// opendir() returns a pointer of DIR type.
+	DIR *dr = opendir("./DB/");
+
+	if (dr == NULL)  // opendir returns NULL if couldn't open directory
 	{
-		LOG_INFO("Open directory failed.");
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		LOG_ERROR("Could not open current directory" );
 		return -1;
 	}
 
 	do
 	{
-		error = f_readdir(&directory, &fileInformation);
+		//error = f_readdir(directory, &fileInformation);
+		fileInformation = readdir(dr);
 
 		/* To the end. */
-		if ((error != FR_OK) || (fileInformation.fname[0U] == 0U))
+		if (!fileInformation)
 		{
 			break;
 		}
-		if (!fileInformation.fname[0]) {
+		if ((error != FR_OK) || (fileInformation->d_name[0U] == 0U))
+		{
+			LOG_ERROR("f_readdir failure %u", error);
+			break;
+		}
+		if (!fileInformation->d_name[0]) {
 			continue;
 		}
-		if (fileInformation.fname[0] == '.')
+		if (fileInformation->d_name[0] == '.')
 		{
 			continue;
 		}
-		if (fileInformation.fattrib & AM_DIR)
-		{
-//			LOG_INFO("Directory file : %s", (uint32_t)fileInformation.fname);
-		}
-		else
-		{
-			fileInformation.fname[12] = 0;
 
-			LOG_DEBUG("General file : %s", (uint32_t)fileInformation.fname);
+		LOG_INFO("Directory file : %s", fileInformation->d_name);
 
-			if (Segment::nomCorrect(fileInformation.fname)) {
-				LOG_DEBUG("Segment added : %s", (uint32_t)fileInformation.fname);
+		{
+			fileInformation->d_name[12] = 0;
+
+			LOG_DEBUG("General file : %s", (uint32_t)fileInformation->d_name);
+
+			if (Segment::nomCorrect(fileInformation->d_name)) {
+				LOG_DEBUG("Segment added : %s", (uint32_t)fileInformation->d_name);
 //				LOG_INFO("Segment added");
-				mes_segments.push_back(Segment(fileInformation.fname));
-			} else if (Parcours::nomCorrect(fileInformation.fname)) {
+				mes_segments.push_back(Segment(fileInformation->d_name));
+			} else if (Parcours::nomCorrect(fileInformation->d_name)) {
 				// pas de chargement en double
 				LOG_INFO("Parcours added");
-				mes_parcours.push_back(Parcours(fileInformation.fname));
+				mes_parcours.push_back(Parcours(fileInformation->d_name));
 			} else {
 				LOG_INFO("File refused");
 				nb_files_errors++;
@@ -110,7 +118,9 @@ int init_liste_segments(void)
 
 		}
 
-	} while (fileInformation.fname[0U]);
+	} while (fileInformation->d_name[0U]);
+
+	closedir(dr);
 
 	LOG_INFO("%u files refused", nb_files_errors);
 	LOG_INFO("%u segments addded", mes_segments.size());
@@ -315,7 +325,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
 
 				int res = load_segment(mon_seg);
-				LOG_INFO("-->> Loading segment %s", mon_seg.getName(), res);
+				LOG_INFO("-->> Loading segment %s %u", mon_seg.getName(), res);
 
 				if (res > 0) mon_seg.init();
 			}
@@ -368,7 +378,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 	for (size_t i=0; i< nb_pos; i++) {
 		// TODO print histo
-		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
+		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%u;%d\r\n",
 				att[i].loc.lat, att[i].loc.lon,
 				att[i].loc.alt, att[i].date.secj,
 				att[i].pwr);

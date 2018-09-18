@@ -9,6 +9,7 @@
 #include "millis.h"
 #include "timer.h"
 
+#define MS_TIMER_GRANULOSITY       100
 
 /*******************************************************************************
  * Code
@@ -19,14 +20,14 @@ static volatile uint32_t m_cur_time_ms = 0;
 
 void timer_handler(void)
 {
-	m_cur_time_ms++;
+	m_cur_time_ms += MS_TIMER_GRANULOSITY;
 }
 /**
  *
  */
 void millis_init(void) {
 
-	start_timer(1, &timer_handler);
+	start_timer(MS_TIMER_GRANULOSITY, &timer_handler);
 
 }
 

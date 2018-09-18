@@ -4,7 +4,7 @@ project (stravaV10)
 
 # On inclut notre bibliothèque dans le processus de CMake
 # add_subdirectory(source/routes)
-add_subdirectory(TDD/DB/fatfs)
+add_subdirectory(TDD/sd/fatfs)
 
 # The version number.
 set (Tutorial_VERSION_MAJOR 1)
@@ -30,8 +30,8 @@ configure_file (
 include_directories(
     ./
 	TDD
-	TDD/DB
-	TDD/DB/fatfs/src
+	TDD/sd
+	TDD/sd/fatfs/src
 	TDD/drivers
 	TDD/timer
 	TDD/vue
@@ -53,8 +53,8 @@ set(SRCS
     main_tdd.cpp
 	Model_tdd.cpp
 	millis_tdd.c
-	DB/sd_functions.cpp
-	DB/sd_hal.c
+	sd/sd_functions.cpp
+	sd/sd_hal.c
 	timer/timer.c
     sensors/GPSMGMT.cpp
 	drivers/uart_tdd.c

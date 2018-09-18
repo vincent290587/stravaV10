@@ -21,6 +21,9 @@
 #ifndef _FATFS
 #define _FATFS	68020	/* Revision ID */
 
+#include <dirent.h>
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -158,62 +161,62 @@ typedef struct {
 
 /* File object structure (FIL) */
 
-typedef struct {
-	_FDID	obj;			/* Object identifier (must be the 1st member to detect invalid object pointer) */
-	BYTE	flag;			/* File status flags */
-	BYTE	err;			/* Abort flag (error code) */
-	FSIZE_t	fptr;			/* File read/write pointer (Zeroed on file open) */
-	DWORD	clust;			/* Current cluster of fpter (invalid when fprt is 0) */
-	DWORD	sect;			/* Sector number appearing in buf[] (0:invalid) */
-#if !_FS_READONLY
-	DWORD	dir_sect;		/* Sector number containing the directory entry */
-	BYTE*	dir_ptr;		/* Pointer to the directory entry in the win[] */
-#endif
-#if _USE_FASTSEEK
-	DWORD*	cltbl;			/* Pointer to the cluster link map table (nulled on open, set by application) */
-#endif
-#if !_FS_TINY
-	BYTE	buf[_MAX_SS];	/* File private data read/write window */
-#endif
-} FIL;
-
-
+//typedef struct {
+//	_FDID	obj;			/* Object identifier (must be the 1st member to detect invalid object pointer) */
+//	BYTE	flag;			/* File status flags */
+//	BYTE	err;			/* Abort flag (error code) */
+//	FSIZE_t	fptr;			/* File read/write pointer (Zeroed on file open) */
+//	DWORD	clust;			/* Current cluster of fpter (invalid when fprt is 0) */
+//	DWORD	sect;			/* Sector number appearing in buf[] (0:invalid) */
+//#if !_FS_READONLY
+//	DWORD	dir_sect;		/* Sector number containing the directory entry */
+//	BYTE*	dir_ptr;		/* Pointer to the directory entry in the win[] */
+//#endif
+//#if _USE_FASTSEEK
+//	DWORD*	cltbl;			/* Pointer to the cluster link map table (nulled on open, set by application) */
+//#endif
+//#if !_FS_TINY
+//	BYTE	buf[_MAX_SS];	/* File private data read/write window */
+//#endif
+//} FIL;
 
 /* Directory object structure (DIR) */
 
-typedef struct {
-	_FDID	obj;			/* Object identifier */
-	DWORD	dptr;			/* Current read/write offset */
-	DWORD	clust;			/* Current cluster */
-	DWORD	sect;			/* Current sector */
-	BYTE*	dir;			/* Pointer to the directory item in the win[] */
-	BYTE	fn[12];			/* SFN (in/out) {body[8],ext[3],status[1]} */
-#if _USE_LFN != 0
-	DWORD	blk_ofs;		/* Offset of current entry block being processed (0xFFFFFFFF:Invalid) */
-#endif
-#if _USE_FIND
-	const TCHAR* pat;		/* Pointer to the name matching pattern */
-#endif
-} DIR;
+//typedef struct {
+//	_FDID	obj;			/* Object identifier */
+//	DWORD	dptr;			/* Current read/write offset */
+//	DWORD	clust;			/* Current cluster */
+//	DWORD	sect;			/* Current sector */
+//	BYTE*	dir;			/* Pointer to the directory item in the win[] */
+//	BYTE	fn[12];			/* SFN (in/out) {body[8],ext[3],status[1]} */
+//#if _USE_LFN != 0
+//	DWORD	blk_ofs;		/* Offset of current entry block being processed (0xFFFFFFFF:Invalid) */
+//#endif
+//#if _USE_FIND
+//	const TCHAR* pat;		/* Pointer to the name matching pattern */
+//#endif
+//} DIR;
 
 
 
 /* File information structure (FILINFO) */
 
-typedef struct {
-	FSIZE_t	fsize;			/* File size */
-	WORD	fdate;			/* Modified date */
-	WORD	ftime;			/* Modified time */
-	BYTE	fattrib;		/* File attribute */
-#if _USE_LFN != 0
-	TCHAR	altname[13];			/* Altenative file name */
-	TCHAR	fname[_MAX_LFN + 1];	/* Primary file name */
-#else
-	TCHAR	fname[13];		/* File name */
-#endif
-} FILINFO;
+//typedef struct {
+//	FSIZE_t	fsize;			/* File size */
+//	WORD	fdate;			/* Modified date */
+//	WORD	ftime;			/* Modified time */
+//	BYTE	fattrib;		/* File attribute */
+//#if _USE_LFN != 0
+//	TCHAR	altname[13];			/* Altenative file name */
+//	TCHAR	fname[_MAX_LFN + 1];	/* Primary file name */
+//#else
+//	TCHAR	fname[13];		/* File name */
+//#endif
+//} FILINFO;
 
+typedef FILE FIL;
 
+typedef struct dirent FILINFO;
 
 /* File function return code (FRESULT) */
 
