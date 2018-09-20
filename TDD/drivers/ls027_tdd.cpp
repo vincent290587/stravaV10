@@ -36,12 +36,10 @@
 static const uint8_t set[] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
 static const uint8_t clr[] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F };
 
-bool m_is_color_inverted = false;
+static bool m_is_color_inverted = false;
 
 static uint8_t ls027_tdd_buffer[LS027_BUFFER_SIZE];
 
-static const char * myfifo = "/home/vincent/myfifo";
-static int m_fd_pipe = -1;
 static int sockfd = -1;
 static int server_fd = -1;
 
@@ -63,7 +61,13 @@ static void ls027_spi_buffer_clear(void) {
 /////////  FUNCTIONS
 
 void LS027_Clear(void) {
+	LOG_DEBUG("LS027 buffers cleared");
 
+	if (!m_is_color_inverted) {
+		memset(ls027_tdd_buffer, LS027_PIXEL_GROUP_WHITE, sizeof(ls027_tdd_buffer));
+	} else {
+		memset(ls027_tdd_buffer, LS027_PIXEL_GROUP_BLACK, sizeof(ls027_tdd_buffer));
+	}
 }
 
 void LS027_Init(void) {
@@ -104,13 +108,6 @@ void LS027_Init(void) {
 	{
 		perror("listen");
 		exit(EXIT_FAILURE);
-	}
-	while ((sockfd = accept(server_fd, (struct sockaddr *)&address,
-			(socklen_t*)&addrlen))<0)
-	{
-		perror("accept");
-		delay_ms(100);
-		//exit(EXIT_FAILURE);
 	}
 
 }
@@ -162,4 +159,5 @@ void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
 	} else {
 		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] &= clr[x & 7];
 	}
+
 }
