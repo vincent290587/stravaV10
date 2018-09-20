@@ -15,6 +15,7 @@
 #include <vue/VuePRC.h>
 #include <vue/Menuable.h>
 #include <button.h>
+#include "ls027.h"
 
 typedef enum {
 	eVueGlobalScreenCRS,

@@ -9,7 +9,7 @@
 #include "millis.h"
 #include "timer.h"
 
-#define MS_TIMER_GRANULOSITY       100
+#define MS_TIMER_GRANULOSITY       10
 
 /*******************************************************************************
  * Code

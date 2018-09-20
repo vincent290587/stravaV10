@@ -57,10 +57,6 @@
 #include "glasses.h"
 #include "fec.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
 #define GPIO_BUTTON                     30
 
 #define ANT_DELAY                       APP_TIMER_TICKS(30000)

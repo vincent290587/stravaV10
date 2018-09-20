@@ -7,14 +7,9 @@
 
 #include <vue/Vue.h>
 #include "nordic_common.h"
-#include "nrf_assert.h"
-#include "ls027.h"
+#include "assert_wrapper.h"
 #include "WString.h"
 #include "segger_wrapper.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 
 Vue::Vue() : Adafruit_GFX(LS027_HW_WIDTH, LS027_HW_HEIGHT) {

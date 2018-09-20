@@ -31,7 +31,7 @@ static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 
 static FIL* g_fileObject;   /* File object */
 
-#define NEW_POINT_PERIOD_MS       10
+#define NEW_POINT_PERIOD_MS       400
 
 static uint32_t last_point_ms = 0;
 

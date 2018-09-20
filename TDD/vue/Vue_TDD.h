@@ -8,6 +8,9 @@
 #ifndef SOURCE_VUE_TDD_H_
 #define SOURCE_VUE_TDD_H_
 
+#include "VueCRS.h"
+#include "VueFEC.h"
+#include "VuePRC.h"
 #include <vue/VueCommon.h>
 #include <vue/Notif.h>
 #include <button.h>
@@ -18,7 +21,7 @@ typedef enum {
 	eVueGlobalScreenPRC,
 } eVueGlobalScreenModes;
 
-class Vue_TDD: public NotifiableDevice {
+class Vue_TDD: public VueCRS, public VueFEC, public VuePRC, public NotifiableDevice {
 public:
 	Vue_TDD();
 
@@ -38,16 +41,9 @@ public:
 	void Histo(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, sVueHistoConfiguration& h_config_);
 	void HistoH (uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_);
 
-	void clearDisplay(void) {
-		//LS027_Clear();
-	}
-	void invertDisplay(void) {
-		//LS027_InvertColors();
-	}
-	void writeWhole(void)
-	{
-		//LS027_UpdateFull();
-	}
+	void clearDisplay(void);
+	void invertDisplay(void);
+	void writeWhole(void);
 private:
 	eVueGlobalScreenModes m_global_mode;
 

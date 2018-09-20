@@ -34,6 +34,8 @@ int main(void)
 
 	load_segment(mes_segments._segs.front());
 
+	vue.init();
+
 	delay_ms(1);
 
 	for (;;)

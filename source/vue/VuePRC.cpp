@@ -5,17 +5,13 @@
  *      Author: Vincent
  */
 
-#include "nrf_ASSERT.h"
+#include "assert_wrapper.h"
 #include "ant.h"
 #include "Model.h"
 #include "segger_wrapper.h"
 #include <sd/sd_functions.h>
 #include <vue/Screenutils.h>
 #include <vue/VuePRC.h>
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 
 #define VUE_PRC_NB_LINES         7
@@ -102,10 +98,10 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			// let the user select one parcours
 			m_prc_screen_mode = eVuePRCScreenInit;
 		}
-
+#ifndef TDD
 		this->cadran(7, VUE_PRC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
 		this->cadran(7, VUE_PRC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
-
+#endif
 		break;
 	}
 

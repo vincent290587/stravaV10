@@ -34,7 +34,6 @@ include_directories(
 	TDD/sd/fatfs/src
 	TDD/drivers
 	TDD/timer
-	TDD/vue
 	libraries/AdafruitGFX
 	libraries/GlobalTop
 	libraries/utils
@@ -60,6 +59,7 @@ set(SRCS
 	timer/timer.c
     sensors/GPSMGMT.cpp
 	drivers/uart_tdd.c
+	drivers/gpio_tdd.c
 	drivers/ls027_tdd.cpp
 	drivers/neopixel_tdd.c
 	libraries/utils/WString.cpp
@@ -69,6 +69,7 @@ set(SRCS
 	libraries/GlobalTop/MTK.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
 	source/display/SegmentManager.cpp
+	source/display/Zoom.cpp
 	source/display/notifications.c
     source/routes/ListePoints.cpp
 	source/routes/Parcours.cpp
@@ -85,6 +86,7 @@ set(SRCS
 	source/vue/Menuable.cpp
 	source/vue/Vue.cpp
 	source/vue/VueCRS.cpp
+	source/vue/VueGPS.cpp
 	source/vue/VuePRC.cpp
 	source/vue/VueFEC.cpp
     )

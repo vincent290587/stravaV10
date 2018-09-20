@@ -23,7 +23,7 @@
 #include "GPSMGMT.h"
 #include "Attitude.h"
 #include "mk64f_parser.h"
-#include "Vue_TDD.h"
+#include "Vue.h"
 
 
 extern SAtt          att;
@@ -40,7 +40,7 @@ extern Locator       locator;
 
 extern Boucle        boucle;
 
-extern Vue_TDD           vue;
+extern Vue           vue;
 
 extern SegmentManager     segMngr;
 
@@ -51,6 +51,9 @@ extern sFecControl   fec_control;
 extern sBacklightOrders     backlight;
 
 extern sNeopixelOrders      neopixel;
+
+extern sHrmInfo hrm_info;
+extern sBscInfo bsc_info;
 
 extern "C" {
 #endif // defined C++

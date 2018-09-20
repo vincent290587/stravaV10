@@ -31,7 +31,11 @@ sBacklightOrders     backlight;
 
 sNeopixelOrders      neopixel;
 
-Vue_TDD           vue;
+Vue           vue;
+
+sHrmInfo hrm_info;
+sBscInfo bsc_info;
+sFecInfo fec_info;
 
 // init counters
 int Point2D::objectCount2D = 0;
