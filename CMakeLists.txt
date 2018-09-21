@@ -34,7 +34,9 @@ include_directories(
 	TDD/sd/fatfs/src
 	TDD/drivers
 	TDD/timer
+	TDD/sensors
 	libraries/AdafruitGFX
+    libraries/AdafruitGFX/Fonts
 	libraries/GlobalTop
 	libraries/utils
 	libraries/TinyGPSPlus
@@ -45,7 +47,6 @@ include_directories(
 	source/vue
 	source/parsers
 	source/display
-	source/sensors
     )
 
 # Crée des variables avec les fichiers à compiler
@@ -58,6 +59,7 @@ set(SRCS
 	sd/sd_hal.c
 	timer/timer.c
     sensors/GPSMGMT.cpp
+    sensors/STC3100.cpp
 	drivers/uart_tdd.c
 	drivers/gpio_tdd.cpp
 	drivers/ls027_tdd.cpp

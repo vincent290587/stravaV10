@@ -43,6 +43,7 @@ void simulator_init(void) {
 
 void simulator_tasks(void) {
 
+	if (millis() < 5000) return;
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
 
 	last_point_ms = millis();

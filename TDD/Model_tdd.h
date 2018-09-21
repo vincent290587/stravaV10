@@ -20,6 +20,7 @@
 #include "Locator.h"
 #include "SegmentManager.h"
 #include "Boucle.h"
+#include "STC3100.h"
 #include "GPSMGMT.h"
 #include "Attitude.h"
 #include "mk64f_parser.h"
@@ -51,6 +52,8 @@ extern sFecControl   fec_control;
 extern sBacklightOrders     backlight;
 
 extern sNeopixelOrders      neopixel;
+
+extern STC3100              stc;
 
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;

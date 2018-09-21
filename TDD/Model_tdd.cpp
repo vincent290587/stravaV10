@@ -34,6 +34,8 @@ sNeopixelOrders      neopixel;
 
 Vue           vue;
 
+STC3100       stc;
+
 sHrmInfo hrm_info;
 sBscInfo bsc_info;
 sFecInfo fec_info;
