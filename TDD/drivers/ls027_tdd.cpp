@@ -40,7 +40,7 @@ static bool m_is_color_inverted = false;
 
 static uint8_t ls027_tdd_buffer[LS027_BUFFER_SIZE];
 
-static int sockfd = -1;
+int sockfd = -1;
 static int server_fd = -1;
 
 struct sockaddr_in address;

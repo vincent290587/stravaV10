@@ -44,6 +44,10 @@ void gpio_set(uint16_t gpio_nb_);
 
 uint8_t gpio_get(uint16_t gpio_nb_);
 
+void register_btn_press(uint8_t btn_index);
+
+void btn_task(void);
+
 #ifdef __cplusplus
 }
 #endif

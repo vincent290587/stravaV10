@@ -7,6 +7,7 @@
 
 #include "Model.h"
 #include "uart_tdd.h"
+#include "gpio.h"
 #include "segger_wrapper.h"
 
 SAtt att;
@@ -58,6 +59,8 @@ void perform_system_tasks(void) {
 
 	uart_tasks();
 
+	btn_task();
+
 }
 
 /**
@@ -66,6 +69,8 @@ void perform_system_tasks(void) {
 void perform_system_tasks_light(void) {
 
 	uart_tasks();
+
+	btn_task();
 
 }
 

@@ -59,7 +59,7 @@ set(SRCS
 	timer/timer.c
     sensors/GPSMGMT.cpp
 	drivers/uart_tdd.c
-	drivers/gpio_tdd.c
+	drivers/gpio_tdd.cpp
 	drivers/ls027_tdd.cpp
 	drivers/neopixel_tdd.c
 	libraries/utils/WString.cpp

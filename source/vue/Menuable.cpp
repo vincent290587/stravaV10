@@ -9,6 +9,7 @@
 #include "Model.h"
 #include "gpio.h"
 #include "assert_wrapper.h"
+#include "segger_wrapper.h"
 #include <vue/Menuable.h>
 
 static void _retour_menu(int var) {
@@ -107,6 +108,8 @@ void Menuable::refreshMenu(void) {
 void Menuable::propagateEvent(eButtonsEvent event) {
 
 	if (millis() < 5000) return;
+
+	LOG_INFO("Menu event %u", event);
 
 	switch (event) {
 	case eButtonsEventLeft:
