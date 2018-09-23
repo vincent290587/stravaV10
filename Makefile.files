@@ -99,6 +99,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/drivers \
   $(PROJ_DIR)/drivers/lcd \
   $(PROJ_DIR)/libraries/AdafruitGFX \
+  $(PROJ_DIR)/libraries/AdafruitGFX/Fonts \
   $(PROJ_DIR)/libraries/GlobalTop \
   $(PROJ_DIR)/libraries/IntelliScreen \
   $(PROJ_DIR)/libraries/sysview \

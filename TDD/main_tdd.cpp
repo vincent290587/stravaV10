@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "sd_hal.h"
 #include "sd_functions.h"
 #include "Simulator.h"
@@ -32,7 +33,7 @@ int main(void)
 
 	boucle.init();
 
-	load_segment(mes_segments._segs.front());
+	baro.init();
 
 	vue.init();
 
@@ -46,6 +47,8 @@ int main(void)
 		perform_system_tasks();
 
 		simulator_tasks();
+
+		sleep(2);
 
 	}
 }

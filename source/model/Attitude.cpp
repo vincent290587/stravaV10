@@ -8,6 +8,7 @@
 #include <Attitude.h>
 #include "Model.h"
 #include "sd_functions.h"
+#include "segger_wrapper.h"
 
 
 Attitude::Attitude() {
@@ -16,6 +17,7 @@ Attitude::Attitude() {
 	m_st_buffer_nb_elem = 0;
 
 	m_is_init = false;
+	m_is_alt_init = false;
 }
 
 
@@ -28,6 +30,32 @@ void Attitude::addNewDate(SDate &date_) {
 	// update date
 	memcpy(&att.date, &date_, sizeof(SDate));
 }
+
+
+void Attitude::computeElevation(void) {
+
+	float ele = 0.;
+
+	if (!baro.computeAlti(&ele)) return;
+
+	if (!m_is_alt_init) {
+		m_is_alt_init = true;
+		m_last_stored_ele = ele;
+		return;
+	}
+
+	if (ele > m_last_stored_ele + 1.) {
+		// mise a jour de la montee totale
+		m_climb += ele - m_last_stored_ele;
+		m_last_stored_ele = ele;
+	}
+	else if (ele + 1. < m_last_stored_ele) {
+		// on descend, donc on garde la derniere alti
+		// la plus basse
+		m_last_stored_ele = ele;
+	}
+}
+
 
 /**
  *
@@ -60,6 +88,11 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_) {
 
 		}
 
+		// treat elevation
+		this->computeElevation();
+
+		att.climb = m_climb;
+
 		// save on buffer
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
@@ -89,4 +122,5 @@ void Attitude::addNewFECPoint(sFecInfo& fec_) {
 	// TODO
 
 }
+
 #endif

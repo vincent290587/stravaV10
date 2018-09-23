@@ -6,6 +6,8 @@
  *      Author: Vincent
  */
 
+
+#ifdef LS027_GUI
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,6 +21,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#endif
 
 #include "gpio.h"
 #include "Model_tdd.h"
@@ -54,6 +57,7 @@ void register_btn_press(uint8_t btn_index) {
 
 void btn_task(void) {
 
+#ifdef LS027_GUI
 	uint8_t RecvBuffer[1];
 
 	if (sockfd > 0) {
@@ -64,6 +68,6 @@ void btn_task(void) {
 			register_btn_press(RecvBuffer[0]);
 		}
 	}
-
+#endif
 
 }

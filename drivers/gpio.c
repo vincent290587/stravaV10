@@ -10,7 +10,6 @@
 #include "boards.h"
 
 
-
 void gpio_set(uint16_t gpio_nb_) {
 
 	nrf_gpio_pin_set(gpio_nb_);

@@ -36,6 +36,8 @@ Vue           vue;
 
 STC3100       stc;
 
+AltiBaro      baro;
+
 sHrmInfo hrm_info;
 sBscInfo bsc_info;
 sFecInfo fec_info;
@@ -93,14 +95,27 @@ bool check_memory_exception(void) {
 
 	int tot_point_mem = 0;
 	tot_point_mem += Point::getObjectCount() * sizeof(Point);
-	tot_point_mem += (Point2D::getObjectCount()-Point::getObjectCount()) * sizeof(Point2D);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
 
-	if (tot_point_mem > TOT_HEAP_MEM_AVAILABLE) {
+	if (tot_point_mem > TOT_HEAP_MEM_AVAILABLE - 500) {
 
 		LOG_ERROR("Memory exhausted");
 
 		return true;
+	} else if (5 * tot_point_mem > 4 * TOT_HEAP_MEM_AVAILABLE) {
+
+		LOG_WARNING("Memory high");
+
 	}
 
 	return false;
+}
+
+void print_mem_state(void) {
+
+	int tot_point_mem = 0;
+	tot_point_mem += Point::getObjectCount() * sizeof(Point);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+
+	LOG_INFO("> %d %u %u", tot_point_mem, Point2D::getObjectCount(), Point::getObjectCount());
 }

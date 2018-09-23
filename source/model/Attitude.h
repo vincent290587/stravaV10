@@ -65,12 +65,16 @@ public:
 
 private:
 	float m_last_save_dist;
+	float m_last_stored_ele;
+	float m_climb;
 
 	bool m_is_init;
+	bool m_is_alt_init;
 
 	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
 	uint16_t m_st_buffer_nb_elem;
 
+	void computeElevation(void);
 };
 
 #endif /* SOURCE_MODEL_ATTITUDE_H_ */

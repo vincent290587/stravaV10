@@ -84,9 +84,9 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->HistoH(4, VUE_FEC_NB_LINES, h_config);
 		this->cadranH(4, VUE_FEC_NB_LINES, "Pwr", _imkstr(fec_info.power), "W");
 	}
-#ifndef TDD
+
 	this->cadran(5, VUE_FEC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
 	this->cadran(5, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
-#endif
+
 	return res;
 }

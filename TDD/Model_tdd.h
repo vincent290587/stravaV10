@@ -21,6 +21,7 @@
 #include "SegmentManager.h"
 #include "Boucle.h"
 #include "STC3100.h"
+#include "AltiBaro.h"
 #include "GPSMGMT.h"
 #include "Attitude.h"
 #include "mk64f_parser.h"
@@ -55,6 +56,8 @@ extern sNeopixelOrders      neopixel;
 
 extern STC3100              stc;
 
+extern AltiBaro      baro;
+
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;
 
@@ -74,6 +77,8 @@ void perform_system_tasks_light(void);
 bool check_memory_exception(void);
 
 void wdt_reload(void);
+
+void print_mem_state(void);
 
 #if defined(__cplusplus)
 }

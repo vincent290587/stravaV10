@@ -195,8 +195,6 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	break;
 	case eLocationSourceGPS:
 	{
-		LOG_INFO("Lat: %d", (int)(gps_loc.data.lat*1000));
-
 		loc_.lat = gps_loc.data.lat;
 		loc_.lon = gps_loc.data.lon;
 		loc_.speed = gps_loc.data.speed;

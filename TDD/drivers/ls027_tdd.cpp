@@ -5,8 +5,8 @@
  *      Author: Vincent
  */
 
-#include <stdio.h>
-#include <string.h>
+
+#ifdef LS027_GUI
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -18,7 +18,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
+#endif
 
+#include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 #include <millis.h>
 #include <stdbool.h>
@@ -40,11 +43,13 @@ static bool m_is_color_inverted = false;
 
 static uint8_t ls027_tdd_buffer[LS027_BUFFER_SIZE];
 
+#ifdef LS027_GUI
 int sockfd = -1;
 static int server_fd = -1;
 
 struct sockaddr_in address;
 static int addrlen;
+#endif
 
 /////////  STATIC FUNCTIONS
 
@@ -73,6 +78,8 @@ void LS027_Clear(void) {
 void LS027_Init(void) {
 
 	LOG_INFO("LS027 Init");
+
+#ifdef LS027_GUI
 
 	int valread;
 	int opt = 1;
@@ -109,7 +116,7 @@ void LS027_Init(void) {
 		perror("listen");
 		exit(EXIT_FAILURE);
 	}
-
+#endif
 }
 
 void LS027_InvertColors(void) {
@@ -118,11 +125,13 @@ void LS027_InvertColors(void) {
 
 void LS027_UpdateFull(void) {
 
+#ifdef LS027_GUI
 	if (sockfd > 0) {
 		send(sockfd, ls027_tdd_buffer, sizeof(ls027_tdd_buffer), 0 );
 	} else {
 		sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
 	}
+#endif
 
 	ls027_spi_buffer_clear();
 

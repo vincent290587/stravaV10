@@ -70,13 +70,12 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 
 		this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
 
-#ifndef TDD
 		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
 		this->cadran(6, VUE_CRS_NB_LINES, 2, "Temp", _fmkstr(stc.getTemperature(), 1U), "C");
 
 		this->cadran(7, VUE_CRS_NB_LINES, 1, "STC", _imkstr((int)stc.getCurrent()), "mA");
 		this->cadran(7, VUE_CRS_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
-#endif
+
 	}
 	break;
 	case eVueCRSScreenDataSS:
@@ -126,9 +125,8 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			this->cadran(3, VUE_CRS_NB_LINES, 2, "Climb", _fmkstr(att.climb, 1U), "m");
 
 			this->cadran(4, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
-#ifndef TDD
+
 			this->cadran(4, VUE_CRS_NB_LINES, 2, "STC", _imkstr((int)stc.getCurrent()), "mA");
-#endif
 
 			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(0)->p_seg);
 			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(1)->p_seg);
@@ -313,10 +311,10 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	LOG_DEBUG("VueCRS %u points printed\r\n", points_nb);
 
 	// draw a circle at the end of the segment
-	if (p_seg->getStatus() != SEG_OFF) {
+	if (p_seg->getStatus() < SEG_OFF) {
 		drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
 				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
-	} else {
+	} else if (p_seg->getStatus() > SEG_OFF) {
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
 		drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0, _width),

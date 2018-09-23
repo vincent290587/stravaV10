@@ -9,6 +9,7 @@
 #define DRIVERS_GPIO_H_
 
 #include <stdint.h>
+#include "boards.h"
 
 #ifdef __cplusplus
 extern "C" {

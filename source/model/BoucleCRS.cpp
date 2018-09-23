@@ -18,6 +18,8 @@
  */
 BoucleCRS::BoucleCRS() : BoucleInterface() {
 	m_dist_next_seg = 5000;
+
+	memset(&att, 0, sizeof(SAtt));
 }
 
 /**
@@ -48,8 +50,6 @@ void BoucleCRS::init() {
 	// turn GPS ON
 	gps_mgmt.awake();
  	gps_mgmt.startEpoUpdate();
-
-	memset(&att, 0, sizeof(SAtt));
 
 	m_needs_init = false;
 

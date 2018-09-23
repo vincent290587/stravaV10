@@ -13,6 +13,7 @@ set (Tutorial_VERSION_MINOR 0)
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
+add_definitions(-DLS027_GUI)
 
 set(CMAKE_C_FLAGS  "-fno-builtin --short-enums -nostdlib -MMD -nostdlib -ffunction-sections -fdata-sections -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS  "-std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti -fpermissive")
@@ -37,6 +38,7 @@ include_directories(
 	TDD/sensors
 	libraries/AdafruitGFX
     libraries/AdafruitGFX/Fonts
+	libraries/AltiBaro
 	libraries/GlobalTop
 	libraries/utils
 	libraries/TinyGPSPlus
@@ -60,6 +62,7 @@ set(SRCS
 	timer/timer.c
     sensors/GPSMGMT.cpp
     sensors/STC3100.cpp
+    sensors/MS5637.cpp
 	drivers/uart_tdd.c
 	drivers/gpio_tdd.cpp
 	drivers/ls027_tdd.cpp
@@ -67,6 +70,7 @@ set(SRCS
 	libraries/utils/WString.cpp
 	libraries/AdafruitGFX/Adafruit_GFX.cpp
 	libraries/AdafruitGFX/Print.cpp
+	libraries/AltiBaro/AltiBaro.cpp
 	libraries/utils/utils.c
 	libraries/GlobalTop/MTK.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp

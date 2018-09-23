@@ -98,10 +98,10 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			// let the user select one parcours
 			m_prc_screen_mode = eVuePRCScreenInit;
 		}
-#ifndef TDD
+
 		this->cadran(7, VUE_PRC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
 		this->cadran(7, VUE_PRC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
-#endif
+
 		break;
 	}
 
@@ -441,9 +441,9 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 
 	// ma position
-	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
-	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);
-	fillCircle(maDpex, maDpey, 4, LS027_PIXEL_BLACK);
+//	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
+//	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);
+//	fillCircle(maDpex, maDpey, 4, LS027_PIXEL_BLACK);
 
 	// return before printing text
 	if (p_seg->getStatus() == SEG_OFF) {

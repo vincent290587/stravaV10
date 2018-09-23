@@ -33,6 +33,12 @@ static void _page0_mode_crs(int var) {
 
 static void _page0_mode_prc(int var) {
 
+	if (!mes_parcours.size()) {
+		vue.addNotif("Error", "No PRC in memory", 5, eNotificationTypeComplete);
+		LOG_ERROR("No PRC in memory");
+		return;
+	}
+
 	vue.setCurrentMode(eVueGlobalScreenPRC);
 	boucle.changeMode(eBoucleGlobalModesPRC);
 	_retour_menu(0);

@@ -31,7 +31,11 @@ static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 
 static FIL* g_fileObject;   /* File object */
 
+#ifdef LS027_GUI
 #define NEW_POINT_PERIOD_MS       400
+#else
+#define NEW_POINT_PERIOD_MS       50
+#endif
 
 static uint32_t last_point_ms = 0;
 
@@ -43,14 +47,21 @@ void simulator_init(void) {
 
 void simulator_tasks(void) {
 
-	if (millis() < 5000) return;
+	if (millis() < 5000) {
+		baro.seaLevelForAltitude(0., 1015);
+		return;
+	}
+
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+
+	print_mem_state();
 
 	last_point_ms = millis();
 
 	if (fgets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
 
-		float lon, lat, alt, rtime;
+		float lon, lat, alt;
+		static float rtime;
 		float data[4];
 		char *pch;
 		uint16_t pos = 0;
@@ -67,7 +78,16 @@ void simulator_tasks(void) {
 		lat   = data[0];
 		lon   = data[1];
 		alt   = data[2];
-		rtime = data[3];
+
+		baro.setAlti(alt);
+
+		if (pos == 4) {
+			// file contains the rtime
+			rtime = data[3];
+		} else {
+			// rtime is missing: generate it
+			rtime += 1;
+		}
 
 		// build make NMEA sentence
 		GPRMC gprmc_(lat, lon, 0., (int)rtime);
