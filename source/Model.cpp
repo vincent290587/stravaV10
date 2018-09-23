@@ -39,7 +39,7 @@ STC3100       stc;
 
 VEML6075      veml;
 
-MS5637        ms5637;
+AltiBaro      baro;
 
 GPS_MGMT      gps_mgmt;
 
@@ -61,8 +61,8 @@ void model_dispatch_sensors_update(void) {
 	uint16_t light_level = veml.getRawVisComp();
 
 	LOG_INFO("Light level: %u", light_level);
-	NRF_LOG_DEBUG("Temperature: %ld", (int)ms5637.m_temperature);
-	NRF_LOG_DEBUG("Pressure: %ld", (int)ms5637.m_pressure);
+	NRF_LOG_DEBUG("Temperature: %ld", (int)baro.m_temperature);
+	NRF_LOG_DEBUG("Pressure: %ld", (int)baro.m_pressure);
 
 	// check if backlighting is used for notifying
 	if (backlight.freq == 0) {

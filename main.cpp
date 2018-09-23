@@ -498,7 +498,7 @@ int main(void)
 			stc.refresh(nullptr);
 			veml.refresh(nullptr);
 			fxos_tasks(nullptr);
-			ms5637.refresh(nullptr);
+			baro.refresh(nullptr);
 #endif
 
 			notifications_tasks();

@@ -331,7 +331,7 @@ void i2c_scheduling_init(void) {
 #else
     stc.init(100);
     veml.init();
-    ms5637.init();
+    baro.init();
 
     if (fxos_init()) LOG_ERROR("FXOS init fail");
 #endif

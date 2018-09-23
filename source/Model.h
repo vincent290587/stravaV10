@@ -28,7 +28,7 @@
 #include "TinyGPS++.h"
 #include "STC3100.h"
 #include "VEML6075.h"
-#include "MS5637.h"
+#include "AltiBaro.h"
 #include "Attitude.h"
 #include "VParser.h"
 #include "mk64f_parser.h"
@@ -56,7 +56,7 @@ extern STC3100       stc;
 
 extern VEML6075      veml;
 
-extern MS5637        ms5637;
+extern AltiBaro      baro;
 
 extern GPS_MGMT      gps_mgmt;
 

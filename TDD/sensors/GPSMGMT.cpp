@@ -10,6 +10,7 @@
 #include "MTK.h"
 #include "uart_tdd.h"
 #include "utils.h"
+#include "gpio.h"
 #include "millis.h"
 #include "WString.h"
 #include "LocusCommands.h"
@@ -120,7 +121,7 @@ void GPS_MGMT::init(void) {
 }
 
 bool GPS_MGMT::isFix(void) {
-	// TODO nrf_gpio_pin_read(FIX_PIN);
+	gpio_get(FIX_PIN);
 	return 1;
 }
 

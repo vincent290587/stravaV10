@@ -24,7 +24,7 @@ AltiBaro::AltiBaro() {
  */
 bool AltiBaro::computeAlti(float *alti_) {
 
-	assert(alti_);
+	ASSERT(alti_);
 #ifdef TDD
 	*alti_ = this->getAlti();
 
