@@ -30,6 +30,9 @@ MS5637::MS5637 () {
 	initialised = false;
 	m_err = ERR_NEEDS_BEGIN;
 
+	m_temperature = 22.;
+	m_pressure = 1015.;
+
 }
 
 void MS5637::init(void) {

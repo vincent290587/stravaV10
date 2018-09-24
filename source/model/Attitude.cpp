@@ -5,7 +5,10 @@
  *      Author: Vincent
  */
 
+#include <math.h>
 #include <Attitude.h>
+#include "utils.h"
+#include "parameters.h"
 #include "Model.h"
 #include "sd_functions.h"
 #include "segger_wrapper.h"
@@ -19,7 +22,6 @@ Attitude::Attitude() {
 	m_is_init = false;
 	m_is_alt_init = false;
 }
-
 
 /**
  *
@@ -54,6 +56,8 @@ void Attitude::computeElevation(void) {
 		// la plus basse
 		m_last_stored_ele = ele;
 	}
+
+	m_cur_ele = ele;
 }
 
 
@@ -61,10 +65,38 @@ void Attitude::computeElevation(void) {
  *
  * @param loc_
  */
-void Attitude::addNewLocation(SLoc& loc_, SDate &date_) {
+void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_) {
 
 	// small correction to allow time with millisecond precision
 	float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
+
+	// init the altitude model
+	if ((eLocationSourceGPS == source_ ||
+			eLocationSourceNRF == source_) &&
+			!baro.hasSeaLevelRef()) {
+
+		// init sea level pressure
+		LOG_INFO("Init sea level pressure...");
+		baro.seaLevelForAltitude(loc_.alt, baro.m_pressure);
+
+		// treat elevation
+		this->computeElevation();
+
+		// reset accumulated data
+		m_climb = 0.;
+		m_last_stored_ele = m_cur_ele;
+
+	} else if ((eLocationSourceGPS == source_ ||
+			eLocationSourceNRF == source_) &&
+			baro.hasSeaLevelRef()) {
+
+		// treat elevation
+		this->computeElevation();
+
+		// overwrite GPS/NRF's elevation
+		loc_.alt = m_cur_ele;
+
+	}
 
 	// add this point to our historic
 	mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
@@ -88,10 +120,11 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_) {
 
 		}
 
-		// treat elevation
-		this->computeElevation();
-
 		att.climb = m_climb;
+
+		this->majPower(20.);
+
+		att.pwr = m_power;
 
 		// save on buffer
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
@@ -111,6 +144,71 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_) {
 	// update date
 	memcpy(&att.date, &date_, sizeof(SDate));
 }
+
+
+/**
+ *
+ * @param speed_
+ */
+void Attitude::majPower(float speed_) {
+
+	float fSpeed = -1.;
+	Point P1, P2, Pc;
+	float dTime;
+	uint8_t i;
+
+	float _y[FILTRE_NB+1];
+	float _x[FILTRE_NB+1];
+	float _lrCoef[2];
+
+	if (mes_points.size() <= FILTRE_NB + 1) return;
+
+	P1 = mes_points.getFirstPoint();
+	P2 = mes_points.getPointAt(FILTRE_NB);
+
+	dTime = P1._rtime - P2._rtime;
+
+	if (fabs(dTime) > 1.5 && fabs(dTime) < 25) {
+
+		// calcul de la vitesse ascentionnelle par regression lineaire
+		for (i = 0; i <= FILTRE_NB; i++) {
+
+			Pc = mes_points.getPointAt(i);
+			_x[i] = Pc._rtime - P2._rtime;
+			_y[i] = Pc._alt;
+
+			LOG_INFO("%d ms %d mm", (int)(_x[i]*1000), (int)(_y[i]*1000));
+		}
+
+		_lrCoef[1] = _lrCoef[0] = 0;
+
+		// regression lineaire
+		simpLinReg(_x, _y, _lrCoef, FILTRE_NB + 1);
+
+		// STEP 1 : on filtre altitude et vitesse
+		m_vit_asc = _lrCoef[0];
+
+		LOG_INFO("Vit. vert.= %d mm/s", (int)(m_vit_asc*1000));
+
+		// horizontal speed (m/s)
+		fSpeed = speed_ / 3.6;
+
+		// STEP 2 : Calcul
+		m_power = 9.81 * MASSE * m_vit_asc; // grav
+		m_power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
+		m_power += 0.204 * fSpeed * fSpeed * fSpeed; // air
+		m_power *= 1.025; // transmission (rendement velo)
+
+		if (fSpeed < 1.5) {
+			m_power = -100.;
+		}
+	} else {
+		LOG_INFO("dTime= %d ms", (int)(dTime*1000));
+	}
+
+	return;
+}
+
 
 
 /**

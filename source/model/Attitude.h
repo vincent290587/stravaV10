@@ -10,26 +10,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "RingBuffer.h"
+#include "Locator.h"
 #include "parameters.h"
 
 #ifdef ANT_STACK_SUPPORT_REQD
 #include "fec.h"
 #endif
-
-typedef struct {
-	float lat;
-	float lon;
-	float alt;
-	float speed;
-	float course;
-} SLoc;
-
-typedef struct {
-	uint32_t secj;
-	uint32_t date;
-	uint32_t timestamp;
-} SDate;
 
 typedef struct {
 	SLoc  loc;
@@ -57,7 +43,7 @@ public:
 	Attitude();
 
 	void addNewDate(SDate &date_);
-	void addNewLocation(SLoc& loc_, SDate &date_);
+	void addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_);
 
 #ifdef ANT_STACK_SUPPORT_REQD
 	void addNewFECPoint(sFecInfo& fec_);
@@ -66,7 +52,10 @@ public:
 private:
 	float m_last_save_dist;
 	float m_last_stored_ele;
+	float m_cur_ele;
 	float m_climb;
+	float m_vit_asc;
+	float m_power;
 
 	bool m_is_init;
 	bool m_is_alt_init;
@@ -75,6 +64,7 @@ private:
 	uint16_t m_st_buffer_nb_elem;
 
 	void computeElevation(void);
+	void majPower(float speed_);
 };
 
 #endif /* SOURCE_MODEL_ATTITUDE_H_ */

@@ -34,6 +34,10 @@ void gpio_set(uint16_t gpio_nb_) {
 }
 
 uint8_t gpio_get(uint16_t gpio_nb_) {
+
+	if (gpio_nb_ == FIX_PIN)
+		return 1;
+
 	return 0;
 }
 

@@ -64,7 +64,8 @@ public:
 		m_temperature = temperature;
 	}
 
-	float m_temperature, m_pressure;
+	float m_temperature;
+	float m_pressure;
 
 private:
 	bool initialised;

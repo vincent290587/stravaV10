@@ -55,6 +55,10 @@
 
 #define ATT_BUFFER_NB_ELEM             20
 
+#define FILTRE_NB                      5
+
+#define MASSE                          79.
+
 ///// CODE FLAGS
 
 #define _DEBUG_TWI

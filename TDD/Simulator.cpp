@@ -48,7 +48,6 @@ void simulator_init(void) {
 void simulator_tasks(void) {
 
 	if (millis() < 5000) {
-		baro.seaLevelForAltitude(0., 1015);
 		return;
 	}
 

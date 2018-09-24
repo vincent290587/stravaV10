@@ -54,6 +54,8 @@ uint32_t decode_uint32 (uint8_t* dest);
 
 void const_char_to_buffer(const char *str_, uint8_t *buff_, uint16_t max_size);
 
+void simpLinReg(float* x, float* y, float* lrCoef, int n);
+
 #ifdef	__cplusplus
 }
 #endif

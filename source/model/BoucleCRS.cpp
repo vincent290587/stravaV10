@@ -83,9 +83,9 @@ void BoucleCRS::run() {
 		memset(&loc, 0, sizeof(loc));
 		memset(&dat, 0, sizeof(dat));
 
-		locator.getPosition(loc, dat);
+		eLocationSource loc_source = locator.getPosition(loc, dat);
 
-		attitude.addNewLocation(loc, dat);
+		attitude.addNewLocation(loc, dat, loc_source);
 
 		// update sements
 		for (auto& seg : mes_segments._segs) {

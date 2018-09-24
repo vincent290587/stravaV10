@@ -167,6 +167,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = sim_loc.data.lat;
 		loc_.lon = sim_loc.data.lon;
+		loc_.alt = sim_loc.data.alt;
 		loc_.speed = 20.;
 		loc_.course = -1;
 		date_.secj = sim_loc.data.utc_time;
@@ -179,6 +180,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = nrf_loc.data.lat;
 		loc_.lon = nrf_loc.data.lon;
+		loc_.alt = nrf_loc.data.alt;
 		loc_.speed = nrf_loc.data.speed;
 		loc_.course = -1;
 		date_.secj = nrf_loc.data.utc_time;
@@ -197,6 +199,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = gps_loc.data.lat;
 		loc_.lon = gps_loc.data.lon;
+		loc_.alt = gps_loc.data.alt;
 		loc_.speed = gps_loc.data.speed;
 		loc_.course = gps_loc.data.course;
 		date_.secj = gps_loc.data.utc_time;

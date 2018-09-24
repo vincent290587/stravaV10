@@ -121,8 +121,7 @@ void GPS_MGMT::init(void) {
 }
 
 bool GPS_MGMT::isFix(void) {
-	gpio_get(FIX_PIN);
-	return 1;
+	return gpio_get(FIX_PIN);
 }
 
 void GPS_MGMT::standby(void) {

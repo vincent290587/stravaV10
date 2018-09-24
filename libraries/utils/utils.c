@@ -301,3 +301,38 @@ void const_char_to_buffer(const char *str_, uint8_t *buff_, uint16_t max_size) {
 	}
 
 }
+
+/**
+ * http://en.wikipedia.org/wiki/Simple_linear_regression
+ *
+ * @param x input arrau horizontal
+ * @param y input arrau vertical
+ * @param lrCoef slope=lrCoef[0] and intercept=lrCoef[1]
+ * @param n length of the x and y arrays.
+ */
+void simpLinReg(float* x, float* y, float* lrCoef, int n) {
+	// pass x and y arrays (pointers), lrCoef pointer, and n.  The lrCoef array is comprised of the slope=lrCoef[0] and intercept=lrCoef[1].  n is length of the x and y arrays.
+	// http://en.wikipedia.org/wiki/Simple_linear_regression
+
+	// initialize variables
+	float xbar = 0;
+	float ybar = 0;
+	float xybar = 0;
+	float xsqbar = 0;
+
+	// calculations required for linear regression
+	for (int i = 0; i < n; i++) {
+		xbar = xbar + x[i];
+		ybar = ybar + y[i];
+		xybar = xybar + x[i] * y[i];
+		xsqbar = xsqbar + x[i] * x[i];
+	}
+	xbar = xbar / n;
+	ybar = ybar / n;
+	xybar = xybar / n;
+	xsqbar = xsqbar / n;
+
+	// simple linear regression algorithm
+	lrCoef[0] = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
+	lrCoef[1] = ybar - lrCoef[0] * xbar;
+}
