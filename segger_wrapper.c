@@ -44,10 +44,10 @@ void cbSendTaskList(void) {
 
 void segger_init(void) {
 
-#if USE_RTT && !USE_SVIEW
-	  // RTT
-	  SEGGER_RTT_Init();
-#endif
+//#if USE_RTT && !USE_SVIEW
+//	  // RTT
+//	  SEGGER_RTT_Init();
+//#endif
 
 #if USE_SVIEW
 

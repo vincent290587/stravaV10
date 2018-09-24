@@ -361,6 +361,7 @@ int main(void)
     nrfx_wdt_enable();
 
 	log_init();
+	segger_init();
 
 	uint32_t reset_reason = NRF_POWER->RESETREAS;
 	NRF_POWER->RESETREAS = 0xffffffff;
