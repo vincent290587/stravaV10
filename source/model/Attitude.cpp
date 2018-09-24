@@ -93,10 +93,17 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		// treat elevation
 		this->computeElevation();
 
+		att.climb = m_climb;
+
 		// overwrite GPS/NRF's elevation
 		loc_.alt = m_cur_ele;
 
 	}
+
+	// update the computed power
+	this->majPower(20.);
+
+	att.pwr = m_power;
 
 	// add this point to our historic
 	mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
@@ -105,6 +112,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 	att.dist += tmp_dist;
 
+	// save attitude to a buffer for later saving to memory
 	if (m_is_init &&
 			att.dist > m_last_save_dist + 15) {
 
@@ -119,12 +127,6 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 			m_st_buffer_nb_elem = 0;
 
 		}
-
-		att.climb = m_climb;
-
-		this->majPower(20.);
-
-		att.pwr = m_power;
 
 		// save on buffer
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
