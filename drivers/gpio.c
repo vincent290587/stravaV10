@@ -18,6 +18,6 @@ void gpio_set(uint16_t gpio_nb_) {
 
 bool gpio_get(uint16_t gpio_nb_) {
 
-	return nrf_gpio_pin_get(gpio_nb_);
+	return nrf_gpio_pin_read(gpio_nb_);
 
 }
