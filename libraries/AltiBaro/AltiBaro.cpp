@@ -11,7 +11,9 @@
 #include "AltiBaro.h"
 
 AltiBaro::AltiBaro() {
+#ifdef TDD
 	m_alti = 0.;
+#endif
 	sea_level_pressure = 1015.;
 	correction = 0.;
 	m_is_init = false;

@@ -52,7 +52,7 @@
  * Configure if example supports USB port connection
  */
 #ifndef USBD_POWER_DETECTION
-#define USBD_POWER_DETECTION true
+#define USBD_POWER_DETECTION false
 #endif
 
 static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
@@ -175,7 +175,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         {
         	m_is_port_open = true;
             /*Setup first transfer*/
-            ret_code_t ret = app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
+            ret_code_t ret = app_usbd_cdc_acm_read_any(p_cdc_acm,
                     m_rx_buffer,
                     READ_SIZE);
 
@@ -196,7 +196,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         {
 
         	// parse chars
-        	size_t bytes_read = app_usbd_cdc_acm_rx_size(&m_app_cdc_acm);
+        	size_t bytes_read = app_usbd_cdc_acm_rx_size(p_cdc_acm);
 
         	LOG_INFO("Bytes RCV: %u", bytes_read);
 
@@ -206,7 +206,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         	}
 
         	/* Fetch data until internal buffer is empty */
-        	(void)app_usbd_cdc_acm_read_any(&m_app_cdc_acm,
+        	(void)app_usbd_cdc_acm_read_any(p_cdc_acm,
         			m_rx_buffer,
 					READ_SIZE);
 
@@ -238,6 +238,7 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
             if (!nrf_drv_usbd_is_enabled())
             {
             	app_usbd_enable();
+                NRF_LOG_INFO("app_usbd_enable");
             }
             break;
         case APP_USBD_EVT_POWER_REMOVED:
@@ -372,7 +373,7 @@ void usb_cdc_start_msc(void) {
 	// remove segments and go to the proper mode
 	model_go_to_msc_mode();
 
-	// prevent cdc from sending bytes
+	// prevent CDC from sending bytes
 	m_is_port_open = false;
 
 	ret = app_usbd_class_remove_all();

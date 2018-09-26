@@ -5352,7 +5352,7 @@
 // <i> Device version, will be converted automatically to BCD notation. Use just decimal values.
 
 #ifndef APP_USBD_DEVICE_VER_MINOR
-#define APP_USBD_DEVICE_VER_MINOR 0
+#define APP_USBD_DEVICE_VER_MINOR 1
 #endif
 
 // <q> APP_USBD_CONFIG_SELF_POWERED  - Self powered 

@@ -37,7 +37,7 @@ APP_TIMER_DEF(m_timer);
  */
 static void _i2c_scheduling_sensors_post_init(void) {
 
-	ms5637.setCx(&m_ms5637_handle);
+	baro.setCx(&m_ms5637_handle);
 
 	LOG_INFO("Sensors initialized");
 }
@@ -216,7 +216,7 @@ static void read_ms_cb(ret_code_t result, void * p_user_data) {
     	// temp has just been commanded, meaning we just got a pressure
     	//  measurement
     	// --> refresh device
-    	ms5637.refresh(_handle);
+    	baro.refresh(_handle);
     }
     	break;
     case eMS5637MeasCmdPress:

@@ -55,6 +55,14 @@
 #endif
 
 /**
+ * @brief Define whether @ref APP_USBD_STRINGS_MANUFACTURER is created by @ref APP_USBD_STRING_DESC
+ * or declared as global variable.
+ * */
+#ifndef APP_USBD_STRINGS_MANUFACTURER_EXTERN
+#define APP_USBD_STRINGS_MANUFACTURER_EXTERN 0
+#endif
+
+/**
  * @brief Manufacturer name string descriptor
  *
  * Comma separated list of manufacturer names for each defined language.
@@ -76,11 +84,11 @@
 #endif
 
 /**
- * @brief Define whether @ref APP_USBD_STRINGS_MANUFACTURER is created by @ref APP_USBD_STRING_DESC
+ * @brief Define whether @ref APP_USBD_STRINGS_PRODUCT is created by @ref APP_USBD_STRING_DESC
  * or declared as global variable.
  * */
-#ifndef APP_USBD_STRINGS_MANUFACTURER_EXTERN
-#define APP_USBD_STRINGS_MANUFACTURER_EXTERN 0
+#ifndef APP_USBD_STRINGS_PRODUCT_EXTERN
+#define APP_USBD_STRINGS_PRODUCT_EXTERN 0
 #endif
 
 /**
@@ -92,14 +100,22 @@
 #define APP_USBD_STRINGS_PRODUCT APP_USBD_STRING_DESC("StravaV10")
 #endif
 
-/**
- * @brief Define whether @ref APP_USBD_STRINGS_PRODUCT is created by @ref APP_USBD_STRING_DESC
- * or declared as global variable.
- * */
-#ifndef APP_USBD_STRINGS_PRODUCT_EXTERN
-#define APP_USBD_STRINGS_PRODUCT_EXTERN 0
+
+// <e> APP_USBD_STRING_ID_SERIAL - Define serial number string ID.
+
+// <i> Setting ID to 0 disables the string.
+//==========================================================
+#ifndef APP_USBD_STRING_ID_SERIAL
+#define APP_USBD_STRING_ID_SERIAL 3
 #endif
 
+/**
+ * @brief Define whether @ref APP_USBD_STRING_SERIAL is created by @ref APP_USBD_STRING_DESC
+ * or declared as global variable.
+ * */
+#ifndef APP_USBD_STRING_SERIAL_EXTERN
+#define APP_USBD_STRING_SERIAL_EXTERN 1
+#endif
 /**
  * @brief Serial number string descriptor
  *
@@ -110,23 +126,7 @@
  * There is only one SERIAL number inside the library and it is Language independent.
  */
 #ifndef APP_USBD_STRING_SERIAL
-#define APP_USBD_STRING_SERIAL \
-		APP_USBD_STRING_DESC("000000000001")
-#endif
-
-// <e> APP_USBD_STRING_ID_SERIAL - Define serial number string ID.
-
-// <i> Setting ID to 0 disables the string.
-//==========================================================
-#ifndef APP_USBD_STRING_ID_SERIAL
-#define APP_USBD_STRING_ID_SERIAL 3
-#endif
-/**
- * @brief Define whether @ref APP_USBD_STRING_SERIAL is created by @ref APP_USBD_STRING_DESC
- * or declared as global variable.
- * */
-#ifndef APP_USBD_STRING_SERIAL_EXTERN
-#define APP_USBD_STRING_SERIAL_EXTERN 0
+#define APP_USBD_STRING_SERIAL g_extern_serial_number
 #endif
 
 
@@ -169,7 +169,7 @@
  */
 #ifndef APP_USBD_STRINGS_USER
 #define APP_USBD_STRINGS_USER          \
-    X(APP_USER_1, , APP_USBD_STRING_DESC("User 1"))
+    X(APP_USER_1, , APP_USBD_STRING_DESC("Biker1"))
 #endif
 
 /** @} */
