@@ -61,14 +61,14 @@ static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
                                     app_usbd_cdc_acm_user_event_t event);
 
-#define CDC_ACM_COMM_INTERFACE  1
-#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN3
+#define CDC_ACM_COMM_INTERFACE  0
+#define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN2
 
-#define CDC_ACM_DATA_INTERFACE  2
-#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN2
-#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT2
+#define CDC_ACM_DATA_INTERFACE  1
+#define CDC_ACM_DATA_EPIN       NRF_DRV_USBD_EPIN1
+#define CDC_ACM_DATA_EPOUT      NRF_DRV_USBD_EPOUT1
 
-#define MSC_DATA_INTERFACE      0
+#define MSC_DATA_INTERFACE      2
 
 #define CDC_X_BUFFERS           (0b1)
 
@@ -82,13 +82,13 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
                             CDC_ACM_COMM_EPIN,
                             CDC_ACM_DATA_EPIN,
                             CDC_ACM_DATA_EPOUT,
-							APP_USBD_CDC_COMM_PROTOCOL_NONE
+							APP_USBD_CDC_COMM_PROTOCOL_AT_V250
 );
 
 /**
  * @brief Endpoint list passed to @ref APP_USBD_MSC_GLOBAL_DEF
  */
-#define ENDPOINT_LIST() APP_USBD_MSC_ENDPOINT_LIST(1, 1)
+#define ENDPOINT_LIST() APP_USBD_MSC_ENDPOINT_LIST(3, 2)
 
 /**
  * @brief Mass storage class work buffer size

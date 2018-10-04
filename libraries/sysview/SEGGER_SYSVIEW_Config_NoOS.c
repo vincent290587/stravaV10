@@ -87,7 +87,7 @@ extern unsigned int SystemCoreClock;
 #define SYSVIEW_CPU_FREQ        (SystemCoreClock)
 
 // The lowest RAM address used for IDs (pointers)
-#define SYSVIEW_RAM_BASE        (0x20003100)
+#define SYSVIEW_RAM_BASE        (0x20000000)
 
 // Define as 1 if the Cortex-M cycle counter is used as SystemView timestamp. Must match SEGGER_SYSVIEW_Conf.h
 #ifndef   USE_CYCCNT_TIMESTAMP
@@ -129,6 +129,8 @@ static void _cbSendSystemDesc(void) {
 *
 **********************************************************************
 */
+extern SEGGER_SYSVIEW_OS_API os_api;
+
 void SEGGER_SYSVIEW_Conf(void) {
 #if USE_CYCCNT_TIMESTAMP
 #if ENABLE_DWT_CYCCNT
@@ -150,7 +152,7 @@ void SEGGER_SYSVIEW_Conf(void) {
   }
 #endif
   SEGGER_SYSVIEW_Init(SYSVIEW_TIMESTAMP_FREQ, SYSVIEW_CPU_FREQ, 
-                      0, _cbSendSystemDesc);
+		  &os_api, _cbSendSystemDesc);
   SEGGER_SYSVIEW_SetRAMBase(SYSVIEW_RAM_BASE);
 }
 

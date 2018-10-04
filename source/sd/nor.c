@@ -17,10 +17,6 @@
 #include "spiffs.h"
 #include "Model.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
 #define SPI_FLASH_SEC_SIZE     SST26_SECTOR_SIZE
 #define LOG_PAGE_SIZE          256
 

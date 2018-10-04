@@ -1154,6 +1154,9 @@ ret_code_t app_sdc_init(app_sdc_config_t const * const p_config, sdc_event_handl
     spi_reconfigure(&spim_sdc_config);
     spi_schedule(&spim_sdc_config, m_cb.cmd_buf, 1, m_cb.rsp_buf, 10);
 
+    // MISO needs pullup
+    nrf_gpio_cfg_input(p_config->miso_pin, NRF_GPIO_PIN_PULLUP);
+
     return NRF_SUCCESS;
 }
 

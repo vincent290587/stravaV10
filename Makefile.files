@@ -88,9 +88,6 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uarte.c \
   $(SDK_ROOT)/external/thedotfactory_fonts/orkney24pts.c \
   $(SDK_ROOT)/external/thedotfactory_fonts/orkney8pts.c \
-  $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT.c \
-  $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c \
-  $(SDK_ROOT)/external/segger_rtt/SEGGER_RTT_printf.c \
   $(SDK_ROOT)/external/utf_converter/utf.c \
 
 # Include folders common to all targets
@@ -107,6 +104,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/TinyGPSPlus \
   $(PROJ_DIR)/libraries/VParser \
   $(PROJ_DIR)/libraries/utils \
+  $(PROJ_DIR)/libraries/rtt \
   $(PROJ_DIR)/libraries/sdcard \
   $(PROJ_DIR)/libraries/spiffs \
   $(PROJ_DIR)/libraries/SST \
@@ -152,7 +150,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/gfx \
   $(SDK_ROOT)/components/libraries/log/src \
   $(SDK_ROOT)/components/libraries/delay \
-  $(SDK_ROOT)/external/segger_rtt \
   $(SDK_ROOT)/components/libraries/atomic \
   $(SDK_ROOT)/components/libraries/atomic_flags \
   $(SDK_ROOT)/components/libraries/fstorage \

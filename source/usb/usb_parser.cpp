@@ -11,12 +11,6 @@
 #include "Model.h"
 #include "nrf_pwr_mgmt.h"
 
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
-
 /**
  * Decodes chars from the VCOM line
  * @param c

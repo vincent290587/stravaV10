@@ -52,7 +52,7 @@ OPT = -O3 -g3
 CFLAGS += $(OPT)
 CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
-#CFLAGS += -DUSE_SVIEW=0
+CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 #CFLAGS += -DNRF_LOG_BACKEND_UART_ENABLED=1 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
@@ -78,7 +78,7 @@ CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-ASMFLAGS += -DBOARD_STRAVA5
+ASMFLAGS += -DBOARD_CUSTOM
 ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += -D__HEAP_SIZE=150000
@@ -93,7 +93,7 @@ LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # let linker to dump unused sections
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
-LDFLAGS += --specs=nano.specs
+LDFLAGS += --specs=nano.specs -u _printf_float -u _scanf_float
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
@@ -126,7 +126,7 @@ settings:
 	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
 
 dfu:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0x00 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p /dev/ttyS5
 
