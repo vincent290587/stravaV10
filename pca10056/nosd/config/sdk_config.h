@@ -5531,6 +5531,13 @@
 #define APP_USBD_MSC_ENABLED 1
 #endif
 
+// <q> APP_USBD_DUMMY_ENABLED  - app_usbd_msc - USB MSC class
+
+
+#ifndef APP_USBD_DUMMY_ENABLED
+#define APP_USBD_DUMMY_ENABLED 1
+#endif
+
 // <q> CRC16_ENABLED  - crc16 - CRC16 calculation routines
  
 

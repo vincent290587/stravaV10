@@ -22,6 +22,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_string_desc.c \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
   $(SDK_ROOT)/components/libraries/usbd/class/msc/app_usbd_msc.c \
+  $(SDK_ROOT)/components/libraries/usbd/class/dummy/app_usbd_dummy.c \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
 
 include $(PROJ_DIR)/Makefile.files
@@ -39,6 +40,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/libraries/usbd/class/msc \
+  $(SDK_ROOT)/components/libraries/usbd/class/dummy \
   
 # Libraries common to all targets
 LIB_FILES += -lm -lstdc++
