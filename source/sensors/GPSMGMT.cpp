@@ -7,12 +7,12 @@
 
 #include <GPSMGMT.h>
 #include <stdio.h>
-#include "MTK.h"
 #include "uart.h"
 #include "utils.h"
 #include "millis.h"
 #include "WString.h"
 #include "LocusCommands.h"
+#include "EPONmeaPacket.h"
 #include "Screenutils.h"
 #include "sd_functions.h"
 #include "segger_wrapper.h"
@@ -20,10 +20,6 @@
 #include "Model.h"
 #include "boards.h"
 #include "parameters.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
 #define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
@@ -48,8 +44,6 @@ static uint8_t buffer[256];
 
 static eGPSMgmtTransType  m_trans_type = eGPSMgmtTransNMEA;
 static eGPSMgmtEPOState   m_epo_state  = eGPSMgmtEPOIdle;
-
-static MTK m_rec_packet;
 
 static bool m_is_uart_on = false;
 
@@ -192,10 +186,21 @@ void GPS_MGMT::tasks(void) {
 		m_epo_packet_nb = 0;
 		m_epo_packet_ind = 0;
 
-		int size = epo_file_size();
-		int res  = epo_file_start();
+		// determine the time
+		int iYr, iMo, iDay, iHr;
+		if (!locator.getGPSDate(iYr, iMo, iDay, iHr)) {
+			LOG_INFO("EPO start: date not valid");
 
-		if (size <= 0 || res < 0) {
+			if (millis() < 2*60*1000) return;
+			else m_epo_state = eGPSMgmtEPOIdle; // stop the process completely
+
+		}
+		int current_gps_hour = utc_to_gps_hour(iYr, iMo, iDay, iHr);
+
+		int size = epo_file_size();
+		bool res  = epo_file_start(current_gps_hour);
+
+		if (size <= 0 || !res) {
 			LOG_ERROR("EPO start failure, size=%ld\r\n", size);
 
 			m_epo_state = eGPSMgmtEPOIdle;
@@ -205,12 +210,7 @@ void GPS_MGMT::tasks(void) {
 
 			m_epo_state = eGPSMgmtEPORunning;
 
-			// set transport to binary
-			SEND_TO_GPS(GPS_BIN_CMD);
-
 			vue.addNotif("GPSMGMT: ", "EPO update started", 4, eNotificationTypeComplete);
-
-			delay_ms(500);
 
 			m_trans_type = eGPSMgmtTransBIN;
 		}
@@ -222,49 +222,37 @@ void GPS_MGMT::tasks(void) {
 		// fill the packet
 		if (m_epo_packet_ind < 0xFFFF) {
 
-			sEpoPacketBinData epo_data;
+			sEpoPacketSatData epo_data;
 			memset(&epo_data, 0, sizeof(epo_data));
 
-			for (int i=0; i < MTK_EPO_MAX_SAT_DATA; i++) {
-				// read file
-				int ret_code = epo_file_read(&epo_data.sat_data[epo_data.nb_sat]);
+			int ret_code = epo_file_read(&epo_data, sizeof(epo_data.sat));
 
-				if (ret_code < 0) {
-					// error
-				} else if (ret_code == 1) {
-					// end
-				} else {
-					epo_data.nb_sat  += 1;
-				}
+			if (ret_code < 0) {
+				// error
+			} else if (ret_code == 1) {
+				// end
+			} else {
+				epo_data.sat_number += 1;
 			}
 
+			uint16_t written = antenova_epo_packet(&epo_data, buffer, sizeof(buffer));
+
 			// prepare the packet to be sent
-			if (epo_data.nb_sat > 0) {
-				epo_data.epo_seq = m_epo_packet_ind++;
+			if (epo_data.sat_number < EPO_SAT_SEGMENTS_NB) {
+				epo_data.sat_number += 1;
 
-				LOG_INFO("EPO sending packet #%u - %u sats\r\n",
-						epo_data.epo_seq, epo_data.nb_sat);
+				LOG_INFO("EPO sending packet sat#%u", epo_data.sat_number);
 
-				LOG_DEBUG("Sat data 1: %X %X\r\n",
-						epo_data.sat_data[0].sat[0],
-						epo_data.sat_data[0].sat[1]);
-
-				MTK tmp_mtk(&epo_data);
-				tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
+				GPS_UART_SEND(buffer, written);
 			} else {
 				// process is finished
 				m_epo_packet_ind = 0xFFFF;
 
-				epo_data.epo_seq = m_epo_packet_ind;
+				epo_data.sat_number = m_epo_packet_ind;
 
 				LOG_INFO("EPO last packet\r\n");
 
-				MTK tmp_mtk(&epo_data);
-				tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
+				GPS_UART_SEND(buffer, written);
 			}
 
 			m_epo_state = eGPSMgmtEPOWaitForEvent;
@@ -285,18 +273,6 @@ void GPS_MGMT::tasks(void) {
 
 		// the file should be deleted only upon success
 		(void)epo_file_stop(m_epo_packet_ind == 0xFFFF);
-
-		// NMEA + baud rate default
-		uint8_t cmd[5] = {0x00,0x00,0x00,0x00,0x00};
-		encode_uint32 (cmd + 1, GPS_FAST_SPEED_BAUD);
-
-		// set transport to NMEA
-		MTK tmp_mtk(MTK_FMT_NMEA_CMD_ID, cmd, sizeof(cmd));
-		tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-		LOG_INFO("MTK switched to NMEA\r\n");
-
-		GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
 
 		m_epo_state = eGPSMgmtEPOIdle;
 
@@ -324,55 +300,6 @@ uint32_t gps_encode_char(char c) {
 
 	} else {
 
-		if (m_rec_packet.encode(c)) {
-
-			// the packet is valid
-			switch (m_rec_packet.getCommandId()) {
-			case MTK_EPO_BIN_ACK_CMD_ID:
-				if (eGPSMgmtEPOWaitForEvent == m_epo_state) {
-
-					if (m_rec_packet.m_packet.raw_packet.data[2] == 0x01) {
-						LOG_INFO("Packet ack recv\r\n");
-
-						uint16_t epo_seq = decode_uint16(m_rec_packet.m_packet.raw_packet.data);
-
-						// resume sending packets
-						if (epo_seq < 0xFFFF) m_epo_state = eGPSMgmtEPORunning;
-						else                  m_epo_state = eGPSMgmtEPOEnd;
-
-					} else {
-						LOG_ERROR("Packet ack recv with error %X\r\n",
-								m_rec_packet.m_packet.raw_packet.data[2]);
-
-						// end it
-						m_epo_state = eGPSMgmtEPOEnd;
-					}
-				}
-				break;
-
-			case MTK_ACK_CMD_ID:
-			{
-				uint16_t cmd_id = decode_uint16(m_rec_packet.m_packet.raw_packet.data);
-				uint8_t status  = m_rec_packet.m_packet.raw_packet.data[2];
-				LOG_INFO("Binary ACK to cmd 0x%X with status=%u\r\n", cmd_id, status);
-
-				if (MTK_FMT_NMEA_CMD_ID == cmd_id &&
-						status == 3) {
-					m_trans_type = eGPSMgmtTransNMEA;
-				}
-			}
-			break;
-
-			case MTK_EMPTY_CMD_ID:
-				break;
-
-			default:
-				break;
-			}
-
-			// reset packet
-			m_rec_packet.clear();
-		}
 
 	}
 

@@ -332,6 +332,25 @@ void Locator::tasks() {
 }
 
 /**
+ * Returns the GPS date
+ *
+ * @param iYr
+ * @param iMo
+ * @param iDay
+ * @param iHr
+ */
+bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
+
+	iYr = gps.date.year();
+	iMo = gps.date.month();
+	iDay = gps.date.day();
+	iHr = gps.time.hour();
+
+	return (gps.date.isValid() && gps.time.isValid());
+}
+
+
+/**
  *
  */
 #ifndef TDD
@@ -400,6 +419,7 @@ void Locator::displayGPS2(void) {
 
 
 }
+
 #else
 void Locator::displayGPS2(void) {
 

@@ -3610,6 +3610,9 @@ FRESULT f_lseek (
 //	}
 //
 //	LEAVE_FF(fs, res);
+
+	fseek(fp, ofs, SEEK_SET);
+
 	return FR_OK;
 }
 
