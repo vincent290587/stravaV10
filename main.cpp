@@ -122,7 +122,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
-    nor_save_error(id, pc, info);
+    //nor_save_error(id, pc, info);
 
     switch (id)
     {
@@ -368,6 +368,8 @@ int main(void)
 
 	log_init();
 
+	pins_init();
+
 	uint32_t reset_reason = NRF_POWER->RESETREAS;
 	NRF_POWER->RESETREAS = 0xffffffff;
 	NRF_LOG_WARNING("Reset_reason: 0x%08x.\n", reset_reason);
@@ -389,8 +391,6 @@ int main(void)
     err_code = nrf_drv_power_init(NULL);
     APP_ERROR_CHECK(err_code);
 #endif
-
-	pins_init();
 
 	// clocks init
 	err_code = nrf_drv_clock_init();
@@ -419,17 +419,17 @@ int main(void)
 	spi_init();
 	i2c_init();
 
-	// LCD displayer
-	vue.init();
 
 #ifdef USB_ENABLED
 	// diskio + fatfs init
 	usb_cdc_diskio_init();
 #else
-	// TODO disk init
+	// disk init
 	fatfs_init();
 #endif
 
+	// LCD displayer
+	vue.init();
 	// SPI flash init
 	nor_init();
 	nor_read_error();

@@ -15,9 +15,9 @@
 extern "C" {
 #endif
 
-void gpio_set(uint16_t gpio_nb_);
+void gpio_set(uint32_t gpio_nb_);
 
-bool gpio_get(uint16_t gpio_nb_);
+bool gpio_get(uint32_t gpio_nb_);
 
 #ifdef __cplusplus
 }

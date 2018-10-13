@@ -206,7 +206,7 @@ uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample
 
 	delay_ms(sampling_delay);
 
-	uint8_t adc[3];
+	uint8_t adc[3] = {0};
 	if (!this->wireReadDataBlock(CMD_READ_ADC, adc, sizeof(adc))) {
 		return 0;
 	}

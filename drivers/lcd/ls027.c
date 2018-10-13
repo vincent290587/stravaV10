@@ -209,9 +209,6 @@ void LS027_Init(void)
 
 	LS027_Clear();
 
-	// TODO remove
-	nrf_delay_ms(700);
-
 	// copy buffer
 	uint16_t offset = 0;
 	for (int i=0; i < LS027_BUFFER_SIZE; i++) {

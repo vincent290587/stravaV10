@@ -5352,7 +5352,7 @@
 // <i> Device version, will be converted automatically to BCD notation. Use just decimal values.
 
 #ifndef APP_USBD_DEVICE_VER_MINOR
-#define APP_USBD_DEVICE_VER_MINOR 1
+#define APP_USBD_DEVICE_VER_MINOR 0
 #endif
 
 // <q> APP_USBD_CONFIG_SELF_POWERED  - Self powered 
@@ -5529,6 +5529,13 @@
 
 #ifndef APP_USBD_MSC_ENABLED
 #define APP_USBD_MSC_ENABLED 1
+#endif
+
+// <q> APP_USBD_DUMMY_ENABLED  - app_usbd_msc - USB MSC class
+
+
+#ifndef APP_USBD_DUMMY_ENABLED
+#define APP_USBD_DUMMY_ENABLED 1
 #endif
 
 // <q> CRC16_ENABLED  - crc16 - CRC16 calculation routines

@@ -176,4 +176,6 @@ void Menuable::tasksMenu(void) {
 			}
 		}
 	}
+
+	LOG_INFO("Menu displayed");
 }
