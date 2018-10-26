@@ -185,12 +185,21 @@ void Attitude::majPower(float speed_) {
 		_lrCoef[1] = _lrCoef[0] = 0;
 
 		// regression lineaire
-		simpLinReg(_x, _y, _lrCoef, FILTRE_NB + 1);
+		float corrsq = simpLinReg(_x, _y, _lrCoef, FILTRE_NB + 1);
 
 		// STEP 1 : on filtre altitude et vitesse
-		m_vit_asc = _lrCoef[0];
+		if (corrsq > 0.8) {
+			m_vit_asc = _lrCoef[0];
 
-		LOG_INFO("Vit. vert.= %d mm/s", (int)(m_vit_asc*1000));
+			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
+					(int)(m_vit_asc*1000), corrsq);
+		} else {
+			m_vit_asc = 0;
+
+			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
+					(int)(m_vit_asc*1000), corrsq);
+		}
+
 
 		// horizontal speed (m/s)
 		fSpeed = speed_ / 3.6;

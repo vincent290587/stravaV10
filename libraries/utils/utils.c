@@ -309,8 +309,10 @@ void const_char_to_buffer(const char *str_, uint8_t *buff_, uint16_t max_size) {
  * @param y input arrau vertical
  * @param lrCoef slope=lrCoef[0] and intercept=lrCoef[1]
  * @param n length of the x and y arrays.
+ *
+ * @return Square of the correlation
  */
-void simpLinReg(float* x, float* y, float* lrCoef, int n) {
+float simpLinReg(float* x, float* y, float* lrCoef, int n) {
 	// pass x and y arrays (pointers), lrCoef pointer, and n.  The lrCoef array is comprised of the slope=lrCoef[0] and intercept=lrCoef[1].  n is length of the x and y arrays.
 	// http://en.wikipedia.org/wiki/Simple_linear_regression
 
@@ -319,6 +321,7 @@ void simpLinReg(float* x, float* y, float* lrCoef, int n) {
 	float ybar = 0;
 	float xybar = 0;
 	float xsqbar = 0;
+	float ysqbar = 0;
 
 	// calculations required for linear regression
 	for (int i = 0; i < n; i++) {
@@ -326,13 +329,24 @@ void simpLinReg(float* x, float* y, float* lrCoef, int n) {
 		ybar = ybar + y[i];
 		xybar = xybar + x[i] * y[i];
 		xsqbar = xsqbar + x[i] * x[i];
+		ysqbar = ysqbar + y[i] * y[i];
 	}
 	xbar = xbar / n;
 	ybar = ybar / n;
 	xybar = xybar / n;
 	xsqbar = xsqbar / n;
+	ysqbar = ysqbar / n;
+
+	float corr = xybar - xbar*ybar;
+	corr *= corr;
+	float corr_denomsq = (xsqbar - xbar*xbar)*(ysqbar - ybar*ybar);
+	if (corr_denomsq == 0.) return 0.;
+
+	corr /= corr_denomsq;
 
 	// simple linear regression algorithm
 	lrCoef[0] = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
 	lrCoef[1] = ybar - lrCoef[0] * xbar;
+
+	return corr;
 }
