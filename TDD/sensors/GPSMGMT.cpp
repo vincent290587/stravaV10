@@ -123,6 +123,10 @@ bool GPS_MGMT::isFix(void) {
 	return gpio_get(FIX_PIN);
 }
 
+bool GPS_MGMT::isEPOUpdating(void) {
+	return m_epo_state == eGPSMgmtEPOIdle;
+}
+
 void GPS_MGMT::standby(void) {
 
 	if (eGPSMgmtPowerOff == m_power_state) return;
@@ -167,7 +171,7 @@ void GPS_MGMT::startEpoUpdate(void) {
  */
 void GPS_MGMT::getAckResult(const char *result) {
 
-	int int_res = atoi(result);
+//	int int_res = atoi(result);
 
 //	if (int_res == 3) {
 //		vue.addNotif("GPSMGMT: ", "Result: success", 4, eNotificationTypeComplete);
@@ -190,21 +194,31 @@ void GPS_MGMT::tasks(void) {
 		m_epo_packet_ind = 0;
 
 		// determine the time
-		int iYr, iMo, iDay, iHr;
-		if (!locator.getGPSDate(iYr, iMo, iDay, iHr)) {
-			LOG_INFO("EPO start: date not valid");
-
-			if (millis() < 2*60*1000) return;
-			else m_epo_state = eGPSMgmtEPOIdle; // stop the process completely
-
-		}
+		int iYr = 2018;
+		int iMo = 10;
+		int iDay = 26;
+		int iHr = 12;
+//		if (!locator.getGPSDate(iYr, iMo, iDay, iHr)) {
+//			LOG_INFO("EPO start: date not valid");
+//
+//			if (millis() < 2*60*1000) return;
+//			else m_epo_state = eGPSMgmtEPOIdle; // stop the process completely
+//
+//		}
 		int current_gps_hour = utc_to_gps_hour(iYr, iMo, iDay, iHr);
 
 		int size = epo_file_size();
 		bool res  = epo_file_start(current_gps_hour);
 
-		if (size <= 0 || !res) {
-			LOG_ERROR("EPO start failure, size=%d\r\n", size);
+		if (size <= 0) {
+
+			LOG_ERROR("EPO start failure: file empty");
+
+			m_epo_state = eGPSMgmtEPOIdle;
+
+		} else if (!res) {
+
+			LOG_ERROR("EPO start date wrong");
 
 			m_epo_state = eGPSMgmtEPOIdle;
 

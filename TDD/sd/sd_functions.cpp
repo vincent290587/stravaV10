@@ -414,7 +414,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 int epo_file_size(void) {
 
 	FRESULT error;
-	const char* fname = "MTK14.EPO";
+	const char* fname = "DB/MTK14.EPO";
 
 	if (!is_fat_init()) return -1;
 
@@ -436,7 +436,7 @@ int epo_file_size(void) {
 bool epo_file_start(int current_gps_hour_) {
 
 	FRESULT error;
-	const char* fname = "MTK14.EPO";
+	const char* fname = "DB/MTK14.EPO";
 
 	if (!is_fat_init()) return -1;
 
