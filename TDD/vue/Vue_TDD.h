@@ -19,9 +19,10 @@ typedef enum {
 	eVueGlobalScreenCRS,
 	eVueGlobalScreenFEC,
 	eVueGlobalScreenPRC,
+	eVueGlobalScreenDEBUG,
 } eVueGlobalScreenModes;
 
-class Vue_TDD: public VueCRS, public VueFEC, public VuePRC, public NotifiableDevice {
+class Vue_TDD: public VueCRS, public VueFEC, public VuePRC, public VueDebug, public NotifiableDevice {
 public:
 	Vue_TDD();
 

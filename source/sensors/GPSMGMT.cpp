@@ -121,6 +121,10 @@ bool GPS_MGMT::isFix(void) {
 	return nrf_gpio_pin_read(FIX_PIN);
 }
 
+bool GPS_MGMT::isEPOUpdating(void) {
+	return m_epo_state == eGPSMgmtEPOIdle;
+}
+
 void GPS_MGMT::standby(void) {
 
 	if (eGPSMgmtPowerOff == m_power_state) return;
@@ -200,8 +204,15 @@ void GPS_MGMT::tasks(void) {
 		int size = epo_file_size();
 		bool res  = epo_file_start(current_gps_hour);
 
-		if (size <= 0 || !res) {
-			LOG_ERROR("EPO start failure, size=%ld\r\n", size);
+		if (size <= 0) {
+
+			LOG_ERROR("EPO start failure: file empty");
+
+			m_epo_state = eGPSMgmtEPOIdle;
+
+		} else if (!res) {
+
+			LOG_ERROR("EPO start date wrong");
 
 			m_epo_state = eGPSMgmtEPOIdle;
 

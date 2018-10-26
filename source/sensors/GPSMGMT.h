@@ -50,6 +50,7 @@ public:
 
 	void init(void);
 	bool isFix(void);
+	bool isEPOUpdating(void);
 
 	void standby(void);
 	void awake(void);

@@ -49,6 +49,12 @@ void Vue::tasks(eButtonsEvent event) {
 		}
 		break;
 	}
+	case eVueGlobalScreenDEBUG:
+	{
+		// propagate to the inner menu
+		this->propagateEvent(event);
+		break;
+	}
 	default:
 		break;
 	}
@@ -75,6 +81,9 @@ void Vue::refresh(void) {
 			break;
 		case eVueGlobalScreenPRC:
 			this->tasksPRC();
+			break;
+		case eVueGlobalScreenDEBUG:
+			this->displayDebug();
 			break;
 
 		default:
