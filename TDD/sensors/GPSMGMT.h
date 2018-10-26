@@ -17,11 +17,6 @@ typedef enum {
 } eGPSMgmtPowerState;
 
 typedef enum {
-	eGPSMgmtTransNMEA,
-	eGPSMgmtTransBIN,
-} eGPSMgmtTransType;
-
-typedef enum {
 	eGPSMgmtEPOIdle,
 	eGPSMgmtEPOStart,
 	eGPSMgmtEPORunning,

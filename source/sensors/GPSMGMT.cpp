@@ -42,7 +42,6 @@
 
 static uint8_t buffer[256];
 
-static eGPSMgmtTransType  m_trans_type = eGPSMgmtTransNMEA;
 static eGPSMgmtEPOState   m_epo_state  = eGPSMgmtEPOIdle;
 
 static bool m_is_uart_on = false;
@@ -79,7 +78,6 @@ void gps_uart_resume() {
 GPS_MGMT::GPS_MGMT() {
 
 	m_power_state = eGPSMgmtPowerOn;
-	m_trans_type  = eGPSMgmtTransNMEA;
 	m_epo_state   = eGPSMgmtEPOIdle;
 
 }
@@ -222,8 +220,6 @@ void GPS_MGMT::tasks(void) {
 			m_epo_state = eGPSMgmtEPORunning;
 
 			vue.addNotif("GPSMGMT: ", "EPO update started", 4, eNotificationTypeComplete);
-
-			m_trans_type = eGPSMgmtTransBIN;
 		}
 	}
 	break;
@@ -308,7 +304,7 @@ uint32_t gps_encode_char(char c) {
 	//LOG_INFO("%c", c);
 	//LOG_FLUSH();
 
-	if (eGPSMgmtTransNMEA == m_trans_type) {
+	if (eGPSMgmtEPOIdle == m_epo_state) {
 
 		locator_encode_char(c);
 
