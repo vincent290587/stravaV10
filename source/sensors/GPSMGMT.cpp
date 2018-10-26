@@ -220,7 +220,7 @@ void GPS_MGMT::tasks(void) {
 	case eGPSMgmtEPORunning:
 	{
 		// fill the packet
-		if (m_epo_packet_ind < 0xFFFF) {
+		if (m_epo_packet_ind < EPO_SAT_SEGMENTS_NB) {
 
 			sEpoPacketSatData epo_data;
 			memset(&epo_data, 0, sizeof(epo_data));
@@ -241,6 +241,8 @@ void GPS_MGMT::tasks(void) {
 			if (epo_data.sat_number < EPO_SAT_SEGMENTS_NB) {
 				epo_data.sat_number += 1;
 
+				m_epo_packet_ind++;
+
 				LOG_INFO("EPO sending packet sat#%u", epo_data.sat_number);
 
 				GPS_UART_SEND(buffer, written);
@@ -255,7 +257,8 @@ void GPS_MGMT::tasks(void) {
 				GPS_UART_SEND(buffer, written);
 			}
 
-			m_epo_state = eGPSMgmtEPOWaitForEvent;
+			// TODO check remove
+			//m_epo_state = eGPSMgmtEPOWaitForEvent;
 		}
 	}
 	break;

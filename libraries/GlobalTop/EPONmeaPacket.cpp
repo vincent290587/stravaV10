@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include "EPONmeaPacket.h"

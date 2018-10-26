@@ -387,7 +387,6 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 	}
 
 	for (size_t i=0; i< nb_pos; i++) {
-		// TODO print histo
 		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%u;%d\r\n",
 				att[i].loc.lat, att[i].loc.lon,
 				att[i].loc.alt, att[i].date.secj,
@@ -414,43 +413,65 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
  */
 int epo_file_size(void) {
 
-//	FRESULT error;
-//	const char* fname = "MTK14.EPO";
-//
-//	if (!is_fat_init()) return -1;
-//
-//	FILINFO file_info;
-//	error = f_stat (fname, &file_info);
-//	if (error) error = f_stat (fname, &file_info);
-//	if (error) {
-//		LOG_INFO("Stat file failed.");
-//		return -1;
-//	}
-//
-//	return file_info.fsize;
-	return 0;
+	FRESULT error;
+	const char* fname = "MTK14.EPO";
+
+	if (!is_fat_init()) return -1;
+
+	FILE *p_file = NULL;
+	p_file = fopen(fname,"rb");
+	if (!p_file) return 0;
+
+	fseek(p_file,0,SEEK_END);
+	int size = ftell(p_file);
+	fclose(p_file);
+
+	return size;
 }
 
 /**
  *
  * @return
  */
-int epo_file_start(void) {
-//
-//	FRESULT error;
-//	const char* fname = "MTK14.EPO";
-//
-//	if (!is_fat_init()) return -1;
-//
-//	error = f_open(&g_EpoFileObject, fname, FA_READ);
-//	if (error) error = f_open(&g_EpoFileObject, fname, FA_READ);
-//	if (error)
-//	{
-//		LOG_INFO("Open file failed.");
-//		return  -1;
-//	}
+bool epo_file_start(int current_gps_hour_) {
 
-	return 0;
+	FRESULT error;
+	const char* fname = "MTK14.EPO";
+
+	if (!is_fat_init()) return -1;
+
+	g_EpoFileObject = fopen(fname, "r");
+	if (!g_EpoFileObject)
+	{
+		LOG_INFO("Open file failed.");
+		return false;
+	}
+
+	int gps_hour = 0;
+
+	UINT size_read = fread (
+			&gps_hour,	        /* Pointer to data buffer */
+			sizeof(uint32_t),   /* Number of bytes to read */
+			sizeof(gps_hour),   /* Buffer size */
+			g_EpoFileObject
+	);
+	if (!size_read)
+	{
+		LOG_INFO("Read file failed.");
+		return false;
+	}
+
+	gps_hour &= 0x00FFFFFF;
+
+	// determine the segment to use
+	int segment = (current_gps_hour_ - gps_hour) / 6;
+	if ((segment < 0) || (segment >= EPO_SAT_SEGMENTS_NUM))
+	{
+		return false;
+	}
+
+	return (FR_OK == fseek(g_EpoFileObject, segment*(EPO_SAT_DATA_SIZE_BYTES)*(EPO_SAT_SEGMENTS_NB), SEEK_SET));
+
 }
 
 /**
@@ -458,40 +479,32 @@ int epo_file_start(void) {
  * @param epo_data
  * @return The number of sat_data read, or -1 if error
  */
-int epo_file_read(sEpoPacketSatData* sat_data) {
+int epo_file_read(sEpoPacketSatData* sat_data, uint16_t size_) {
 
-//	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
-//
-//	ASSERT(sat_data);
-//
-//	if (!is_fat_init()) return -1;
-//
-//	UINT size_read = 0;
-//	FRESULT error = f_read (
-//			&g_EpoFileObject, 	/* Pointer to the file object */
-//			g_bufferRead,	    /* Pointer to data buffer */
-//			MTK_EPO_SAT_DATA_SIZE,/* Number of bytes to read */
-//			&size_read	        /* Pointer to number of bytes read */
-//	);
-//	if (error) error = f_read (
-//			&g_EpoFileObject, 	/* Pointer to the file object */
-//			g_bufferRead,	    /* Pointer to data buffer */
-//			MTK_EPO_SAT_DATA_SIZE,/* Number of bytes to read */
-//			&size_read	        /* Pointer to number of bytes read */
-//	);
-//
-//	if (error)
-//	{
-//		LOG_INFO("Read EPO file failed.");
-//		return -1;
-//	}
-//
-//	if (size_read != MTK_EPO_SAT_DATA_SIZE) {
-//		LOG_INFO("End of EPO file");
-//		return 1;
-//	} else {
-//		memcpy(sat_data->sat, g_bufferRead, MTK_EPO_SAT_DATA_SIZE);
-//	}
+	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+
+	ASSERT(sat_data);
+
+	if (!is_fat_init()) return -1;
+
+	UINT size_read = fread (
+			g_bufferRead,	    /* Pointer to data buffer */
+			size_,              /* Number of bytes to read */
+			BUFFER_SIZE,	    /* Buffer size */
+			g_EpoFileObject
+	);
+	if (!size_read)
+	{
+		LOG_INFO("Read EPO file failed.");
+		return -1;
+	}
+
+	if (size_read != size_) {
+		LOG_INFO("End of EPO file");
+		return 1;
+	} else {
+		memcpy(sat_data->sat, g_bufferRead, size_);
+	}
 
 	return 0;
 }
@@ -502,18 +515,18 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
  */
 int epo_file_stop(bool toBeDeleted) {
 
-//	if (!is_fat_init()) return -3;
-//
-//	FRESULT error = f_close (&g_EpoFileObject);
-//	if (error)
-//	{
-//		LOG_INFO("Close file failed.");
-//		return -1;
-//	}
-//
+	if (!is_fat_init()) return -3;
+
+	int error = fclose (g_EpoFileObject);
+	if (error)
+	{
+		LOG_INFO("Close file failed.");
+		return -1;
+	}
+
 //#ifndef DEBUG_CONFIG
 //	if (toBeDeleted) {
-//		error = f_unlink("MTK14.EPO");
+//		error = funlink("MTK14.EPO");
 //		if (error)
 //		{
 //			LOG_INFO("Unlink file failed.");

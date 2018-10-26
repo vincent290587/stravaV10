@@ -32,8 +32,8 @@ int init_liste_segments(void);
 void uninit_liste_segments(void);
 
 int epo_file_size(void);
-int epo_file_read(sEpoPacketSatData* epo_data);
-int epo_file_start(void);
+int epo_file_read(sEpoPacketSatData* sat_data, uint16_t size_);
+bool epo_file_start(int current_gps_hour);
 int epo_file_stop(bool toBeDeleted);
 
 
