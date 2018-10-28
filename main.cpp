@@ -505,6 +505,8 @@ int main(void)
 			veml.refresh(nullptr);
 			fxos_tasks(nullptr);
 			baro.refresh(nullptr);
+
+			model_dispatch_sensors_update();
 #endif
 
 			notifications_tasks();
