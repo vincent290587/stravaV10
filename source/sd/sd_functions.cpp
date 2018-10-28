@@ -18,7 +18,6 @@
 
 #include "ff.h"
 #include "diskio_blkdev.h"
-#include "nrf_block_dev_sdc.h"
 #include "sd_functions.h"
 
 

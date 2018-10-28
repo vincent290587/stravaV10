@@ -8,6 +8,7 @@
 #include "millis.h"
 #include "Model.h"
 #include "gpio.h"
+#include "sd_hal.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include <vue/Menuable.h>
@@ -59,10 +60,8 @@ static void _page0_shutdown(int var) {
 	_retour_menu(0);
 }
 
-#include "sd_hal.h"
 static void _page0_format(int var) {
 
-	// TODO
 	format_memory();
 
 	vue.addNotif("Formatting... ", "", 4, eNotificationTypePartial);

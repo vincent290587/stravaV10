@@ -30,6 +30,13 @@ bool is_fat_init(void) {
 
 /**
  *
+ */
+void format_memory(void) {
+
+}
+
+/**
+ *
  * @return 0 if success
  */
 int fatfs_init(void) {

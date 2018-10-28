@@ -8,12 +8,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "boards.h"
-#include "nrf_qspi.h"
+#include "millis.h"
+#include "nrfx_qspi.h"
+#include "sd_hal.h"
 #include "segger_wrapper.h"
 
 #include "ff.h"
 #include "diskio_blkdev.h"
-#include "nrf_block_dev_sdc.h"
 
 
 static DSTATUS disk_state = STA_NOINIT;
@@ -21,10 +22,14 @@ static FATFS fs;
 
 static bool m_is_fat_mounted = false;
 
-
 #define QSPI_STD_CMD_WRSR   0x01
 #define QSPI_STD_CMD_RSTEN  0x66
 #define QSPI_STD_CMD_RST    0x99
+
+#define QSPI_TEST_DATA_SIZE 32
+static uint8_t m_buffer_tx[QSPI_TEST_DATA_SIZE];
+static uint8_t m_buffer_rx[QSPI_TEST_DATA_SIZE];
+
 
 static void configure_memory()
 {
@@ -93,11 +98,6 @@ void format_memory() {
 	APP_ERROR_CHECK(err_code);
 
 }
-
-#define QSPI_TEST_DATA_SIZE 32
-static uint8_t m_buffer_tx[QSPI_TEST_DATA_SIZE];
-static uint8_t m_buffer_rx[QSPI_TEST_DATA_SIZE];
-
 
 void test_memory(void)
 {
