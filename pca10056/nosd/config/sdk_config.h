@@ -2822,7 +2822,7 @@
 // <e> NRFX_QSPI_ENABLED - nrfx_qspi - QSPI peripheral driver
 //==========================================================
 #ifndef NRFX_QSPI_ENABLED
-#define NRFX_QSPI_ENABLED 0
+#define NRFX_QSPI_ENABLED 1
 #endif
 // <o> NRFX_QSPI_CONFIG_SCK_DELAY - tSHSL, tWHSL and tSHWL in number of 16 MHz periods (62.5 ns).  <0-255> 
 
@@ -2843,9 +2843,9 @@
 // <2=> Read2IO 
 // <3=> Read4O 
 // <4=> Read4IO 
-
+// TODO set 2
 #ifndef NRFX_QSPI_CONFIG_READOC
-#define NRFX_QSPI_CONFIG_READOC 0
+#define NRFX_QSPI_CONFIG_READOC 2
 #endif
 
 // <o> NRFX_QSPI_CONFIG_WRITEOC  - Number of data lines and opcode used for writing.
@@ -2897,7 +2897,7 @@
 // <15=> 32MHz/16 
 
 #ifndef NRFX_QSPI_CONFIG_FREQUENCY
-#define NRFX_QSPI_CONFIG_FREQUENCY 15
+#define NRFX_QSPI_CONFIG_FREQUENCY 7
 #endif
 
 // <s> NRFX_QSPI_PIN_SCK - SCK pin value.
@@ -2946,6 +2946,71 @@
 #endif
 
 // </e>
+
+
+// <e> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED - Enables logging in the module.
+//==========================================================
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED
+#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED 1
+#endif
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL
+#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL 3
+#endif
+
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL  - Initial severity level if dynamic filtering is enabled
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL
+#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL 3
+#endif
+
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR
+#define NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR 0
+#endif
+
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR
+#define NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR 6
+#endif
+
+// </e>
+
 
 // <e> NRFX_RNG_ENABLED - nrfx_rng - RNG peripheral driver
 //==========================================================
@@ -4728,136 +4793,136 @@
 #endif
 
 // </e>
-
-// <e> QSPI_ENABLED - nrf_drv_qspi - QSPI peripheral driver - legacy layer
-//==========================================================
-#ifndef QSPI_ENABLED
-#define QSPI_ENABLED 0
-#endif
-// <o> QSPI_CONFIG_SCK_DELAY - tSHSL, tWHSL and tSHWL in number of 16 MHz periods (62.5 ns).  <0-255> 
-
-
-#ifndef QSPI_CONFIG_SCK_DELAY
-#define QSPI_CONFIG_SCK_DELAY 1
-#endif
-
-// <o> QSPI_CONFIG_XIP_OFFSET - Address offset in the external memory for Execute in Place operation. 
-#ifndef QSPI_CONFIG_XIP_OFFSET
-#define QSPI_CONFIG_XIP_OFFSET 0
-#endif
-
-// <o> QSPI_CONFIG_READOC  - Number of data lines and opcode used for reading.
- 
-// <0=> FastRead 
-// <1=> Read2O 
-// <2=> Read2IO 
-// <3=> Read4O 
-// <4=> Read4IO 
-
-#ifndef QSPI_CONFIG_READOC
-#define QSPI_CONFIG_READOC 0
-#endif
-
-// <o> QSPI_CONFIG_WRITEOC  - Number of data lines and opcode used for writing.
- 
-// <0=> PP 
-// <1=> PP2O 
-// <2=> PP4O 
-// <3=> PP4IO 
-
-#ifndef QSPI_CONFIG_WRITEOC
-#define QSPI_CONFIG_WRITEOC 0
-#endif
-
-// <o> QSPI_CONFIG_ADDRMODE  - Addressing mode.
- 
-// <0=> 24bit 
-// <1=> 32bit 
-
-#ifndef QSPI_CONFIG_ADDRMODE
-#define QSPI_CONFIG_ADDRMODE 0
-#endif
-
-// <o> QSPI_CONFIG_MODE  - SPI mode.
- 
-// <0=> Mode 0 
-// <1=> Mode 1 
-
-#ifndef QSPI_CONFIG_MODE
-#define QSPI_CONFIG_MODE 0
-#endif
-
-// <o> QSPI_CONFIG_FREQUENCY  - Frequency divider.
- 
-// <0=> 32MHz/1 
-// <1=> 32MHz/2 
-// <2=> 32MHz/3 
-// <3=> 32MHz/4 
-// <4=> 32MHz/5 
-// <5=> 32MHz/6 
-// <6=> 32MHz/7 
-// <7=> 32MHz/8 
-// <8=> 32MHz/9 
-// <9=> 32MHz/10 
-// <10=> 32MHz/11 
-// <11=> 32MHz/12 
-// <12=> 32MHz/13 
-// <13=> 32MHz/14 
-// <14=> 32MHz/15 
-// <15=> 32MHz/16 
-
-#ifndef QSPI_CONFIG_FREQUENCY
-#define QSPI_CONFIG_FREQUENCY 15
-#endif
-
-// <s> QSPI_PIN_SCK - SCK pin value.
-#ifndef QSPI_PIN_SCK
-#define QSPI_PIN_SCK NRF_QSPI_PIN_NOT_CONNECTED
-#endif
-
-// <s> QSPI_PIN_CSN - CSN pin value.
-#ifndef QSPI_PIN_CSN
-#define QSPI_PIN_CSN NRF_QSPI_PIN_NOT_CONNECTED
-#endif
-
-// <s> QSPI_PIN_IO0 - IO0 pin value.
-#ifndef QSPI_PIN_IO0
-#define QSPI_PIN_IO0 NRF_QSPI_PIN_NOT_CONNECTED
-#endif
-
-// <s> QSPI_PIN_IO1 - IO1 pin value.
-#ifndef QSPI_PIN_IO1
-#define QSPI_PIN_IO1 NRF_QSPI_PIN_NOT_CONNECTED
-#endif
-
-// <s> QSPI_PIN_IO2 - IO2 pin value.
-#ifndef QSPI_PIN_IO2
-#define QSPI_PIN_IO2 NRF_QSPI_PIN_NOT_CONNECTED
-#endif
-
-// <s> QSPI_PIN_IO3 - IO3 pin value.
-#ifndef QSPI_PIN_IO3
-#define QSPI_PIN_IO3 NRF_QSPI_PIN_NOT_CONNECTED
-#endif
-
-// <o> QSPI_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef QSPI_CONFIG_IRQ_PRIORITY
-#define QSPI_CONFIG_IRQ_PRIORITY 7
-#endif
-
-// </e>
+//
+//// <e> QSPI_ENABLED - nrf_drv_qspi - QSPI peripheral driver - legacy layer
+////==========================================================
+//#ifndef QSPI_ENABLED
+//#define QSPI_ENABLED 0
+//#endif
+//// <o> QSPI_CONFIG_SCK_DELAY - tSHSL, tWHSL and tSHWL in number of 16 MHz periods (62.5 ns).  <0-255>
+//
+//
+//#ifndef QSPI_CONFIG_SCK_DELAY
+//#define QSPI_CONFIG_SCK_DELAY 1
+//#endif
+//
+//// <o> QSPI_CONFIG_XIP_OFFSET - Address offset in the external memory for Execute in Place operation.
+//#ifndef QSPI_CONFIG_XIP_OFFSET
+//#define QSPI_CONFIG_XIP_OFFSET 0
+//#endif
+//
+//// <o> QSPI_CONFIG_READOC  - Number of data lines and opcode used for reading.
+//
+//// <0=> FastRead
+//// <1=> Read2O
+//// <2=> Read2IO
+//// <3=> Read4O
+//// <4=> Read4IO
+//
+//#ifndef QSPI_CONFIG_READOC
+//#define QSPI_CONFIG_READOC 0
+//#endif
+//
+//// <o> QSPI_CONFIG_WRITEOC  - Number of data lines and opcode used for writing.
+//
+//// <0=> PP
+//// <1=> PP2O
+//// <2=> PP4O
+//// <3=> PP4IO
+//
+//#ifndef QSPI_CONFIG_WRITEOC
+//#define QSPI_CONFIG_WRITEOC 0
+//#endif
+//
+//// <o> QSPI_CONFIG_ADDRMODE  - Addressing mode.
+//
+//// <0=> 24bit
+//// <1=> 32bit
+//
+//#ifndef QSPI_CONFIG_ADDRMODE
+//#define QSPI_CONFIG_ADDRMODE 0
+//#endif
+//
+//// <o> QSPI_CONFIG_MODE  - SPI mode.
+//
+//// <0=> Mode 0
+//// <1=> Mode 1
+//
+//#ifndef QSPI_CONFIG_MODE
+//#define QSPI_CONFIG_MODE 0
+//#endif
+//
+//// <o> QSPI_CONFIG_FREQUENCY  - Frequency divider.
+//
+//// <0=> 32MHz/1
+//// <1=> 32MHz/2
+//// <2=> 32MHz/3
+//// <3=> 32MHz/4
+//// <4=> 32MHz/5
+//// <5=> 32MHz/6
+//// <6=> 32MHz/7
+//// <7=> 32MHz/8
+//// <8=> 32MHz/9
+//// <9=> 32MHz/10
+//// <10=> 32MHz/11
+//// <11=> 32MHz/12
+//// <12=> 32MHz/13
+//// <13=> 32MHz/14
+//// <14=> 32MHz/15
+//// <15=> 32MHz/16
+//
+//#ifndef QSPI_CONFIG_FREQUENCY
+//#define QSPI_CONFIG_FREQUENCY 15
+//#endif
+//
+//// <s> QSPI_PIN_SCK - SCK pin value.
+//#ifndef QSPI_PIN_SCK
+//#define QSPI_PIN_SCK NRF_QSPI_PIN_NOT_CONNECTED
+//#endif
+//
+//// <s> QSPI_PIN_CSN - CSN pin value.
+//#ifndef QSPI_PIN_CSN
+//#define QSPI_PIN_CSN NRF_QSPI_PIN_NOT_CONNECTED
+//#endif
+//
+//// <s> QSPI_PIN_IO0 - IO0 pin value.
+//#ifndef QSPI_PIN_IO0
+//#define QSPI_PIN_IO0 NRF_QSPI_PIN_NOT_CONNECTED
+//#endif
+//
+//// <s> QSPI_PIN_IO1 - IO1 pin value.
+//#ifndef QSPI_PIN_IO1
+//#define QSPI_PIN_IO1 NRF_QSPI_PIN_NOT_CONNECTED
+//#endif
+//
+//// <s> QSPI_PIN_IO2 - IO2 pin value.
+//#ifndef QSPI_PIN_IO2
+//#define QSPI_PIN_IO2 NRF_QSPI_PIN_NOT_CONNECTED
+//#endif
+//
+//// <s> QSPI_PIN_IO3 - IO3 pin value.
+//#ifndef QSPI_PIN_IO3
+//#define QSPI_PIN_IO3 NRF_QSPI_PIN_NOT_CONNECTED
+//#endif
+//
+//// <o> QSPI_CONFIG_IRQ_PRIORITY  - Interrupt priority
+//
+//
+//// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
+//// <0=> 0 (highest)
+//// <1=> 1
+//// <2=> 2
+//// <3=> 3
+//// <4=> 4
+//// <5=> 5
+//// <6=> 6
+//// <7=> 7
+//
+//#ifndef QSPI_CONFIG_IRQ_PRIORITY
+//#define QSPI_CONFIG_IRQ_PRIORITY 7
+//#endif
+//
+//// </e>
 
 // <e> RNG_ENABLED - nrf_drv_rng - RNG peripheral driver - legacy layer
 //==========================================================
@@ -5529,6 +5594,13 @@
 
 #ifndef APP_USBD_MSC_ENABLED
 #define APP_USBD_MSC_ENABLED 1
+#endif
+
+// <q> APP_USBD_DUMMY_ENABLED  - app_usbd_msc - USB MSC class
+
+
+#ifndef APP_USBD_DUMMY_ENABLED
+#define APP_USBD_DUMMY_ENABLED 1
 #endif
 
 // <q> CRC16_ENABLED  - crc16 - CRC16 calculation routines
@@ -11363,6 +11435,26 @@
 // </h> 
 //==========================================================
 
+// <q> NRF_BLOCK_DEV_EMPTY_ENABLED  - nrf_block_dev_empty - Empty block device
+
+
+#ifndef NRF_BLOCK_DEV_EMPTY_ENABLED
+#define NRF_BLOCK_DEV_EMPTY_ENABLED 0
+#endif
+
+// <q> NRF_BLOCK_DEV_QSPI_ENABLED  - nrf_block_dev_qspi - QSPI block device
+
+
+#ifndef NRF_BLOCK_DEV_QSPI_ENABLED
+#define NRF_BLOCK_DEV_QSPI_ENABLED 1
+#endif
+
+// <q> NRF_BLOCK_DEV_RAM_ENABLED  - nrf_block_dev_ram - RAM block device
+
+
+#ifndef NRF_BLOCK_DEV_RAM_ENABLED
+#define NRF_BLOCK_DEV_RAM_ENABLED 0
+#endif
 
 // </e>
 

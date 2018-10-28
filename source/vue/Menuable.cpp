@@ -1,13 +1,14 @@
 /*
  * Menuable.cpp
  *
- *  Created on: 13 déc. 2017
+ *  Created on: 13 dÃ©c. 2017
  *      Author: Vincent
  */
 
 #include "millis.h"
 #include "Model.h"
 #include "gpio.h"
+#include "sd_hal.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include <vue/Menuable.h>
@@ -66,6 +67,15 @@ static void _page0_shutdown(int var) {
 	_retour_menu(0);
 }
 
+static void _page0_format(int var) {
+
+	format_memory();
+
+	vue.addNotif("Formatting... ", "", 4, eNotificationTypePartial);
+
+	_retour_menu(0);
+}
+
 void menu_init_page(sMenuPage *page) {
 	ASSERT(page);
 
@@ -107,6 +117,7 @@ void Menuable::initMenu(void) {
 	menu_add_item(&m_menus.menu_page[0], "Mode FEC", _page0_mode_fec);
 	menu_add_item(&m_menus.menu_page[0], "Mode CRS", _page0_mode_crs);
 	menu_add_item(&m_menus.menu_page[0], "Mode PRC", _page0_mode_prc);
+	menu_add_item(&m_menus.menu_page[0], "Format memory", _page0_format);
 	menu_add_item(&m_menus.menu_page[0], "Mode DBG", _page0_mode_debug);
 
 	menu_add_item(&m_menus.menu_page[0], "Shutdown", _page0_shutdown);
@@ -184,4 +195,6 @@ void Menuable::tasksMenu(void) {
 			}
 		}
 	}
+
+	LOG_INFO("Menu displayed");
 }

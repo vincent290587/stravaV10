@@ -92,6 +92,8 @@ extern "C" {
 
 #define NEO_PIN           NRF_GPIO_PIN_MAP(0, 4)
 
+#define USB_PRES          NRF_GPIO_PIN_MAP(0, 6)
+
 #ifdef __cplusplus
 }
 #endif

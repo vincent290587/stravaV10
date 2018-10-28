@@ -21,6 +21,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_string_desc.c \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
   $(SDK_ROOT)/components/libraries/usbd/class/msc/app_usbd_msc.c \
+  $(SDK_ROOT)/components/libraries/usbd/class/dummy/app_usbd_dummy.c \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_soc.c \
@@ -36,6 +37,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/libraries/usbd/class/msc \
+  $(SDK_ROOT)/components/libraries/usbd/class/dummy \
   
 include $(PROJ_DIR)/Makefile.files
   
@@ -83,7 +85,6 @@ ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += -D__HEAP_SIZE=150000
 ASMFLAGS += -DSWI_DISABLE0
-ASMFLAGS += -DS140
 
 # Linker flags
 LDFLAGS += $(OPT)

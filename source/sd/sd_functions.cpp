@@ -18,7 +18,6 @@
 
 #include "ff.h"
 #include "diskio_blkdev.h"
-#include "nrf_block_dev_sdc.h"
 #include "sd_functions.h"
 
 
@@ -373,7 +372,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 	}
 
 	for (size_t i=0; i< nb_pos; i++) {
-		// TODO print histo
+		// print histo
 		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
 				att[i].loc.lat, att[i].loc.lon,
 				att[i].loc.alt, att[i].date.secj,

@@ -18,6 +18,7 @@
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
+#include "nrf_drv_clock.h"
 #include "usb_parser.h"
 #include "usb_cdc.h"
 #include "ring_buffer.h"
@@ -25,8 +26,7 @@
 #include "Model.h"
 
 #include "diskio_blkdev.h"
-#include "nrf_block_dev_sdc.h"
-#include "nrf_block_dev_ram.h"
+#include "nrf_block_dev_qspi.h"
 #include "segger_wrapper.h"
 
 #include "millis.h"
@@ -35,15 +35,11 @@
 #include "app_timer.h"
 #include "app_usbd_core.h"
 #include "app_usbd.h"
+#include "app_usbd_dummy.h"
 #include "app_usbd_string_desc.h"
 #include "app_usbd_cdc_acm.h"
 #include "app_usbd_msc.h"
 #include "app_usbd_serial_num.h"
-
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 
 /**
@@ -52,7 +48,7 @@
  * Configure if example supports USB port connection
  */
 #ifndef USBD_POWER_DETECTION
-#define USBD_POWER_DETECTION false
+#define USBD_POWER_DETECTION true
 #endif
 
 static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
@@ -76,13 +72,13 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
  * @brief CDC_ACM class instance
  * */
 APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
-                            cdc_acm_user_ev_handler,
-                            CDC_ACM_COMM_INTERFACE,
-                            CDC_ACM_DATA_INTERFACE,
-                            CDC_ACM_COMM_EPIN,
-                            CDC_ACM_DATA_EPIN,
-                            CDC_ACM_DATA_EPOUT,
-							APP_USBD_CDC_COMM_PROTOCOL_AT_V250
+		cdc_acm_user_ev_handler,
+		CDC_ACM_COMM_INTERFACE,
+		CDC_ACM_DATA_INTERFACE,
+		CDC_ACM_COMM_EPIN,
+		CDC_ACM_DATA_EPIN,
+		CDC_ACM_DATA_EPOUT,
+		APP_USBD_CDC_COMM_PROTOCOL_AT_V250
 );
 
 /**
@@ -95,24 +91,52 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
  */
 #define MSC_WORKBUFFER_SIZE (1024)
 
+#define NRF_QSPI_CONFIG                                        \
+{                                                                       \
+    .xip_offset  = NRFX_QSPI_CONFIG_XIP_OFFSET,                         \
+    .pins = {                                                           \
+       .sck_pin     = SPI_SCK_PIN,                                 \
+       .csn_pin     = SST_CS,                                      \
+       .io0_pin     = SPI_MOSI_PIN,                                \
+       .io1_pin     = SPI_MISO_PIN,                                \
+       .io2_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
+       .io3_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
+    },                                                                  \
+    .irq_priority   = (uint8_t)NRFX_QSPI_CONFIG_IRQ_PRIORITY,           \
+    .prot_if = {                                                        \
+        .readoc     = (nrf_qspi_readoc_t)NRFX_QSPI_CONFIG_READOC,       \
+        .writeoc    = (nrf_qspi_writeoc_t)NRFX_QSPI_CONFIG_WRITEOC,     \
+        .addrmode   = (nrf_qspi_addrmode_t)NRFX_QSPI_CONFIG_ADDRMODE,   \
+        .dpmconfig  = false,                                            \
+    },                                                                  \
+    .phy_if = {                                                         \
+        .sck_freq   = (nrf_qspi_frequency_t)NRFX_QSPI_CONFIG_FREQUENCY, \
+        .sck_delay  = (uint8_t)NRFX_QSPI_CONFIG_SCK_DELAY,              \
+        .spi_mode   = (nrf_qspi_spi_mode_t)NRFX_QSPI_CONFIG_MODE,       \
+        .dpmen      = false                                             \
+    },                                                                  \
+}
+
 /**
- * @brief  SDC block device definition
- * */
-NRF_BLOCK_DEV_SDC_DEFINE(
-        m_block_dev_sdc,
-        NRF_BLOCK_DEV_SDC_CONFIG(
-                SDC_SECTOR_SIZE,
-                APP_SDCARD_CONFIG(SPI_MOSI_PIN, SPI_MISO_PIN, SPI_SCK_PIN, SDC_CS_PIN)
-         ),
-         NFR_BLOCK_DEV_INFO_CONFIG("Nordic", "SDC", "1.00")
+ * @brief  QSPI block device definition
+ */
+NRF_BLOCK_DEV_QSPI_DEFINE(
+    m_block_dev_qspi,
+    NRF_BLOCK_DEV_QSPI_CONFIG(
+        512,
+        NRF_BLOCK_DEV_QSPI_FLAG_CACHE_WRITEBACK,
+        NRF_QSPI_CONFIG
+     ),
+     NFR_BLOCK_DEV_INFO_CONFIG("stravaV10", "QSPI", "0.01")
 );
+
 
 /**
  * @brief Block devices list passed to @ref APP_USBD_MSC_GLOBAL_DEF
 
  */
 #define BLOCKDEV_LIST() (                                   \
-    NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev),    \
+    NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev),    \
 )
 
 /**
@@ -124,6 +148,8 @@ APP_USBD_MSC_GLOBAL_DEF(m_app_msc,
 		ENDPOINT_LIST(),
 		BLOCKDEV_LIST(),
 		MSC_WORKBUFFER_SIZE);
+
+APP_USBD_DUMMY_GLOBAL_DEF(m_app_msc_dummy, MSC_DATA_INTERFACE);
 
 
 #define READ_SIZE 64
@@ -299,22 +325,36 @@ static void usb_cdc_trigger_xfer(void) {
 /**
  *
  */
+#include "ff.h"
 void usb_cdc_diskio_init(void) {
 
+	// clocks init
+	ret_code_t err_code;
+	err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+
+    LOG_INFO("Starting LF clock");
+    nrf_drv_clock_lfclk_request(NULL);
+    while(!nrf_drv_clock_lfclk_is_running())
+    {
+        /* Just waiting */
+    	nrf_delay_ms(1);
+    }
+
 	// Initialize FATFS disk I/O interface by providing the block device.
-    // TODO wait function
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_sdc, block_dev), perform_system_tasks_light)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), perform_system_tasks_light)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
 
-	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_size;
-	uint32_t capacity = m_block_dev_sdc.block_dev.p_ops->geometry(&m_block_dev_sdc.block_dev)->blk_count / blocks_per_mb;
+	fatfs_init();
+
+	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_qspi.block_dev.p_ops->geometry(&m_block_dev_qspi.block_dev)->blk_size;
+	uint32_t capacity = m_block_dev_qspi.block_dev.p_ops->geometry(&m_block_dev_qspi.block_dev)->blk_count / blocks_per_mb;
 	LOG_INFO("Capacity: %d MB", capacity);
 
-	fatfs_init();
 }
 
 /**
@@ -327,9 +367,15 @@ void usb_cdc_init(void)
         .ev_state_proc = usbd_user_ev_handler
     };
 
+    app_usbd_serial_num_generate();
+
     ret = app_usbd_init(&usbd_config);
     APP_ERROR_CHECK(ret);
     LOG_INFO("USBD CDC / MSC started.");
+
+    app_usbd_class_inst_t const * class_inst_msc = app_usbd_dummy_class_inst_get(&m_app_msc_dummy);
+    ret = app_usbd_class_append(class_inst_msc);
+    APP_ERROR_CHECK(ret);
 
     app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     ret = app_usbd_class_append(class_cdc_acm);
@@ -383,9 +429,11 @@ void usb_cdc_start_msc(void) {
 	ret = app_usbd_class_append(class_inst_msc);
 	APP_ERROR_CHECK(ret);
 
-    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
-    ret = app_usbd_class_append(class_cdc_acm);
-    APP_ERROR_CHECK(ret);
+	app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+	ret = app_usbd_class_append(class_cdc_acm);
+	APP_ERROR_CHECK(ret);
+
+	m_is_port_open = true;
 
     if (USBD_POWER_DETECTION)
     {
