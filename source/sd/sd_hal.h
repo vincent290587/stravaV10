@@ -20,6 +20,8 @@ bool is_fat_init(void);
 
 int fatfs_uninit(void);
 
+void format_memory();
+
 #ifdef	__cplusplus
 }
 #endif

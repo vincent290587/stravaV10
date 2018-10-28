@@ -317,29 +317,17 @@ static void pins_init(void)
 
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
+
+	nrf_gpio_cfg_output(USB_PRES);
+	nrf_gpio_pin_set(USB_PRES);
+
+	nrf_gpio_cfg_output(SPK_IN);
+	nrf_gpio_pin_set(SPK_IN);
+
 }
 
 void wdt_reload() {
 	nrfx_wdt_channel_feed(m_channel_id);
-}
-
-static void clock_handler(nrf_drv_clock_evt_type_t event) {
-
-	switch (event) {
-	case NRF_DRV_CLOCK_EVT_LFCLK_STARTED:
-		LOG_INFO("LFCLK started");
-		break;
-	case NRF_DRV_CLOCK_EVT_HFCLK_STARTED:
-		LOG_INFO("HFCLK started");
-		break;
-	case NRF_DRV_CLOCK_EVT_CAL_DONE:
-		LOG_INFO("CAL done");
-		break;
-	case NRF_DRV_CLOCK_EVT_CAL_ABORTED:
-		LOG_INFO("CAL aborted");
-		break;
-	}
-
 }
 
 /**
@@ -430,9 +418,6 @@ int main(void)
 
 	// LCD displayer
 	vue.init();
-	// SPI flash init
-	nor_init();
-	nor_read_error();
 
 	LOG_FLUSH();
 
@@ -492,7 +477,7 @@ int main(void)
 
 			job_to_do = false;
 
-			LOG_INFO("\r\nTask %u", millis());
+			LOG_DEBUG("\r\nTask %u", millis());
 
 			wdt_reload();
 

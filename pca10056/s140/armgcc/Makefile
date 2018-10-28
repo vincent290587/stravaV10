@@ -55,7 +55,7 @@ OPT = -O3 -g3
 CFLAGS += $(OPT)
 CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
-#CFLAGS += -DUSE_SVIEW=0
+CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 #CFLAGS += -DNRF_LOG_BACKEND_UART_ENABLED=1 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
@@ -147,7 +147,7 @@ dfu_softdevice:
 	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p $(COM_PORT)
 
 dfu:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xae --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xae --application-version 1 --application _build_W/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
 

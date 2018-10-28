@@ -129,6 +129,10 @@ typedef struct {
     sdc_type_t  type;           ///< Card type information structure.
 } app_sdc_info_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief SDC event handler type.
  */
@@ -205,6 +209,12 @@ ret_code_t app_sdc_block_write(uint8_t const * p_buf, uint32_t block_address, ui
 app_sdc_info_t const * app_sdc_info_get(void);
 
 void app_sdc_spi_reconfigure(void);
+
+void app_sdc_tasks();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //APP_SDC_H_
 /** @} */

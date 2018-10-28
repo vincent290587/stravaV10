@@ -59,7 +59,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_block_dev_qspi.c \
   $(SDK_ROOT)/components/libraries/block_dev/ram/nrf_block_dev_ram.c \
   $(SDK_ROOT)/components/libraries/block_dev/sdc/nrf_block_dev_sdc.c \
-  $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_serial_flash_params.c \
   $(SDK_ROOT)/components/libraries/memobj/nrf_memobj.c \
   $(SDK_ROOT)/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c \
   $(SDK_ROOT)/components/libraries/queue/nrf_queue.c \
@@ -79,6 +78,7 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power_clock.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_spim.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_qspi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twim.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_ppi.c \

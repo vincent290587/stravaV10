@@ -93,8 +93,8 @@ void segger_init(void) {
 	  pInfo[nb_tasks].TaskID = USB_VCOM_TASK;
 	  pInfo[nb_tasks++].sName  = "USB_VCOM_TASK";
 
-	  pInfo[nb_tasks].TaskID = EMPTY1;
-	  pInfo[nb_tasks++].sName  = "EMPTY1";
+	  pInfo[nb_tasks].TaskID = SST_TASK;
+	  pInfo[nb_tasks++].sName  = "SST_TASK";
 
 	  pInfo[nb_tasks].TaskID = EMPTY2;
 	  pInfo[nb_tasks++].sName  = "EMPTY2";

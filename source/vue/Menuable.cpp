@@ -59,6 +59,17 @@ static void _page0_shutdown(int var) {
 	_retour_menu(0);
 }
 
+#include "sd_hal.h"
+static void _page0_format(int var) {
+
+	// TODO
+	format_memory();
+
+	vue.addNotif("Formatting... ", "", 4, eNotificationTypePartial);
+
+	_retour_menu(0);
+}
+
 void menu_init_page(sMenuPage *page) {
 	ASSERT(page);
 
@@ -100,6 +111,7 @@ void Menuable::initMenu(void) {
 	menu_add_item(&m_menus.menu_page[0], "Mode FEC", _page0_mode_fec);
 	menu_add_item(&m_menus.menu_page[0], "Mode CRS", _page0_mode_crs);
 	menu_add_item(&m_menus.menu_page[0], "Mode PRC", _page0_mode_prc);
+	menu_add_item(&m_menus.menu_page[0], "Format memory", _page0_format);
 
 	menu_add_item(&m_menus.menu_page[0], "Shutdown", _page0_shutdown);
 

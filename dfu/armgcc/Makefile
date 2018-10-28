@@ -251,9 +251,10 @@ flash: default
 	nrfjprog -f nrf52 --reset
 
 # Flash softdevice
-flash_mbr:
+flash_mbr: default
 	@echo Flashing: mbr_nrf52_2.3.0_mbr.hex
 	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/mbr/nrf52840/hex/mbr_nrf52_2.3.0_mbr.hex --sectorerase
+	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --sectorerase
 	nrfjprog -f nrf52 --reset
 
 erase:
