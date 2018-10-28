@@ -18,11 +18,6 @@
 #include "spi.h"
 #include "segger_wrapper.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
-
 #define SPIM_INSTANCE  0
 
 static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPIM_INSTANCE);  /**< SPI instance. */
@@ -44,7 +39,7 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
                        void *                  p_context)
 {
 
-	W_SYSVIEW_OnTaskStopExec(SPI_TASK);
+	W_SYSVIEW_RecordEnterISR();
 
     spi_xfer_done = true;
 
@@ -57,10 +52,11 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
     if (spi_config[0]) {
 
     	if (spi_config[0]->handler) {
-    		//NRF_LOG_INFO("SPI handler");
     		spi_config[0]->handler(p_event, p_context);
     	}
     }
+
+    W_SYSVIEW_RecordExitISR();
 }
 
 /**
@@ -112,60 +108,8 @@ void spi_uninit(void)
 
 	m_is_started = false;
 
-	nrf_delay_us(200);
+	nrf_delay_us(800);
 }
-
-/**
- *
- * @param p_transaction
- */
-void spi_reconfigure (sSpimConfig const * spi_config) {
-
-	ASSERT(spi_config);
-
-	// Adapt the configuration to the current transfer
-	if (spi_config != p_spi_config[0]) {
-
-		if (!spi_xfer_done) {
-			NRF_LOG_WARNING("SPI Waiting...");
-			uint32_t millis_ = millis();
-			do {
-				// perform system tasks
-				perform_system_tasks();
-
-				if (millis() - millis_ > 500) {
-					NRF_LOG_ERROR("SPI timeout");
-					nrfx_spim_abort(&spi);
-					spi_xfer_done = true;
-					break;
-				}
-
-			} while (!spi_xfer_done);
-
-		}
-
-		// not first transfer
-		if (m_is_started) spi_uninit();
-
-		if (!p_spi_config[0]) {
-			NRF_LOG_WARNING("SPI configuration set");
-		} else {
-			NRF_LOG_WARNING("SPI configuration changed");
-		}
-
-		// reconfigure
-		m_spi_config.bit_order      = spi_config->bit_order;
-		m_spi_config.frequency      = spi_config->frequency;
-
-		_spi_start();
-
-		p_spi_config[0] = spi_config;
-	}
-
-	ASSERT(m_is_started);
-
-}
-
 
 /**
  *
@@ -182,6 +126,8 @@ int spi_schedule (sSpimConfig const * spi_config,
 		uint8_t       * p_rx_buffer,
 		size_t          rx_length) {
 
+	W_SYSVIEW_OnTaskStartExec(SPI_TASK);
+
 	nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(
 			p_tx_buffer, tx_length,
 			p_rx_buffer, rx_length);
@@ -189,28 +135,6 @@ int spi_schedule (sSpimConfig const * spi_config,
 	NRF_LOG_DEBUG("SPI Xfer %u/%u byte", tx_length, rx_length);
 
 	uint32_t millis_ = millis();
-	if (!spi_xfer_done) {
-		NRF_LOG_WARNING("SPI Waiting...");
-		millis_ = millis();
-		do {
-			NRF_LOG_PROCESS();
-
-			if (millis() - millis_ > 200) {
-				LOG_ERROR("SPI timeout1 TX=%u RX=%u",
-						tx_length, rx_length);
-				nrfx_spim_abort(&spi);
-				spi_xfer_done = true;
-				return 1;
-			}
-
-		} while (!spi_xfer_done);
-	}
-
-	// potential reconfiguration
-	if (spi_config) {
-		// reconfiguration
-		spi_reconfigure(spi_config);
-	}
 
 	if (!m_is_started) {
 		// first ever transfer
@@ -223,24 +147,21 @@ int spi_schedule (sSpimConfig const * spi_config,
 	APP_ERROR_CHECK(err);
 
 	if (!err) {
-
-		W_SYSVIEW_OnTaskStartExec(SPI_TASK);
-
 		// Xfer bytes
 		spi_xfer_done = false;
 	}
 
 	wdt_reload();
 
-	 millis_ = millis();
 	if (p_spi_config[0]) {
 		if (p_spi_config[0]->blocking) {
+			millis_ = millis();
 			// wait for last transfer to finish
 			do {
 				// perform system tasks
 				perform_system_tasks();
 
-				if (millis() - millis_ > 400) {
+				if (millis() - millis_ > 120) {
 					LOG_ERROR("SPI timeout2 TX=%u RX=%u",
 							tx_length, rx_length);
 					nrfx_spim_abort(&spi);
@@ -251,10 +172,10 @@ int spi_schedule (sSpimConfig const * spi_config,
 			} while (!spi_xfer_done);
 
 			LOG_DEBUG("Xfer took %ums", millis() - millis_);
-
-			W_SYSVIEW_OnTaskStopExec(SPI_TASK);
 		}
 	}
+
+	W_SYSVIEW_OnTaskStopExec(SPI_TASK);
 
 	return 0;
 }

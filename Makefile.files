@@ -58,8 +58,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/block_dev/empty/nrf_block_dev_empty.c \
   $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_block_dev_qspi.c \
   $(SDK_ROOT)/components/libraries/block_dev/ram/nrf_block_dev_ram.c \
-  $(SDK_ROOT)/components/libraries/block_dev/sdc/nrf_block_dev_sdc.c \
-  $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_serial_flash_params.c \
   $(SDK_ROOT)/components/libraries/memobj/nrf_memobj.c \
   $(SDK_ROOT)/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c \
   $(SDK_ROOT)/components/libraries/queue/nrf_queue.c \
@@ -79,6 +77,7 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power_clock.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_spim.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_qspi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twim.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_ppi.c \
@@ -105,7 +104,6 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/VParser \
   $(PROJ_DIR)/libraries/utils \
   $(PROJ_DIR)/libraries/rtt \
-  $(PROJ_DIR)/libraries/sdcard \
   $(PROJ_DIR)/libraries/spiffs \
   $(PROJ_DIR)/libraries/SST \
   $(PROJ_DIR)/rf \
@@ -127,7 +125,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/block_dev \
   $(SDK_ROOT)/components/libraries/block_dev/ram \
   $(SDK_ROOT)/components/libraries/block_dev/qspi \
-  $(SDK_ROOT)/components/libraries/block_dev/sdc \
   $(SDK_ROOT)/components/libraries/log \
   $(SDK_ROOT)/components/libraries/queue \
   $(SDK_ROOT)/components/libraries/ringbuf \

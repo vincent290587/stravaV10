@@ -128,7 +128,7 @@
 #define DISPLAY_TASK3                  (TASK_BASE + 12u)
 #define DISPLAY_TASK4                  (TASK_BASE + 13u)
 #define USB_VCOM_TASK                  (TASK_BASE + 14u)
-#define EMPTY1                         (TASK_BASE + 15u)
+#define SST_TASK                       (TASK_BASE + 15u)
 #define EMPTY2                         (TASK_BASE + 16u)
 
 
