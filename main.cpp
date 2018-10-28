@@ -28,8 +28,6 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
-#include "nrf_drv_clock.h"
-#include "nrf_drv_power.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
@@ -62,6 +60,8 @@
 APP_TIMER_DEF(m_job_timer);
 
 nrfx_wdt_channel_id m_channel_id;
+
+static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
 extern "C" void ble_ant_init(void);
 
@@ -122,7 +122,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
-    nor_save_error(id, pc, info);
+    //nor_save_error(id, pc, info);
 
     switch (id)
     {
@@ -199,13 +199,18 @@ static void log_init(void)
 	SVIEW_INIT();
 }
 
-
-/**@brief Function for handling bsp events.
+/**@brief Interrupt function for handling bsp events.
  */
 static void bsp_evt_handler(bsp_event_t evt)
 {
+	m_bsp_evt = evt;
+}
 
-	switch (evt)
+/**@brief Function for handling bsp events.
+ */
+static void bsp_tasks(void)
+{
+	switch (m_bsp_evt)
 	{
 	case BSP_EVENT_KEY_0:
 		vue.tasks(eButtonsEventLeft);
@@ -220,8 +225,9 @@ static void bsp_evt_handler(bsp_event_t evt)
 		return; // no implementation needed
 	}
 
+	// clear event
+	m_bsp_evt = BSP_EVENT_NOTHING;
 }
-
 
 /**@brief Handler for shutdown preparation.
  *
@@ -311,29 +317,17 @@ static void pins_init(void)
 
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
+
+	nrf_gpio_cfg_output(USB_PRES);
+	nrf_gpio_pin_set(USB_PRES);
+
+	nrf_gpio_cfg_output(SPK_IN);
+	nrf_gpio_pin_set(SPK_IN);
+
 }
 
 void wdt_reload() {
 	nrfx_wdt_channel_feed(m_channel_id);
-}
-
-static void clock_handler(nrf_drv_clock_evt_type_t event) {
-
-	switch (event) {
-	case NRF_DRV_CLOCK_EVT_LFCLK_STARTED:
-		LOG_INFO("LFCLK started");
-		break;
-	case NRF_DRV_CLOCK_EVT_HFCLK_STARTED:
-		LOG_INFO("HFCLK started");
-		break;
-	case NRF_DRV_CLOCK_EVT_CAL_DONE:
-		LOG_INFO("CAL done");
-		break;
-	case NRF_DRV_CLOCK_EVT_CAL_ABORTED:
-		LOG_INFO("CAL aborted");
-		break;
-	}
-
 }
 
 /**
@@ -361,7 +355,8 @@ int main(void)
     nrfx_wdt_enable();
 
 	log_init();
-	segger_init();
+
+	pins_init();
 
 	uint32_t reset_reason = NRF_POWER->RESETREAS;
 	NRF_POWER->RESETREAS = 0xffffffff;
@@ -384,8 +379,6 @@ int main(void)
     err_code = nrf_drv_power_init(NULL);
     APP_ERROR_CHECK(err_code);
 #endif
-
-	pins_init();
 
 	// clocks init
 	err_code = nrf_drv_clock_init();
@@ -414,20 +407,17 @@ int main(void)
 	spi_init();
 	i2c_init();
 
-	// LCD displayer
-	vue.init();
 
 #ifdef USB_ENABLED
 	// diskio + fatfs init
 	usb_cdc_diskio_init();
 #else
-	// TODO disk init
+	// disk init
 	fatfs_init();
 #endif
 
-	// SPI flash init
-	nor_init();
-	nor_read_error();
+	// LCD displayer
+	vue.init();
 
 	LOG_FLUSH();
 
@@ -487,7 +477,7 @@ int main(void)
 
 			job_to_do = false;
 
-			LOG_INFO("\r\nTask %u", millis());
+			LOG_DEBUG("\r\nTask %u", millis());
 
 			wdt_reload();
 
@@ -512,6 +502,8 @@ int main(void)
 		}
 
 		// tasks
+		bsp_tasks();
+
 		perform_system_tasks();
 
 	}
