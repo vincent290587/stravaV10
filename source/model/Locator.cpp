@@ -15,7 +15,7 @@
 #include <Locator.h>
 
 
-static bool m_is_updated;
+static volatile bool m_is_updated;
 
 TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
@@ -347,6 +347,24 @@ void Locator::displayGPS2(void) {
 	vue.print(F(" used of "));
 	vue.println(satsInView.value());
 	vue.println("");
+
+	if (gps.location.isValid()) {
+		vue.println("Loc valid");
+	} else {
+		vue.println("Loc pb");
+	}
+
+	String line = "Loc age: ";
+	line += String((int)gps.location.age());
+	vue.println(line);
+
+	if (gps_mgmt.isFix()) {
+		vue.println("FIX pin high");
+	} else {
+		vue.println("No fix");
+	}
+
+	vue.println("  ------");
 
 	uint8_t nb_activ = 0;
 
