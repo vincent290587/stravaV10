@@ -38,7 +38,8 @@
 
 
 #if USE_SVIEW
-#define LOG_INFO(...)                  EMPTY_MACRO
+#include "usb_cdc.h"
+#define LOG_INFO(...)                  usb_printf(__VA_ARGS__)
 #define LOG_RAW_INFO(X)                EMPTY_MACRO
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 //#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
@@ -93,7 +94,7 @@
 //#define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
 #define W_SYSVIEW_OnIdle(...)          SEGGER_SYSVIEW_OnIdle()
 // TODO
-#if 0
+#if 1
 #define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_OnTaskStartExec(X)
 #define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_OnTaskTerminate(X);SEGGER_SYSVIEW_OnIdle()
 #define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)

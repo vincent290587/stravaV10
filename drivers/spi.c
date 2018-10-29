@@ -65,8 +65,8 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
 void spi_init(void)
 {
 
-	m_spi_config.ss_pin         = SPI_SS_PIN;
-	m_spi_config.miso_pin       = SPI_MISO_PIN;
+	m_spi_config.ss_pin         = 0xFF;
+	m_spi_config.miso_pin       = 0xFF;
 	m_spi_config.mosi_pin       = SPI_MOSI_PIN;
 	m_spi_config.sck_pin        = SPI_SCK_PIN;
 

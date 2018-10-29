@@ -373,12 +373,6 @@ int main(void)
 	NRF_POWER->RESETREAS = 0xffffffff;
 	NRF_LOG_WARNING("Reset_reason: 0x%08x.\n", reset_reason);
 
-    char buff[100];
-    memset(buff, 0, sizeof(buff));
-    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
-    		reset_reason);
-    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
-
 	if (reset_reason == 0)
 	{
 		// watchdog reset
@@ -386,38 +380,21 @@ int main(void)
 		NVIC_SystemReset();
 	}
 
-#ifndef USB_ENABLED
-    err_code = nrf_drv_power_init(NULL);
-    APP_ERROR_CHECK(err_code);
-#endif
+    char buff[100];
+    memset(buff, 0, sizeof(buff));
+    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
+    		reset_reason);
+    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
 
-	// clocks init
-	err_code = nrf_drv_clock_init();
-    APP_ERROR_CHECK(err_code);
-
-    nrf_drv_clock_handler_item_s clock_h = {
-    		.p_next = NULL,
-    		.event_handler = clock_handler,
-    };
-
-    LOG_INFO("Starting LF clock");
-    nrf_drv_clock_lfclk_request(&clock_h);
-    while(!nrf_drv_clock_lfclk_is_running())
-    {
-        /* Just waiting */
-    	nrf_delay_ms(1);
-    }
 
     err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
 
-    nrf_delay_ms(5);
 	LOG_INFO("Init start");
 
 	// drivers
 	spi_init();
 	i2c_init();
-
 
 #ifdef USB_ENABLED
 	// diskio + fatfs init
