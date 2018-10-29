@@ -12,7 +12,11 @@
 
 class Task {
 public:
-	Task() { }
+	Task() {
+		m_task_id = TASK_ID_INVALID;
+	}
+
+	virtual void run(void * p_context) = 0;
 
 	/**@brief Create new task.
 	 *
@@ -22,7 +26,9 @@ public:
 	 *
 	 * @return      ID of the task on success, otherwise TASK_ID_INVALID.
 	 */
-	task_id_t create(task_main_t task, char const * p_task_name, void * p_context);
+	void create(char const * p_task_name) {
+		m_task_id = task_create(this->run(), p_task_name, NULL);
+	}
 
 	/**@brief Yield CPU to other tasks.
 	 */
@@ -76,7 +82,7 @@ public:
 	}
 
 protected:
-	uint32_t m_task_id = TASK_ID_INVALID;
+	uint32_t m_task_id;
 };
 
 #endif /* SOURCE_MODEL_BOUCLE_H_ */

@@ -380,7 +380,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
 
-		perform_system_tasks_light();
+		task_yield();
 	}
 
 	error = f_close(&g_fileObject);

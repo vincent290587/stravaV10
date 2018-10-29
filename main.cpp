@@ -20,7 +20,6 @@
 #include "spi.h"
 #include "i2c.h"
 #include "fec.h"
-#include "bsp.h"
 #include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
@@ -28,6 +27,7 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
+#include "nrf_drv_clock.h"
 #include "task_manager.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
@@ -49,7 +49,7 @@
 
 #define DEAD_BEEF           0xDEADBEEF                                  /**< Value used as error code on stack dump. Can be used to identify stack location on stack unwind. */
 
-#define APP_DELAY           APP_TIMER_TICKS(APP_DELAY_MS)
+#define APP_DELAY           APP_TIMER_TICKS(APP_TIMEOUT_DELAY_MS)
 
 #define SCHED_MAX_EVENT_DATA_SIZE      APP_TIMER_SCHED_EVENT_DATA_SIZE              /**< Maximum size of scheduler events. */
 #ifdef SVCALL_AS_NORMAL_FUNCTION
@@ -67,13 +67,6 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 extern "C" void ble_ant_init(void);
 
 
-typedef struct {
-	uint32_t sensors_id;
-	uint32_t boucle_id;
-} sTasksIDs;
-
-static sTasksIDs m_tasks_id;
-
 /**
  * @brief Handler for timer events.
  */
@@ -83,9 +76,9 @@ void timer_event_handler(void* p_context)
 
 	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
 
-	// TODO
-	task_events_set(_tasks_ids->sensors_id, TASK_EVENT_SENSORS_READY);
-	task_events_set(_tasks_ids->boucle_id, TASK_EVENT_BOUCLE_READY);
+	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+		task_events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
+	}
 }
 
 
@@ -148,6 +141,9 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ASSERT:
         {
             assert_info_t * p_info = (assert_info_t *)info;
+            NRF_LOG_ERROR("ASSERTION FAILED at %s:%u",
+                          p_info->p_file_name,
+                          p_info->line_num);
             LOG_ERROR("ASSERTION FAILED at %s:%u",
                           p_info->p_file_name,
                           p_info->line_num);
@@ -306,7 +302,6 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(FXOS_RST);
 	nrf_gpio_pin_clear(FXOS_RST);
 
-	// SDC_CS_PIN is configured later
 	// LS027_CS_PIN is configured later
 
 	nrf_gpio_cfg_output(BCK_PIN);
@@ -314,12 +309,6 @@ static void pins_init(void)
 
 	nrf_gpio_cfg_output(SPK_IN);
 	nrf_gpio_pin_clear(SPK_IN);
-
-//	nrf_gpio_cfg_output(SCL_PIN_NUMBER);
-//	nrf_gpio_pin_set(SCL_PIN_NUMBER);
-//
-//	nrf_gpio_cfg_output(SDA_PIN_NUMBER);
-//	nrf_gpio_pin_set(SDA_PIN_NUMBER);
 
 	// FIX_PIN is configured later
 
@@ -332,8 +321,8 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(USB_PRES);
 	nrf_gpio_pin_set(USB_PRES);
 
-	nrf_gpio_cfg_output(SPK_IN);
-	nrf_gpio_pin_set(SPK_IN);
+	nrf_gpio_cfg_output(SST_CS);
+	nrf_gpio_pin_set(SST_CS);
 
 }
 
@@ -355,6 +344,11 @@ int main(void)
 //	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
 //	NRF_RTC0->TASKS_STOP = 0;
 //	NRF_RTC1->TASKS_STOP = 0;
+
+	m_tasks_id.boucle_id = TASK_ID_INVALID;
+	m_tasks_id.system_id = TASK_ID_INVALID;
+	m_tasks_id.peripherals_id = TASK_ID_INVALID;
+	m_tasks_id.ls027_id = TASK_ID_INVALID;
 
 	// Initialize.
     //Configure WDT.
@@ -457,14 +451,15 @@ int main(void)
 
 	NRF_LOG_INFO("App init done");
 
-	task_create	(notifications_task, "notifications_tasks", NULL);
 	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
-#ifdef _DEBUG_TWI
-	m_tasks_id.sensors_id = task_create	(sensors_task, "sensors_tasks", NULL);
-#endif
+	m_tasks_id.system_id = task_create	(system_task, "system_task", NULL);
+	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
+	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
+
+	W_SYSVIEW_OnTaskCreate(LCD_TASK);
 
 	// does not return
-	task_manager_start(idle_task, NULL);
+	task_manager_start(idle_task, &m_tasks_id);
 
 }
 

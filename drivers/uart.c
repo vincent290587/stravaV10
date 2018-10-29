@@ -29,7 +29,7 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-#define UART0_RB_SIZE         256
+#define UART0_RB_SIZE         2048
 RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
 
 volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
@@ -42,7 +42,7 @@ static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI
 
 nrf_uarte_baudrate_t m_baud;
 
-static uint8_t m_uart_rx_buffer[4];
+static uint8_t m_uart_rx_buffer[16];
 
 
 /**

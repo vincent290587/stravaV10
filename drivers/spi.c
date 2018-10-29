@@ -15,6 +15,7 @@
 #include "boards.h"
 #include "Model.h"
 #include "parameters.h"
+#include "Model.h"
 #include "spi.h"
 #include "segger_wrapper.h"
 
@@ -54,6 +55,10 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
     	if (spi_config[0]->handler) {
     		spi_config[0]->handler(p_event, p_context);
     	}
+    }
+
+    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+    	task_events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_WAIT);
     }
 
     W_SYSVIEW_RecordExitISR();
@@ -134,8 +139,6 @@ int spi_schedule (sSpimConfig const * spi_config,
 
 	NRF_LOG_DEBUG("SPI Xfer %u/%u byte", tx_length, rx_length);
 
-	uint32_t millis_ = millis();
-
 	if (!m_is_started) {
 		// first ever transfer
 		_spi_start();
@@ -149,28 +152,24 @@ int spi_schedule (sSpimConfig const * spi_config,
 	if (!err) {
 		// Xfer bytes
 		spi_xfer_done = false;
+	} else {
+		W_SYSVIEW_OnTaskStopExec(SPI_TASK);
+		return 1;
 	}
 
 	if (p_spi_config[0]) {
 		if (p_spi_config[0]->blocking) {
-			millis_ = millis();
-			// wait for last transfer to finish
-			do {
-				// perform system tasks
-				perform_system_tasks();
 
-				if (millis() - millis_ > 120) {
-					LOG_ERROR("SPI timeout2 TX=%u RX=%u",
-							tx_length, rx_length);
-					nrfx_spim_abort(&spi);
-					spi_xfer_done = true;
-					return 1;
+			if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+				task_events_wait(TASK_EVENT_PERIPH_WAIT);
+			} else {
+				while (!spi_xfer_done) {
+					perform_system_tasks_light();
 				}
-
-			} while (!spi_xfer_done);
-
-			LOG_DEBUG("Xfer took %ums", millis() - millis_);
+			}
 		}
+
+		LOG_DEBUG("Xfer took %ums", millis() - millis_);
 	}
 
 	W_SYSVIEW_OnTaskStopExec(SPI_TASK);

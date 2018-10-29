@@ -6,6 +6,7 @@
  */
 
 #include <Boucle.h>
+#include "Model.h"
 #include "segger_wrapper.h"
 #include <sd/sd_functions.h>
 
@@ -107,6 +108,11 @@ void Boucle::run(void) {
 void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 
 	if (new_mode == m_global_mode) return;
+
+	// Unblock task
+	if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
+		task_events_set(m_tasks_id.boucle_id, TASK_EVENT_BOUCLE_RELEASE);
+	}
 
 	// finish old operations
 	switch (m_global_mode) {

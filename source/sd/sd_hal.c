@@ -102,9 +102,17 @@ void format_memory() {
 	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
 	APP_ERROR_CHECK(err_code);
 
-//	fatfs_mkfs();
-
 	LOG_INFO("Memory formatted");
+}
+
+void fmkfs_memory(void) {
+
+	if (nrfx_qspi_mem_busy_check()) {
+		LOG_INFO("SST busy");
+		return;
+	}
+
+	fatfs_mkfs();
 }
 
 void test_memory(void)
@@ -235,7 +243,7 @@ int fatfs_init(void) {
 		if (ff_result == FR_NO_FILESYSTEM)
 		{
 			LOG_ERROR("Mount failed. Filesystem not found. Please format device.");
-			fatfs_mkfs();
+			//fatfs_mkfs();
 		}
 		else
 		{

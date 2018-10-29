@@ -53,9 +53,14 @@ public:
 	{
 		LS027_UpdateFull();
 	}
+
+	uint32_t getLastRefreshed() const {
+		return m_last_refreshed;
+	}
+
 private:
 	eVueGlobalScreenModes m_global_mode;
-
+	uint32_t m_last_refreshed;
 
 };
 
