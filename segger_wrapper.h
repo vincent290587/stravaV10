@@ -10,6 +10,8 @@
 
 #define EMPTY_MACRO                    do {} while (0)
 
+#define TASK_EVENT_BOUCLE_READY          (1 << 0)
+#define TASK_EVENT_SENSORS_READY         (1 << 1)
 
 #ifdef TDD
 #include "segger_wrapper_tdd.h"

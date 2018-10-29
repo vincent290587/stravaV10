@@ -8,6 +8,7 @@
 #include "Model.h"
 #include "nrf_pwr_mgmt.h"
 #include "sdk_config.h"
+#include "task_manager.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -96,10 +97,6 @@ void perform_system_tasks(void) {
 	app_sched_execute();
 #endif
 
-	if (NRF_LOG_PROCESS() == false)
-	{
-		nrf_pwr_mgmt_run();
-	}
 }
 
 /**
@@ -147,3 +144,94 @@ bool check_memory_exception(void) {
 
 	return false;
 }
+
+
+/**
+ *
+ */
+void idle_task(void * p_context)
+{
+    for(;;)
+    {
+    	while (NRF_LOG_PROCESS()) { }
+
+		perform_system_tasks();
+
+		// BSP tasks
+		bsp_tasks();
+
+    	//No more logs to process, go to sleep
+    	nrf_pwr_mgmt_run();
+
+    	//Trigger context switch after any interrupt
+        task_yield();
+    }
+}
+
+/**
+ *
+ */
+void boucle_task(void * p_context)
+{
+
+	for (;;)
+	{
+		LOG_DEBUG("\r\nTask %u", millis());
+
+//			if (millis() > 4950 && millis() < 5050) usb_cdc_start_msc();
+
+		wdt_reload();
+
+#ifdef ANT_STACK_SUPPORT_REQD
+		roller_manager_tasks();
+#endif
+
+		boucle.tasks();
+
+		if (!millis()) NRF_LOG_WARNING("No millis");
+
+		task_events_wait(TASK_EVENT_BOUCLE_READY);
+	}
+}
+
+/**
+ *
+ */
+void notifications_task(void * p_context)
+{
+    for(;;)
+    {
+		notifications_tasks();
+
+		backlighting_tasks();
+
+		task_events_wait(TASK_EVENT_SENSORS_READY);
+    }
+}
+
+
+/**
+ *
+ */
+#ifdef _DEBUG_TWI
+void sensors_task(void * p_context)
+{
+	for(;;)
+	{
+		stc.refresh(nullptr);
+		task_yield();
+		veml.refresh(nullptr);
+		task_yield();
+		fxos_tasks(nullptr);
+		task_yield();
+		baro.refresh(nullptr);
+		task_yield();
+
+		model_dispatch_sensors_update();
+
+		//Trigger context switch after any interrupt
+		task_events_wait(TASK_EVENT_SENSORS_READY);
+	}
+}
+#endif
+

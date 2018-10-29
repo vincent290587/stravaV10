@@ -87,7 +87,7 @@ static void ls027_spi_init() {
 	m_spi_ls027_cfg.frequency      = NRF_SPIM_FREQ_4M;
 	m_spi_ls027_cfg.handler        = ls027_cs_off;
 	m_spi_ls027_cfg.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
-	m_spi_ls027_cfg.blocking       = false;
+	m_spi_ls027_cfg.blocking       = true;
 }
 
 static int ls027_prepare_buffer(void)

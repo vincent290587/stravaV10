@@ -110,7 +110,7 @@ void Menuable::initMenu(void) {
 	menu_add_item(&m_menus.menu_page[0], "Mode FEC", _page0_mode_fec);
 	menu_add_item(&m_menus.menu_page[0], "Mode CRS", _page0_mode_crs);
 	menu_add_item(&m_menus.menu_page[0], "Mode PRC", _page0_mode_prc);
-	menu_add_item(&m_menus.menu_page[0], "Format memory", _page0_format);
+	menu_add_item(&m_menus.menu_page[0], "! Format", _page0_format);
 
 	menu_add_item(&m_menus.menu_page[0], "Shutdown", _page0_shutdown);
 

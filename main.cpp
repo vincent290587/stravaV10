@@ -28,6 +28,7 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
+#include "task_manager.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
@@ -66,15 +67,25 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 extern "C" void ble_ant_init(void);
 
 
-static volatile bool job_to_do = true;
+typedef struct {
+	uint32_t sensors_id;
+	uint32_t boucle_id;
+} sTasksIDs;
 
+static sTasksIDs m_tasks_id;
 
 /**
  * @brief Handler for timer events.
  */
 void timer_event_handler(void* p_context)
 {
-	job_to_do = true;
+	ASSERT(p_context);
+
+	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
+
+	// TODO
+	task_events_set(_tasks_ids->sensors_id, TASK_EVENT_SENSORS_READY);
+	task_events_set(_tasks_ids->boucle_id, TASK_EVENT_BOUCLE_READY);
 }
 
 
@@ -208,7 +219,7 @@ static void bsp_evt_handler(bsp_event_t evt)
 
 /**@brief Function for handling bsp events.
  */
-static void bsp_tasks(void)
+void bsp_tasks(void)
 {
 	switch (m_bsp_evt)
 	{
@@ -453,13 +464,12 @@ int main(void)
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
 	APP_ERROR_CHECK(err_code);
 
-	err_code = app_timer_start(m_job_timer, APP_DELAY, NULL);
+	err_code = app_timer_start(m_job_timer, APP_DELAY, &m_tasks_id);
 	APP_ERROR_CHECK(err_code);
 
 	sNeopixelOrders neo_order;
 	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);
-
 
 	gps_mgmt.init();
 
@@ -470,44 +480,14 @@ int main(void)
 
 	NRF_LOG_INFO("App init done");
 
-	for (;;)
-	{
-		if (job_to_do) {
-			// tasks to run non-continuously
-
-			job_to_do = false;
-
-			LOG_DEBUG("\r\nTask %u", millis());
-
-			wdt_reload();
-
-#ifdef ANT_STACK_SUPPORT_REQD
-			roller_manager_tasks();
-#endif
-
+	task_create	(notifications_task, "notifications_tasks", NULL);
+	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
 #ifdef _DEBUG_TWI
-			stc.refresh(nullptr);
-			veml.refresh(nullptr);
-			fxos_tasks(nullptr);
-			baro.refresh(nullptr);
-
-			model_dispatch_sensors_update();
+	m_tasks_id.sensors_id = task_create	(sensors_task, "sensors_tasks", NULL);
 #endif
 
-			notifications_tasks();
+	// does not return
+	task_manager_start(idle_task, NULL);
 
-			backlighting_tasks();
-
-			boucle.tasks();
-
-			if (!millis()) NRF_LOG_WARNING("No millis");
-		}
-
-		// tasks
-		bsp_tasks();
-
-		perform_system_tasks();
-
-	}
 }
 

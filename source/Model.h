@@ -85,6 +85,21 @@ bool check_memory_exception(void);
 
 void wdt_reload(void);
 
+void bsp_tasks(void);
+
+void backlighting_tasks(void);
+
+void idle_task(void * p_context);
+
+void boucle_task(void * p_context);
+
+void notifications_task(void * p_context);
+
+#ifdef _DEBUG_TWI
+void sensors_task(void * p_context);
+#endif
+
+
 #if defined(__cplusplus)
 }
 #endif // defined C++

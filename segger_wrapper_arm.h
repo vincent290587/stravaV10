@@ -8,7 +8,7 @@
 #ifndef LIBRARIES_UTILS_SEGGER_WRAPPER_H_
 #define LIBRARIES_UTILS_SEGGER_WRAPPER_H_
 
-
+#include "task_manager.h"
 #include "nrf_log.h"
 #include <stddef.h>
 

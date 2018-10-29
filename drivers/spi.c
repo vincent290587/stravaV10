@@ -151,8 +151,6 @@ int spi_schedule (sSpimConfig const * spi_config,
 		spi_xfer_done = false;
 	}
 
-	wdt_reload();
-
 	if (p_spi_config[0]) {
 		if (p_spi_config[0]->blocking) {
 			millis_ = millis();

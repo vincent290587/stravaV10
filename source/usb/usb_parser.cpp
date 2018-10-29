@@ -8,6 +8,7 @@
 #include "segger_wrapper.h"
 #include "usb_parser.h"
 #include "usb_cdc.h"
+#include "sd_hal.h"
 #include "Model.h"
 #include "nrf_pwr_mgmt.h"
 
@@ -40,6 +41,9 @@ void usb_cdc_decoder(char c) {
 		}
 		else if (vparser.getPC() == 16) {
 			usb_cdc_start_msc();
+		}
+		else if (vparser.getPC() == 15) {
+			format_memory();
 		}
 
 		break;
