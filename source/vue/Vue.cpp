@@ -6,6 +6,8 @@
  */
 
 #include <vue/Vue.h>
+#include "millis.h"
+#include "Model.h"
 #include "nordic_common.h"
 #include "assert_wrapper.h"
 #include "WString.h"
@@ -63,6 +65,8 @@ void Vue::setCurrentMode(eVueGlobalScreenModes mode_) {
 
 void Vue::refresh(void) {
 
+	m_last_refreshed = millis();
+
 	if (m_is_menu_selected) {
 		this->tasksMenu();
 	} else {
@@ -105,7 +109,11 @@ void Vue::refresh(void) {
 		}
 	}
 
+#ifdef TDD
 	this->writeWhole();
+#else
+    task_events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
+#endif
 }
 
 void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {

@@ -43,10 +43,6 @@
 #include "neopixel.h"
 #include "segger_wrapper.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
 #define BLE_DEVICE_NAME             "myStrava"
 
 #define APP_BLE_CONN_CFG_TAG        1                                   /**< A tag identifying the SoftDevice BLE configuration. */

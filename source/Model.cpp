@@ -50,6 +50,8 @@ sBacklightOrders     backlight;
 
 sNeopixelOrders      neopixel;
 
+sTasksIDs     m_tasks_id;
+
 // init counters
 int Point2D::objectCount2D = 0;
 int Point::objectCount = 0;
@@ -148,6 +150,7 @@ bool check_memory_exception(void) {
 
 /**
  *
+ * @param p_context
  */
 void idle_task(void * p_context)
 {
@@ -155,30 +158,45 @@ void idle_task(void * p_context)
     {
     	while (NRF_LOG_PROCESS()) { }
 
+    	W_SYSVIEW_OnIdle();
+
+    	//No more logs to process, go to sleep
+    	nrf_pwr_mgmt_run();
+
+    	task_yield();
+    }
+}
+
+/**
+ * System continuous tasks
+ *
+ * @param p_context
+ */
+void system_task(void * p_context)
+{
+    for(;;)
+    {
 		perform_system_tasks();
 
 		// BSP tasks
 		bsp_tasks();
 
-    	//No more logs to process, go to sleep
-    	nrf_pwr_mgmt_run();
-
-    	//Trigger context switch after any interrupt
-        task_yield();
+    	if (!NRF_LOG_PROCESS()) {
+        	task_yield();
+    	}
     }
 }
 
 /**
+ * Triggered externally when device has new valid data
  *
+ * @param p_context
  */
 void boucle_task(void * p_context)
 {
-
 	for (;;)
 	{
 		LOG_DEBUG("\r\nTask %u", millis());
-
-//			if (millis() > 4950 && millis() < 5050) usb_cdc_start_msc();
 
 		wdt_reload();
 
@@ -186,52 +204,66 @@ void boucle_task(void * p_context)
 		roller_manager_tasks();
 #endif
 
-		boucle.tasks();
+		boucle.run();
 
 		if (!millis()) NRF_LOG_WARNING("No millis");
-
-		task_events_wait(TASK_EVENT_BOUCLE_READY);
 	}
 }
 
 /**
+ * Task triggered every APP_TIMEOUT_DELAY_MS.
  *
+ * @param p_context
  */
-void notifications_task(void * p_context)
+void ls027_task(void * p_context)
 {
-    for(;;)
-    {
+	for(;;)
+	{
+		// check screen update & unlock task
+		vue.writeWhole();
+
+		task_events_wait(TASK_EVENT_LS027_TRIGGER);
+	}
+}
+
+/**
+ * Task triggered every APP_TIMEOUT_DELAY_MS.
+ *
+ * @param p_context
+ */
+void peripherals_task(void * p_context)
+{
+	for(;;)
+	{
+#ifdef _DEBUG_TWI
+		static uint32_t _counter = 0;
+
+		if (++_counter >= 1000 / (SENSORS_REFRESH_FREQ * APP_TIMEOUT_DELAY_MS)) {
+			_counter = 0;
+			stc.refresh(nullptr);
+			veml.refresh(nullptr);
+			fxos_tasks(nullptr);
+			baro.refresh(nullptr);
+		}
+
+		model_dispatch_sensors_update();
+#endif
+		// check screen update & unlock task
+		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
+			vue.refresh();
+		}
+
+		// update date
+		SDate dat;
+		locator.getDate(dat);
+		attitude.addNewDate(dat);
+
 		notifications_tasks();
 
 		backlighting_tasks();
 
-		task_events_wait(TASK_EVENT_SENSORS_READY);
-    }
-}
-
-
-/**
- *
- */
-#ifdef _DEBUG_TWI
-void sensors_task(void * p_context)
-{
-	for(;;)
-	{
-		stc.refresh(nullptr);
-		task_yield();
-		veml.refresh(nullptr);
-		task_yield();
-		fxos_tasks(nullptr);
-		task_yield();
-		baro.refresh(nullptr);
-		task_yield();
-
-		model_dispatch_sensors_update();
-
-		//Trigger context switch after any interrupt
-		task_events_wait(TASK_EVENT_SENSORS_READY);
+		task_events_wait(TASK_EVENT_PERIPH_TRIGGER);
 	}
 }
-#endif
+
 

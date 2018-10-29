@@ -8,9 +8,11 @@
 #ifndef SOURCE_PARAMETERS_H_
 #define SOURCE_PARAMETERS_H_
 
-#define APP_DELAY_MS                   2000
+#define APP_TIMEOUT_DELAY_MS           100
 
 #define S_TO_MS(X)                     ((X)*1000)
+
+#define LS027_TIMEOUT_DELAY_MS         1250
 
 #define GPS_USE_COLD_START             0
 

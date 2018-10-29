@@ -20,7 +20,6 @@
 #include "spi.h"
 #include "i2c.h"
 #include "fec.h"
-#include "bsp.h"
 #include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
@@ -28,6 +27,7 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
+#include "nrf_drv_clock.h"
 #include "task_manager.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
@@ -49,7 +49,7 @@
 
 #define DEAD_BEEF           0xDEADBEEF                                  /**< Value used as error code on stack dump. Can be used to identify stack location on stack unwind. */
 
-#define APP_DELAY           APP_TIMER_TICKS(APP_DELAY_MS)
+#define APP_DELAY           APP_TIMER_TICKS(APP_TIMEOUT_DELAY_MS)
 
 #define SCHED_MAX_EVENT_DATA_SIZE      APP_TIMER_SCHED_EVENT_DATA_SIZE              /**< Maximum size of scheduler events. */
 #ifdef SVCALL_AS_NORMAL_FUNCTION
@@ -67,13 +67,6 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 extern "C" void ble_ant_init(void);
 
 
-typedef struct {
-	uint32_t sensors_id;
-	uint32_t boucle_id;
-} sTasksIDs;
-
-static sTasksIDs m_tasks_id;
-
 /**
  * @brief Handler for timer events.
  */
@@ -83,9 +76,7 @@ void timer_event_handler(void* p_context)
 
 	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
 
-	// TODO
-	task_events_set(_tasks_ids->sensors_id, TASK_EVENT_SENSORS_READY);
-	task_events_set(_tasks_ids->boucle_id, TASK_EVENT_BOUCLE_READY);
+	task_events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
 }
 
 
@@ -397,7 +388,7 @@ int main(void)
 
     nrf_drv_clock_handler_item_s clock_h = {
     		.p_next = NULL,
-    		.event_handler = clock_handler,
+    		.event_handler = NULL,
     };
 
     LOG_INFO("Starting LF clock");
@@ -480,14 +471,13 @@ int main(void)
 
 	NRF_LOG_INFO("App init done");
 
-	task_create	(notifications_task, "notifications_tasks", NULL);
 	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
-#ifdef _DEBUG_TWI
-	m_tasks_id.sensors_id = task_create	(sensors_task, "sensors_tasks", NULL);
-#endif
+	m_tasks_id.system_id = task_create	(system_task, "system_task", NULL);
+	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
+	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
 
 	// does not return
-	task_manager_start(idle_task, NULL);
+	task_manager_start(idle_task, &m_tasks_id);
 
 }
 
