@@ -2908,7 +2908,6 @@
 // <2=> Read2IO 
 // <3=> Read4O 
 // <4=> Read4IO 
-// TODO set 2
 #ifndef NRFX_QSPI_CONFIG_READOC
 #define NRFX_QSPI_CONFIG_READOC 2
 #endif
@@ -2921,7 +2920,7 @@
 // <3=> PP4IO 
 
 #ifndef NRFX_QSPI_CONFIG_WRITEOC
-#define NRFX_QSPI_CONFIG_WRITEOC 0
+#define NRFX_QSPI_CONFIG_WRITEOC 1
 #endif
 
 // <o> NRFX_QSPI_CONFIG_ADDRMODE  - Addressing mode.
@@ -3359,7 +3358,7 @@
 // <3=> NRF_GPIO_PIN_PULLUP 
 
 #ifndef NRFX_SPIM_MISO_PULL_CFG
-#define NRFX_SPIM_MISO_PULL_CFG 1
+#define NRFX_SPIM_MISO_PULL_CFG 0
 #endif
 
 // <o> NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -4793,7 +4792,7 @@
 #endif
 
 // </e>
-
+//
 //// <e> QSPI_ENABLED - nrf_drv_qspi - QSPI peripheral driver - legacy layer
 ////==========================================================
 //#ifndef QSPI_ENABLED
