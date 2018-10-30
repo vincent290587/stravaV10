@@ -113,7 +113,7 @@ void Vue::refresh(void) {
 	this->writeWhole();
 #else
     if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-    	task_events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
+    	events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
     } else {
     	this->writeWhole();
     }

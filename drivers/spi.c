@@ -58,7 +58,7 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
     }
 
     if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-    	task_events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_WAIT);
+    	events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_WAIT);
     }
 
     W_SYSVIEW_RecordExitISR();
@@ -161,7 +161,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 		if (p_spi_config[0]->blocking) {
 
 			if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-				task_events_wait(TASK_EVENT_PERIPH_WAIT);
+				events_wait(TASK_EVENT_PERIPH_WAIT);
 			} else {
 				while (!spi_xfer_done) {
 					perform_system_tasks_light();

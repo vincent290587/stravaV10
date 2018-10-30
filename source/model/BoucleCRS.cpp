@@ -146,6 +146,6 @@ void BoucleCRS::run() {
 	m_last_refresh.setUpdateTime();
 
 	// wait for location to be updated
-	(void)task_events_wait(TASK_EVENT_LOCATION);
+	(void)events_wait(TASK_EVENT_LOCATION);
 
 }

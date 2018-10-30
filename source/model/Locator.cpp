@@ -39,7 +39,7 @@ sSatellite sats[MAX_SATELLITES];
 
 /**
  *
- * @param csatNumber
+ * @param c Character to encode
  * @return
  */
 uint32_t locator_encode_char(char c) {
@@ -72,6 +72,9 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 	locator.nrf_loc.data.date = lns_info->date;
 
 	locator.nrf_loc.setIsUpdated();
+
+	// notify task
+    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 }
 
 
@@ -103,10 +106,14 @@ eLocationSource Locator::getUpdateSource() {
 
 	if (sim_loc.isUpdated()) {
 		return eLocationSourceSimu;
+	} else if (sim_loc.getAge() < 2000) {
+		return eLocationSourceNone;
 	}
 
 	if (gps_loc.isUpdated()) {
 		return eLocationSourceGPS;
+	} else if (gps_loc.getAge() < 1500) {
+		return eLocationSourceNone;
 	}
 
 	if (nrf_loc.isUpdated() && !gps_mgmt.isFix()) {
@@ -291,9 +298,13 @@ void Locator::tasks() {
 			gps_loc.data.date = gps.date.year()   % 100;
 			gps_loc.data.date += gps.date.day()   * 10000;
 			gps_loc.data.date += gps.date.month() * 100;
+
 		}
 
 		if (gps.location.isValid()) {
+
+			// notify task
+		    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 
 			gps_loc.data.speed  = gps.speed.kmph();
 			gps_loc.data.alt    = gps.altitude.meters();

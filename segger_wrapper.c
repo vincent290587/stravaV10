@@ -60,6 +60,18 @@ void segger_init(void) {
 
 	  nb_tasks = 0;
 
+	  pInfo[nb_tasks].TaskID = BOUCLE_TASK;
+	  pInfo[nb_tasks++].sName  = "BOUCLE_TASK";
+
+	  pInfo[nb_tasks].TaskID = SYSTEM_TASK;
+	  pInfo[nb_tasks++].sName  = "SYSTEM_TASK";
+
+	  pInfo[nb_tasks].TaskID = PERIPH_TASK;
+	  pInfo[nb_tasks++].sName  = "PERIPH_TASK";
+
+	  pInfo[nb_tasks].TaskID = LCD_TASK;
+	  pInfo[nb_tasks++].sName  = "LCD_TASK";
+
 	  pInfo[nb_tasks].TaskID = I2C_TASK;
 	  pInfo[nb_tasks++].sName  = "I2C_TASK";
 
@@ -80,9 +92,6 @@ void segger_init(void) {
 
 	  pInfo[nb_tasks].TaskID = NRF52_TASK;
 	  pInfo[nb_tasks++].sName  = "NRF52_TASK";
-
-	  pInfo[nb_tasks].TaskID = LCD_TASK;
-	  pInfo[nb_tasks++].sName  = "LCD_TASK";
 
 	  pInfo[nb_tasks].TaskID = DISPLAY_TASK3;
 	  pInfo[nb_tasks++].sName  = "DISPLAY_TASK3";

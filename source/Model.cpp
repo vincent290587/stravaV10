@@ -8,7 +8,6 @@
 #include "Model.h"
 #include "nrf_pwr_mgmt.h"
 #include "sdk_config.h"
-#include "task_manager.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -158,12 +157,11 @@ void idle_task(void * p_context)
     {
     	while (NRF_LOG_PROCESS()) { }
 
-    	W_SYSVIEW_OnIdle();
-
     	//No more logs to process, go to sleep
     	nrf_pwr_mgmt_run();
 
     	task_yield();
+    	W_SYSVIEW_OnIdle();
     }
 }
 
@@ -222,9 +220,7 @@ void ls027_task(void * p_context)
 
 		wdt_reload();
 
-		W_SYSVIEW_OnTaskStopExec(LCD_TASK);
-		task_events_wait(TASK_EVENT_LS027_TRIGGER);
-		W_SYSVIEW_OnTaskStartExec(LCD_TASK);
+		events_wait(TASK_EVENT_LS027_TRIGGER);
 	}
 }
 
@@ -266,7 +262,7 @@ void peripherals_task(void * p_context)
 
 		backlighting_tasks();
 
-		task_events_wait(TASK_EVENT_PERIPH_TRIGGER);
+		events_wait(TASK_EVENT_PERIPH_TRIGGER);
 	}
 }
 

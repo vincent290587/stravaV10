@@ -77,7 +77,7 @@ void timer_event_handler(void* p_context)
 	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
 
 	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-		task_events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
+		events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
 	}
 }
 
@@ -456,6 +456,9 @@ int main(void)
 	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
 	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
 
+	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
+	W_SYSVIEW_OnTaskCreate(SYSTEM_TASK);
+	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
 	W_SYSVIEW_OnTaskCreate(LCD_TASK);
 
 	// does not return
