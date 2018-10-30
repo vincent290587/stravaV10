@@ -39,8 +39,9 @@ static bool m_is_started = false;
 static void spim_event_handler(nrfx_spim_evt_t const * p_event,
                        void *                  p_context)
 {
-
 	W_SYSVIEW_RecordEnterISR();
+
+	SEGGER_SYSVIEW_OnUserStop(SPI_TASK);
 
     spi_xfer_done = true;
 
@@ -131,7 +132,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 		uint8_t       * p_rx_buffer,
 		size_t          rx_length) {
 
-	W_SYSVIEW_OnTaskStartExec(SPI_TASK);
+	SEGGER_SYSVIEW_OnUserStart(SPI_TASK);
 
 	nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(
 			p_tx_buffer, tx_length,
@@ -153,7 +154,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 		// Xfer bytes
 		spi_xfer_done = false;
 	} else {
-		W_SYSVIEW_OnTaskStopExec(SPI_TASK);
+		SEGGER_SYSVIEW_OnUserStop(SPI_TASK);
 		return 1;
 	}
 
@@ -172,7 +173,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 		LOG_DEBUG("Xfer took %ums", millis() - millis_);
 	}
 
-	W_SYSVIEW_OnTaskStopExec(SPI_TASK);
+	SEGGER_SYSVIEW_OnUserStop(SPI_TASK);
 
 	return 0;
 }
