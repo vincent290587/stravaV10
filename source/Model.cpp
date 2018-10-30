@@ -56,6 +56,18 @@ int Point2D::objectCount2D = 0;
 int Point::objectCount = 0;
 
 /**
+ * this function will be called instead of the original __aeabi_idiv0()
+ */
+void $Super$$__aeabi_idiv0()
+{
+   // insert code to process a divide by zero
+   ASSERT(0);
+
+   // call the original __aeabi_idiv0 function
+   $Super$$__aeabi_idiv0();
+}
+
+/**
  *
  */
 void model_dispatch_sensors_update(void) {

@@ -79,6 +79,8 @@ extern sNeopixelOrders      neopixel;
 extern "C" {
 #endif // defined C++
 
+void __aeabi_idiv0(void);
+
 void model_go_to_msc_mode(void);
 
 void model_dispatch_sensors_update(void);

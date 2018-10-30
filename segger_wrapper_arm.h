@@ -97,8 +97,8 @@
 #define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_OnTaskStartExec(X)
 #define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_OnTaskTerminate(X);SEGGER_SYSVIEW_OnIdle()
 #define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)
-#define W_SEGGER_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X);
-#define W_SEGGER_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M);
+#define W_SEGGER_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
+#define W_SEGGER_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
 #else
 #define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_RecordVoid(X)
 #define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_RecordEndCall(X)
@@ -111,6 +111,8 @@
 #define W_SYSVIEW_OnTaskStartExec(X)   EMPTY_MACRO
 #define W_SYSVIEW_OnTaskStopExec(X)    EMPTY_MACRO
 #define W_SYSVIEW_OnTaskCreate(X)      EMPTY_MACRO
+#define W_SEGGER_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
+#define W_SEGGER_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
 #endif
 
 #define SYSVIEW_MAX_NOF_TASKS          30

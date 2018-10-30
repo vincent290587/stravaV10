@@ -126,6 +126,8 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
+    static char _buffer[256] = {0};
+
     //nor_save_error(id, pc, info);
 
     switch (id)
@@ -141,29 +143,31 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ASSERT:
         {
             assert_info_t * p_info = (assert_info_t *)info;
-            NRF_LOG_ERROR("ASSERTION FAILED at %s:%u",
-                          p_info->p_file_name,
-                          p_info->line_num);
-            LOG_ERROR("ASSERTION FAILED at %s:%u",
-                          p_info->p_file_name,
-                          p_info->line_num);
+            snprintf(_buffer, sizeof(_buffer),
+        			"ASSERTION FAILED at %s:%u",
+                    p_info->p_file_name,
+                    p_info->line_num);
+#if USE_SVIEW
+            SEGGER_SYSVIEW_Error(_buffer);
+#else
+            NRF_LOG_ERROR(_buffer);
+            LOG_ERROR(_buffer);
+#endif
             break;
         }
         case NRF_FAULT_ID_SDK_ERROR:
         {
+        	error_info_t * p_info = (error_info_t *)info;
+        	snprintf(_buffer, sizeof(_buffer),
+        			"ERROR %u [%s] at %s:%u",
+                    p_info->err_code,
+					  nrf_strerror_get(p_info->err_code),
+                    p_info->p_file_name,
+                    p_info->line_num);
 #if USE_SVIEW
-            error_info_t * p_info = (error_info_t *)info;
-            SEGGER_SYSVIEW_PrintfHost("ERROR %u at %s:%u",
-                          p_info->err_code,
-                          p_info->p_file_name,
-                          p_info->line_num);
+            SEGGER_SYSVIEW_Error(_buffer);
 #else
-            error_info_t * p_info = (error_info_t *)info;
-            LOG_ERROR("ERROR %u [%s] at %s:%u",
-                          p_info->err_code,
-						  nrf_strerror_get(p_info->err_code),
-                          p_info->p_file_name,
-                          p_info->line_num);
+            LOG_ERROR(_buffer);
 #endif
             break;
         }
