@@ -14,10 +14,7 @@
 #include "app_error.h"
 #include "nordic_common.h"
 #include "sdk_config.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
+#include "segger_wrapper.h"
 
 #include "helper.h"
 
@@ -49,6 +46,18 @@ void FPU_IRQHandler(void)
     // Execute FPU instruction to activate lazy stacking.
     (void)__get_FPSCR();
 
+    /*
+     * The last chance to indicate an error in FPU to the user
+     * as the FPSCR is now cleared
+     *
+     * This assert is related to previous FPU operations
+     * and not power management.
+     *
+     * Critical FPU exceptions signaled:
+     * - IOC - Invalid Operation cumulative exception bit.
+     * - DZC - Division by Zero cumulative exception bit.
+     * - OFC - Overflow cumulative exception bit.
+     */
     if (*fpscr & 0x7) {
     	// https://stackoverflow.com/questions/38724658/find-where-the-interrupt-happened-on-cortex-m4
     	__asm(  "TST lr, #4\n"
@@ -62,6 +71,18 @@ void FPU_IRQHandler(void)
 
     // Clear flags in stacked FPSCR register.
     *fpscr = *fpscr & ~(FPU_EXCEPTION_MASK);
+}
+
+void check_fpu(void) {
+	uint32_t PC = *r0;
+
+	if (PC) {
+		LOG_ERROR("FPU fault at PC=0x%08X", PC);
+	}
+	*r0 = 0x00;
+}
+#else
+void check_fpu(void) {
 }
 #endif
 
