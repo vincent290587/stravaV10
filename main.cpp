@@ -47,8 +47,6 @@
 #include "nrf_log_default_backends.h"
 
 
-#define DEAD_BEEF           0xDEADBEEF                                  /**< Value used as error code on stack dump. Can be used to identify stack location on stack unwind. */
-
 #define APP_DELAY           APP_TIMER_TICKS(APP_TIMEOUT_DELAY_MS)
 
 #define SCHED_MAX_EVENT_DATA_SIZE      APP_TIMER_SCHED_EVENT_DATA_SIZE              /**< Maximum size of scheduler events. */
@@ -66,15 +64,6 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
 extern "C" void ble_ant_init(void);
 
-#define FPU_EXCEPTION_MASK 0x0000009F
-
-void FPU_IRQHandler(void)
-{
-    uint32_t *fpscr = (uint32_t *)(FPU->FPCAR+0x40);
-    (void)__get_FPSCR();
-
-    *fpscr = *fpscr & ~(FPU_EXCEPTION_MASK);
-}
 
 /**
  * @brief Handler for timer events.

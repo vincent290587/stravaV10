@@ -31,6 +31,9 @@
 
 
 #ifdef FPU_INTERRUPT_MODE
+
+register int *r0 __asm("r0");
+
 /**
  * @brief FPU Interrupt handler. Clearing exception flag at the stack.
  *
@@ -45,6 +48,18 @@ void FPU_IRQHandler(void)
     uint32_t * fpscr = (uint32_t * )(FPU->FPCAR + FPU_FPSCR_REG_STACK_OFF);
     // Execute FPU instruction to activate lazy stacking.
     (void)__get_FPSCR();
+
+    if (*fpscr & 0x7) {
+    	// https://stackoverflow.com/questions/38724658/find-where-the-interrupt-happened-on-cortex-m4
+    	__asm(  "TST lr, #4\n"
+    			"ITE EQ\n"
+    			"MRSEQ r0, MSP\n"
+    			"MRSNE r0, PSP\n" // stack pointer now in r0
+    			"ldr r0, [r0, #0x18]\n" // stored pc now in r0
+    			//"add r0, r0, #6\n" // address to stored pc now in r0
+    	);
+    }
+
     // Clear flags in stacked FPSCR register.
     *fpscr = *fpscr & ~(FPU_EXCEPTION_MASK);
 }
