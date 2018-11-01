@@ -66,6 +66,15 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
 extern "C" void ble_ant_init(void);
 
+#define FPU_EXCEPTION_MASK 0x0000009F
+
+void FPU_IRQHandler(void)
+{
+    uint32_t *fpscr = (uint32_t *)(FPU->FPCAR+0x40);
+    (void)__get_FPSCR();
+
+    *fpscr = *fpscr & ~(FPU_EXCEPTION_MASK);
+}
 
 /**
  * @brief Handler for timer events.
@@ -364,6 +373,13 @@ int main(void)
     nrfx_wdt_enable();
 
 	log_init();
+
+#ifdef FPU_INTERRUPT_MODE
+    // Enable FPU interrupt
+    NVIC_SetPriority(FPU_IRQn, APP_IRQ_PRIORITY_LOWEST);
+    NVIC_ClearPendingIRQ(FPU_IRQn);
+    NVIC_EnableIRQ(FPU_IRQn);
+#endif
 
 	pins_init();
 

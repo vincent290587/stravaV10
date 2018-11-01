@@ -35,8 +35,8 @@ inline void yield(void) {
  */
 inline uint32_t events_wait(uint32_t evt_mask) {
 	if (task_id_get() < 0) return 0;
-	W_SEGGER_SYSVIEW_OnTaskStopReady(id_get(), evt_mask);
-	W_SEGGER_SYSVIEW_OnTaskStop(id_get());
+	W_SYSVIEW_OnTaskStopReady(id_get(), evt_mask);
+	W_SYSVIEW_OnTaskStopExec(id_get());
 	uint32_t mask = task_events_wait(evt_mask);
 	W_SYSVIEW_OnTaskStartExec(id_get());
 	return mask;
@@ -50,7 +50,7 @@ inline uint32_t events_wait(uint32_t evt_mask) {
  */
 inline void events_set(task_id_t task_id, uint32_t evt_mask) {
 	if (task_id < 0) return;
-	W_SEGGER_SYSVIEW_OnTaskStartReady(task_id);
+	W_SYSVIEW_OnTaskStartReady(task_id);
 	task_events_set(task_id, evt_mask);
 }
 

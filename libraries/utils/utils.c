@@ -7,8 +7,10 @@
 
 
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
+#include <stdint.h>
+#include "app_util_platform.h"
+#include "arm_math.h"
 #include "utils.h"
 
 #ifndef _USE_MATH_DEFINES
@@ -127,23 +129,24 @@ float distance_between(float lat1, float long1, float lat2, float long2) {
 
   float lat1rad = 3.141592 * lat1 / 180.;
 
-  float cos2lat1 = pow(cos(lat1rad), 2.);
+  float cos2lat1 = pow(arm_cos_f32(lat1rad), 2.);
 
   if (fabs(latRm - lat1rad) > 0.008) {
 	  latRm = lat1rad;
-	  Rm = sqrt(pow(R1,2.)*(1-cos2lat1) + pow(R2,2.)*cos2lat1);
+	  arm_sqrt_f32(pow(R1,2.)*(1-cos2lat1) + pow(R2,2.)*cos2lat1, &Rm);
   }
 
   // petits angles: tan = Id
   float deltalat = 3.141592 * (lat2 -lat1) / 180.;
   float deltalon = 3.141592 * (long2-long1) / 180.;
 
-  float dhori  = deltalon * R2 * cos(lat1rad);
+  float dhori  = deltalon * R2 * arm_cos_f32(lat1rad);
   float dverti = deltalat * Rm;
 
   // projection plane et pythagore
-  return sqrt(dhori*dhori + dverti*dverti);
-
+  float res;
+  arm_sqrt_f32(dhori*dhori + dverti*dverti, &res);
+  return res;
 }
 
 void calculePos (const char *nom, float *lat, float *lon) {

@@ -26,16 +26,35 @@
 
 #define TICKS_TO_US(ticks)       (ticks * ( (APP_TIMER_PRESCALER + 1 ) * 1000 ) / APP_TIMER_CLOCK_FREQ)
 
+#define FPU_EXCEPTION_MASK               0x0000009F                      //!< FPU exception mask used to clear exceptions in FPSCR register.
+#define FPU_FPSCR_REG_STACK_OFF          0x40                            //!< Offset of FPSCR register stacked during interrupt handling in FPU part stack.
 
 
+#ifdef FPU_INTERRUPT_MODE
+/**
+ * @brief FPU Interrupt handler. Clearing exception flag at the stack.
+ *
+ * Function clears exception flag in FPSCR register and at the stack. During interrupt handler
+ * execution FPU registers might be copied to the stack (see lazy stacking option) and
+ * it is necessary to clear data at the stack which will be recovered in the return from
+ * interrupt handling.
+ */
+void FPU_IRQHandler(void)
+{
+    // Prepare pointer to stack address with pushed FPSCR register.
+    uint32_t * fpscr = (uint32_t * )(FPU->FPCAR + FPU_FPSCR_REG_STACK_OFF);
+    // Execute FPU instruction to activate lazy stacking.
+    (void)__get_FPSCR();
+    // Clear flags in stacked FPSCR register.
+    *fpscr = *fpscr & ~(FPU_EXCEPTION_MASK);
+}
+#endif
 
 void delay(uint32_t p_time) {
 
 	nrf_delay_ms(p_time);
 
 }
-
-
 
 void pinMode(uint8_t p_pin, uint8_t p_mode) {
 

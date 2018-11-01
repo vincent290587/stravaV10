@@ -221,6 +221,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/ble/nrf_ble_qwr \
   $(SDK_ROOT)/components/ble/peer_manager \
   $(SDK_ROOT)/external/utf_converter \
+  $(SDK_ROOT)/external/CMSIS_5/CMSIS/DSP/Include \
 
 
 
