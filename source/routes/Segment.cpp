@@ -250,7 +250,10 @@ int Segment::testActivation(ListePoints& liste) {
 	Vecteur PC, PS;
 
 	if (!m_p_data) {
-		this->init();
+		if (!this->init()) {
+			LOG_ERROR("!! Segment no mem !!");
+			return 0;
+		}
 		LOG_ERROR("Segment allocated last minute");
 	}
 
@@ -279,9 +282,9 @@ int Segment::testActivation(ListePoints& liste) {
 
 	p_scal = PC._x * PS._x + PC._y * PS._y;
 
-	if (sqrt(PC._x * PC._x + PC._y * PC._y) * sqrt(PS._x * PS._x + PS._y * PS._y) > 0.001) {
-		p_scal /= sqrt(PC._x * PC._x + PC._y * PC._y);
-		p_scal /= sqrt(PS._x * PS._x + PS._y * PS._y);
+	if (sqrtf(PC._x * PC._x + PC._y * PC._y) * sqrtf(PS._x * PS._x + PS._y * PS._y) > 0.001) {
+		p_scal /= sqrtf(PC._x * PC._x + PC._y * PC._y);
+		p_scal /= sqrtf(PS._x * PS._x + PS._y * PS._y);
 	} else {
 		p_scal = -10.;
 	}
@@ -409,12 +412,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 				}
 
 			} else {
-				//        loggerMsg("Desactivation pendant segment de ");
-				//        loggerMsg(_nomFichier.c_str());
-
 				_actif = SEG_OFF;
-
-				//        display.notifyANCS(1, "SEG", "Seg desactive");
 			}
 
 		} else {
@@ -422,12 +420,8 @@ void Segment::majPerformance(ListePoints& mes_points) {
 			Point lp = *m_p_data->_lpts.getLastPoint();
 
 			if (!lp.isValid()) {
-				//        loggerMsg("Dernier point invalide !!!!!");
-				//        Serial.print(F("Dernier point invalide !!!!!"));
 				desallouerPoints();
 				_actif = SEG_OFF;
-
-				//display.notifyANCS(1, "SEG", "Dernier point invalide");
 				return;
 			}
 
