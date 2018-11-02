@@ -1,4 +1,5 @@
 
+#include "helper.h"
 #include "assert_wrapper.h"
 #include "math.h"
 #include "Segment.h"
@@ -249,7 +250,10 @@ int Segment::testActivation(ListePoints& liste) {
 	Point P1, P2, PPc, PPp;
 	Vecteur PC, PS;
 
-	ASSERT(m_p_data);
+	if (!m_p_data) {
+		this->init();
+		LOG_ERROR("Segment allocated last minute");
+	}
 
 	if (m_p_data->_lpts.size() <= 3 || liste.size() <= 2) {
 		return 0;
@@ -416,7 +420,6 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 		} else {
 			// on doit desactiver
-
 			Point lp = *m_p_data->_lpts.getLastPoint();
 
 			if (!lp.isValid()) {

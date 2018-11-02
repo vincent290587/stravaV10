@@ -69,7 +69,7 @@ CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DSWI_DISABLE0
 CFLAGS += -DFLOAT_ABI_HARD
 CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=0 -DFPU_INTERRUPT_MODE
-CFLAGS += -mcpu=cortex-m4
+CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
