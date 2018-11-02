@@ -281,13 +281,8 @@ void ListePoints::updateRelativePosition(Point& point) {
 		}
 	}
 
-	if (distP1_ < distP2_) {
-		m_P1 = P1;
-		m_P2 = P2;
-	} else {
-		m_P1 = P2;
-		m_P2 = P1;
-	}
+	m_P1 = P1;
+	m_P2 = P2;
 
 	p1p2_dist = P1.dist(&P2);
 
@@ -313,15 +308,6 @@ void ListePoints::updateRelativePosition(Point& point) {
 
 		// project on P1P2
 		m_pos_r._x = ScalarProduct(P1P, P1P2) / P1P2.getNorm();
-
-		if (m_pos_r._x < 0. || m_pos_r._x > p1p2_dist) {
-			LOG_ERROR("Weeeeiiiiird");
-			LOG_ERROR("m_pos_r._x=%f m_pos_r._y=%f", m_pos_r._x, m_pos_r._y);
-			LOG_ERROR("P1P2 %f %f", P1P2._x, P1P2._y);
-			LOG_ERROR("P1P %f %f", P1P._x, P1P._y);
-			LOG_ERROR("P1 %f P2 %f P1P2 %f", distP1_, distP2_, p1p2_dist);
-			exit(1);
-		}
 
 		Vecteur orthoP1P2;
 		orthoP1P2._x = P1P2._y;
@@ -354,6 +340,7 @@ Vecteur ListePoints::computePosRelative(Point point) {
 		return res;
 	}
 
+
 	// on cherche les deux plus proches points
 	for (auto& tmpPT : m_lpoints) {
 
@@ -367,27 +354,37 @@ Vecteur ListePoints::computePosRelative(Point point) {
 			P2 = tmpPT;
 			distP2_ = P2.dist(&point);
 			init++;
+
+			if (distP1_ > distP2_) {
+				// invert them
+				P2 = P1;
+				distP2_ = distP1_;
+
+				P1 = tmpPT;
+				distP1_ = P1.dist(&point);
+			}
 		} else {
 
 			if (tmp_dist < distP1_) {
-				if (distP1_ < distP2_) {
-					P2 = P1;
-					distP2_ = P2.dist(&point);
-				}
+				P2 = P1;
+				distP2_ = P2.dist(&point);
+
 				P1 = tmpPT;
 				distP1_ = P1.dist(&point);
-
 			} else if (tmp_dist < distP2_) {
 				P2 = tmpPT;
 				distP2_ = P2.dist(&point);
 			}
 		}
-
 	}
+
+	m_P1 = P1;
+	m_P2 = P2;
 
 	p1p2_dist = P1.dist(&P2);
 
-	if (distP2_*distP2_ >= p1p2_dist*p1p2_dist + distP1_*distP1_) {
+	if (distP1_ > 50. ||
+			(distP2_*distP2_ >= p1p2_dist*p1p2_dist + distP1_*distP1_)) {
 		/* out of triangle, P1 is always closest
 		 *                              P
 		 *
@@ -406,23 +403,15 @@ Vecteur ListePoints::computePosRelative(Point point) {
 		P1P = Vecteur(P1, point);
 		P1P2 = Vecteur(P1, P2);
 
-		Vecteur projete = Project(P1P2, P1P);
+		// project on P1P2
+		res._x = ScalarProduct(P1P, P1P2) / P1P2.getNorm();
 
-		Vecteur orthoP1P2 ;
+		Vecteur orthoP1P2;
 		orthoP1P2._x = P1P2._y;
 		orthoP1P2._y = -P1P2._x;
 
-		// project on P1P2
-		res._x = projete._x / P1P2.getNorm();
-
 		// project on P1P2 orthogonal vector
-		projete = Project(orthoP1P2, P1P);
-		res._y = projete._y / orthoP1P2.getNorm();
-
-		//		LOG_ERROR("m_pos_r._x=%f m_pos_r._y=%f", m_pos_r._x, m_pos_r._y);
-		//		LOG_ERROR("P1P2 %f %f", P1P2._x, P1P2._y);
-		//		LOG_ERROR("P1P %f %f", P1P._x, P1P._y);
-		//		LOG_ERROR("P1 %f P2 %f P1P2 %f", distP1_, distP2_, p1p2_dist);
+		res._y = ScalarProduct(P1P, orthoP1P2) / orthoP1P2.getNorm();
 
 		res._z = P1._alt + (P2._alt - P1._alt) * m_pos_r._x / P1P2.getNorm();
 		res._t = P1._rtime + (P2._rtime - P1._rtime) * m_pos_r._x / P1P2.getNorm();
@@ -547,27 +536,34 @@ Vecteur ListePoints2D::computePosRelative(Point point) {
 			P2 = tmpPT;
 			distP2_ = P2.dist(&point);
 			init++;
+
+			if (distP1_ > distP2_) {
+				// invert them
+				P2 = P1;
+				distP2_ = distP1_;
+
+				P1 = tmpPT;
+				distP1_ = P1.dist(&point);
+			}
 		} else {
 
 			if (tmp_dist < distP1_) {
-				if (distP1_ < distP2_) {
-					P2 = P1;
-					distP2_ = P2.dist(&point);
-				}
+				P2 = P1;
+				distP2_ = P2.dist(&point);
+
 				P1 = tmpPT;
 				distP1_ = P1.dist(&point);
-
 			} else if (tmp_dist < distP2_) {
 				P2 = tmpPT;
 				distP2_ = P2.dist(&point);
 			}
 		}
-
 	}
 
 	p1p2_dist = P1.dist(&P2);
 
-	if (distP2_*distP2_ >= p1p2_dist*p1p2_dist + distP1_*distP1_) {
+	if (distP1_ > 50. ||
+			(distP2_*distP2_ >= p1p2_dist*p1p2_dist + distP1_*distP1_)) {
 		/* out of triangle, P1 is always closest
 		 *                              P
 		 *
@@ -584,18 +580,15 @@ Vecteur ListePoints2D::computePosRelative(Point point) {
 		P1P = Vecteur(P1, point);
 		P1P2 = Vecteur(P1, P2);
 
-		Vecteur projete = Project(P1P2, P1P);
+		// project on P1P2
+		res._x = ScalarProduct(P1P, P1P2) / P1P2.getNorm();
 
-		Vecteur orthoP1P2 ;
+		Vecteur orthoP1P2;
 		orthoP1P2._x = P1P2._y;
 		orthoP1P2._y = -P1P2._x;
 
-		// project on P1P2
-		res._x = projete._x / P1P2.getNorm();
-
 		// project on P1P2 orthogonal vector
-		projete = Project(orthoP1P2, P1P);
-		res._y = projete._y / orthoP1P2.getNorm();
+		res._y = ScalarProduct(P1P, orthoP1P2) / orthoP1P2.getNorm();
 
 	}
 
@@ -675,16 +668,23 @@ void ListePoints2D::updateRelativePosition(Point& point) {
 			P2 = tmpPT;
 			distP2_ = P2.dist(&point);
 			init++;
+
+			if (distP1_ > distP2_) {
+				// invert them
+				P2 = P1;
+				distP2_ = distP1_;
+
+				P1 = tmpPT;
+				distP1_ = P1.dist(&point);
+			}
 		} else {
 
 			if (tmp_dist < distP1_) {
-				if (distP1_ < distP2_) {
-					P2 = P1;
-					distP2_ = P2.dist(&point);
-				}
+				P2 = P1;
+				distP2_ = P2.dist(&point);
+
 				P1 = tmpPT;
 				distP1_ = P1.dist(&point);
-
 			} else if (tmp_dist < distP2_) {
 				P2 = tmpPT;
 				distP2_ = P2.dist(&point);
@@ -697,42 +697,40 @@ void ListePoints2D::updateRelativePosition(Point& point) {
 
 	p1p2_dist = P1.dist(&P2);
 
-	if (distP2_*distP2_ >= p1p2_dist*p1p2_dist + distP1_*distP1_) {
-			/* out of triangle, P1 is always closest
-			 *                              P
-			 *
-			 *      P2---------------P1
-			 *
-			 */
-			m_pos_r._x = 0.;
-			m_pos_r._y = 0.;
-			m_pos_r._z = P1._alt;
-			m_pos_r._t = P1._rtime;
-		} else {
-			// inside the triangle
-			Vecteur P1P, P1P2;
+	if (distP1_ > 50. ||
+			(distP2_*distP2_ >= p1p2_dist*p1p2_dist + distP1_*distP1_)) {
+		/* out of triangle, P1 is always closest
+		 *                              P
+		 *
+		 *      P2---------------P1
+		 *
+		 */
+		m_pos_r._x = 0.;
+		m_pos_r._y = 0.;
+		m_pos_r._z = P1._alt;
+		m_pos_r._t = P1._rtime;
+	} else {
+		// inside the triangle
+		Vecteur P1P, P1P2;
 
-			// construction des vecteurs
-			P1P = Vecteur(P1, point);
-			P1P2 = Vecteur(P1, P2);
+		// construction des vecteurs
+		P1P = Vecteur(P1, point);
+		P1P2 = Vecteur(P1, P2);
 
-			Vecteur projete = Project(P1P2, P1P);
+		// project on P1P2
+		m_pos_r._x = ScalarProduct(P1P, P1P2) / P1P2.getNorm();
 
-			Vecteur orthoP1P2 ;
-			orthoP1P2._x = P1P2._y;
-			orthoP1P2._y = -P1P2._x;
+		Vecteur orthoP1P2;
+		orthoP1P2._x = P1P2._y;
+		orthoP1P2._y = -P1P2._x;
 
-			// project on P1P2
-			m_pos_r._x = projete._x / P1P2.getNorm();
+		// project on P1P2 orthogonal vector
+		m_pos_r._y = ScalarProduct(P1P, orthoP1P2) / orthoP1P2.getNorm();
 
-			// project on P1P2 orthogonal vector
-			projete = Project(orthoP1P2, P1P);
-			m_pos_r._y = projete._y / orthoP1P2.getNorm();
+		m_pos_r._z = P1._alt + (P2._alt - P1._alt) * m_pos_r._x / P1P2.getNorm();
+		m_pos_r._t = P1._rtime + (P2._rtime - P1._rtime) * m_pos_r._x / P1P2.getNorm();
 
-			m_pos_r._z = P1._alt + (P2._alt - P1._alt) * m_pos_r._x / P1P2.getNorm();
-			m_pos_r._t = P1._rtime + (P2._rtime - P1._rtime) * m_pos_r._x / P1P2.getNorm();
-
-		}
+	}
 
 }
 
