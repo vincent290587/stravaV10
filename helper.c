@@ -80,6 +80,14 @@ void check_fpu(void) {
 		LOG_ERROR("FPU fault at PC=0x%08X", PC);
 	}
 	*r0 = 0x00;
+
+    /* Clear FPSCR register and clear pending FPU interrupts. This code is base on
+     * nRF5x_release_notes.txt in documentation folder. It is necessary part of code when
+     * application using power saving mode and after handling FPU errors in polling mode.
+     */
+    __set_FPSCR(__get_FPSCR() & ~(FPU_EXCEPTION_MASK));
+    (void) __get_FPSCR();
+    NVIC_ClearPendingIRQ(FPU_IRQn);
 }
 #else
 void check_fpu(void) {
