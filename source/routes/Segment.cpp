@@ -1,5 +1,4 @@
 
-#include "helper.h"
 #include "assert_wrapper.h"
 #include "math.h"
 #include "Segment.h"
