@@ -95,7 +95,7 @@
 // TODO
 #if 1
 #define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_OnTaskStartExec(X)
-#define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_OnTaskTerminate(X);SEGGER_SYSVIEW_OnIdle()
+#define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_OnTaskStopExec()
 #define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)
 #define W_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
 #define W_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
@@ -139,7 +139,8 @@
 #define DISPLAY_TASK4                  (TASK_BASE + 13u)
 #define USB_VCOM_TASK                  (TASK_BASE + 14u)
 #define SST_TASK                       (TASK_BASE + 15u)
-#define EMPTY2                         (TASK_BASE + 16u)
+#define EMPTY1                         (TASK_BASE + 16u)
+#define EMPTY2                         (TASK_BASE + 17u)
 
 
 #include "nrf_log.h"

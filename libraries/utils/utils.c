@@ -254,7 +254,7 @@ float percentageBatt(float tensionValue, float current) {
 		if (fp_ > 100.) fp_ = 100.;
 
     } else if (tensionValue > 3.2) {
-        fp_ = pow(10, -11.4) * pow(tensionValue, 22.315);
+        fp_ = powf(10, -11.4) * powf(tensionValue, 22.315);
     } else {
         fp_ = -1;
     }

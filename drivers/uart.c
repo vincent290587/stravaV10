@@ -204,6 +204,8 @@ void uart_timer_init(void) {
 	 /* If ring buffer is not empty, parse data. */
 	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
 	 {
+		 CRITICAL_REGION_ENTER();
+
 		 char c = RING_BUFF_GET_ELEM(uart0_rb1);
 
 		 gps_encode_char(c);
@@ -211,6 +213,8 @@ void uart_timer_init(void) {
 		 //LOG_RAW_INFO(c);
 
 		 RING_BUFFER_POP(uart0_rb1);
+
+		 CRITICAL_REGION_EXIT();
 	 }
 
  }

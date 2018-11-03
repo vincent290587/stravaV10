@@ -6,6 +6,7 @@
  */
 
 #include "utils.h"
+#include "helper.h"
 #include <math.h>
 #include "Vecteur.h"
 #include "ListePoints.h"
@@ -237,7 +238,7 @@ void ListePoints::updateDelta() {
 void ListePoints::updateRelativePosition(Point& point) {
 
 	Point P1, P2;
-	float p1p2_dist, tmp_dist, distP1_, distP2_;
+	float p1p2_dist, tmp_dist, distP1_=0., distP2_=0.;
 	int init = 0;
 
 	if (m_lpoints.size() < 5) {
@@ -332,7 +333,7 @@ void ListePoints::updateRelativePosition(Point& point) {
 Vecteur ListePoints::computePosRelative(Point point) {
 
 	Point P1, P2;
-	float p1p2_dist, tmp_dist, distP1_, distP2_;
+	float p1p2_dist, tmp_dist, distP1_=0., distP2_=0.;
 	int init = 0;
 	Vecteur res;
 
@@ -515,7 +516,7 @@ Point2D* ListePoints2D::getPointAt(int i) {
 Vecteur ListePoints2D::computePosRelative(Point point) {
 
 	Point P1, P2;
-	float p1p2_dist, tmp_dist, distP1_, distP2_;
+	float p1p2_dist, tmp_dist, distP1_=0., distP2_=0.;
 	int init = 0;
 	Vecteur res, PP1, P1P2;
 
@@ -648,7 +649,7 @@ void ListePoints2D::updateDelta() {
 void ListePoints2D::updateRelativePosition(Point& point) {
 
 	Point P1, P2;
-	float p1p2_dist, tmp_dist, distP1_, distP2_;
+	float p1p2_dist, tmp_dist, distP1_=0., distP2_=0.;
 	int init = 0;
 
 	if (m_lpoints.size() < 5) {

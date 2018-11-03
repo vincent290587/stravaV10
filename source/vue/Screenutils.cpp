@@ -84,7 +84,7 @@ String _fmkstr(float value, unsigned int nb_digits) {
 
 	String res;
 
-	if (fabs(value) > 100000) {
+	if (fabsf(value) > 100000) {
 		res = "---";
 		return res;
 	}
@@ -94,7 +94,7 @@ String _fmkstr(float value, unsigned int nb_digits) {
 
 	if (nb_digits > 0) {
 		res += ".";
-		uint32_t dec_val = fabs(value - (float)ent_val) * powf(10, nb_digits);
+		uint32_t dec_val = fabsf(value - (float)ent_val) * powf(10, nb_digits);
 		res += dec_val;
 	}
 

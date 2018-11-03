@@ -350,14 +350,12 @@ void Segment::majPerformance(ListePoints& mes_points) {
 	Vecteur vect;
 
 	if (mes_points.size() < 2) {
-		//    loggerMsg("Historique insuffisant");
 		return;
 	}
 
 	pc = mes_points.getFirstPoint();
 
 	if (!pc.isValid()) {
-		//    loggerMsg("Premier point invalide");
 		return;
 	}
 
@@ -398,7 +396,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 			vect = m_p_data->_lpts.getPosRelative();
 
-			if (fabs(vect._y) < MARGE_ACT * DIST_ACT) {
+			if (fabsf(vect._y) < MARGE_ACT * DIST_ACT) {
 
 				m_p_data->_monCur = vect._t;
 				m_p_data->_monAvance = m_p_data->_monStart + vect._t - pc._rtime;
@@ -420,7 +418,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 			Point lp = *m_p_data->_lpts.getLastPoint();
 
 			if (!lp.isValid()) {
-				desallouerPoints();
+				this->desallouerPoints();
 				_actif = SEG_OFF;
 				return;
 			}
