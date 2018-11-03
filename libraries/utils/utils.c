@@ -12,6 +12,7 @@
 #include "app_util_platform.h"
 #include "arm_math.h"
 #include "utils.h"
+#include "segger_wrapper.h"
 
 #ifndef _USE_MATH_DEFINES
 
@@ -94,23 +95,63 @@ float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
   return res;
 }
 
+/**
+ * distance_between: 24ms
+ * distance_between2: 24ms
+ * distance_between3: 21ms
+ * distance_between4: 40ms
+ *
+ *
+ * @param lat1 En degres
+ * @param long1 En degres
+ * @param lat2 En degres
+ * @param long2 En degres
+ * @return
+ */
 float distance_between2(float lat1, float long1, float lat2, float long2) {
   float delta = 3.141592 * (long1 - long2) / 180.;
-  float sdlong = sin(delta);
-  float cdlong = cos(delta);
+  float sdlong = sinf(delta);
+  float cdlong = cosf(delta);
   lat1 = 3.141592 * (lat1) / 180.;
   lat2 = 3.141592 * (lat2) / 180.;
-  float slat1 = sin(lat1);
-  float clat1 = cos(lat1);
-  float slat2 = sin(lat2);
-  float clat2 = cos(lat2);
+  float slat1 = sinf(lat1);
+  float clat1 = cosf(lat1);
+  float slat2 = sinf(lat2);
+  float clat2 = cosf(lat2);
   delta = (clat1 * slat2) - (slat1 * clat2 * cdlong);
   delta = delta*delta;
   delta += clat2 * sdlong * clat2 * sdlong;
-  delta = sqrt(delta);
+  delta = sqrtf(delta);
   float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
-  delta = atan2(delta, denom);
-  return delta * 6369933;
+  delta = atan2f(delta, denom);
+  return delta * 6369933.;
+}
+
+/**
+ *
+ * @param lat1 En degres
+ * @param long1 En degres
+ * @param lat2 En degres
+ * @param long2 En degres
+ * @return
+ */
+float distance_between(float lat1, float long1, float lat2, float long2) {
+  float delta = 3.141592 * (long1 - long2) / 180.;
+  float sdlong = arm_sin_f32(delta);
+  float cdlong = arm_cos_f32(delta);
+  lat1 = 3.141592 * (lat1) / 180.;
+  lat2 = 3.141592 * (lat2) / 180.;
+  float slat1 = arm_sin_f32(lat1);
+  float clat1 = arm_cos_f32(lat1);
+  float slat2 = arm_sin_f32(lat2);
+  float clat2 = arm_cos_f32(lat2);
+  delta = (clat1 * slat2) - (slat1 * clat2 * cdlong);
+  delta = delta*delta;
+  delta += clat2 * sdlong * clat2 * sdlong;
+  APP_ERROR_CHECK(arm_sqrt_f32(delta, &delta));
+  float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
+  delta = atan2f(delta, denom);
+  return delta * 6369933.;
 }
 
 /**
@@ -122,31 +163,68 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
  * @param long2 En degres
  * @return
  */
-float distance_between(float lat1, float long1, float lat2, float long2) {
+float distance_between3(float lat1, float long1, float lat2, float long2) {
+
+  static float Rm = 6356752.;
+  static float latRm = 0.;
+
+  float lat1rad = M_PI * lat1 / 180.;
+
+  float cos2lat1 = arm_cos_f32(lat1rad);
+  cos2lat1 *= cos2lat1;
+
+  if (fabsf(latRm - lat1rad) > 0.008) {
+	  latRm = lat1rad;
+	  APP_ERROR_CHECK(arm_sqrt_f32(R1*R1*(1-cos2lat1) + R2*R2*cos2lat1, &Rm));
+  }
+
+  // petits angles: tan = Id
+  float deltalat = M_PI * (lat2 -lat1) / 180.;
+  float deltalon = M_PI * (long2-long1) / 180.;
+
+  float dhori  = deltalon * R2 * arm_cos_f32(lat1rad);
+  float dverti = deltalat * Rm;
+
+  // projection plane et pythagore
+  float res = dhori*dhori + dverti*dverti;
+
+  APP_ERROR_CHECK(arm_sqrt_f32(res, &res));
+
+  return res;
+}
+
+/**
+ * Approximation petits angles sur une Terre ellipsoidale
+ *
+ * @param lat1 En degres
+ * @param long1 En degres
+ * @param lat2 En degres
+ * @param long2 En degres
+ * @return
+ */
+float distance_between4(float lat1, float long1, float lat2, float long2) {
 
   static float Rm = 6356752.;
   static float latRm = 0.;
 
   float lat1rad = 3.141592 * lat1 / 180.;
 
-  float cos2lat1 = pow(arm_cos_f32(lat1rad), 2.);
+  float cos2lat1 = powf(cosf(lat1rad), 2.);
 
-  if (fabs(latRm - lat1rad) > 0.008) {
+  if (fabsf(latRm - lat1rad) > 0.008) {
 	  latRm = lat1rad;
-	  arm_sqrt_f32(pow(R1,2.)*(1-cos2lat1) + pow(R2,2.)*cos2lat1, &Rm);
+	  Rm = sqrtf(powf(R1,2.)*(1-cos2lat1) + powf(R2,2.)*cos2lat1);
   }
 
   // petits angles: tan = Id
   float deltalat = 3.141592 * (lat2 -lat1) / 180.;
   float deltalon = 3.141592 * (long2-long1) / 180.;
 
-  float dhori  = deltalon * R2 * arm_cos_f32(lat1rad);
+  float dhori  = deltalon * R2 * cosf(lat1rad);
   float dverti = deltalat * Rm;
 
   // projection plane et pythagore
-  float res;
-  arm_sqrt_f32(dhori*dhori + dverti*dverti, &res);
-  return res;
+  return sqrtf(dhori*dhori + dverti*dverti);
 }
 
 void calculePos (const char *nom, float *lat, float *lon) {
