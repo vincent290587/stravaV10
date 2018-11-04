@@ -37,8 +37,8 @@ void rotate_point(float angle, int16_t cx, int16_t cy,
 	tmp2 = y1 - cy;
 
 	// rotation dans (cx, cy)
-	tmp3 = tmp1 * cos(angle_rad) - tmp2 * sin(angle_rad);
-	tmp4 = tmp1 * sin(angle_rad) + tmp2 * cos(angle_rad);
+	tmp3 = tmp1 * cosf(angle_rad) - tmp2 * sinf(angle_rad);
+	tmp4 = tmp1 * sinf(angle_rad) + tmp2 * cosf(angle_rad);
 
 	// coordonnees dans (0, 0)
 	x2 = tmp3 + cx;
@@ -67,10 +67,10 @@ float course_to (float lat1, float long1, float lat2, float long2)
   dlon *= PI / 180.;
   lat1 *= PI / 180.;
   lat2 *= PI / 180.;
-  float a1 = sin(dlon) * cos(lat2);
-  float a2 = sin(lat1) * cos(lat2) * cos(dlon);
-  a2 = cos(lat1) * sin(lat2) - a2;
-  a2 = atan2(a1, a2);
+  float a1 = sinf(dlon) * cosf(lat2);
+  float a2 = sinf(lat1) * cosf(lat2) * cosf(dlon);
+  a2 = cosf(lat1) * sinf(lat2) - a2;
+  a2 = atan2f(a1, a2);
   if (a2 < 0.0)
   {
     a2 += TWO_PI;
@@ -84,7 +84,7 @@ String _fmkstr(float value, unsigned int nb_digits) {
 
 	String res;
 
-	if (fabs(value) > 100000) {
+	if (fabsf(value) > 100000) {
 		res = "---";
 		return res;
 	}
@@ -94,7 +94,7 @@ String _fmkstr(float value, unsigned int nb_digits) {
 
 	if (nb_digits > 0) {
 		res += ".";
-		uint32_t dec_val = fabs(value - (float)ent_val) * pow(10, nb_digits);
+		uint32_t dec_val = fabsf(value - (float)ent_val) * powf(10, nb_digits);
 		res += dec_val;
 	}
 

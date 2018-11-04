@@ -20,7 +20,6 @@
 #include "spi.h"
 #include "i2c.h"
 #include "fec.h"
-#include "bsp.h"
 #include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
@@ -28,6 +27,8 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
+#include "nrf_drv_clock.h"
+#include "task_manager.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
@@ -46,9 +47,7 @@
 #include "nrf_log_default_backends.h"
 
 
-#define DEAD_BEEF           0xDEADBEEF                                  /**< Value used as error code on stack dump. Can be used to identify stack location on stack unwind. */
-
-#define APP_DELAY           APP_TIMER_TICKS(APP_DELAY_MS)
+#define APP_DELAY           APP_TIMER_TICKS(APP_TIMEOUT_DELAY_MS)
 
 #define SCHED_MAX_EVENT_DATA_SIZE      APP_TIMER_SCHED_EVENT_DATA_SIZE              /**< Maximum size of scheduler events. */
 #ifdef SVCALL_AS_NORMAL_FUNCTION
@@ -66,15 +65,18 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 extern "C" void ble_ant_init(void);
 
 
-static volatile bool job_to_do = true;
-
-
 /**
  * @brief Handler for timer events.
  */
 void timer_event_handler(void* p_context)
 {
-	job_to_do = true;
+	ASSERT(p_context);
+
+	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
+
+	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+		events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
+	}
 }
 
 
@@ -122,6 +124,8 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
+    static char _buffer[256] = {0};
+
     //nor_save_error(id, pc, info);
 
     switch (id)
@@ -137,26 +141,31 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ASSERT:
         {
             assert_info_t * p_info = (assert_info_t *)info;
-            LOG_ERROR("ASSERTION FAILED at %s:%u",
-                          p_info->p_file_name,
-                          p_info->line_num);
+            snprintf(_buffer, sizeof(_buffer),
+        			"ASSERTION FAILED at %s:%u",
+                    p_info->p_file_name,
+                    p_info->line_num);
+#if USE_SVIEW
+            SEGGER_SYSVIEW_Error(_buffer);
+#else
+            NRF_LOG_ERROR(_buffer);
+            LOG_ERROR(_buffer);
+#endif
             break;
         }
         case NRF_FAULT_ID_SDK_ERROR:
         {
+        	error_info_t * p_info = (error_info_t *)info;
+        	snprintf(_buffer, sizeof(_buffer),
+        			"ERROR %u [%s] at %s:%u",
+                    p_info->err_code,
+					  nrf_strerror_get(p_info->err_code),
+                    p_info->p_file_name,
+                    p_info->line_num);
 #if USE_SVIEW
-            error_info_t * p_info = (error_info_t *)info;
-            SEGGER_SYSVIEW_PrintfHost("ERROR %u at %s:%u",
-                          p_info->err_code,
-                          p_info->p_file_name,
-                          p_info->line_num);
+            SEGGER_SYSVIEW_Error(_buffer);
 #else
-            error_info_t * p_info = (error_info_t *)info;
-            LOG_ERROR("ERROR %u [%s] at %s:%u",
-                          p_info->err_code,
-						  nrf_strerror_get(p_info->err_code),
-                          p_info->p_file_name,
-                          p_info->line_num);
+            LOG_ERROR(_buffer);
 #endif
             break;
         }
@@ -208,7 +217,7 @@ static void bsp_evt_handler(bsp_event_t evt)
 
 /**@brief Function for handling bsp events.
  */
-static void bsp_tasks(void)
+void bsp_tasks(void)
 {
 	switch (m_bsp_evt)
 	{
@@ -295,7 +304,6 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(FXOS_RST);
 	nrf_gpio_pin_clear(FXOS_RST);
 
-	// SDC_CS_PIN is configured later
 	// LS027_CS_PIN is configured later
 
 	nrf_gpio_cfg_output(BCK_PIN);
@@ -303,12 +311,6 @@ static void pins_init(void)
 
 	nrf_gpio_cfg_output(SPK_IN);
 	nrf_gpio_pin_clear(SPK_IN);
-
-//	nrf_gpio_cfg_output(SCL_PIN_NUMBER);
-//	nrf_gpio_pin_set(SCL_PIN_NUMBER);
-//
-//	nrf_gpio_cfg_output(SDA_PIN_NUMBER);
-//	nrf_gpio_pin_set(SDA_PIN_NUMBER);
 
 	// FIX_PIN is configured later
 
@@ -321,8 +323,8 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(USB_PRES);
 	nrf_gpio_pin_set(USB_PRES);
 
-	nrf_gpio_cfg_output(SPK_IN);
-	nrf_gpio_pin_set(SPK_IN);
+	nrf_gpio_cfg_output(SST_CS);
+	nrf_gpio_pin_set(SST_CS);
 
 }
 
@@ -345,6 +347,11 @@ int main(void)
 //	NRF_RTC0->TASKS_STOP = 0;
 //	NRF_RTC1->TASKS_STOP = 0;
 
+	m_tasks_id.boucle_id = TASK_ID_INVALID;
+	m_tasks_id.system_id = TASK_ID_INVALID;
+	m_tasks_id.peripherals_id = TASK_ID_INVALID;
+	m_tasks_id.ls027_id = TASK_ID_INVALID;
+
 	// Initialize.
     //Configure WDT.
     nrfx_wdt_config_t wdt_config = NRFX_WDT_DEAFULT_CONFIG;
@@ -355,6 +362,13 @@ int main(void)
     nrfx_wdt_enable();
 
 	log_init();
+
+#ifdef FPU_INTERRUPT_MODE
+    // Enable FPU interrupt
+    NVIC_SetPriority(FPU_IRQn, APP_IRQ_PRIORITY_LOWEST);
+    NVIC_ClearPendingIRQ(FPU_IRQn);
+    NVIC_EnableIRQ(FPU_IRQn);
+#endif
 
 	pins_init();
 
@@ -430,13 +444,12 @@ int main(void)
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
 	APP_ERROR_CHECK(err_code);
 
-	err_code = app_timer_start(m_job_timer, APP_DELAY, NULL);
+	err_code = app_timer_start(m_job_timer, APP_DELAY, &m_tasks_id);
 	APP_ERROR_CHECK(err_code);
 
 	sNeopixelOrders neo_order;
 	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);
-
 
 	gps_mgmt.init();
 
@@ -447,44 +460,18 @@ int main(void)
 
 	NRF_LOG_INFO("App init done");
 
-	for (;;)
-	{
-		if (job_to_do) {
-			// tasks to run non-continuously
+	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
+	m_tasks_id.system_id = task_create	(system_task, "system_task", NULL);
+	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
+	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
 
-			job_to_do = false;
+	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
+	W_SYSVIEW_OnTaskCreate(SYSTEM_TASK);
+	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
+	W_SYSVIEW_OnTaskCreate(LCD_TASK);
 
-			LOG_DEBUG("\r\nTask %u", millis());
+	// does not return
+	task_manager_start(idle_task, &m_tasks_id);
 
-			wdt_reload();
-
-#ifdef ANT_STACK_SUPPORT_REQD
-			roller_manager_tasks();
-#endif
-
-#ifdef _DEBUG_TWI
-			stc.refresh(nullptr);
-			veml.refresh(nullptr);
-			fxos_tasks(nullptr);
-			baro.refresh(nullptr);
-
-			model_dispatch_sensors_update();
-#endif
-
-			notifications_tasks();
-
-			backlighting_tasks();
-
-			boucle.tasks();
-
-			if (!millis()) NRF_LOG_WARNING("No millis");
-		}
-
-		// tasks
-		bsp_tasks();
-
-		perform_system_tasks();
-
-	}
 }
 

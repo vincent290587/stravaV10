@@ -68,91 +68,84 @@ void BoucleCRS::run() {
 
 	if (m_needs_init) this->init();
 
-	if (locator.isUpdated()) {
+	LOG_INFO("Locator is updated (%u)\r\n", millis());
 
-		LOG_INFO("Locator is updated (%u)\r\n", millis());
+	// reset the segment manager
+	segMngr.clearSegs();
 
-		// reset the segment manager
-		segMngr.clearSegs();
+	att.nbact = 0;
 
-		att.nbact = 0;
+	// update position
+	SLoc loc;
+	SDate dat;
+	memset(&loc, 0, sizeof(loc));
+	memset(&dat, 0, sizeof(dat));
 
-		// update position
-		SLoc loc;
-		SDate dat;
-		memset(&loc, 0, sizeof(loc));
-		memset(&dat, 0, sizeof(dat));
+	eLocationSource loc_source = locator.getPosition(loc, dat);
 
-		eLocationSource loc_source = locator.getPosition(loc, dat);
+	attitude.addNewLocation(loc, dat, loc_source);
 
-		attitude.addNewLocation(loc, dat, loc_source);
+	// update sements
+	for (auto& seg : mes_segments._segs) {
 
-		// update sements
-		for (auto& seg : mes_segments._segs) {
+		if (seg.isValid() && mes_points.size() > 2) {
 
-			if (seg.isValid() && mes_points.size() > 2) {
+			tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
 
-				tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
+			// calculate distance to closest segment
+			if (tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
 
-				// calculate distance to closest segment
-				if (tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
+			if (seg.getStatus() != SEG_OFF) {
 
-				if (seg.getStatus() != SEG_OFF) {
+				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				seg.majPerformance(mes_points);
+				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
+				att.nbact += 1;
 
-					W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
-					seg.majPerformance(mes_points);
-					W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
-					att.nbact += 1;
-
-					if (seg.getStatus() < SEG_OFF) {
-						segMngr.addSegmentPrio(&seg);
-					} else if (seg.getStatus() > SEG_OFF) {
-						segMngr.addSegment(&seg);
-					}
-
-					if (seg.getStatus() == SEG_FIN) {
-
-						LOG_INFO("Segment FIN %s\r\n", seg.getName());
-
-						// show some light !
-						if (seg.getAvance() > 0.) {
-							SET_NEO_EVENT_BLUE(neopixel, eNeoEventWeakNotify, 2);
-						} else {
-							SET_NEO_EVENT_RED(neopixel, eNeoEventWeakNotify, 2);
-						}
-
-					}
-
-				} else if (tmp_dist < 250) {
-
-					W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
-					seg.majPerformance(mes_points);
-					W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
-
+				if (seg.getStatus() < SEG_OFF) {
+					segMngr.addSegmentPrio(&seg);
+				} else if (seg.getStatus() > SEG_OFF) {
 					segMngr.addSegment(&seg);
+				}
+
+				if (seg.getStatus() == SEG_FIN) {
+
+					LOG_INFO("Segment FIN %s\r\n", seg.getName());
+
+					// show some light !
+					if (seg.getAvance() > 0.) {
+						SET_NEO_EVENT_BLUE(neopixel, eNeoEventWeakNotify, 2);
+					} else {
+						SET_NEO_EVENT_RED(neopixel, eNeoEventWeakNotify, 2);
+					}
 
 				}
 
-			} // fin isValid
+			} else if (tmp_dist < 250) {
 
-		} // fin for
+				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				seg.majPerformance(mes_points);
+				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
 
-		att.next = m_dist_next_seg;
+				segMngr.addSegment(&seg);
 
-		LOG_INFO("Next segment: %u", att.next);
-	} else {
-		// update date
-		SDate dat;
-		memset(&dat, 0, sizeof(dat));
-		locator.getDate(dat);
+			}
 
-		attitude.addNewDate(dat);
-	}
+		} // fin isValid
+
+	} // fin for
+
+	att.next = m_dist_next_seg;
+
+	LOG_INFO("Next segment: %u", att.next);
 
 	notifications_setNotify(&neopixel);
 
 	vue.refresh();
+
 	m_last_refresh.setUpdateTime();
 
-	W_SYSVIEW_OnIdle();
+	// wait for location to be updated
+	(void)events_wait(TASK_EVENT_LOCATION);
+
 }

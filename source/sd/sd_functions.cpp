@@ -100,7 +100,6 @@ int init_liste_segments(void)
 
 			if (Segment::nomCorrect(fileInformation.fname)) {
 				LOG_DEBUG("Segment added : %s", (uint32_t)fileInformation.fname);
-//				LOG_INFO("Segment added");
 				mes_segments.push_back(Segment(fileInformation.fname));
 			} else if (Parcours::nomCorrect(fileInformation.fname)) {
 				// pas de chargement en double
@@ -300,9 +299,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 		else {
 
 			if (parseSegmentName(mon_seg.getName(), &tmp_lat, &tmp_lon) == 1) {
-//				Serial.println(F("Echec parsing du nom"));
-//				loggerMsg("Echec parsing du nom");
-//				loggerMsg(mon_seg->getName());
+				LOG_ERROR("Echec parsing du nom");
 				return ret_val;
 			}
 
@@ -318,11 +315,10 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 					mon_seg.desallouerPoints();
 				}
 
-
 				int res = load_segment(mon_seg);
 				LOG_INFO("-->> Loading segment %s", mon_seg.getName(), res);
 
-				if (res > 0) mon_seg.init();
+				mon_seg.init();
 			}
 		}
 
@@ -343,9 +339,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 			LOG_INFO("Desallocation non nominale !");
 
 			mon_seg.desallouerPoints();
+			mon_seg.uninit();
 			mon_seg.setStatus(SEG_OFF);
-
-//			display.notifyANCS(1, "WTCH", "Seg trop loin");
 		}
 
 
@@ -380,7 +375,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
 
-		perform_system_tasks_light();
+		yield();
 	}
 
 	error = f_close(&g_fileObject);

@@ -49,6 +49,8 @@ sBacklightOrders     backlight;
 
 sNeopixelOrders      neopixel;
 
+sTasksIDs     m_tasks_id;
+
 // init counters
 int Point2D::objectCount2D = 0;
 int Point::objectCount = 0;
@@ -96,10 +98,6 @@ void perform_system_tasks(void) {
 	app_sched_execute();
 #endif
 
-	if (NRF_LOG_PROCESS() == false)
-	{
-		nrf_pwr_mgmt_run();
-	}
 }
 
 /**
@@ -147,3 +145,125 @@ bool check_memory_exception(void) {
 
 	return false;
 }
+
+
+/**
+ *
+ * @param p_context
+ */
+void idle_task(void * p_context)
+{
+    for(;;)
+    {
+    	while (NRF_LOG_PROCESS()) { }
+
+    	//No more logs to process, go to sleep
+    	nrf_pwr_mgmt_run();
+
+    	task_yield();
+    	W_SYSVIEW_OnIdle();
+    }
+}
+
+/**
+ * System continuous tasks
+ *
+ * @param p_context
+ */
+void system_task(void * p_context)
+{
+    for(;;)
+    {
+		perform_system_tasks();
+
+		// BSP tasks
+		bsp_tasks();
+
+    	if (!NRF_LOG_PROCESS()) {
+        	task_yield();
+    	}
+    }
+}
+
+/**
+ * Triggered externally when device has new valid data
+ *
+ * @param p_context
+ */
+void boucle_task(void * p_context)
+{
+	for (;;)
+	{
+		LOG_INFO("\r\nTask %u", millis());
+
+#ifdef ANT_STACK_SUPPORT_REQD
+		roller_manager_tasks();
+#endif
+
+		boucle.run();
+
+		if (!millis()) NRF_LOG_WARNING("No millis");
+	}
+}
+
+/**
+ * Task triggered every APP_TIMEOUT_DELAY_MS.
+ *
+ * @param p_context
+ */
+void ls027_task(void * p_context)
+{
+	for(;;)
+	{
+		// check screen update & unlock task
+		vue.writeWhole();
+
+		wdt_reload();
+
+		events_wait(TASK_EVENT_LS027_TRIGGER);
+	}
+}
+
+/**
+ * Task triggered every APP_TIMEOUT_DELAY_MS.
+ *
+ * @param p_context
+ */
+void peripherals_task(void * p_context)
+{
+	for(;;)
+	{
+#ifdef _DEBUG_TWI
+		static uint32_t _counter = 0;
+
+		if (++_counter >= 1000 / (SENSORS_REFRESH_FREQ * APP_TIMEOUT_DELAY_MS)) {
+			W_SYSVIEW_OnTaskStartExec(I2C_TASK);
+			_counter = 0;
+			stc.refresh(nullptr);
+			veml.refresh(nullptr);
+			fxos_tasks(nullptr);
+			baro.refresh(nullptr);
+			W_SYSVIEW_OnTaskStopExec(I2C_TASK);
+		}
+
+		model_dispatch_sensors_update();
+#endif
+		// check screen update & unlock task
+		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
+			vue.refresh();
+		}
+
+		// update date
+		SDate dat;
+		locator.getDate(dat);
+		attitude.addNewDate(dat);
+
+		notifications_tasks();
+
+		backlighting_tasks();
+
+		events_wait(TASK_EVENT_PERIPH_TRIGGER);
+	}
+}
+
+

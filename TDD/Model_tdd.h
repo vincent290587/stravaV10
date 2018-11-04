@@ -27,6 +27,14 @@
 #include "mk64f_parser.h"
 #include "Vue.h"
 
+typedef struct {
+	uint32_t peripherals_id;
+	uint32_t boucle_id;
+	uint32_t system_id;
+	uint32_t ls027_id;
+} sTasksIDs;
+
+extern sTasksIDs m_tasks_id;
 
 extern SAtt          att;
 

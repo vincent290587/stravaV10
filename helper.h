@@ -43,6 +43,14 @@
 extern "C" {
 #endif
 
+/**
+ *
+ */
+void check_fpu(void);
+
+/**
+ *
+ */
 void init_timers_millis();
 
 /**

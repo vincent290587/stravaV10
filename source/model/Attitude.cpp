@@ -170,7 +170,7 @@ void Attitude::majPower(float speed_) {
 
 	dTime = P1._rtime - P2._rtime;
 
-	if (fabs(dTime) > 1.5 && fabs(dTime) < 25) {
+	if (fabsf(dTime) > 1.5 && fabsf(dTime) < 25) {
 
 		// calcul de la vitesse ascentionnelle par regression lineaire
 		for (i = 0; i <= FILTRE_NB; i++) {

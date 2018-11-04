@@ -136,7 +136,7 @@ void Point::toString() {
 }
 
 int Point2D::isValid() {
-	if (_lat == 0. || _lon == 0. || fabs(_lat) > 89. || fabs(_lon) > 189.) {
+	if (_lat == 0. || _lon == 0. || fabsf(_lat) > 89. || fabsf(_lon) > 189.) {
 		return 0;
 	} else {
 		return 1;
