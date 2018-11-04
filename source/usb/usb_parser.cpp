@@ -8,6 +8,7 @@
 #include "segger_wrapper.h"
 #include "usb_parser.h"
 #include "usb_cdc.h"
+#include "sd_hal.h"
 #include "Model.h"
 #include "nrf_pwr_mgmt.h"
 
@@ -31,6 +32,11 @@ void usb_cdc_decoder(char c) {
 
 		locator.sim_loc.setIsUpdated();
 
+		// notify task
+		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
+		    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+		}
+
 		break;
 
 	case _SENTENCE_PC:
@@ -40,6 +46,15 @@ void usb_cdc_decoder(char c) {
 		}
 		else if (vparser.getPC() == 16) {
 			usb_cdc_start_msc();
+		}
+		else if (vparser.getPC() == 15) {
+			format_memory();
+		}
+		else if (vparser.getPC() == 14) {
+			fmkfs_memory();
+		}
+		else if (vparser.getPC() == 13) {
+			test_memory();
 		}
 
 		break;

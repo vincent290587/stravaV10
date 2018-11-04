@@ -478,7 +478,7 @@
 // <e> NRF_MPU_ENABLED - nrf_mpu - Module for MPU
 //==========================================================
 #ifndef NRF_MPU_ENABLED
-#define NRF_MPU_ENABLED 0
+#define NRF_MPU_ENABLED 1
 #endif
 // <q> NRF_MPU_CLI_CMDS  - Enable CLI commands specific to the module
  
@@ -2819,6 +2819,71 @@
 
 // </e>
 
+
+// <e> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED - Enables logging in the module.
+//==========================================================
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED
+#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED 1
+#endif
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL
+#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL 3
+#endif
+
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL  - Initial severity level if dynamic filtering is enabled
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL
+#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL 3
+#endif
+
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR
+#define NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR 0
+#endif
+
+// <o> NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR
+#define NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR 0
+#endif
+
+// </e>
+
+
 // <e> NRFX_QSPI_ENABLED - nrfx_qspi - QSPI peripheral driver
 //==========================================================
 #ifndef NRFX_QSPI_ENABLED
@@ -2837,13 +2902,12 @@
 #endif
 
 // <o> NRFX_QSPI_CONFIG_READOC  - Number of data lines and opcode used for reading.
- 
+
 // <0=> FastRead 
 // <1=> Read2O 
 // <2=> Read2IO 
 // <3=> Read4O 
 // <4=> Read4IO 
-// TODO set 2
 #ifndef NRFX_QSPI_CONFIG_READOC
 #define NRFX_QSPI_CONFIG_READOC 2
 #endif
@@ -2856,7 +2920,7 @@
 // <3=> PP4IO 
 
 #ifndef NRFX_QSPI_CONFIG_WRITEOC
-#define NRFX_QSPI_CONFIG_WRITEOC 0
+#define NRFX_QSPI_CONFIG_WRITEOC 1
 #endif
 
 // <o> NRFX_QSPI_CONFIG_ADDRMODE  - Addressing mode.
@@ -2946,71 +3010,6 @@
 #endif
 
 // </e>
-
-
-// <e> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED - Enables logging in the module.
-//==========================================================
-#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED
-#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED 1
-#endif
-// <o> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL  - Default Severity level
-
-// <0=> Off
-// <1=> Error
-// <2=> Warning
-// <3=> Info
-// <4=> Debug
-
-#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL
-#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL 3
-#endif
-
-// <o> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL  - Initial severity level if dynamic filtering is enabled
-
-// <0=> Off
-// <1=> Error
-// <2=> Warning
-// <3=> Info
-// <4=> Debug
-
-#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL
-#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_INIT_FILTER_LEVEL 3
-#endif
-
-// <o> NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR  - ANSI escape code prefix.
-
-// <0=> Default
-// <1=> Black
-// <2=> Red
-// <3=> Green
-// <4=> Yellow
-// <5=> Blue
-// <6=> Magenta
-// <7=> Cyan
-// <8=> White
-
-#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR
-#define NRF_BLOCK_DEV_QSPI_CONFIG_INFO_COLOR 0
-#endif
-
-// <o> NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
-
-// <0=> Default
-// <1=> Black
-// <2=> Red
-// <3=> Green
-// <4=> Yellow
-// <5=> Blue
-// <6=> Magenta
-// <7=> Cyan
-// <8=> White
-
-#ifndef NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR
-#define NRF_BLOCK_DEV_QSPI_CONFIG_DEBUG_COLOR 6
-#endif
-
-// </e>
-
 
 // <e> NRFX_RNG_ENABLED - nrfx_rng - RNG peripheral driver
 //==========================================================
@@ -3359,7 +3358,7 @@
 // <3=> NRF_GPIO_PIN_PULLUP 
 
 #ifndef NRFX_SPIM_MISO_PULL_CFG
-#define NRFX_SPIM_MISO_PULL_CFG 1
+#define NRFX_SPIM_MISO_PULL_CFG 0
 #endif
 
 // <o> NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -6414,7 +6413,7 @@
 // <e> TASK_MANAGER_ENABLED - task_manager - Task manager.
 //==========================================================
 #ifndef TASK_MANAGER_ENABLED
-#define TASK_MANAGER_ENABLED 0
+#define TASK_MANAGER_ENABLED 1
 #endif
 // <q> TASK_MANAGER_CLI_CMDS  - Enable CLI commands specific to the module
  
@@ -6425,7 +6424,7 @@
 
 // <o> TASK_MANAGER_CONFIG_MAX_TASKS - Maximum number of tasks which can be created 
 #ifndef TASK_MANAGER_CONFIG_MAX_TASKS
-#define TASK_MANAGER_CONFIG_MAX_TASKS 2
+#define TASK_MANAGER_CONFIG_MAX_TASKS 5
 #endif
 
 // <o> TASK_MANAGER_CONFIG_STACK_SIZE - Stack size for every task (power of 2) 
@@ -6437,7 +6436,7 @@
  
 
 #ifndef TASK_MANAGER_CONFIG_STACK_PROFILER_ENABLED
-#define TASK_MANAGER_CONFIG_STACK_PROFILER_ENABLED 1
+#define TASK_MANAGER_CONFIG_STACK_PROFILER_ENABLED 0
 #endif
 
 // <o> TASK_MANAGER_CONFIG_STACK_GUARD  - Configures stack guard.

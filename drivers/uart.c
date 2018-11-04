@@ -29,7 +29,7 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-#define UART0_RB_SIZE         256
+#define UART0_RB_SIZE         2048
 RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
 
 volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
@@ -42,7 +42,7 @@ static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI
 
 nrf_uarte_baudrate_t m_baud;
 
-static uint8_t m_uart_rx_buffer[4];
+static uint8_t m_uart_rx_buffer[16];
 
 
 /**
@@ -204,6 +204,8 @@ void uart_timer_init(void) {
 	 /* If ring buffer is not empty, parse data. */
 	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
 	 {
+		 CRITICAL_REGION_ENTER();
+
 		 char c = RING_BUFF_GET_ELEM(uart0_rb1);
 
 		 gps_encode_char(c);
@@ -211,6 +213,8 @@ void uart_timer_init(void) {
 		 //LOG_RAW_INFO(c);
 
 		 RING_BUFFER_POP(uart0_rb1);
+
+		 CRITICAL_REGION_EXIT();
 	 }
 
  }

@@ -15,7 +15,7 @@
 #include <Locator.h>
 
 
-static bool m_is_updated;
+static volatile bool m_is_updated;
 
 TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
@@ -39,7 +39,7 @@ sSatellite sats[MAX_SATELLITES];
 
 /**
  *
- * @param csatNumber
+ * @param c Character to encode
  * @return
  */
 uint32_t locator_encode_char(char c) {
@@ -72,6 +72,9 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 	locator.nrf_loc.data.date = lns_info->date;
 
 	locator.nrf_loc.setIsUpdated();
+
+	// notify task
+    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 }
 
 
@@ -103,10 +106,14 @@ eLocationSource Locator::getUpdateSource() {
 
 	if (sim_loc.isUpdated()) {
 		return eLocationSourceSimu;
+	} else if (sim_loc.getAge() < 2000) {
+		return eLocationSourceNone;
 	}
 
 	if (gps_loc.isUpdated()) {
 		return eLocationSourceGPS;
+	} else if (gps_loc.getAge() < 1500) {
+		return eLocationSourceNone;
 	}
 
 	if (nrf_loc.isUpdated() && !gps_mgmt.isFix()) {
@@ -291,9 +298,13 @@ void Locator::tasks() {
 			gps_loc.data.date = gps.date.year()   % 100;
 			gps_loc.data.date += gps.date.day()   * 10000;
 			gps_loc.data.date += gps.date.month() * 100;
+
 		}
 
 		if (gps.location.isValid()) {
+
+			// notify task
+		    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 
 			gps_loc.data.speed  = gps.speed.kmph();
 			gps_loc.data.alt    = gps.altitude.meters();
@@ -364,57 +375,25 @@ void Locator::displayGPS2(void) {
 	vue.println(satsInView.value());
 	vue.println("");
 
-//	uint8_t nb_activ = 0;
-//
-//	for (int i=0; i<MAX_SATELLITES; ++i) {
-//
-//		if (sats[i].active) {
-//
-//			sats[i].active--;
-//
-//			nb_activ++;
-//
-//			// i+1 is here also the satellite number
-//			vue.print(i+1);
-//			vue.print(F(": "));
-//
-//			vue.print(sats[i].elevation);
-//			vue.print(F("el "));
-//
-//			vue.print(sats[i].azimuth);
-//			vue.print(F("az "));
-//
-//			vue.print(sats[i].snr);
-//			vue.println(F("dBi"));
-//
-//		}
-//	}
-//
-//	if (!nb_activ) {
-//		for (int i=0; i<MAX_SATELLITES; ++i) {
-//
-//			if (sats[i].snr && nb_activ++ < 10) {
-//
-//				// i+1 is here also the satellite number
-//				vue.print(i+1);
-//				vue.print(F(": "));
-//
-//				vue.print(sats[i].elevation);
-//				vue.print(F("el "));
-//
-//				vue.print(sats[i].azimuth);
-//				vue.print(F("az "));
-//
-//				vue.print(sats[i].snr);
-//				vue.println(F("dBi"));
-//			}
-//
-//		}
-//
-//		vue.println("All inactive");
-//	}
+	if (gps.location.isValid()) {
+		vue.println("Loc valid");
+	} else {
+		vue.println("Loc pb");
+	}
 
+	String line = "Loc age: ";
+	line += String((int)gps.location.age());
+	vue.println(line);
 
+	if (gps_mgmt.isFix()) {
+		vue.println("FIX pin high");
+	} else {
+		vue.println("No fix");
+	}
+
+	vue.println("  ------");
+
+	uint8_t nb_activ = 0;
 }
 
 #else

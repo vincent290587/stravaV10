@@ -17,7 +17,7 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
-#define VEML_NOMINAL_CONF     (VEML6075_CONF_PW_ON | VEML6075_CONF_HD_HIGH | VEML6075_CONF_IT_100MS)
+#define VEML_NOMINAL_CONF     (VEML6075_CONF_PW_ON | VEML6075_CONF_HD_NORM | VEML6075_CONF_IT_200MS)
 
 VEML6075::VEML6075() {
 
@@ -105,10 +105,10 @@ void VEML6075::refresh(uint8_t *_data) {
 
 #endif
 
-	LOG_DEBUG("Raw IR : %u", this->raw_ir);
-	LOG_INFO ("Raw VIS: %u", this->raw_vis);
-	LOG_DEBUG("Raw UVA: %u", this->raw_uva);
-	LOG_INFO ("UV index: %d", (int)this->getUVIndex());
+	LOG_DEBUG ("Raw IR : %u", this->raw_ir);
+	LOG_DEBUG ("Raw VIS: %u", this->raw_vis);
+	LOG_DEBUG ("Raw UVA: %u", this->raw_uva);
+	LOG_DEBUG ("UV index: %d", (int)this->getUVIndex());
 }
 
 uint16_t VEML6075::getRawUVA() {

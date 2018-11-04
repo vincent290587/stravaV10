@@ -34,5 +34,10 @@
 #define W_SYSVIEW_OnTaskStartExec(X)   EMPTY_MACRO
 #define W_SYSVIEW_OnTaskStopExec(X)    EMPTY_MACRO
 #define W_SYSVIEW_OnTaskCreate(X)      EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
+
+#include "task_manager_wrapper_tdd.h"
+
 
 #endif /* SEGGER_WRAPPER_TDD_H_ */

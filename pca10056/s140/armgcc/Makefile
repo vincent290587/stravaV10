@@ -43,7 +43,9 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/usbd/class/dummy \
   
 # Libraries common to all targets
-LIB_FILES += -lm -lstdc++
+LIB_FILES += \
+  -lm -lstdc++ \
+  $(SDK_ROOT)/components/toolchain/cmsis/dsp/GCC/libarm_cortexM4lf_math.a \
 
 
 # Optimization flags
@@ -55,9 +57,8 @@ OPT = -O3 -g3
 CFLAGS += $(OPT)
 CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
+#CFLAGS += -DUSE_SVIEW=1 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
-#CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
-#CFLAGS += -DNRF_LOG_BACKEND_UART_ENABLED=1 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840
@@ -69,8 +70,10 @@ CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DNRF_SD_BLE_API_VERSION=6
 CFLAGS += -DSWI_DISABLE0
+#CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1 -DFPU_INTERRUPT_MODE
 CFLAGS += -DS140
-CFLAGS += -mcpu=cortex-m4
+CFLAGS += -DFLOAT_ABI_HARD
+CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -84,7 +87,9 @@ CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 # Assembler flags common to all targets
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
+ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
+ASMFLAGS += -DARM_MATH_CM4
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DBOARD_CUSTOM
 ASMFLAGS += -DNRF52840

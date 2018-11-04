@@ -249,7 +249,13 @@ int Segment::testActivation(ListePoints& liste) {
 	Point P1, P2, PPc, PPp;
 	Vecteur PC, PS;
 
-	ASSERT(m_p_data);
+	if (!m_p_data) {
+		if (!this->init()) {
+			LOG_ERROR("!! Segment no mem !!");
+			return 0;
+		}
+		LOG_ERROR("Segment allocated last minute");
+	}
 
 	if (m_p_data->_lpts.size() <= 3 || liste.size() <= 2) {
 		return 0;
@@ -276,9 +282,9 @@ int Segment::testActivation(ListePoints& liste) {
 
 	p_scal = PC._x * PS._x + PC._y * PS._y;
 
-	if (sqrt(PC._x * PC._x + PC._y * PC._y) * sqrt(PS._x * PS._x + PS._y * PS._y) > 0.001) {
-		p_scal /= sqrt(PC._x * PC._x + PC._y * PC._y);
-		p_scal /= sqrt(PS._x * PS._x + PS._y * PS._y);
+	if (sqrtf(PC._x * PC._x + PC._y * PC._y) * sqrtf(PS._x * PS._x + PS._y * PS._y) > 0.001) {
+		p_scal /= sqrtf(PC._x * PC._x + PC._y * PC._y);
+		p_scal /= sqrtf(PS._x * PS._x + PS._y * PS._y);
 	} else {
 		p_scal = -10.;
 	}
@@ -344,14 +350,12 @@ void Segment::majPerformance(ListePoints& mes_points) {
 	Vecteur vect;
 
 	if (mes_points.size() < 2) {
-		//    loggerMsg("Historique insuffisant");
 		return;
 	}
 
 	pc = mes_points.getFirstPoint();
 
 	if (!pc.isValid()) {
-		//    loggerMsg("Premier point invalide");
 		return;
 	}
 
@@ -359,6 +363,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 	ASSERT(m_p_data);
 
+	m_p_data->_lpts.updateDelta();
 	Vecteur& delta = m_p_data->_lpts.getDeltaListe();
 
 	// update the relative position of our last point on the segment
@@ -392,10 +397,12 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 			vect = m_p_data->_lpts.getPosRelative();
 
-			if (fabs(vect._y) < MARGE_ACT * DIST_ACT) {
+			if (fabsf(vect._y) < MARGE_ACT * DIST_ACT) {
 
-				m_p_data->_monCur = vect._t;
-				m_p_data->_monAvance = m_p_data->_monStart + vect._t - pc._rtime;
+				Point *pp = m_p_data->_lpts.getFirstPoint();
+
+				m_p_data->_monCur = pc._rtime - m_p_data->_monStart;
+				m_p_data->_monAvance = (vect._t - pp->_rtime) - m_p_data->_monCur;
 
 				m_p_data->_monElev0 = m_p_data->_lpts.getFirstPoint()->_alt;
 
@@ -406,26 +413,16 @@ void Segment::majPerformance(ListePoints& mes_points) {
 				}
 
 			} else {
-				//        loggerMsg("Desactivation pendant segment de ");
-				//        loggerMsg(_nomFichier.c_str());
-
 				_actif = SEG_OFF;
-
-				//        display.notifyANCS(1, "SEG", "Seg desactive");
 			}
 
 		} else {
 			// on doit desactiver
-
 			Point lp = *m_p_data->_lpts.getLastPoint();
 
 			if (!lp.isValid()) {
-				//        loggerMsg("Dernier point invalide !!!!!");
-				//        Serial.print(F("Dernier point invalide !!!!!"));
-				desallouerPoints();
+				this->desallouerPoints();
 				_actif = SEG_OFF;
-
-				//display.notifyANCS(1, "SEG", "Dernier point invalide");
 				return;
 			}
 

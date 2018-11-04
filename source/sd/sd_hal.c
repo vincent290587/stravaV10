@@ -30,8 +30,9 @@ static bool m_is_fat_mounted = false;
 static uint8_t m_buffer_tx[QSPI_TEST_DATA_SIZE];
 static uint8_t m_buffer_rx[QSPI_TEST_DATA_SIZE];
 
+static void fatfs_mkfs(void);
 
-static void configure_memory()
+static bool configure_memory()
 {
 	uint32_t err_code;
 	nrf_qspi_cinstr_conf_t cinstr_cfg = {
@@ -80,9 +81,13 @@ static void configure_memory()
 //    cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_1B;
 //    err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
 //    APP_ERROR_CHECK(err_code);
+
+	return recv[0] == 0xBF;
 }
 
 void format_memory() {
+
+	LOG_INFO("Formatting...");
 	uint32_t err_code;
 	nrf_qspi_cinstr_conf_t cinstr_cfg = {
 			.opcode    = 0xc7,
@@ -97,6 +102,17 @@ void format_memory() {
 	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
 	APP_ERROR_CHECK(err_code);
 
+	LOG_INFO("Memory formatted");
+}
+
+void fmkfs_memory(void) {
+
+	if (nrfx_qspi_mem_busy_check()) {
+		LOG_INFO("SST busy");
+		return;
+	}
+
+	fatfs_mkfs();
 }
 
 void test_memory(void)
@@ -211,12 +227,11 @@ int fatfs_init(void) {
 
 	//test_memory();
 
-	configure_memory();
+	//configure_memory();
 
 	if (disk_state)
 	{
 		LOG_INFO("Disk initialization failed.");
-
 
 		return -1;
 	}
@@ -228,7 +243,7 @@ int fatfs_init(void) {
 		if (ff_result == FR_NO_FILESYSTEM)
 		{
 			LOG_ERROR("Mount failed. Filesystem not found. Please format device.");
-			fatfs_mkfs();
+			//fatfs_mkfs();
 		}
 		else
 		{

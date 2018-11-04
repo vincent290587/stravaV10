@@ -12,6 +12,8 @@
 
 SAtt att;
 
+sTasksIDs m_tasks_id;
+
 Attitude      attitude;
 
 ListeSegments mes_segments;

@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.9.3)
+cmake_minimum_required (VERSION 3.5.1)
 
 project (stravaV10)
 
@@ -51,9 +51,10 @@ include_directories(
 	source/display
     )
 
-# Crée des variables avec les fichiers à compiler
+# Cree des variables avec les fichiers à compiler
 set(SRCS
     main_tdd.cpp
+    unit_testing.cpp
 	Model_tdd.cpp
     Simulator.cpp
 	millis_tdd.c
@@ -105,6 +106,6 @@ set(HEADERS
 # add the executable
 add_executable(StravaV10 ${SRCS} ${HEADERS})
 
-# Et pour que l'exécutable fonctionne, il faut lui indiquer la bibliothèque dont il dépend
+# Et pour que l'executable fonctionne, il faut lui indiquer la bibliothèque dont il dépend
 target_link_libraries(StravaV10 fatfs)
 # target_link_libraries(StravaV10 routes)

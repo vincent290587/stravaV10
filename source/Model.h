@@ -14,6 +14,15 @@
 #include "notifications.h"
 #include "parameters.h"
 
+typedef struct {
+	uint32_t peripherals_id;
+	uint32_t boucle_id;
+	uint32_t system_id;
+	uint32_t ls027_id;
+} sTasksIDs;
+
+extern sTasksIDs m_tasks_id;
+
 #if defined(__cplusplus)
 
 #include "fxos.h"
@@ -32,7 +41,6 @@
 #include "Attitude.h"
 #include "VParser.h"
 #include "mk64f_parser.h"
-
 
 extern SAtt          att;
 
@@ -71,6 +79,8 @@ extern sNeopixelOrders      neopixel;
 extern "C" {
 #endif // defined C++
 
+void __aeabi_idiv0(void);
+
 void model_go_to_msc_mode(void);
 
 void model_dispatch_sensors_update(void);
@@ -84,6 +94,20 @@ void perform_system_tasks_light(void);
 bool check_memory_exception(void);
 
 void wdt_reload(void);
+
+void bsp_tasks(void);
+
+void backlighting_tasks(void);
+
+void idle_task(void * p_context);
+
+void boucle_task(void * p_context);
+
+void peripherals_task(void * p_context);
+
+void system_task(void * p_context);
+
+void ls027_task(void * p_context);
 
 #if defined(__cplusplus)
 }
