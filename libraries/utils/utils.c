@@ -9,8 +9,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#ifndef TDD
 #include "app_util_platform.h"
 #include "arm_math.h"
+#else
+#include "math.h"
+#endif
 #include "utils.h"
 #include "segger_wrapper.h"
 
@@ -96,11 +100,6 @@ float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
 }
 
 /**
- * distance_between: 24ms
- * distance_between2: 24ms
- * distance_between3: 21ms
- * distance_between4: 40ms
- *
  *
  * @param lat1 En degres
  * @param long1 En degres
@@ -127,6 +126,7 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
   return delta * 6369933.;
 }
 
+#ifndef TDD
 /**
  *
  * @param lat1 En degres
@@ -135,7 +135,7 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
  * @param long2 En degres
  * @return
  */
-float distance_between(float lat1, float long1, float lat2, float long2) {
+float distance_between5(float lat1, float long1, float lat2, float long2) {
   float delta = 3.141592 * (long1 - long2) / 180.;
   float sdlong = arm_sin_f32(delta);
   float cdlong = arm_cos_f32(delta);
@@ -192,6 +192,7 @@ float distance_between3(float lat1, float long1, float lat2, float long2) {
 
   return res;
 }
+#endif
 
 /**
  * Approximation petits angles sur une Terre ellipsoidale
@@ -225,6 +226,27 @@ float distance_between4(float lat1, float long1, float lat2, float long2) {
 
   // projection plane et pythagore
   return sqrtf(dhori*dhori + dverti*dverti);
+}
+
+/**
+ * distance_between5: 24ms
+ * distance_between2: 24ms
+ * distance_between3: 21ms
+ * distance_between4: 40ms
+ *
+ *
+ * @param lat1 En degres
+ * @param long1 En degres
+ * @param lat2 En degres
+ * @param long2 En degres
+ * @return
+ */
+float distance_between(float lat1, float long1, float lat2, float long2) {
+#ifdef TDD
+  return distance_between2(lat1, long1, lat2, long2);
+#else
+  return distance_between5(lat1, long1, lat2, long2);
+#endif
 }
 
 void calculePos (const char *nom, float *lat, float *lon) {

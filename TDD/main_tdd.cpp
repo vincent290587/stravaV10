@@ -17,6 +17,7 @@
 #include "Simulator.h"
 #include "Model_tdd.h"
 #include "segger_wrapper.h"
+#include "unit_testing.hpp"
 
 
 #include <fenv.h> // For feenableexcept
@@ -61,6 +62,10 @@ int main(void)
 	// register signal SIGINT and signal handler
 	signal(SIGFPE, signalHandler);
 	signal(SIGSEGV, signalHandler);
+
+	LOG_INFO("Unit testing...");
+
+	test_liste ();
 
 	LOG_INFO("Program init");
 

@@ -6,7 +6,6 @@
  */
 
 #include "utils.h"
-#include "helper.h"
 #include <math.h>
 #include "Vecteur.h"
 #include "ListePoints.h"
@@ -414,8 +413,8 @@ Vecteur ListePoints::computePosRelative(Point point) {
 		// project on P1P2 orthogonal vector
 		res._y = ScalarProduct(P1P, orthoP1P2) / orthoP1P2.getNorm();
 
-		res._z = P1._alt + (P2._alt - P1._alt) * m_pos_r._x / P1P2.getNorm();
-		res._t = P1._rtime + (P2._rtime - P1._rtime) * m_pos_r._x / P1P2.getNorm();
+		res._z = P1._alt + (P2._alt - P1._alt) * res._x / P1P2.getNorm();
+		res._t = P1._rtime + (P2._rtime - P1._rtime) * res._x / P1P2.getNorm();
 
 	}
 

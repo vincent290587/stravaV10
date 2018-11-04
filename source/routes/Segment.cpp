@@ -363,6 +363,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 	ASSERT(m_p_data);
 
+	m_p_data->_lpts.updateDelta();
 	Vecteur& delta = m_p_data->_lpts.getDeltaListe();
 
 	// update the relative position of our last point on the segment
@@ -398,8 +399,10 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 			if (fabsf(vect._y) < MARGE_ACT * DIST_ACT) {
 
-				m_p_data->_monCur = vect._t;
-				m_p_data->_monAvance = m_p_data->_monStart + vect._t - pc._rtime;
+				Point *pp = m_p_data->_lpts.getFirstPoint();
+
+				m_p_data->_monCur = pc._rtime - m_p_data->_monStart;
+				m_p_data->_monAvance = (vect._t - pp->_rtime) - m_p_data->_monCur;
 
 				m_p_data->_monElev0 = m_p_data->_lpts.getFirstPoint()->_alt;
 
