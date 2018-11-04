@@ -157,8 +157,6 @@ void idle_task(void * p_context)
     {
     	while (NRF_LOG_PROCESS()) { }
 
-    	check_fpu();
-
     	//No more logs to process, go to sleep
     	nrf_pwr_mgmt_run();
 

@@ -271,14 +271,6 @@ int fatfs_uninit(void) {
 
 	m_is_fat_mounted = false;
 
-//	while (!configure_memory()) {
-//		LOG_INFO("SST wrong JEDEC ID");
-//		while (nrfx_qspi_mem_busy_check()) {
-//			LOG_INFO("SST busy");
-//			task_yield();
-//		}
-//	}
-
 	return 0;
 }
 
