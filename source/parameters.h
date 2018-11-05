@@ -16,7 +16,7 @@
 
 #define GPS_USE_COLD_START             0
 
-#define HISTO_POINT_SIZE               8
+#define HISTO_POINT_SIZE               20
 
 #define LNS_OVER_GPS_DTIME_S           6
 
@@ -57,7 +57,7 @@
 
 #define ATT_BUFFER_NB_ELEM             8
 
-#define FILTRE_NB                      5
+#define FILTRE_NB                      10
 
 #define MASSE                          79.
 

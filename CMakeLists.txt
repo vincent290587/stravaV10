@@ -93,6 +93,7 @@ set(SRCS
 	source/vue/Menuable.cpp
 	source/vue/Vue.cpp
 	source/vue/VueCRS.cpp
+	source/vue/VueDebug.cpp
 	source/vue/VueGPS.cpp
 	source/vue/VuePRC.cpp
 	source/vue/VueFEC.cpp
