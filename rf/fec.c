@@ -18,10 +18,7 @@
 #include "ant_interface.h"
 
 #include "app_timer.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
+#include "segger_wrapper.h"
 
 
 #define FEC_CONTROL_DELAY           APP_TIMER_TICKS(1500)

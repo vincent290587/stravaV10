@@ -52,6 +52,7 @@
 #include "ant_interface.h"
 #endif
 
+#include "Model.h"
 #include "segger_wrapper.h"
 
 #include "glasses.h"
@@ -257,9 +258,7 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
  */
 void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 {
-//	W_SYSVIEW_RecordEnterISR();
-	W_SYSVIEW_OnTaskStartExec(ANT_TASK);
-	// TODO add to scheduler
+	W_SYSVIEW_RecordEnterISR();
 
 	switch(p_ant_evt->channel) {
 	case HRM_CHANNEL_NUMBER:
@@ -276,14 +275,14 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 
 	case FEC_CHANNEL_NUMBER:
 		ant_evt_fec (p_ant_evt);
+    	events_set(m_tasks_id.ls027_id, TASK_EVENT_FEC_INFO);
 		break;
 
 	default:
 		break;
 	}
 
-	W_SYSVIEW_OnTaskStopExec(ANT_TASK);
-//    W_SYSVIEW_RecordExitISR();
+    W_SYSVIEW_RecordExitISR();
 }
 NRF_SDH_ANT_OBSERVER(m_ant_observer, APP_ANT_OBSERVER_PRIO, ant_evt_handler, 0);
 

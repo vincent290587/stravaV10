@@ -394,8 +394,20 @@ int main(void)
 	// diskio + fatfs init
 	usb_cdc_diskio_init();
 #else
+	// clocks init
+	err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+
+	// start RTC
+    LOG_INFO("Starting LF clock");
+    nrf_drv_clock_lfclk_request(NULL);
+    while(!nrf_drv_clock_lfclk_is_running())
+    {
+        /* Just waiting */
+    }
+
 	// disk init
-	fatfs_init();
+	//fatfs_init();
 #endif
 
 	// LCD displayer

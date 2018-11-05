@@ -37,8 +37,12 @@
 
 
 #if USE_SVIEW
+#ifdef USDB_ENABLED
 #include "usb_cdc.h"
 #define LOG_INFO(...)                  usb_printf(__VA_ARGS__)
+#else
+#define LOG_INFO(...)                  EMPTY_MACRO
+#endif
 #define LOG_RAW_INFO(X)                EMPTY_MACRO
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 //#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
