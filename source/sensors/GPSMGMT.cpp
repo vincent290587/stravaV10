@@ -91,8 +91,11 @@ void GPS_MGMT::init(void) {
 	// configure fix pin
 	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
 
-	SEND_TO_GPS(PMTK_AWAKE);
-	delay_us(500);
+	nrf_gpio_cfg_output(GPS_R);
+	nrf_gpio_pin_clear(GPS_R);
+	delay_ms(5);
+	nrf_gpio_pin_set(GPS_R);
+	delay_ms(100);
 
 #if GPS_USE_COLD_START
 	SEND_TO_GPS(PMTK_COLD);
@@ -156,7 +159,7 @@ void GPS_MGMT::startEpoUpdate(void) {
 
 	LOG_INFO("EPO update started\r\n");
 
-	m_epo_state = eGPSMgmtEPOStart;
+	//m_epo_state = eGPSMgmtEPOStart;
 
 	this->awake();
 }

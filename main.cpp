@@ -309,9 +309,6 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(BCK_PIN);
 	nrf_gpio_pin_clear(BCK_PIN);
 
-	nrf_gpio_cfg_output(SPK_IN);
-	nrf_gpio_pin_clear(SPK_IN);
-
 	// FIX_PIN is configured later
 
 	nrf_gpio_cfg_output(NEO_PIN);
@@ -319,12 +316,6 @@ static void pins_init(void)
 
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
-
-	nrf_gpio_cfg_output(USB_PRES);
-	nrf_gpio_pin_set(USB_PRES);
-
-	nrf_gpio_cfg_output(SST_CS);
-	nrf_gpio_pin_set(SST_CS);
 
 }
 
