@@ -21,10 +21,6 @@ typedef struct task_t {
 
 /** Default stack size and stack max. */
 #define DEFAULT_STACK_SIZE       2048
-//#define DEFAULT_MAIN_STACK_SIZE  2048
-
-// Configuration: SRAM and heap handling
-#define RAMEND 0x00030000
 
 // Stack magic pattern
 const uint8_t MAGIC = 0xa5;
@@ -164,7 +160,10 @@ void task_wait_event(uint32_t event)
 	if (setjmp(s_running->context)) return;
 
 	// Next task in run queue will continue
-	s_running = s_running->next;
+	while (s_running->events_mask) {
+		s_running = s_running->next;
+	}
+
 	longjmp(s_running->context, true);
 }
 
@@ -178,11 +177,17 @@ void task_feed_event(task_id_t task_id, uint32_t event)
 	LOG_INFO("Task %u recv event %u",
 			task_id, event);
 
-	for (int i=0; i < m_tasks_nb; i++) {
-		if (task_id == m_tasks[i].task_id) {
-			m_tasks[i].events_mask &= ~event;
+	task_t* p_task = s_running;
+
+	for (int i=0; i < MAX_TASKS_NB; i++) {
+		if (task_id == p_task->task_id) {
+			p_task->events_mask &= ~event;
+			return;
 		}
+		p_task = p_task->next;
 	}
+
+	LOG_ERROR("Task not found");
 }
 
 size_t task_stack()
