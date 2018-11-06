@@ -73,4 +73,7 @@ void BoucleFEC::run() {
 
 	vue.refresh();
 
+	// wait for location to be updated
+	(void)events_wait(TASK_EVENT_FEC_INFO);
+
 }

@@ -82,6 +82,8 @@ public:
 
 	void displayGPS2(void);
 
+	bool getGPSDate(int &iYr, int &iMo, int &iDay, int &iHr);
+
 	eLocationSource getDate(SDate& date_);
 	eLocationSource getPosition(SLoc& loc_, SDate& date_);
 

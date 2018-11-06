@@ -13,6 +13,7 @@
 #include <vue/VueCRS.h>
 #include <vue/VueFEC.h>
 #include <vue/VuePRC.h>
+#include <vue/VueDebug.h>
 #include <vue/Menuable.h>
 #include <button.h>
 #include "ls027.h"
@@ -21,9 +22,10 @@ typedef enum {
 	eVueGlobalScreenCRS,
 	eVueGlobalScreenFEC,
 	eVueGlobalScreenPRC,
+	eVueGlobalScreenDEBUG,
 } eVueGlobalScreenModes;
 
-class Vue: public VueCRS, public VueFEC, public VuePRC, public NotifiableDevice, public Menuable {
+class Vue: public VueCRS, public VueFEC, public VuePRC, public VueDebug, public NotifiableDevice, public Menuable {
 public:
 	Vue();
 

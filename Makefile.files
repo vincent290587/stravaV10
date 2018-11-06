@@ -102,6 +102,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/AltiBaro \
   $(PROJ_DIR)/libraries/GlobalTop \
   $(PROJ_DIR)/libraries/IntelliScreen \
+  $(PROJ_DIR)/libraries/jscope \
   $(PROJ_DIR)/libraries/sysview \
   $(PROJ_DIR)/libraries/TinyGPSPlus \
   $(PROJ_DIR)/libraries/VParser \

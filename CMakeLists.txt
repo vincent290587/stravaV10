@@ -73,7 +73,7 @@ set(SRCS
 	libraries/AdafruitGFX/Print.cpp
 	libraries/AltiBaro/AltiBaro.cpp
 	libraries/utils/utils.c
-	libraries/GlobalTop/MTK.cpp
+	libraries/GlobalTop/EPONmeaPacket.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
 	source/display/SegmentManager.cpp
 	source/display/Zoom.cpp
@@ -93,6 +93,7 @@ set(SRCS
 	source/vue/Menuable.cpp
 	source/vue/Vue.cpp
 	source/vue/VueCRS.cpp
+	source/vue/VueDebug.cpp
 	source/vue/VueGPS.cpp
 	source/vue/VuePRC.cpp
 	source/vue/VueFEC.cpp

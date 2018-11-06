@@ -61,6 +61,8 @@ void model_dispatch_sensors_update(void) {
  */
 void perform_system_tasks(void) {
 
+	gps_mgmt.tasks();
+
 	locator.tasks();
 
 	uart_tasks();
@@ -119,5 +121,5 @@ void print_mem_state(void) {
 	tot_point_mem += Point::getObjectCount() * sizeof(Point);
 	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
 
-	LOG_INFO("> %d %u %u", tot_point_mem, Point2D::getObjectCount(), Point::getObjectCount());
+	LOG_INFO("Allocated points: %d o %u 2D %u 3D", tot_point_mem, Point2D::getObjectCount(), Point::getObjectCount());
 }

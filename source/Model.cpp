@@ -215,12 +215,12 @@ void ls027_task(void * p_context)
 {
 	for(;;)
 	{
-		// check screen update & unlock task
-		vue.writeWhole();
-
 		wdt_reload();
 
 		events_wait(TASK_EVENT_LS027_TRIGGER);
+
+		// check screen update & unlock task
+		vue.writeWhole();
 	}
 }
 

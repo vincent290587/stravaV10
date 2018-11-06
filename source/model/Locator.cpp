@@ -174,7 +174,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = sim_loc.data.lat;
 		loc_.lon = sim_loc.data.lon;
-		loc_.alt = sim_loc.data.alt;
+		loc_.alt = sim_loc.data.alt / 100.;
 		loc_.speed = 20.;
 		loc_.course = -1;
 		date_.secj = sim_loc.data.utc_time;
@@ -343,6 +343,25 @@ void Locator::tasks() {
 }
 
 /**
+ * Returns the GPS date
+ *
+ * @param iYr
+ * @param iMo
+ * @param iDay
+ * @param iHr
+ */
+bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
+
+	iYr = gps.date.year();
+	iMo = gps.date.month();
+	iDay = gps.date.day();
+	iHr = gps.time.hour();
+
+	return (gps.date.isValid() && gps.time.isValid());
+}
+
+
+/**
  *
  */
 #ifndef TDD
@@ -350,9 +369,6 @@ void Locator::displayGPS2(void) {
 
 //	int totalMessages = atoi(totalGPGSVMessages.value());
 //	int currentMessage = atoi(messageNumber.value());
-
-	vue.setCursor(20,20);
-	vue.setTextSize(2);
 
 	vue.print(satsInUse.value());
 	vue.print(F(" used of "));
@@ -378,59 +394,11 @@ void Locator::displayGPS2(void) {
 	vue.println("  ------");
 
 	uint8_t nb_activ = 0;
-
-	for (int i=0; i<MAX_SATELLITES; ++i) {
-
-		if (sats[i].active) {
-
-			sats[i].active--;
-
-			nb_activ++;
-
-			// i+1 is here also the satellite number
-			vue.print(i+1);
-			vue.print(F(": "));
-
-			vue.print(sats[i].elevation);
-			vue.print(F("el "));
-
-			vue.print(sats[i].azimuth);
-			vue.print(F("az "));
-
-			vue.print(sats[i].snr);
-			vue.println(F("dBi"));
-
-		}
-	}
-
-	if (!nb_activ) {
-		for (int i=0; i<MAX_SATELLITES; ++i) {
-
-			if (sats[i].snr && nb_activ++ < 10) {
-
-				// i+1 is here also the satellite number
-				vue.print(i+1);
-				vue.print(F(": "));
-
-				vue.print(sats[i].elevation);
-				vue.print(F("el "));
-
-				vue.print(sats[i].azimuth);
-				vue.print(F("az "));
-
-				vue.print(sats[i].snr);
-				vue.println(F("dBi"));
-			}
-
-		}
-
-		vue.println("All inactive");
-	}
-
-
 }
+
 #else
 void Locator::displayGPS2(void) {
-
+	vue.setCursor(20,20);
+	vue.setTextSize(2);
 }
 #endif

@@ -24,7 +24,8 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 
 	LOG_DEBUG("Last update age: %lu\r\n", locator.getLastUpdateAge());
 
-	if (locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS) {
+	if (locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS ||
+			!gps_mgmt.isEPOUpdating()) {
 		m_crs_screen_mode = eVueCRSScreenInit;
 	}
 	else if (m_crs_screen_mode == eVueCRSScreenInit) {
