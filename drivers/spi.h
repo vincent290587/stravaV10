@@ -15,8 +15,6 @@
  */
 typedef struct
 {
-    nrf_spim_frequency_t frequency; ///< SPI frequency.
-    nrf_spim_bit_order_t bit_order; ///< SPI bit order.
     nrfx_spim_evt_handler_t handler;
     bool blocking;
 } sSpimConfig;

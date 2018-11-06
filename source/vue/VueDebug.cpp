@@ -19,6 +19,9 @@ void VueDebug::displayDebug() {
 
 	String info = "";
 
+	vue.setCursor(20,20);
+	vue.setTextSize(2);
+
 	locator.displayGPS2();
 
 	info = String("STC: ") + String((int)stc.getCurrent());
