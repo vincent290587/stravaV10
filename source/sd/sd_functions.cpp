@@ -415,7 +415,7 @@ int epo_file_size(void) {
  *
  * @return
  */
-int epo_file_start(void) {
+bool epo_file_start(int current_gps_hour) {
 
 	FRESULT error;
 	const char* fname = "MTK14.EPO";
@@ -427,10 +427,34 @@ int epo_file_start(void) {
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
-		return  -1;
+		return false;
 	}
 
-	return 0;
+	int gps_hour = 0;
+
+	UINT size_read = 0;
+	error = f_read (
+			&g_EpoFileObject, 	/* Pointer to the file object */
+			&gps_hour,	        /* Pointer to data buffer */
+			sizeof(uint32_t),   /* Number of bytes to read */
+			&size_read	        /* Pointer to number of bytes read */
+	);
+	if (error)
+	{
+		LOG_INFO("Read file failed.");
+		return false;
+	}
+
+	gps_hour &= 0x00FFFFFF;
+
+	// determine the segment to use
+	int segment = (current_gps_hour - gps_hour) / 6;
+	if ((segment < 0) || (segment >= EPO_SAT_SEGMENTS_NUM))
+	{
+		return false;
+	}
+
+	return (FR_OK == f_lseek(&g_EpoFileObject, segment*(EPO_SAT_DATA_SIZE_BYTES)*(EPO_SAT_SEGMENTS_NB)));
 }
 
 /**
@@ -438,7 +462,7 @@ int epo_file_start(void) {
  * @param epo_data
  * @return The number of sat_data read, or -1 if error
  */
-int epo_file_read(sEpoPacketSatData* sat_data) {
+int epo_file_read(sEpoPacketSatData* sat_data, uint16_t size_) {
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
@@ -450,13 +474,13 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
 	FRESULT error = f_read (
 			&g_EpoFileObject, 	/* Pointer to the file object */
 			g_bufferRead,	    /* Pointer to data buffer */
-			MTK_EPO_SAT_DATA_SIZE,/* Number of bytes to read */
+			size_,              /* Number of bytes to read */
 			&size_read	        /* Pointer to number of bytes read */
 	);
 	if (error) error = f_read (
 			&g_EpoFileObject, 	/* Pointer to the file object */
 			g_bufferRead,	    /* Pointer to data buffer */
-			MTK_EPO_SAT_DATA_SIZE,/* Number of bytes to read */
+			size_,              /* Number of bytes to read */
 			&size_read	        /* Pointer to number of bytes read */
 	);
 
@@ -466,11 +490,11 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
 		return -1;
 	}
 
-	if (size_read != MTK_EPO_SAT_DATA_SIZE) {
+	if (size_read != size_) {
 		LOG_INFO("End of EPO file");
 		return 1;
 	} else {
-		memcpy(sat_data->sat, g_bufferRead, MTK_EPO_SAT_DATA_SIZE);
+		memcpy(sat_data->sat, g_bufferRead, size_);
 	}
 
 	return 0;

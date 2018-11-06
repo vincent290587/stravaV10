@@ -1,6 +1,5 @@
 PROJECT_NAME     := strava10_pca10052_s140
 TARGETS          := nrf52840_xxaa
-OUTPUT_DIRECTORY := _build.$(OS)
 SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.1.0_softdevice.hex
 
 include Makefile.local
@@ -59,6 +58,7 @@ CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 #CFLAGS += -DUSE_SVIEW=1 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
+#CFLAGS += -DUSE_SVIEW=0 -DUSE_JSCOPE -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840
@@ -152,7 +152,7 @@ dfu_softdevice:
 	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p $(COM_PORT)
 
 dfu:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xae --application-version 1 --application _build_W/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xae --application-version 1 --application $(OUTPUT_DIRECTORY)//nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
 

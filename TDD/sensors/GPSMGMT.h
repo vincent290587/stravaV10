@@ -17,11 +17,6 @@ typedef enum {
 } eGPSMgmtPowerState;
 
 typedef enum {
-	eGPSMgmtTransNMEA,
-	eGPSMgmtTransBIN,
-} eGPSMgmtTransType;
-
-typedef enum {
 	eGPSMgmtEPOIdle,
 	eGPSMgmtEPOStart,
 	eGPSMgmtEPORunning,
@@ -50,6 +45,7 @@ public:
 
 	void init(void);
 	bool isFix(void);
+	bool isEPOUpdating(void);
 
 	void standby(void);
 	void awake(void);

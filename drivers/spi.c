@@ -41,8 +41,6 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
 {
 	W_SYSVIEW_RecordEnterISR();
 
-	SEGGER_SYSVIEW_OnUserStop(SPI_TASK);
-
     spi_xfer_done = true;
 
     NRF_LOG_DEBUG("SPI Xfer %u/%u byte", p_event->xfer_desc.tx_length, p_event->xfer_desc.rx_length);
@@ -51,6 +49,10 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
 
     sSpimConfig **spi_config = (sSpimConfig**)p_context;
 
+    if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+    	events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_WAIT);
+    }
+
     if (spi_config[0]) {
 
     	if (spi_config[0]->handler) {
@@ -58,29 +60,7 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
     	}
     }
 
-    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-    	events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_WAIT);
-    }
-
     W_SYSVIEW_RecordExitISR();
-}
-
-/**
- *
- */
-void spi_init(void)
-{
-
-	m_spi_config.ss_pin         = 0xFF;
-	m_spi_config.miso_pin       = 0xFF;
-	m_spi_config.mosi_pin       = SPI_MOSI_PIN;
-	m_spi_config.sck_pin        = SPI_SCK_PIN;
-
-	spi_xfer_done = true;
-
-	p_spi_config[0] = NULL;
-
-	LOG_INFO("SPI init");
 }
 
 /**
@@ -102,6 +82,27 @@ static void _spi_start(void)
 
 	nrf_delay_us(800);
 
+}
+
+/**
+ *
+ */
+void spi_init(void)
+{
+	m_spi_config.ss_pin         = NRFX_SPIM_PIN_NOT_USED;
+	m_spi_config.miso_pin       = NRFX_SPIM_PIN_NOT_USED;
+	m_spi_config.mosi_pin       = LS027_MOSI_PIN;
+	m_spi_config.sck_pin        = LS027_SCK_PIN;
+	m_spi_config.frequency      = NRF_SPIM_FREQ_4M;
+	m_spi_config.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
+
+	spi_xfer_done = true;
+
+	p_spi_config[0] = NULL;
+
+	LOG_INFO("SPI init");
+
+	_spi_start();
 }
 
 /**
@@ -132,20 +133,23 @@ int spi_schedule (sSpimConfig const * spi_config,
 		uint8_t       * p_rx_buffer,
 		size_t          rx_length) {
 
-	SEGGER_SYSVIEW_OnUserStart(SPI_TASK);
-
 	nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(
 			p_tx_buffer, tx_length,
 			p_rx_buffer, rx_length);
 
-	NRF_LOG_DEBUG("SPI Xfer %u/%u byte", tx_length, rx_length);
-
-	if (!m_is_started) {
-		// first ever transfer
-		_spi_start();
-	}
+	NRF_LOG_INFO("SPI Xfer %u/%u byte", tx_length, rx_length);
 
 	ASSERT(m_is_started);
+	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+		while (!spi_xfer_done) {
+			yield();
+		}
+	} else {
+		LOG_ERROR("SPI Xfer not finished, aborting");
+		return 2;
+	}
+
+	p_spi_config[0] = spi_config;
 
 	ret_code_t err = nrfx_spim_xfer(&spi, &xfer_desc, 0);
 	APP_ERROR_CHECK(err);
@@ -154,15 +158,14 @@ int spi_schedule (sSpimConfig const * spi_config,
 		// Xfer bytes
 		spi_xfer_done = false;
 	} else {
-		SEGGER_SYSVIEW_OnUserStop(SPI_TASK);
 		return 1;
 	}
 
 	if (p_spi_config[0]) {
 		if (p_spi_config[0]->blocking) {
 
-			if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-				events_wait(TASK_EVENT_PERIPH_WAIT);
+			if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+				events_wait(TASK_EVENT_LS027_WAIT);
 			} else {
 				while (!spi_xfer_done) {
 					perform_system_tasks_light();
@@ -172,8 +175,6 @@ int spi_schedule (sSpimConfig const * spi_config,
 
 		LOG_DEBUG("Xfer took %ums", millis() - millis_);
 	}
-
-	SEGGER_SYSVIEW_OnUserStop(SPI_TASK);
 
 	return 0;
 }

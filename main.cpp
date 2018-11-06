@@ -309,9 +309,6 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(BCK_PIN);
 	nrf_gpio_pin_clear(BCK_PIN);
 
-	nrf_gpio_cfg_output(SPK_IN);
-	nrf_gpio_pin_clear(SPK_IN);
-
 	// FIX_PIN is configured later
 
 	nrf_gpio_cfg_output(NEO_PIN);
@@ -319,12 +316,6 @@ static void pins_init(void)
 
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
-
-	nrf_gpio_cfg_output(USB_PRES);
-	nrf_gpio_pin_set(USB_PRES);
-
-	nrf_gpio_cfg_output(SST_CS);
-	nrf_gpio_pin_set(SST_CS);
 
 }
 
@@ -405,8 +396,20 @@ int main(void)
 	// diskio + fatfs init
 	usb_cdc_diskio_init();
 #else
+	// clocks init
+	err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+
+	// start RTC
+    LOG_INFO("Starting LF clock");
+    nrf_drv_clock_lfclk_request(NULL);
+    while(!nrf_drv_clock_lfclk_is_running())
+    {
+        /* Just waiting */
+    }
+
 	// disk init
-	fatfs_init();
+	//fatfs_init();
 #endif
 
 	// LCD displayer

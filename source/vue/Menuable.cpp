@@ -1,7 +1,7 @@
 /*
  * Menuable.cpp
  *
- *  Created on: 13 d�c. 2017
+ *  Created on: 13 dÃ©c. 2017
  *      Author: Vincent
  */
 
@@ -49,6 +49,13 @@ static void _page0_mode_fec(int var) {
 
 	vue.setCurrentMode(eVueGlobalScreenFEC);
 	boucle.changeMode(eBoucleGlobalModesFEC);
+	_retour_menu(0);
+}
+
+static void _page0_mode_debug(int var) {
+
+	vue.setCurrentMode(eVueGlobalScreenDEBUG);
+	boucle.changeMode(eBoucleGlobalModesCRS);
 	_retour_menu(0);
 }
 
@@ -110,7 +117,8 @@ void Menuable::initMenu(void) {
 	menu_add_item(&m_menus.menu_page[0], "Mode FEC", _page0_mode_fec);
 	menu_add_item(&m_menus.menu_page[0], "Mode CRS", _page0_mode_crs);
 	menu_add_item(&m_menus.menu_page[0], "Mode PRC", _page0_mode_prc);
-	menu_add_item(&m_menus.menu_page[0], "! Format", _page0_format);
+	menu_add_item(&m_menus.menu_page[0], "Format", _page0_format);
+	menu_add_item(&m_menus.menu_page[0], "Mode DBG", _page0_mode_debug);
 
 	menu_add_item(&m_menus.menu_page[0], "Shutdown", _page0_shutdown);
 

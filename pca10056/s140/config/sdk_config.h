@@ -2909,7 +2909,7 @@
 // <3=> Read4O 
 // <4=> Read4IO 
 #ifndef NRFX_QSPI_CONFIG_READOC
-#define NRFX_QSPI_CONFIG_READOC 2
+#define NRFX_QSPI_CONFIG_READOC 0
 #endif
 
 // <o> NRFX_QSPI_CONFIG_WRITEOC  - Number of data lines and opcode used for writing.
@@ -2920,7 +2920,7 @@
 // <3=> PP4IO 
 
 #ifndef NRFX_QSPI_CONFIG_WRITEOC
-#define NRFX_QSPI_CONFIG_WRITEOC 1
+#define NRFX_QSPI_CONFIG_WRITEOC 0
 #endif
 
 // <o> NRFX_QSPI_CONFIG_ADDRMODE  - Addressing mode.

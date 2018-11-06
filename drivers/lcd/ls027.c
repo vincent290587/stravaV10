@@ -84,9 +84,7 @@ static void ls027_spi_init() {
 	nrf_gpio_pin_clear(LS027_CS_PIN);
 	nrf_gpio_cfg_output(LS027_CS_PIN);
 
-	m_spi_ls027_cfg.frequency      = NRF_SPIM_FREQ_4M;
 	m_spi_ls027_cfg.handler        = ls027_cs_off;
-	m_spi_ls027_cfg.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
 	m_spi_ls027_cfg.blocking       = true;
 }
 

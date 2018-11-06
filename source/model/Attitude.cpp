@@ -13,6 +13,10 @@
 #include "sd_functions.h"
 #include "segger_wrapper.h"
 
+#ifdef USE_JSCOPE
+#include "JScope.h"
+JScope jscope;
+#endif
 
 Attitude::Attitude() {
 	m_last_save_dist = 0.;
@@ -100,8 +104,8 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 	}
 
-	// update the computed power
-	this->majPower(20.);
+	// TODO update the computed power
+	this->majPower(loc_.speed);
 
 	att.pwr = m_power;
 
@@ -179,18 +183,38 @@ void Attitude::majPower(float speed_) {
 			_x[i] = Pc._rtime - P2._rtime;
 			_y[i] = Pc._alt;
 
-			LOG_INFO("%d ms %d mm", (int)(_x[i]*1000), (int)(_y[i]*1000));
+			LOG_DEBUG("%d ms %d mm", (int)(_x[i]*1000), (int)(_y[i]*1000));
 		}
 
 		_lrCoef[1] = _lrCoef[0] = 0;
 
 		// regression lineaire
-		simpLinReg(_x, _y, _lrCoef, FILTRE_NB + 1);
+		float corrsq = simpLinReg(_x, _y, _lrCoef, FILTRE_NB + 1);
+
+#ifdef USE_JSCOPE
+		{
+			// output some results to Segger JSCOPE
+			jscope.inputData(P1._alt, 0);
+			jscope.inputData(_lrCoef[0], 4);
+			jscope.inputData(corrsq, 8);
+		}
+
+		jscope.flush();
+#endif
 
 		// STEP 1 : on filtre altitude et vitesse
-		m_vit_asc = _lrCoef[0];
+		if (corrsq > 0.8) {
+			m_vit_asc = _lrCoef[0];
 
-		LOG_INFO("Vit. vert.= %d mm/s", (int)(m_vit_asc*1000));
+			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
+					(int)(m_vit_asc*1000), corrsq);
+		} else {
+			m_vit_asc = 0;
+
+			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
+					(int)(m_vit_asc*1000), corrsq);
+		}
+
 
 		// horizontal speed (m/s)
 		fSpeed = speed_ / 3.6;

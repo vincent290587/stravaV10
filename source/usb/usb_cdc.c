@@ -95,10 +95,10 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
 {                                                                       \
     .xip_offset  = NRFX_QSPI_CONFIG_XIP_OFFSET,                         \
     .pins = {                                                           \
-       .sck_pin     = SPI_SCK_PIN,                                 \
-       .csn_pin     = SST_CS,                                      \
-       .io0_pin     = SST_MOSI_PIN,                                \
-       .io1_pin     = SPI_MISO_PIN,                                \
+       .sck_pin     = QSPI_SCK_PIN,                                 \
+       .csn_pin     = QSPI_SS_PIN,                                      \
+       .io0_pin     = QSPI_MOSI_PIN,                                \
+       .io1_pin     = QSPI_MISO_PIN,                                \
        .io2_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
        .io3_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
     },                                                                  \
