@@ -140,13 +140,15 @@ int main(void)
 //	m_tasks_id.system_id = task_create(task2, "task2", 2048, NULL);
 //	m_tasks_id.peripherals_id = task_create(task3, "task3", 2048, NULL);
 //	m_tasks_id.ls027_id = task_create(task4, "task4", 2048, NULL);
+//
+//	task_start(idle_task_test, NULL);
 
 	m_tasks_id.boucle_id = task_create(boucle_task, "boucle_task", 65536, NULL);
 	m_tasks_id.system_id = task_create(system_task, "system_task", 65536, NULL);
 	m_tasks_id.peripherals_id = task_create(peripherals_task, "peripherals_task", 65536, NULL);
 	m_tasks_id.ls027_id = task_create(ls027_task, "ls027_task", 65536, NULL);
 
-	task_start(idle_task_test, NULL);
+	task_start(idle_task, NULL);
 
 }
 

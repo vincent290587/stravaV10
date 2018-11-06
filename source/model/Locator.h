@@ -87,6 +87,8 @@ public:
 
 	eLocationSource getUpdateSource();
 
+	bool getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr);
+
 	bool isUpdated();
 
 	uint32_t getLastUpdateAge();

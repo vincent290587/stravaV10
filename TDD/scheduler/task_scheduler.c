@@ -56,7 +56,7 @@ static int _task_init(tasked_func_t loop, const char *name, const uint8_t* stack
 	// Add task last in run queue (main task)
 	uint8_t task_id = m_tasks_nb++;
 
-	m_tasks[task_id].task_id = task_id;
+	m_tasks[task_id].task_id = m_tasks_nb;
 	m_tasks[task_id].events_mask = 0;
 	m_tasks[task_id].stack = stack;
 	m_tasks[task_id].name = name;
