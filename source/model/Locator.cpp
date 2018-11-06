@@ -174,7 +174,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = sim_loc.data.lat;
 		loc_.lon = sim_loc.data.lon;
-		loc_.alt = sim_loc.data.alt;
+		loc_.alt = sim_loc.data.alt / 100.;
 		loc_.speed = 20.;
 		loc_.course = -1;
 		date_.secj = sim_loc.data.utc_time;
@@ -343,8 +343,28 @@ void Locator::tasks() {
 }
 
 /**
+ * Returns the GPS date
+ *
+ * @param iYr
+ * @param iMo
+ * @param iDay
+ * @param iHr
+ */
+bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
+
+	iYr = gps.date.year();
+	iMo = gps.date.month();
+	iDay = gps.date.day();
+	iHr = gps.time.hour();
+
+	return (gps.date.isValid() && gps.time.isValid());
+}
+
+
+/**
  *
  */
+#ifndef TDD
 void Locator::displayGPS2(void) {
 
 //	int totalMessages = atoi(totalGPGSVMessages.value());
@@ -376,7 +396,11 @@ void Locator::displayGPS2(void) {
 
 	vue.println("  ------");
 
-
-
 }
 
+#else
+void Locator::displayGPS2(void) {
+	vue.setCursor(20,20);
+	vue.setTextSize(2);
+}
+#endif

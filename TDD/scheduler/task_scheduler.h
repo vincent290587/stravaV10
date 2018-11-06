@@ -33,7 +33,7 @@ bool task_begin(size_t stackSize);
  * @param stackSize
  * @return
  */
-int task_create(tasked_func_t taskLoop, size_t stackSize, void *p_context);
+int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void *p_context);
 
 /**
  * This function does not return

@@ -399,6 +399,8 @@ int main(void)
 	spi_init();
 	i2c_init();
 
+	nrf_delay_ms(1000);
+
 #ifdef USB_ENABLED
 	// diskio + fatfs init
 	usb_cdc_diskio_init();
@@ -409,8 +411,6 @@ int main(void)
 
 	// LCD displayer
 	vue.init();
-
-	LOG_FLUSH();
 
 	// Initialize timer module
 #ifdef USB_ENABLED

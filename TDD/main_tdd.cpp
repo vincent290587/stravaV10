@@ -47,39 +47,49 @@ void signalHandler( int signum ) {
 }
 
 void idle_task_test(void *p_context) {
-	sleep(500);
-	yield();
+	for (;;) {
+		sleep(500);
+		yield();
+	}
 }
 
 void task1(void *p_context) {
-	LOG_INFO("Task0");
+	for (;;) {
+		LOG_INFO("Task1");
 
-	sleep(500);
-	events_set(1, 1);
-	yield();
+		sleep(500);
+		events_set(2, 1);
+		yield();
+	}
 }
 
 void task2(void *p_context) {
-	events_wait(1);
-	LOG_INFO("Task1");
+	for (;;) {
+		events_wait(1);
+		LOG_INFO("Task2");
 
-	sleep(500);
-	events_set(2, 2);
+		sleep(500);
+		events_set(3, 2);
+	}
 }
 
 void task3(void *p_context) {
-	events_wait(2);
-	LOG_INFO("Task2");
+	for (;;) {
+		events_wait(2);
+		LOG_INFO("Task3");
 
-	sleep(500);
-	events_set(3, 4);
+		sleep(500);
+		events_set(4, 4);
+	}
 }
 
 void task4(void *p_context) {
-	events_wait(4);
-	LOG_INFO("Task3");
+	for (;;) {
+		events_wait(4);
+		LOG_INFO("Task4");
 
-	sleep(500);
+		sleep(500);
+	}
 }
 
 /**
@@ -126,10 +136,15 @@ int main(void)
 
 	task_begin(65536 * 5);
 
-	m_tasks_id.boucle_id = task_create(task1, 65536, NULL);
-	m_tasks_id.system_id = task_create(task2, 65536, NULL);
-	m_tasks_id.peripherals_id = task_create(task3, 65536, NULL);
-	m_tasks_id.ls027_id = task_create(task4, 65536, NULL);
+//	m_tasks_id.boucle_id = task_create(task1, "task1", 2048, NULL);
+//	m_tasks_id.system_id = task_create(task2, "task2", 2048, NULL);
+//	m_tasks_id.peripherals_id = task_create(task3, "task3", 2048, NULL);
+//	m_tasks_id.ls027_id = task_create(task4, "task4", 2048, NULL);
+
+	m_tasks_id.boucle_id = task_create(boucle_task, "boucle_task", 65536, NULL);
+	m_tasks_id.system_id = task_create(system_task, "system_task", 65536, NULL);
+	m_tasks_id.peripherals_id = task_create(peripherals_task, "peripherals_task", 65536, NULL);
+	m_tasks_id.ls027_id = task_create(ls027_task, "ls027_task", 65536, NULL);
 
 	task_start(idle_task_test, NULL);
 
