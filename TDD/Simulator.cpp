@@ -53,6 +53,12 @@ void simulator_tasks(void) {
 
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
 
+	// FEC simulation
+	fec_info.power = rand() % 500;
+	fec_info.speed = 20.;
+	fec_info.el_time++;
+	events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
+
 	print_mem_state();
 
 	last_point_ms = millis();

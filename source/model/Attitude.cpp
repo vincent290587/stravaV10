@@ -240,11 +240,10 @@ void Attitude::majPower(float speed_) {
 /**
  *
  */
-#ifdef ANT_STACK_SUPPORT_REQD
+
 void Attitude::addNewFECPoint(sFecInfo& fec_) {
 
 	// TODO
 
 }
 
-#endif

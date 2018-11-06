@@ -61,7 +61,7 @@ void BoucleFEC::run() {
 
 	LOG_INFO("Boucle FEC run\r\n");
 
-#ifdef ANT_STACK_SUPPORT_REQD
+#if defined(ANT_STACK_SUPPORT_REQD) || defined(TDD)
 	// add FEC point to record
 	attitude.addNewFECPoint(fec_info);
 

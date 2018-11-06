@@ -69,6 +69,7 @@ extern AltiBaro      baro;
 
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;
+extern sFecInfo fec_info;
 
 extern "C" {
 #endif // defined C++
