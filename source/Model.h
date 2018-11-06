@@ -15,10 +15,10 @@
 #include "parameters.h"
 
 typedef struct {
-	uint32_t peripherals_id;
-	uint32_t boucle_id;
-	uint32_t system_id;
-	uint32_t ls027_id;
+	uint8_t peripherals_id;
+	uint8_t boucle_id;
+	uint8_t system_id;
+	uint8_t ls027_id;
 } sTasksIDs;
 
 extern sTasksIDs m_tasks_id;

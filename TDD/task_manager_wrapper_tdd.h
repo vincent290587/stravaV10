@@ -11,10 +11,10 @@
 #include <stdint.h>
 #include "task_scheduler.h"
 
-#define TASK_ID_INVALID                -1
 
-/**@brief Task ID */
-typedef uint8_t task_id_t;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**@brief Returns ID of currently running task.
  *
@@ -51,5 +51,8 @@ inline void events_set(task_id_t task_id, uint32_t evt_mask) {
 	task_feed_event(task_id, evt_mask);
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* TASK_MANAGER_WRAPPER_TDD_H_ */

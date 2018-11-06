@@ -345,7 +345,6 @@ void Locator::tasks() {
 /**
  *
  */
-#ifndef TDD
 void Locator::displayGPS2(void) {
 
 //	int totalMessages = atoi(totalGPGSVMessages.value());
@@ -377,60 +376,7 @@ void Locator::displayGPS2(void) {
 
 	vue.println("  ------");
 
-	uint8_t nb_activ = 0;
-
-	for (int i=0; i<MAX_SATELLITES; ++i) {
-
-		if (sats[i].active) {
-
-			sats[i].active--;
-
-			nb_activ++;
-
-			// i+1 is here also the satellite number
-			vue.print(i+1);
-			vue.print(F(": "));
-
-			vue.print(sats[i].elevation);
-			vue.print(F("el "));
-
-			vue.print(sats[i].azimuth);
-			vue.print(F("az "));
-
-			vue.print(sats[i].snr);
-			vue.println(F("dBi"));
-
-		}
-	}
-
-	if (!nb_activ) {
-		for (int i=0; i<MAX_SATELLITES; ++i) {
-
-			if (sats[i].snr && nb_activ++ < 10) {
-
-				// i+1 is here also the satellite number
-				vue.print(i+1);
-				vue.print(F(": "));
-
-				vue.print(sats[i].elevation);
-				vue.print(F("el "));
-
-				vue.print(sats[i].azimuth);
-				vue.print(F("az "));
-
-				vue.print(sats[i].snr);
-				vue.println(F("dBi"));
-			}
-
-		}
-
-		vue.println("All inactive");
-	}
 
 
 }
-#else
-void Locator::displayGPS2(void) {
 
-}
-#endif

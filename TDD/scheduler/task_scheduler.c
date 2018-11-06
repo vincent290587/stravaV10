@@ -13,7 +13,7 @@ typedef struct task_t {
 	struct task_t* prev;		//!< Previous task.
 	jmp_buf context;		//!< Task context.
 	const uint8_t* stack;	//!< Task stack top.
-	uint8_t task_id;
+	task_id_t task_id;
 	uint32_t events_mask;
 	tasked_func_t exec_func;
 	void *p_context;
@@ -22,7 +22,6 @@ typedef struct task_t {
 /** Default stack size and stack max. */
 #define DEFAULT_STACK_SIZE       2048
 //#define DEFAULT_MAIN_STACK_SIZE  2048
-#define STACK_MAX                65536
 
 // Configuration: SRAM and heap handling
 #define RAMEND 0x00030000
@@ -119,8 +118,6 @@ int task_create(tasked_func_t taskLoop, size_t stackSize, void *p_context)
 		memset(stack, MAGIC, s_top);
 	}
 
-	if (s_top + stackSize > STACK_MAX) return -1;
-
 	// Adjust stack top for next task allocation
 	s_top += stackSize;
 
@@ -131,14 +128,13 @@ int task_create(tasked_func_t taskLoop, size_t stackSize, void *p_context)
 	return _task_init(taskLoop, stack - stackSize, p_context);
 }
 
-void task_start()
+void task_start(tasked_func_t idle_task, void *p_context)
 {
 	LOG_INFO("%u tasks recorded and starting", m_tasks_nb);
 
 	while (1) {
-		sleep(1500);
-		LOG_INFO("Main task...");
-		task_yield();
+		LOG_DEBUG("Main task...");
+		idle_task(p_context);
 	}
 }
 
@@ -147,12 +143,12 @@ void task_yield()
 	// Caller will continue here on yield
 	if (setjmp(s_running->context)) return;
 
-	LOG_INFO("Finishing task %u", s_running->task_id);
+	LOG_DEBUG("Finishing task %u", s_running->task_id);
 
 	// Next task in run queue will continue
 	s_running = s_running->next;
 
-	LOG_INFO("Starting task %u", s_running->task_id);
+	LOG_DEBUG("Starting task %u", s_running->task_id);
 
 	longjmp(s_running->context, true);
 }
@@ -172,8 +168,16 @@ void task_wait_event(uint32_t event)
 	longjmp(s_running->context, true);
 }
 
-void task_feed_event(uint8_t task_id, uint32_t event)
+void task_feed_event(task_id_t task_id, uint32_t event)
 {
+	if (TASK_ID_INVALID == task_id) {
+		LOG_ERROR("Invalid task id");
+		return;
+	}
+
+	LOG_INFO("Task %u recv event %u",
+			task_id, event);
+
 	for (int i=0; i < m_tasks_nb; i++) {
 		if (task_id == m_tasks[i].task_id) {
 			m_tasks[i].events_mask &= ~event;

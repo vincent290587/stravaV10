@@ -5,14 +5,16 @@
  *      Author: Vincent
  */
 
+#include <unistd.h>
 #include "Model.h"
 #include "uart_tdd.h"
+#include "Simulator.h"
 #include "gpio.h"
 #include "segger_wrapper.h"
 
 SAtt att;
 
-sTasksIDs m_tasks_id;
+sTasksIDs     m_tasks_id;
 
 Attitude      attitude;
 
@@ -121,3 +123,98 @@ void print_mem_state(void) {
 
 	LOG_INFO("> %d %u %u", tot_point_mem, Point2D::getObjectCount(), Point::getObjectCount());
 }
+
+/**
+ *
+ * @param p_context
+ */
+void idle_task(void * p_context)
+{
+    for(;;)
+    {
+    	sleep(5);
+
+		simulator_tasks();
+
+    	task_yield();
+    }
+}
+
+/**
+ * System continuous tasks
+ *
+ * @param p_context
+ */
+void system_task(void * p_context)
+{
+    for(;;)
+    {
+		perform_system_tasks();
+
+		task_yield();
+    }
+}
+
+/**
+ * Triggered externally when device has new valid data
+ *
+ * @param p_context
+ */
+void boucle_task(void * p_context)
+{
+	for (;;)
+	{
+		LOG_DEBUG("\r\nTask %u", millis());
+
+#ifdef ANT_STACK_SUPPORT_REQD
+		roller_manager_tasks();
+#endif
+
+		boucle.run();
+	}
+}
+
+/**
+ * Task triggered every APP_TIMEOUT_DELAY_MS.
+ *
+ * @param p_context
+ */
+void ls027_task(void * p_context)
+{
+	for(;;)
+	{
+		// check screen update & unlock task
+		vue.writeWhole();
+
+		events_wait(TASK_EVENT_LS027_TRIGGER);
+	}
+}
+
+/**
+ * Task triggered every APP_TIMEOUT_DELAY_MS.
+ *
+ * @param p_context
+ */
+void peripherals_task(void * p_context)
+{
+	for(;;)
+	{
+		model_dispatch_sensors_update();
+
+		// check screen update & unlock task
+		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
+			vue.refresh();
+		}
+
+		// update date
+		SDate dat;
+		locator.getDate(dat);
+		attitude.addNewDate(dat);
+
+		notifications_tasks();
+
+		events_wait(TASK_EVENT_PERIPH_TRIGGER);
+	}
+}
+
+

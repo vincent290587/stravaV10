@@ -18,6 +18,7 @@
 #include "Model_tdd.h"
 #include "segger_wrapper.h"
 #include "unit_testing.hpp"
+#include "task_scheduler.h"
 
 
 #include <fenv.h> // For feenableexcept
@@ -49,7 +50,6 @@ void signalHandler( int signum ) {
  *
  * @return 0
  */
-#include "Vecteur.h"
 int main(void)
 {
 	// Enable exceptions for certain floating point results
@@ -69,6 +69,11 @@ int main(void)
 
 	LOG_INFO("Program init");
 
+	m_tasks_id.boucle_id = TASK_ID_INVALID;
+	m_tasks_id.system_id = TASK_ID_INVALID;
+	m_tasks_id.peripherals_id = TASK_ID_INVALID;
+	m_tasks_id.ls027_id = TASK_ID_INVALID;
+
 	simulator_init();
 
 	millis_init();
@@ -83,18 +88,15 @@ int main(void)
 
 	delay_ms(1);
 
-	for (;;)
-	{
-		boucle.tasks();
+	task_begin(65536 * 5);
 
-		// tasks
-		perform_system_tasks();
+	m_tasks_id.boucle_id = task_create(boucle_task, 65536, NULL);
+	m_tasks_id.system_id = task_create(system_task, 65536, NULL);
+	m_tasks_id.peripherals_id = task_create(peripherals_task, 65536, NULL);
+	m_tasks_id.ls027_id = task_create(ls027_task, 65536, NULL);
 
-		simulator_tasks();
+	task_start(idle_task, NULL);
 
-		sleep(2);
-
-	}
 }
 
 

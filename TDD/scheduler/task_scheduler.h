@@ -10,6 +10,11 @@
 extern "C" {
 #endif
 
+#define TASK_ID_INVALID                -1
+
+/**@brief Task ID */
+typedef uint8_t task_id_t;
+
 /**
  * Function prototype (task setup and loop functions).
  */
@@ -31,9 +36,12 @@ bool task_begin(size_t stackSize);
 int task_create(tasked_func_t taskLoop, size_t stackSize, void *p_context);
 
 /**
+ * This function does not return
  *
+ * @param idle_task The background task to be run
+ * @param p_context Context
  */
-void task_start();
+void task_start(tasked_func_t idle_task, void *p_context);
 
 /**
  * Yields to the next task
@@ -50,7 +58,7 @@ void task_wait_event(uint32_t event);
  * @param task_id
  * @param event
  */
-void task_feed_event(uint8_t task_id, uint32_t event);
+void task_feed_event(task_id_t task_id, uint32_t event);
 
 /**
  *
