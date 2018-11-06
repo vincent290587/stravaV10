@@ -118,15 +118,11 @@ void Vue::refresh(void) {
 		}
 	}
 
-#ifdef TDD
-	this->writeWhole();
-#else
     if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
     	events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
     } else {
     	this->writeWhole();
     }
-#endif
 }
 
 void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {

@@ -8,9 +8,19 @@
 #ifndef SOURCE_MODEL_TDD_H_
 #define SOURCE_MODEL_TDD_H_
 
-
+#include <stdbool.h>
 #include "notifications.h"
 #include "parameters.h"
+#include "task_manager_wrapper_tdd.h"
+
+typedef struct {
+	task_id_t peripherals_id;
+	task_id_t boucle_id;
+	task_id_t system_id;
+	task_id_t ls027_id;
+} sTasksIDs;
+
+extern sTasksIDs m_tasks_id;
 
 #if defined(__cplusplus)
 
@@ -26,15 +36,6 @@
 #include "Attitude.h"
 #include "mk64f_parser.h"
 #include "Vue.h"
-
-typedef struct {
-	uint32_t peripherals_id;
-	uint32_t boucle_id;
-	uint32_t system_id;
-	uint32_t ls027_id;
-} sTasksIDs;
-
-extern sTasksIDs m_tasks_id;
 
 extern SAtt          att;
 
@@ -68,6 +69,7 @@ extern AltiBaro      baro;
 
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;
+extern sFecInfo fec_info;
 
 extern "C" {
 #endif // defined C++
@@ -87,6 +89,19 @@ bool check_memory_exception(void);
 void wdt_reload(void);
 
 void print_mem_state(void);
+
+void backlighting_tasks(void);
+
+void idle_task(void * p_context);
+
+void boucle_task(void * p_context);
+
+void peripherals_task(void * p_context);
+
+void system_task(void * p_context);
+
+void ls027_task(void * p_context);
+
 
 #if defined(__cplusplus)
 }

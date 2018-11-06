@@ -36,6 +36,7 @@ include_directories(
 	TDD/drivers
 	TDD/timer
 	TDD/sensors
+	TDD/scheduler
 	libraries/AdafruitGFX
     libraries/AdafruitGFX/Fonts
 	libraries/AltiBaro
@@ -54,6 +55,7 @@ include_directories(
 # Cree des variables avec les fichiers à compiler
 set(SRCS
     main_tdd.cpp
+    scheduler/task_scheduler.c
     unit_testing.cpp
 	Model_tdd.cpp
     Simulator.cpp

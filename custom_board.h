@@ -67,7 +67,7 @@ extern "C" {
 
 #define QSPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 24)
 #define QSPI_MOSI_PIN     NRF_GPIO_PIN_MAP(1, 4)
-#define QSPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 6)
+#define QSPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 6) // 6 for proto
 #define QSPI_SS_PIN       NRF_GPIO_PIN_MAP(1, 2)
 
 #define FXOS_INT1         NRF_GPIO_PIN_MAP(0, 31)

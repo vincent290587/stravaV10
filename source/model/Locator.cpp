@@ -370,6 +370,9 @@ void Locator::displayGPS2(void) {
 //	int totalMessages = atoi(totalGPGSVMessages.value());
 //	int currentMessage = atoi(messageNumber.value());
 
+	vue.setCursor(20,20);
+	vue.setTextSize(2);
+
 	vue.print(satsInUse.value());
 	vue.print(F(" used of "));
 	vue.println(satsInView.value());
@@ -393,7 +396,6 @@ void Locator::displayGPS2(void) {
 
 	vue.println("  ------");
 
-	uint8_t nb_activ = 0;
 }
 
 #else

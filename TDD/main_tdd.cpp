@@ -18,6 +18,7 @@
 #include "Model_tdd.h"
 #include "segger_wrapper.h"
 #include "unit_testing.hpp"
+#include "task_scheduler.h"
 
 
 #include <fenv.h> // For feenableexcept
@@ -45,11 +46,56 @@ void signalHandler( int signum ) {
     exit(signum);
 }
 
+void idle_task_test(void *p_context) {
+	for (;;) {
+		sleep(500);
+		yield();
+	}
+}
+
+void task1(void *p_context) {
+	for (;;) {
+		LOG_INFO("Task1");
+
+		sleep(500);
+		events_set(2, 1);
+		yield();
+	}
+}
+
+void task2(void *p_context) {
+	for (;;) {
+		events_wait(1);
+		LOG_INFO("Task2");
+
+		sleep(500);
+		events_set(3, 2);
+	}
+}
+
+void task3(void *p_context) {
+	for (;;) {
+		events_wait(2);
+		LOG_INFO("Task3");
+
+		sleep(500);
+		events_set(4, 4);
+	}
+}
+
+void task4(void *p_context) {
+	for (;;) {
+		events_wait(4);
+		LOG_INFO("Task4");
+
+		sleep(500);
+	}
+}
+
 /**
  *
  * @return 0
  */
-#include "Vecteur.h"
 int main(void)
 {
 	// Enable exceptions for certain floating point results
@@ -69,6 +115,11 @@ int main(void)
 
 	LOG_INFO("Program init");
 
+	m_tasks_id.boucle_id = TASK_ID_INVALID;
+	m_tasks_id.system_id = TASK_ID_INVALID;
+	m_tasks_id.peripherals_id = TASK_ID_INVALID;
+	m_tasks_id.ls027_id = TASK_ID_INVALID;
+
 	simulator_init();
 
 	millis_init();
@@ -83,18 +134,22 @@ int main(void)
 
 	delay_ms(1);
 
-	for (;;)
-	{
-		boucle.tasks();
+	task_begin(65536 * 5);
 
-		// tasks
-		perform_system_tasks();
+//	m_tasks_id.boucle_id = task_create(task1, "task1", 2048, NULL);
+//	m_tasks_id.system_id = task_create(task2, "task2", 2048, NULL);
+//	m_tasks_id.peripherals_id = task_create(task3, "task3", 2048, NULL);
+//	m_tasks_id.ls027_id = task_create(task4, "task4", 2048, NULL);
+//
+//	task_start(idle_task_test, NULL);
 
-		simulator_tasks();
+	m_tasks_id.boucle_id = task_create(boucle_task, "boucle_task", 65536, NULL);
+	m_tasks_id.system_id = task_create(system_task, "system_task", 65536, NULL);
+	m_tasks_id.peripherals_id = task_create(peripherals_task, "peripherals_task", 65536, NULL);
+	m_tasks_id.ls027_id = task_create(ls027_task, "ls027_task", 65536, NULL);
 
-		sleep(2);
+	task_start(idle_task, NULL);
 
-	}
 }
 
 
