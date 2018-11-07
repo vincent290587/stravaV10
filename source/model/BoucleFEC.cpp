@@ -59,6 +59,9 @@ void BoucleFEC::run() {
 
 	if (m_needs_init) this->init();
 
+	// wait for location to be updated
+	(void)events_wait(TASK_EVENT_FEC_INFO);
+
 	LOG_INFO("Boucle FEC run\r\n");
 
 #if defined(ANT_STACK_SUPPORT_REQD) || defined(TDD)
@@ -72,8 +75,5 @@ void BoucleFEC::run() {
 #endif
 
 	vue.refresh();
-
-	// wait for location to be updated
-	(void)events_wait(TASK_EVENT_FEC_INFO);
 
 }

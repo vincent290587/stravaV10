@@ -120,6 +120,7 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 	case ANT_FEC_PAGE_25_UPDATED:
 	{
 		fec_info.power = p_profile->page_25.inst_power;
+    	events_set(m_tasks_id.ls027_id, TASK_EVENT_FEC_INFO);
 	}
 	break;
 

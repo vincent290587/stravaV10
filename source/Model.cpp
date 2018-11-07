@@ -8,6 +8,7 @@
 #include "Model.h"
 #include "nrf_pwr_mgmt.h"
 #include "sdk_config.h"
+#include "neopixel.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -248,6 +249,12 @@ void peripherals_task(void * p_context)
 
 		model_dispatch_sensors_update();
 #endif
+
+#ifndef BLE_STACK_SUPPORT_REQD
+		CRITICAL_REGION_ENTER();
+		neopixel_radio_callback_handler(false);
+		CRITICAL_REGION_EXIT();
+#endif
 		// check screen update & unlock task
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
 			vue.refresh();
@@ -256,7 +263,7 @@ void peripherals_task(void * p_context)
 		// update date
 		SDate dat;
 		locator.getDate(dat);
-		attitude.addNewDate(dat);
+		attitude.addNewDate(&dat);
 
 		notifications_tasks();
 
