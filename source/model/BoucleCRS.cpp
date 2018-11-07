@@ -68,6 +68,9 @@ void BoucleCRS::run() {
 
 	if (m_needs_init) this->init();
 
+	// wait for location to be updated
+	(void)events_wait(TASK_EVENT_LOCATION);
+
 	LOG_INFO("Locator is updated (%u)\r\n", millis());
 
 	// reset the segment manager
@@ -88,12 +91,15 @@ void BoucleCRS::run() {
 	// update sements
 	for (auto& seg : mes_segments._segs) {
 
-		if (seg.isValid() && mes_points.size() > 2) {
+		if (seg.isValid()) {
 
 			tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
 
 			// calculate distance to closest segment
 			if (tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
+
+			// we don't possess enough points to continue calculating...
+			if (mes_points.size() < 2) continue;
 
 			if (seg.getStatus() != SEG_OFF) {
 
@@ -144,8 +150,5 @@ void BoucleCRS::run() {
 	vue.refresh();
 
 	m_last_refresh.setUpdateTime();
-
-	// wait for location to be updated
-	(void)events_wait(TASK_EVENT_LOCATION);
 
 }
