@@ -431,15 +431,15 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 
 	// limit position when segment is finished
-	float _lat, _lon;
-	if (p_seg->getStatus() < SEG_OFF) {
-		_lon = pCourant._lon;
-		_lat = pCourant._lat;
-	} else {
-		_lon = att.loc.lon;
-		_lat = att.loc.lat;
-	}
-
+//	float _lat, _lon;
+//	if (p_seg->getStatus() < SEG_OFF) {
+//		_lon = pCourant._lon;
+//		_lat = pCourant._lat;
+//	} else {
+//		_lon = att.loc.lon;
+//		_lat = att.loc.lat;
+//	}
+//
 	// ma position
 //	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
 //	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);

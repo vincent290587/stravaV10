@@ -213,7 +213,7 @@ void peripherals_task(void * p_context)
 		// update date
 		SDate dat;
 		locator.getDate(dat);
-		attitude.addNewDate(dat);
+		attitude.addNewDate(&dat);
 
 		notifications_tasks();
 

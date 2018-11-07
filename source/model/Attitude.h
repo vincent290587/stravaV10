@@ -42,7 +42,7 @@ class Attitude {
 public:
 	Attitude();
 
-	void addNewDate(SDate &date_);
+	void addNewDate(SDate *date_);
 	void addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_);
 
 	void addNewFECPoint(sFecInfo& fec_);

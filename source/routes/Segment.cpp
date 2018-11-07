@@ -56,6 +56,7 @@ bool Segment::nomCorrect(const char *chaine) {
 
 Segment::Segment(void) {
 
+	_actif = SEG_OFF;
 	m_p_data = nullptr;
 
 }
@@ -68,7 +69,6 @@ Segment::~Segment(void) {
 }
 
 Segment::Segment(const char *nom_seg) : Segment() {
-	_actif = 0;
 	if (nom_seg)
 		_nomFichier = nom_seg;
 }

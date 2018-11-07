@@ -31,10 +31,10 @@ Attitude::Attitude() {
  *
  * @param loc_
  */
-void Attitude::addNewDate(SDate &date_) {
+void Attitude::addNewDate(SDate *date_) {
 
 	// update date
-	memcpy(&att.date, &date_, sizeof(SDate));
+	memcpy(&att.date, date_, sizeof(SDate));
 }
 
 

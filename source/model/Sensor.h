@@ -24,7 +24,7 @@ public:
 		memset(&data, 0, sizeof(T));
 	}
 
-	Sensor(Sensor const& copy) {
+	Sensor(Sensor const& copy) : Sensor() {
 		memcpy(&data, &copy, sizeof(T));
 	}
 
