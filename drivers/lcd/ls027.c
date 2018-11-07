@@ -85,7 +85,7 @@ static void ls027_spi_init() {
 	nrf_gpio_cfg_output(LS027_CS_PIN);
 
 	m_spi_ls027_cfg.handler        = ls027_cs_off;
-	m_spi_ls027_cfg.blocking       = true;
+	m_spi_ls027_cfg.blocking       = false;
 }
 
 static int ls027_prepare_buffer(void)

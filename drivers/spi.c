@@ -140,13 +140,15 @@ int spi_schedule (sSpimConfig const * spi_config,
 	NRF_LOG_INFO("SPI Xfer %u/%u byte", tx_length, rx_length);
 
 	ASSERT(m_is_started);
-	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-		while (!spi_xfer_done) {
-			yield();
+
+	if (!spi_xfer_done) {
+		if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+			events_wait(TASK_EVENT_LS027_WAIT_SPI);
+		} else {
+			while (!spi_xfer_done) {
+				perform_system_tasks_light();
+			}
 		}
-	} else {
-		LOG_ERROR("SPI Xfer not finished, aborting");
-		return 2;
 	}
 
 	p_spi_config[0] = spi_config;
@@ -171,9 +173,10 @@ int spi_schedule (sSpimConfig const * spi_config,
 					perform_system_tasks_light();
 				}
 			}
+
+			LOG_DEBUG("Xfer took %ums", millis() - millis_);
 		}
 
-		LOG_DEBUG("Xfer took %ums", millis() - millis_);
 	}
 
 	return 0;
