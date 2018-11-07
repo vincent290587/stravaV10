@@ -185,8 +185,10 @@ void ls027_task(void * p_context)
 {
 	for(;;)
 	{
+#ifdef LS027_GUI
 		// check screen update & unlock task
 		vue.writeWhole();
+#endif
 
 		events_wait(TASK_EVENT_LS027_TRIGGER);
 	}

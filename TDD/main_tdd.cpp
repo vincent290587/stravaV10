@@ -46,6 +46,11 @@ void signalHandler( int signum ) {
     exit(signum);
 }
 
+void pipeHandler( int signum ) {
+	printf("Screen shutdown detected\n");
+    exit(signum);
+}
+
 void idle_task_test(void *p_context) {
 	for (;;) {
 		sleep(500);
@@ -108,6 +113,7 @@ int main(void)
 	// register signal SIGINT and signal handler
 	signal(SIGFPE, signalHandler);
 	signal(SIGSEGV, signalHandler);
+	signal(SIGPIPE, pipeHandler);
 
 	LOG_INFO("Unit testing...");
 

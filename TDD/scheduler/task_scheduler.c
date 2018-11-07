@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
@@ -23,6 +24,8 @@ typedef struct task_t {
 /** Default stack size and stack max. */
 #define DEFAULT_STACK_SIZE       2048
 
+#define STACKDIR         - // set to + for upwards and - for downwards
+
 // Stack magic pattern
 const uint8_t MAGIC = 0xa5;
 
@@ -38,16 +41,19 @@ static uint32_t m_cur_task_id = 0;
 // Reference running task
 static task_t* s_running = &s_main;
 
-// Initial top stack for task allocation
-size_t s_top = DEFAULT_STACK_SIZE;
+static char *s_top; // top of stack
+
 
 bool task_begin(size_t stackSize)
 {
 	// Set main task stack size
-	s_top = stackSize;
+	s_top = NULL;
 	s_main.prev = &s_main;
 	s_main.next = &s_main;
 	s_main.stack = NULL;
+
+	memset(m_tasks, 0, sizeof(m_tasks));
+
 	return (true);
 }
 
@@ -78,26 +84,40 @@ static int _task_init(tasked_func_t loop, const char *name, const uint8_t* stack
 	return (int)m_tasks[task_id].task_id;
 }
 
+/**
+ * https://fanf.livejournal.com/105413.html
+ *
+ * @param taskLoop
+ * @param name
+ * @param stackSize
+ * @param p_context
+ * @return
+ */
 int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void *p_context)
 {
 	// Check called from main task and valid task loop function
 	if ((s_running != &s_main) || !taskLoop) return -2;
 
 	// Adjust stack size with size of task context
-	stackSize += sizeof(task_t);
+	stackSize += 256;
 
 	// Allocate stack(s) and check if main stack top should be set
-	uint8_t stack[s_top];
-	if (s_main.stack == NULL) {
-		s_main.stack = stack;
-		memset(stack, MAGIC, s_top);
-	}
+	uint8_t frame=0;
+	if (s_top == NULL) s_top = (char*)&frame;
 
 	// Adjust stack top for next task allocation
-	s_top += stackSize;
+	s_top += STACKDIR stackSize;
+
+	uint8_t stack[STACKDIR (s_top - (char*)&frame)];
+	stack[0] = 1;
+
+	if (s_main.stack == NULL) {
+		s_main.stack = stack;
+//		memset(stack, MAGIC, (s_top - (char*)&frame));
+	}
 
 	// Fill stack with magic pattern to allow detect of stack usage
-	memset(stack - stackSize, MAGIC, stackSize - sizeof(task_t));
+//	memset(stack STACKDIR stackSize, MAGIC, stackSize - 256);
 
 	// Initiate task with given functions and stack top
 	return _task_init(taskLoop, name, stack - stackSize, p_context);
