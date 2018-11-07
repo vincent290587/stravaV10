@@ -71,7 +71,7 @@ void Vue::setCurrentMode(eVueGlobalScreenModes mode_) {
 
 void Vue::refresh(void) {
 
-	m_last_refreshed = millis();
+	this->clearDisplay();
 
 	if (m_is_menu_selected) {
 		this->tasksMenu();
@@ -123,6 +123,8 @@ void Vue::refresh(void) {
     } else {
     	this->writeWhole();
     }
+
+	m_last_refreshed = millis();
 }
 
 void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {

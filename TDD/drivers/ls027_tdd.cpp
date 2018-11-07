@@ -133,9 +133,8 @@ void LS027_UpdateFull(void) {
 	}
 #endif
 
-	ls027_spi_buffer_clear();
-
 	LOG_INFO("LS027 Updated");
+
 }
 
 void LS027_ToggleVCOM(void) {
