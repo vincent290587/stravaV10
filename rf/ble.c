@@ -584,7 +584,6 @@ static void ble_stack_init(void)
 
 	// Register handlers for BLE and SoC events.
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
-	NRF_SDH_SOC_OBSERVER(m_soc_observer, APP_SOC_OBSERVER_PRIO, soc_evt_handler, NULL);
 
 	// radio callback to write to the neopixels right ;-)
 	err_code = ble_radio_notification_init(7, NRF_RADIO_NOTIFICATION_DISTANCE_1740US, ble_radio_callback_handler);
@@ -969,12 +968,15 @@ static void gatt_init(void)
 
 void ble_ant_init(void)
 {
+#ifdef BLE_STACK_SUPPORT_REQD
 	ble_stack_init();
+#endif
 
 #ifdef ANT_STACK_SUPPORT_REQD
 	ant_stack_init();
 #endif
 
+#ifdef BLE_STACK_SUPPORT_REQD
 	peer_manager_init();
 
 	gatt_init();
@@ -982,15 +984,17 @@ void ble_ant_init(void)
 
 	lns_c_init();
 	bas_c_init();
+#endif
 
 #ifdef ANT_STACK_SUPPORT_REQD
 	ant_setup_start();
 #endif
 
+#ifdef BLE_STACK_SUPPORT_REQD
 	// Start scanning for peripherals and initiate connection
 	// with devices that advertise LNS UUID.
 	scan_start();
-
+#endif
 }
 
 

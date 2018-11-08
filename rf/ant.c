@@ -39,6 +39,7 @@
 #include "app_scheduler.h"
 #include "nrf_soc.h"
 #include "nrf_delay.h"
+#include "nrf_sdh.h"
 #include "app_timer.h"
 #include "nrf_drv_wdt.h"
 
@@ -182,7 +183,7 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
 		if (!is_cad_init) {
 			sd_ant_channel_id_get (BSC_CHANNEL_NUMBER,
 					&pusDeviceNumber, &pucDeviceType, &pucTransmitType);
-//			printf("$ANCS,0,CAD 0x%x connected\n\r", pusDeviceNumber);
+//			LOG_INFO("$ANCS,0,CAD 0x%x connected\n\r", pusDeviceNumber);
 			if (pusDeviceNumber) {
 				is_cad_init = 1;
 
@@ -275,7 +276,6 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 
 	case FEC_CHANNEL_NUMBER:
 		ant_evt_fec (p_ant_evt);
-    	events_set(m_tasks_id.ls027_id, TASK_EVENT_FEC_INFO);
 		break;
 
 	default:
@@ -500,6 +500,11 @@ void ant_stack_init(void)
 {
 	ret_code_t err_code;
 
+	err_code = nrf_sdh_enable_request();
+	APP_ERROR_CHECK(err_code);
+
+	ASSERT(nrf_sdh_is_enabled());
+
 	err_code = nrf_sdh_ant_enable();
 	APP_ERROR_CHECK(err_code);
 
@@ -576,7 +581,7 @@ static void ant_profile_setup(void)
 
 //	err_code = ant_glasses_open(&m_ant_glasses);
 //	APP_ERROR_CHECK(err_code);
-
+	LOG_INFO("ANT ready");
 }
 
 

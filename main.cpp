@@ -440,9 +440,13 @@ int main(void)
 	notifications_init(NEO_PIN);
 
 	// init BLE + ANT
-#ifdef BLE_STACK_SUPPORT_REQD
+#if defined (BLE_STACK_SUPPORT_REQD)
 	ble_ant_init();
+#elif defined(ANT_STACK_SUPPORT_REQD)
+	ant_stack_init();
+	ant_setup_start();
 #endif
+
 
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
 	APP_ERROR_CHECK(err_code);
