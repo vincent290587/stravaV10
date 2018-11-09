@@ -490,6 +490,10 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		APP_ERROR_CHECK(err_code);
 		break;
 
+	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
+		// TODO clear to send more packets
+		break;
+
 	default:
 		break;
 	}
@@ -701,47 +705,30 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
  */
 static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const * p_evt)
 {
-	uint32_t err_code;
-//
-//	switch (p_bas_c_evt->evt_type)
-//	{
-//	case BLE_BAS_C_EVT_DISCOVERY_COMPLETE:
-//	{
-//		err_code = ble_bas_c_handles_assign(p_bas_c,
-//				p_bas_c_evt->conn_handle,
-//				&p_bas_c_evt->params.bas_db);
-//		APP_ERROR_CHECK(err_code);
-//
-//		// Initiate bonding.
-//		err_code = pm_conn_secure(p_bas_c_evt->conn_handle, false);
-//		if (err_code != NRF_ERROR_INVALID_STATE)
-//		{
-//			APP_ERROR_CHECK(err_code);
-//		}
-//
-//		// Batttery service discovered. Enable notification of Battery Level.
-//		NRF_LOG_DEBUG("Battery Service discovered. Reading battery level.");
-//
-//		err_code = ble_bas_c_bl_read(p_bas_c);
-//		APP_ERROR_CHECK(err_code);
-//
-//		NRF_LOG_DEBUG("Enabling Battery Level Notification.");
-//		err_code = ble_bas_c_bl_notif_enable(p_bas_c);
-//		APP_ERROR_CHECK(err_code);
-//
-//	} break;
-//
-//	case BLE_BAS_C_EVT_BATT_NOTIFICATION:
-//		LOG_INFO("Battery Level received %d %%.\r\n", p_bas_c_evt->params.battery_level);
-//		break;
-//
-//	case BLE_BAS_C_EVT_BATT_READ_RESP:
-//		LOG_INFO("Battery Level Read as %d %%.\r\n", p_bas_c_evt->params.battery_level);
-//		break;
-//
-//	default:
-//		break;
-//	}
+    ret_code_t err_code;
+
+    switch (p_evt->evt_type)
+    {
+        case BLE_NUS_C_EVT_DISCOVERY_COMPLETE:
+            LOG_INFO("Discovery complete.");
+            err_code = ble_nus_c_handles_assign(p_ble_nus_c, p_evt->conn_handle, &p_evt->handles);
+            APP_ERROR_CHECK(err_code);
+
+            err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
+            APP_ERROR_CHECK(err_code);
+            LOG_INFO("Connected to stravaAP");
+            break;
+
+        case BLE_NUS_C_EVT_NUS_TX_EVT:
+            // TODO handle received chars
+        	// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+            break;
+
+        case BLE_NUS_C_EVT_DISCONNECTED:
+            LOG_INFO("Disconnected.");
+            scan_start();
+            break;
+    }
 }
 
 
