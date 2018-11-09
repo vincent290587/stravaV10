@@ -60,7 +60,7 @@ void BoucleFEC::run() {
 	if (m_needs_init) this->init();
 
 	// wait for location to be updated
-	(void)events_wait(TASK_EVENT_FEC_INFO);
+	(void)events_wait(TASK_EVENT_FEC_INFO | TASK_EVENT_FEC_POWER);
 
 	LOG_INFO("Boucle FEC run\r\n");
 

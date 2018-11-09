@@ -78,7 +78,7 @@ extern "C" {
 
 #define BCK_PIN           NRF_GPIO_PIN_MAP(1, 0)
 
-#define GPS_R             NRF_GPIO_PIN_MAP(0, 26)
+#define GPS_R             NRF_GPIO_PIN_MAP(0, 26) // 26 for proto
 
 #define FIX_PIN           NRF_GPIO_PIN_MAP(0, 8)
 
