@@ -25,6 +25,7 @@ SRC_FILES += \
   $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_ancs_c/*.c) \
   $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_bas_c/*.c) \
   $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_lns_c/*.c) \
+  $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_nus_c/*.c) \
   $(SDK_ROOT)/components/ble/ble_services/experimental_gatts_c/nrf_ble_gatts_c.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ble.c \
