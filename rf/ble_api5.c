@@ -109,6 +109,11 @@ static bool                  m_memory_access_in_progress;  /**< Flag to keep tra
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
 
+static volatile bool m_nus_cts = false;
+static volatile bool m_connected = false;
+static uint32_t m_nus_packet_nb = 0;
+static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
+
 
 /**@brief Connection parameters requested for connection. */
 static ble_gap_conn_params_t const m_connection_param =
@@ -401,6 +406,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	case BLE_GAP_EVT_CONNECTED:
 	{
 		LOG_INFO("Connected.");
+		m_connected = true;
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
@@ -431,6 +437,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 		LOG_INFO("Disconnected, reason 0x%x.",
 				p_ble_evt->evt.gap_evt.params.disconnected.reason);
+
+		m_connected = false;
 
 		// Reset DB discovery structure.
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
@@ -492,6 +500,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
 		// TODO clear to send more packets
+		m_nus_cts = true;
 		break;
 
 	default:
@@ -721,6 +730,9 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 
         case BLE_NUS_C_EVT_NUS_TX_EVT:
             // TODO handle received chars
+        	LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
+        	m_nus_cts = true;
+        	m_nus_packet_nb = 0;
         	// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
             break;
 
@@ -942,6 +954,9 @@ static void gatt_init(void)
 
 
 #ifdef BLE_STACK_SUPPORT_REQD
+/**
+ * Init BLE stack
+ */
 void ble_init(void)
 {
 	ble_stack_init();
@@ -958,6 +973,53 @@ void ble_init(void)
 	// with devices that advertise LNS UUID.
 	scan_start();
 }
+
+/**
+ * Send the log file to a remote computer
+ */
+void ble_nus_tasks(void) {
+
+	if (m_connected && m_nus_cts) {
+
+		// TODO remove
+		memset(m_nus_data_array, 0x5A, sizeof(m_nus_data_array));
+
+		uint16_t length = MIN(16, BLE_NUS_MAX_DATA_LEN);
+
+		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, m_nus_data_array, length);
+
+		switch (err_code) {
+		case NRF_ERROR_BUSY:
+			NRF_LOG_INFO("NUS BUSY");
+			m_nus_cts = false;
+			break;
+
+		case NRF_ERROR_RESOURCES:
+			m_nus_cts = false;
+			break;
+
+		case NRF_ERROR_TIMEOUT:
+			NRF_LOG_ERROR("NUS timeout", err_code);
+		case NRF_SUCCESS:
+			break;
+
+		default:
+			NRF_LOG_ERROR("NUS unknown error: 0x%X", err_code);
+			break;
+		}
+
+		// TODO remove
+		// is it the end ? tadadaaaaa
+		if (m_nus_packet_nb++ >= 50) {
+			m_nus_cts = false;
+			LOG_INFO("NUS send ended !");
+		}
+
+	}
+
+}
+
+
 #endif
 
 

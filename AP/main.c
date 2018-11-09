@@ -183,7 +183,7 @@ static char m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 static char m_rx_buffer[READ_SIZE];
 
 
-#define CDC_RB_SIZE         1024
+#define CDC_RB_SIZE             8192
 RING_BUFFER_DEF(cdc_rb1, CDC_RB_SIZE);
 
 #define CDC_X_BUFFERS           (0b1)

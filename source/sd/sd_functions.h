@@ -36,6 +36,9 @@ int epo_file_read(sEpoPacketSatData* epo_data, uint16_t size_);
 bool epo_file_start(int current_gps_hour);
 int epo_file_stop(bool toBeDeleted);
 
+bool log_file_start(void);
+int log_file_read(uint8_t* log_buffer, uint16_t size_);
+int log_file_stop(bool toBeDeleted);
 
 #if defined(__cplusplus)
 }
