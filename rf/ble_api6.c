@@ -567,11 +567,6 @@ static void ble_stack_init(void)
 {
 	ret_code_t err_code;
 
-	err_code = nrf_sdh_enable_request();
-	APP_ERROR_CHECK(err_code);
-
-	ASSERT(nrf_sdh_is_enabled());
-
 	// Configure the BLE stack using the default settings.
 	// Fetch the start address of the application RAM.
 	uint32_t ram_start = 0;
@@ -966,17 +961,11 @@ static void gatt_init(void)
 }
 
 
-void ble_ant_init(void)
+#ifdef BLE_STACK_SUPPORT_REQD
+void ble_init(void)
 {
-#ifdef BLE_STACK_SUPPORT_REQD
 	ble_stack_init();
-#endif
 
-#ifdef ANT_STACK_SUPPORT_REQD
-	ant_stack_init();
-#endif
-
-#ifdef BLE_STACK_SUPPORT_REQD
 	peer_manager_init();
 
 	gatt_init();
@@ -984,17 +973,11 @@ void ble_ant_init(void)
 
 	lns_c_init();
 	bas_c_init();
-#endif
 
-#ifdef ANT_STACK_SUPPORT_REQD
-	ant_setup_start();
-#endif
-
-#ifdef BLE_STACK_SUPPORT_REQD
 	// Start scanning for peripherals and initiate connection
 	// with devices that advertise LNS UUID.
 	scan_start();
-#endif
 }
+#endif
 
 

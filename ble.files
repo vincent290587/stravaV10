@@ -2,7 +2,6 @@
 
 # Source files common to all targets
 SRC_FILES += \
-  $(wildcard $(PROJ_DIR)/rf/*.c) \
   $(SDK_ROOT)/components/libraries/fstorage/nrf_fstorage_sd.c \
   $(SDK_ROOT)/components/ble/common/ble_advdata.c \
   $(SDK_ROOT)/components/ble/ble_advertising/ble_advertising.c \

@@ -42,11 +42,6 @@
 #include "usb_cdc.h"
 #endif
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
-
 #define APP_DELAY           APP_TIMER_TICKS(APP_TIMEOUT_DELAY_MS)
 
 #define SCHED_MAX_EVENT_DATA_SIZE      APP_TIMER_SCHED_EVENT_DATA_SIZE              /**< Maximum size of scheduler events. */
@@ -62,7 +57,7 @@ nrfx_wdt_channel_id m_channel_id;
 
 static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
-extern "C" void ble_ant_init(void);
+extern "C" void ble_init(void);
 
 
 /**
@@ -323,6 +318,26 @@ void wdt_reload() {
 	nrfx_wdt_channel_feed(m_channel_id);
 }
 
+
+#ifdef SOFTDEVICE_PRESENT
+/**@brief Function for initializing the softdevice
+ *
+ * @details Initializes the SoftDevice
+ */
+#include "nrf_sdh.h"
+static void sdh_init(void)
+{
+	ret_code_t err_code;
+
+	err_code = nrf_sdh_enable_request();
+	APP_ERROR_CHECK(err_code);
+
+	ASSERT(nrf_sdh_is_enabled());
+
+}
+#endif
+
+
 /**
  *
  * @return 0
@@ -440,13 +455,16 @@ int main(void)
 	notifications_init(NEO_PIN);
 
 	// init BLE + ANT
+#ifdef SOFTDEVICE_PRESENT
+	sdh_init();
+#endif
 #if defined (BLE_STACK_SUPPORT_REQD)
-	ble_ant_init();
-#elif defined(ANT_STACK_SUPPORT_REQD)
+	ble_init();
+#endif
+#if defined(ANT_STACK_SUPPORT_REQD)
 	ant_stack_init();
 	ant_setup_start();
 #endif
-
 
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
 	APP_ERROR_CHECK(err_code);

@@ -462,7 +462,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     }
     else
     {
-        if (ble_advdata_uuid_find(p_adv_report->data.p_data, p_adv_report->data.len, &target_uuid))
+        if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid))
         {
             do_connect = true;
             LOG_INFO("UUID match send connect_request.");
@@ -473,7 +473,6 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     {
         // Stop scanning.
         (void) sd_ble_gap_scan_stop();
-        m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL,
 
         // Initiate connection.
         err_code = sd_ble_gap_connect(&p_adv_report->peer_addr,
@@ -490,7 +489,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     }
     else
     {
-        err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+        err_code = sd_ble_gap_scan_start(NULL);
         APP_ERROR_CHECK(err_code);
     }
 }
@@ -980,21 +979,29 @@ static void scan_start(void)
 			(m_whitelist_disabled))
 	{
 		// Don't use whitelist.
-		m_scan_param.timeout       = SCAN_DURATION;
-		m_scan_param.scan_phys     = BLE_GAP_PHY_1MBPS;
-		m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+#if (NRF_SD_BLE_API_VERSION == 5)
+		m_scan_param.use_whitelist  = 0;
+		m_scan_param.adv_dir_report = 0;
+#endif
+
+		m_scan_param.timeout  = 0x0000; // No timeout.
 	}
 	else
 	{
 		// Use whitelist.
-		m_scan_param.scan_phys     = BLE_GAP_PHY_1MBPS;
-		m_scan_param.filter_policy = BLE_GAP_SCAN_FP_WHITELIST;
-		m_scan_param.timeout       = SCAN_DURATION_WITELIST;
+
+#if (NRF_SD_BLE_API_VERSION == 5)
+		m_scan_param.use_whitelist  = 1;
+		m_scan_param.adv_dir_report = 0;
+#endif
+
+		m_scan_param.timeout  = 0x001E; // 30 seconds.
 	}
+
 
 	LOG_INFO("Starting scan.");
 
-	ret = sd_ble_gap_scan_start(&m_scan_param, &m_scan_buffer);
+	ret = sd_ble_gap_scan_start(&m_scan_param);
 	APP_ERROR_CHECK(ret);
 
 }
@@ -1056,13 +1063,10 @@ static void gatt_init(void)
 }
 
 
-void ble_ant_init(void)
+#ifdef BLE_STACK_SUPPORT_REQD
+void ble_init(void)
 {
 	ble_stack_init();
-
-#ifdef ANT_STACK_SUPPORT_REQD
-	ant_stack_init();
-#endif
 
 	peer_manager_init();
 
@@ -1072,14 +1076,10 @@ void ble_ant_init(void)
 	lns_c_init();
 	bas_c_init();
 
-#ifdef ANT_STACK_SUPPORT_REQD
-	ant_setup_start();
-#endif
-
 	// Start scanning for peripherals and initiate connection
 	// with devices that advertise LNS UUID.
 	scan_start();
-
 }
+#endif
 
 
