@@ -409,7 +409,7 @@ int main(void)
     }
 
 	// disk init
-	//fatfs_init();
+	fatfs_init();
 #endif
 
 	// LCD displayer
