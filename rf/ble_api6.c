@@ -34,6 +34,7 @@
 #include "nrf_ble_gatt.h"
 #include "helper.h"
 #include "ble_bas_c.h"
+#include "ble_nus_c.h"
 #include "ble_advdata.h"
 #include "ble_lns_c.h"
 #include "ant.h"
@@ -71,7 +72,7 @@
 #define SUPERVISION_TIMEOUT         MSEC_TO_UNITS(4000, UNIT_10_MS)     /**< Determines supervision time-out in units of 10 millisecond. */
 
 #define TARGET_UUID                 BLE_UUID_LOCATION_AND_NAVIGATION_SERVICE         /**< Target device name that application is looking for. */
-
+#define TARGET_NAME                 "stravaAP"
 
 
 /**@breif Macro to unpack 16bit unsigned UUID from octet stream. */
@@ -92,8 +93,8 @@ typedef struct
 } data_t;
 
 
+BLE_NUS_C_DEF(m_ble_nus_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
-BLE_BAS_C_DEF(m_ble_bas_c);                                             /**< Structure used to identify the Battery Service client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
 
@@ -108,6 +109,11 @@ static bool                  m_memory_access_in_progress;  /**< Flag to keep tra
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
 
+static volatile bool m_nus_cts = false;
+static volatile bool m_connected = false;
+static uint16_t m_nus_packet_nb = 0;
+static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
+
 
 /**@brief Connection parameters requested for connection. */
 static ble_gap_conn_params_t const m_connection_param =
@@ -121,8 +127,6 @@ static ble_gap_conn_params_t const m_connection_param =
 /**@brief Names which the central applications will scan for, and which will be advertised by the peripherals.
  *  if these are set to empty strings, the UUIDs defined below will be used
  */
-static const char m_target_periph_name[] = "LeGPS";          /**< If you want to connect to a peripheral using a given advertising name, type its name here. */
-
 
 #if (NRF_SD_BLE_API_VERSION==6)
 static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
@@ -151,7 +155,7 @@ static void scan_start(void);
 static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
 	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
-	ble_bas_on_db_disc_evt(&m_ble_bas_c, p_evt);
+	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
 }
 
 
@@ -296,61 +300,6 @@ static uint32_t adv_report_parse(uint8_t type, data_t * p_advdata, data_t * p_ty
 	return NRF_ERROR_NOT_FOUND;
 }
 
-
-
-/**@brief Function for searching a given name in the advertisement packets.
- *
- * @details Use this function to parse received advertising data and to find a given
- * name in them either as 'complete_local_name' or as 'short_local_name'.
- *
- * @param[in]   p_adv_report   advertising data to parse.
- * @param[in]   name_to_find   name to search.
- * @return   true if the given name was found, false otherwise.
- */
-static bool find_adv_name(const ble_gap_evt_adv_report_t *p_adv_report, const char * name_to_find)
-{
-	uint32_t err_code;
-	data_t   adv_data;
-	data_t   dev_name;
-
-	// Initialize advertisement report for parsing
-#if (NRF_SD_BLE_API_VERSION==5)
-	adv_data.p_data     = (uint8_t *)p_adv_report->data;
-	adv_data.data_len   = p_adv_report->dlen;
-#else
-	adv_data.p_data     = (uint8_t *)p_adv_report->data.p_data;
-	adv_data.data_len   = p_adv_report->data.len;
-#endif
-
-	//search for advertising names
-	err_code = adv_report_parse(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME,
-			&adv_data,
-			&dev_name);
-	if (err_code == NRF_SUCCESS)
-	{
-		if (memcmp(name_to_find, dev_name.p_data, dev_name.data_len)== 0)
-		{
-			return true;
-		}
-	}
-	else
-	{
-		// Look for the short local name if it was not found as complete
-		err_code = adv_report_parse(BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME,
-				&adv_data,
-				&dev_name);
-		if (err_code != NRF_SUCCESS)
-		{
-			return false;
-		}
-		if (memcmp(m_target_periph_name, dev_name.p_data, dev_name.data_len )== 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 /**@brief Function for handling the advertising report BLE event.
  *
  * @param[in] p_adv_report  Advertising report from the SoftDevice.
@@ -376,17 +325,16 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 		LOG_INFO("UUID match");
 	}
 
-
-	if (find_adv_name(p_adv_report, m_target_periph_name)) {
+	if (ble_advdata_name_find(p_adv_report->data.p_data, p_adv_report->data.len, TARGET_NAME)) {
 		do_connect = true;
-		LOG_INFO("Name match");
+		LOG_INFO("Name match send connect_request.");
 	}
 
-    if (do_connect)
-    {
-        m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+	if (do_connect)
+	{
+		m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
 
-        // Initiate connection.
+		// Initiate connection.
         err_code = sd_ble_gap_connect(&p_adv_report->peer_addr,
                                       &m_scan_param,
                                       &m_connection_param,
@@ -424,6 +372,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	case BLE_GAP_EVT_CONNECTED:
 	{
 		LOG_INFO("Connected.");
+		m_connected = true;
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
@@ -454,6 +403,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 		LOG_INFO("Disconnected, reason 0x%x.",
 				p_ble_evt->evt.gap_evt.params.disconnected.reason);
+
+		m_connected = false;
 
 		// Reset DB discovery structure.
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
@@ -511,6 +462,16 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle,
 				BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
 		APP_ERROR_CHECK(err_code);
+		break;
+
+	case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
+		NRF_LOG_INFO("GATTC HVX Complete");
+		// clear to send more packets
+		m_nus_cts = true;
+		break;
+
+	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
+		// unused here
 		break;
 
 	default:
@@ -579,6 +540,7 @@ static void ble_stack_init(void)
 
 	// Register handlers for BLE and SoC events.
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
+	NRF_SDH_SOC_OBSERVER(m_soc_observer, APP_SOC_OBSERVER_PRIO, soc_evt_handler, NULL);
 
 	// radio callback to write to the neopixels right ;-)
 	err_code = ble_radio_notification_init(7, NRF_RADIO_NOTIFICATION_DISTANCE_1740US, ble_radio_callback_handler);
@@ -716,49 +678,35 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 
 /**@brief Battery level Collector Handler.
  */
-static void bas_c_evt_handler(ble_bas_c_t * p_bas_c, ble_bas_c_evt_t * p_bas_c_evt)
+static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const * p_evt)
 {
-	uint32_t err_code;
+    ret_code_t err_code;
 
-	switch (p_bas_c_evt->evt_type)
-	{
-	case BLE_BAS_C_EVT_DISCOVERY_COMPLETE:
-	{
-		err_code = ble_bas_c_handles_assign(p_bas_c,
-				p_bas_c_evt->conn_handle,
-				&p_bas_c_evt->params.bas_db);
-		APP_ERROR_CHECK(err_code);
+    switch (p_evt->evt_type)
+    {
+        case BLE_NUS_C_EVT_DISCOVERY_COMPLETE:
+            LOG_INFO("Discovery complete.");
+            err_code = ble_nus_c_handles_assign(p_ble_nus_c, p_evt->conn_handle, &p_evt->handles);
+            APP_ERROR_CHECK(err_code);
 
-		// Initiate bonding.
-		err_code = pm_conn_secure(p_bas_c_evt->conn_handle, false);
-		if (err_code != NRF_ERROR_INVALID_STATE)
-		{
-			APP_ERROR_CHECK(err_code);
-		}
+            err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
+            APP_ERROR_CHECK(err_code);
+            LOG_INFO("Connected to stravaAP");
+            break;
 
-		// Batttery service discovered. Enable notification of Battery Level.
-		NRF_LOG_DEBUG("Battery Service discovered. Reading battery level.");
+        case BLE_NUS_C_EVT_NUS_TX_EVT:
+            // TODO handle received chars
+        	LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
+        	m_nus_cts = true;
+        	m_nus_packet_nb = 0;
+        	// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+            break;
 
-		err_code = ble_bas_c_bl_read(p_bas_c);
-		APP_ERROR_CHECK(err_code);
-
-		NRF_LOG_DEBUG("Enabling Battery Level Notification.");
-		err_code = ble_bas_c_bl_notif_enable(p_bas_c);
-		APP_ERROR_CHECK(err_code);
-
-	} break;
-
-	case BLE_BAS_C_EVT_BATT_NOTIFICATION:
-		LOG_INFO("Battery Level received %d %%.\r\n", p_bas_c_evt->params.battery_level);
-		break;
-
-	case BLE_BAS_C_EVT_BATT_READ_RESP:
-		LOG_INFO("Battery Level Read as %d %%.\r\n", p_bas_c_evt->params.battery_level);
-		break;
-
-	default:
-		break;
-	}
+        case BLE_NUS_C_EVT_DISCONNECTED:
+            LOG_INFO("Disconnected.");
+            scan_start();
+            break;
+    }
 }
 
 
@@ -779,13 +727,13 @@ static void lns_c_init(void)
 /**
  * @brief Battery level collector initialization.
  */
-static void bas_c_init(void)
+static void nus_c_init(void)
 {
-	ble_bas_c_init_t bas_c_init_obj;
+	ble_nus_c_init_t nus_c_init_obj;
 
-	bas_c_init_obj.evt_handler = bas_c_evt_handler;
+	nus_c_init_obj.evt_handler = nus_c_evt_handler;
 
-	uint32_t err_code = ble_bas_c_init(&m_ble_bas_c, &bas_c_init_obj);
+	uint32_t err_code = ble_nus_c_init(&m_ble_nus_c, &nus_c_init_obj);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -962,6 +910,9 @@ static void gatt_init(void)
 
 
 #ifdef BLE_STACK_SUPPORT_REQD
+/**
+ * Init BLE stack
+ */
 void ble_init(void)
 {
 	ble_stack_init();
@@ -972,12 +923,56 @@ void ble_init(void)
 	db_discovery_init();
 
 	lns_c_init();
-	bas_c_init();
+	nus_c_init();
 
 	// Start scanning for peripherals and initiate connection
 	// with devices that advertise LNS UUID.
 	scan_start();
 }
+
+/**
+ * Send the log file to a remote computer
+ */
+void ble_nus_tasks(void) {
+
+	if (m_connected && m_nus_cts && m_nus_packet_nb < 350) {
+
+		// TODO remove block
+		memset(m_nus_data_array, 0x5A, sizeof(m_nus_data_array));
+		uint16_t length = MIN(32, BLE_NUS_MAX_DATA_LEN);
+		snprintf((char*)m_nus_data_array, 32, "%u abc", m_nus_packet_nb);
+
+		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, m_nus_data_array, length);
+
+		switch (err_code) {
+		case NRF_ERROR_BUSY:
+			NRF_LOG_INFO("NUS BUSY");
+			break;
+
+		case NRF_ERROR_RESOURCES:
+			NRF_LOG_INFO("NUS RESSSS %u", m_nus_packet_nb);
+			m_nus_cts = false;
+			break;
+
+		case NRF_ERROR_TIMEOUT:
+			NRF_LOG_ERROR("NUS timeout", err_code);
+			break;
+
+		case NRF_SUCCESS:
+			NRF_LOG_INFO("Packet %u sent", m_nus_packet_nb);
+			m_nus_packet_nb++;
+			break;
+
+		default:
+			NRF_LOG_ERROR("NUS unknown error: 0x%X", err_code);
+			break;
+		}
+
+	}
+
+}
+
+
 #endif
 
 

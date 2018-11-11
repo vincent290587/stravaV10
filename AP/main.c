@@ -511,6 +511,11 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		}
 	} break; // BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST
 
+	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
+	{
+		// TODO wait for BLE to be ready again
+	} break;
+
 	default:
 		// No implementation needed.
 		break;
@@ -770,9 +775,15 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 	case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
 	{
 		// parse chars
-		size_t bytes_read = app_usbd_cdc_acm_rx_size(p_cdc_acm);
+		uint16_t bytes_read = app_usbd_cdc_acm_rx_size(p_cdc_acm);
 
 		NRF_LOG_INFO("Bytes RCV: %u", bytes_read);
+
+		uint32_t err_code = ble_nus_data_send(&m_nus,
+				(uint8_t*)m_rx_buffer,
+				&bytes_read,
+				m_conn_handle);
+		APP_ERROR_CHECK(err_code);
 
 		// TODO parse incoming bytes
 		size_t ind = 0;

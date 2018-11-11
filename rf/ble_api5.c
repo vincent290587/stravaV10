@@ -111,7 +111,7 @@ static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  
 
 static volatile bool m_nus_cts = false;
 static volatile bool m_connected = false;
-static uint32_t m_nus_packet_nb = 0;
+static uint16_t m_nus_packet_nb = 0;
 static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 
 
@@ -498,9 +498,14 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		APP_ERROR_CHECK(err_code);
 		break;
 
-	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
-		// TODO clear to send more packets
+	case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
+		NRF_LOG_INFO("GATTC HVX Complete");
+		// clear to send more packets
 		m_nus_cts = true;
+		break;
+
+	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
+		// unused here
 		break;
 
 	default:
@@ -557,20 +562,21 @@ static void ble_stack_init(void)
 {
 	ret_code_t err_code;
 
-	err_code = nrf_sdh_enable_request();
-	APP_ERROR_CHECK(err_code);
-
-	ASSERT(nrf_sdh_is_enabled());
-
 	// Configure the BLE stack using the default settings.
 	// Fetch the start address of the application RAM.
 	uint32_t ram_start = 0;
 	err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
 	APP_ERROR_CHECK(err_code);
 
+	NRF_LOG_WARNING("Ram start1: %x", ram_start);
+	NRF_LOG_FLUSH();
+
 	// Enable BLE stack.
 	err_code = nrf_sdh_ble_enable(&ram_start);
 	APP_ERROR_CHECK(err_code);
+
+	NRF_LOG_WARNING("Ram start2: %x", ram_start);
+	NRF_LOG_FLUSH();
 
 	// Register handlers for BLE and SoC events.
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
@@ -905,9 +911,7 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 	{
 	case NRF_BLE_GATT_EVT_ATT_MTU_UPDATED:
 	{
-		LOG_INFO("GATT ATT MTU on connection 0x%x changed to %d.",
-				p_evt->conn_handle,
-				p_evt->params.att_mtu_effective);
+        LOG_INFO("ATT MTU exchange completed.");
 	} break;
 
 	case NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED:
@@ -979,40 +983,37 @@ void ble_init(void)
  */
 void ble_nus_tasks(void) {
 
-	if (m_connected && m_nus_cts) {
+	if (m_connected && m_nus_cts && m_nus_packet_nb < 350) {
 
-		// TODO remove
+		// TODO remove block
 		memset(m_nus_data_array, 0x5A, sizeof(m_nus_data_array));
-
-		uint16_t length = MIN(16, BLE_NUS_MAX_DATA_LEN);
+		uint16_t length = MIN(32, BLE_NUS_MAX_DATA_LEN);
+		snprintf((char*)m_nus_data_array, 32, "%u abc", m_nus_packet_nb);
 
 		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, m_nus_data_array, length);
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
 			NRF_LOG_INFO("NUS BUSY");
-			m_nus_cts = false;
 			break;
 
 		case NRF_ERROR_RESOURCES:
+			NRF_LOG_INFO("NUS RESSSS %u", m_nus_packet_nb);
 			m_nus_cts = false;
 			break;
 
 		case NRF_ERROR_TIMEOUT:
 			NRF_LOG_ERROR("NUS timeout", err_code);
+			break;
+
 		case NRF_SUCCESS:
+			NRF_LOG_INFO("Packet %u sent", m_nus_packet_nb);
+			m_nus_packet_nb++;
 			break;
 
 		default:
 			NRF_LOG_ERROR("NUS unknown error: 0x%X", err_code);
 			break;
-		}
-
-		// TODO remove
-		// is it the end ? tadadaaaaa
-		if (m_nus_packet_nb++ >= 50) {
-			m_nus_cts = false;
-			LOG_INFO("NUS send ended !");
 		}
 
 	}

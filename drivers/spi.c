@@ -137,7 +137,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 			p_tx_buffer, tx_length,
 			p_rx_buffer, rx_length);
 
-	NRF_LOG_INFO("SPI Xfer %u/%u byte", tx_length, rx_length);
+	NRF_LOG_DEBUG("SPI Xfer %u/%u byte", tx_length, rx_length);
 
 	ASSERT(m_is_started);
 

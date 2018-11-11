@@ -32,6 +32,7 @@
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
+#include "diskio_nor.h"
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
 #include "Model.h"
@@ -407,25 +408,8 @@ int main(void)
 
 	nrf_delay_ms(1000);
 
-#ifdef USB_ENABLED
 	// diskio + fatfs init
-	usb_cdc_diskio_init();
-#else
-	// clocks init
-	err_code = nrf_drv_clock_init();
-    APP_ERROR_CHECK(err_code);
-
-	// start RTC
-    LOG_INFO("Starting LF clock");
-    nrf_drv_clock_lfclk_request(NULL);
-    while(!nrf_drv_clock_lfclk_is_running())
-    {
-        /* Just waiting */
-    }
-
-	// disk init
-	fatfs_init();
-#endif
+	diskio_nor_init();
 
 	// LCD displayer
 	vue.init();
@@ -445,7 +429,6 @@ int main(void)
 
 	// timers
 #ifdef ANT_STACK_SUPPORT_REQD
-	ant_timers_init();
 #endif
 
 	backlighting_init();
@@ -461,9 +444,10 @@ int main(void)
 #if defined (BLE_STACK_SUPPORT_REQD)
 	ble_init();
 #endif
-#if defined(ANT_STACK_SUPPORT_REQD)
+#if defined (ANT_STACK_SUPPORT_REQD)
 	ant_stack_init();
 	ant_setup_start();
+	ant_timers_init();
 #endif
 
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
