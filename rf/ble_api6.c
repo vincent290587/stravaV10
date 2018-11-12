@@ -92,6 +92,13 @@ typedef struct
 	uint16_t   data_len;    /**< Length of data. */
 } data_t;
 
+typedef enum {
+	eNusTransferStateIdle,
+	eNusTransferStateInit,
+	eNusTransferStateRun,
+	eNusTransferStateWait,
+	eNusTransferStateFinish
+} eNusTransferState;
 
 BLE_NUS_C_DEF(m_ble_nus_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
@@ -114,6 +121,7 @@ static volatile bool m_connected = false;
 static uint16_t m_nus_packet_nb = 0;
 static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 
+static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
 /**@brief Connection parameters requested for connection. */
 static ble_gap_conn_params_t const m_connection_param =
@@ -697,8 +705,7 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
         case BLE_NUS_C_EVT_NUS_TX_EVT:
             // TODO handle received chars
         	LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
-        	m_nus_cts = true;
-        	m_nus_packet_nb = 0;
+        	m_nus_xfer_state = eNusTransferStateInit;
         	// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
             break;
 
@@ -933,16 +940,55 @@ void ble_init(void)
 /**
  * Send the log file to a remote computer
  */
+#include "sd_functions.h"
 void ble_nus_tasks(void) {
 
-	if (m_connected && m_nus_cts && m_nus_packet_nb < 350) {
+	if (m_nus_xfer_state == eNusTransferStateIdle) return;
 
-		// TODO remove block
-		memset(m_nus_data_array, 0x5A, sizeof(m_nus_data_array));
-		uint16_t length = MIN(32, BLE_NUS_MAX_DATA_LEN);
-		snprintf((char*)m_nus_data_array, 32, "%u abc", m_nus_packet_nb);
+	switch (m_nus_xfer_state) {
 
-		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, m_nus_data_array, length);
+	case eNusTransferStateInit:
+	{
+		if (!log_file_start()) {
+			NRF_LOG_WARNING("Log file error start")
+			m_nus_xfer_state = eNusTransferStateIdle;
+		} else {
+			m_nus_packet_nb = 0;
+			m_nus_cts = true;
+			m_nus_xfer_state = eNusTransferStateRun;
+		}
+	}
+	break;
+
+	case eNusTransferStateRun:
+	break;
+
+	case eNusTransferStateFinish:
+		if (!log_file_stop(false)) {
+			NRF_LOG_WARNING("Log file error stop")
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	if (m_connected &&
+			m_nus_xfer_state == eNusTransferStateRun &&
+			m_nus_cts) {
+
+		char *p_xfer_str = NULL;
+		size_t length_ = 0;
+		p_xfer_str = log_file_read(&length_);
+		if (!p_xfer_str) {
+			// problem or end of transfer
+			m_nus_xfer_state = eNusTransferStateFinish;
+			return;
+		} else {
+			// nothing
+		}
+
+		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)p_xfer_str, length_);
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
@@ -959,7 +1005,7 @@ void ble_nus_tasks(void) {
 			break;
 
 		case NRF_SUCCESS:
-			NRF_LOG_INFO("Packet %u sent", m_nus_packet_nb);
+			NRF_LOG_INFO("Packet %u sent size %u", m_nus_packet_nb, length_);
 			m_nus_packet_nb++;
 			break;
 
