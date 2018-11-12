@@ -549,37 +549,23 @@ bool log_file_start(void) {
  *
  * @param log_buffer
  * @param size_
- * @return 0 on success, or -1 if error
+ * @return The pointer to read string, or NULL if problem
  */
-int log_file_read(uint8_t* log_buffer, uint16_t size_) {
+char* log_file_read(size_t *r_length) {
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
-	if (!is_fat_init()) return -1;
+	if (!is_fat_init()) return NULL;
 
-	UINT size_read = 0;
-	FRESULT error = f_read (
-			&g_LogFileObject, 	/* Pointer to the file object */
-			g_bufferRead,	    /* Pointer to data buffer */
-			size_,              /* Number of bytes to read */
-			&size_read	        /* Pointer to number of bytes read */
-	);
-	if (error)
+	if (!f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_LogFileObject))
 	{
 		LOG_INFO("Read LOG file failed.");
-		return -1;
+		return NULL;
 	}
 
-	if (size_read != size_) {
-		LOG_INFO("End of LOG file");
-		return 1;
-	} else if (size_ > sizeof(g_bufferRead)) {
-		LOG_ERROR("Reading buffer too small !");
-	} else {
-		memcpy(log_buffer, g_bufferRead, size_);
-	}
+	*r_length = strlen(g_bufferRead);
 
-	return 0;
+	return g_bufferRead;
 }
 
 /**

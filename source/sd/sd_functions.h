@@ -8,10 +8,11 @@
 #ifndef SOURCE_SD_SD_FUNCTIONS_H_
 #define SOURCE_SD_SD_FUNCTIONS_H_
 
-#include "Attitude.h"
 #include "EpoDefinitions.h"
 
 #if defined(__cplusplus)
+
+#include "Attitude.h"
 
 class Segment;
 class Parcours;
@@ -37,7 +38,7 @@ bool epo_file_start(int current_gps_hour);
 int epo_file_stop(bool toBeDeleted);
 
 bool log_file_start(void);
-int log_file_read(uint8_t* log_buffer, uint16_t size_);
+char* log_file_read(size_t *r_length);
 int log_file_stop(bool toBeDeleted);
 
 #if defined(__cplusplus)
