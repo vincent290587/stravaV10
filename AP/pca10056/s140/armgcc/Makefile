@@ -1,5 +1,6 @@
 PROJECT_NAME     := usbd_ble_uart_pca10056_s140
 TARGETS          := nrf52840_xxaa
+SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.1.0_softdevice.hex
 
 include Makefile.local
 
@@ -302,6 +303,22 @@ $(foreach target, $(TARGETS), $(call define_target, $(target)))
 
 .PHONY: flash flash_softdevice erase
 
+settings:
+	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
+
+dfu_softdevice:
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaAP_soft.zip
+	nrfutil pkg display stravaAP_soft.zip
+	nrfutil dfu usb_serial -pkg stravaAP_soft.zip -p $(COM_PORT)
+
+dfu:
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xae --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaAP.zip
+	nrfutil pkg display stravaAP.zip
+	nrfutil dfu usb_serial -pkg stravaAP.zip -p $(COM_PORT)
+
+dfu_send:
+	nrfutil dfu usb_serial -pkg stravaAP.zip -p $(COM_PORT)
+
 # Flash the program
 flash: default
 	@echo Flashing: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
@@ -311,7 +328,7 @@ flash: default
 # Flash softdevice
 flash_softdevice:
 	@echo Flashing: s140_nrf52_6.1.0_softdevice.hex
-	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/s140/hex/s140_nrf52_6.1.0_softdevice.hex --sectorerase
+	nrfjprog -f nrf52 --program $(SDK_ROOT)/$(SOFTDEVICE) --sectorerase
 	nrfjprog -f nrf52 --reset
 
 erase:
