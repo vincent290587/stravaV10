@@ -225,9 +225,6 @@ void Attitude::majPower(float speed_) {
 		m_power += 0.204 * fSpeed * fSpeed * fSpeed; // air
 		m_power *= 1.025; // transmission (rendement velo)
 
-		if (fSpeed < 1.5) {
-			m_power = -100.;
-		}
 	} else {
 		LOG_INFO("dTime= %d ms", (int)(dTime*1000));
 	}

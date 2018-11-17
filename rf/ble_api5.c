@@ -1028,7 +1028,7 @@ void ble_nus_tasks(void) {
 		char *p_xfer_str = NULL;
 		size_t length_ = 0;
 		p_xfer_str = log_file_read(&length_);
-		if (!p_xfer_str) {
+		if (!p_xfer_str || !length_) {
 			// problem or end of transfer
 			m_nus_xfer_state = eNusTransferStateFinish;
 			return;
