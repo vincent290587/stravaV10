@@ -967,6 +967,7 @@ void ble_nus_tasks(void) {
 		if (!log_file_stop(false)) {
 			NRF_LOG_WARNING("Log file error stop")
 		}
+		m_nus_xfer_state = eNusTransferStateIdle;
 		break;
 
 	default:

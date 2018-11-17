@@ -173,7 +173,6 @@ static ble_uuid_t m_adv_uuids[]          =                                      
 {
 		{BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}
 };
-static char m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 
 // BLE DEFINES END
 
@@ -200,7 +199,56 @@ static volatile bool m_is_port_open = false;
 
 static bool m_usb_connected = false;
 
-// CDC defines end
+
+/**
+ * Prints a single char to VCOM
+ * @param c
+ */
+static void usb_print(char c) {
+
+	if (RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
+		RING_BUFFER_ADD_ATOMIC(cdc_rb1, c);
+
+		// TODO check m_last_buffered = millis();
+	} else {
+
+	}
+
+}
+
+/**
+ * Prints a char* to VCOM printf style
+ * @param format
+ */
+void usb_printf(const char *format, ...) {
+
+	va_list args;
+	va_start(args, format);
+
+	static char m_usb_char_buffer[128];
+
+	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
+
+	int length = vsnprintf(m_usb_char_buffer,
+			sizeof(m_usb_char_buffer),
+			format, args);
+
+	NRF_LOG_DEBUG("Printfing %d bytes to VCOM", length);
+
+	for (int i=0; i < length; i++) {
+
+		usb_print(m_usb_char_buffer[i]);
+
+	}
+
+	// newline
+	usb_print('\r');
+	usb_print('\n');
+
+	// TODO check m_last_buffered = millis();
+
+}
+
 
 /**
  * @brief Function for assert macro callback.
@@ -277,24 +325,12 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
 		bsp_board_led_invert(LED_BLE_NUS_RX);
 		NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on CDC ACM.");
 		NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
-		memcpy(m_nus_data_array, p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
 
-		// Add endline characters
-		uint16_t length = p_evt->params.rx_data.length;
-		if (length + sizeof(ENDLINE_STRING) < BLE_NUS_MAX_DATA_LEN)
-		{
-			memcpy(m_nus_data_array + length, ENDLINE_STRING, sizeof(ENDLINE_STRING));
-			length += sizeof(ENDLINE_STRING);
+		// send to USB TX RB
+		for (int i=0; i < p_evt->params.rx_data.length; i++) {
+			usb_print(p_evt->params.rx_data.p_data[i]);
 		}
 
-		// TODO Send data through CDC ACM
-		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
-				m_nus_data_array,
-				length);
-		if(ret != NRF_SUCCESS)
-		{
-			NRF_LOG_INFO("CDC ACM unavailable, data received: %s", m_nus_data_array);
-		}
 	}
 
 }
@@ -417,6 +453,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 	case BLE_GAP_EVT_CONNECTED:
 		NRF_LOG_INFO("BLE NUS connected");
+		usb_printf("Connected");
 		err_code = app_timer_stop(m_blink_ble);
 		APP_ERROR_CHECK(err_code);
 		bsp_board_led_on(LED_BLE_NUS_CONN);
@@ -680,55 +717,6 @@ static void idle_state_handle(void)
 	power_manage();
 }
 
-/**
- * Prints a single char to VCOM
- * @param c
- */
-static void usb_print(char c) {
-
-	if (RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
-		RING_BUFFER_ADD_ATOMIC(cdc_rb1, c);
-
-		// TODO check m_last_buffered = millis();
-	} else {
-
-	}
-
-}
-
-/**
- * Prints a char* to VCOM printf style
- * @param format
- */
-void usb_printf(const char *format, ...) {
-
-	va_list args;
-	va_start(args, format);
-
-	static char m_usb_char_buffer[128];
-
-	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
-
-	int length = vsnprintf(m_usb_char_buffer,
-			sizeof(m_usb_char_buffer),
-			format, args);
-
-	NRF_LOG_DEBUG("Printfing %d bytes to VCOM", length);
-
-	for (int i=0; i < length; i++) {
-
-		usb_print(m_usb_char_buffer[i]);
-
-	}
-
-	// newline
-	usb_print('\r');
-	usb_print('\n');
-
-	// TODO check m_last_buffered = millis();
-
-}
-
 /** @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t */
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		app_usbd_cdc_acm_user_event_t event)
@@ -784,12 +772,6 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 				&bytes_read,
 				m_conn_handle);
 		APP_ERROR_CHECK(err_code);
-
-		// TODO parse incoming bytes
-		size_t ind = 0;
-		while (bytes_read--) {
-			usb_print(m_rx_buffer[ind++]);
-		}
 
 		/* Fetch data until internal buffer is empty */
 		(void)app_usbd_cdc_acm_read_any(p_cdc_acm,
@@ -867,7 +849,6 @@ void usb_cdc_tasks(void) {
 	}
 
 	// send if inactive and data is waiting in buffer or if the buffer is almost full
-	// TODO check:  && millis() - m_last_buffered > 1
 	if ((m_tx_buffer_bytes_nb[m_tx_buffer_index] > (NRF_DRV_USBD_EPSIZE * 3 /4)) ||
 			(m_tx_buffer_bytes_nb[m_tx_buffer_index])) {
 
