@@ -22,6 +22,19 @@ float regFen(float val_, float b1_i, float b1_f, float b2_i, float b2_f);
 
 float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f);
 
+
+/**
+ * distance_between5: 24ms
+ * distance_between2: 24ms
+ * distance_between3: 21ms
+ * distance_between4: 40ms
+ *
+ */
+float distance_between5(float, float, float, float);
+inline float distance_between(float lat1, float long1, float lat2, float long2) {
+	return distance_between5(lat1, long1, lat2, long2);
+}
+
 float distance_between(float lat1, float long1, float lat2, float long2);
 
 void calculePos (const char *nom, float *lat, float *lon);

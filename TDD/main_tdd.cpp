@@ -26,6 +26,27 @@
 #include <unistd.h> // For STDERR_FILENO
 #include <signal.h> // To register the signal handler
 
+void print_backtrace(void)
+{
+        static const char start[] = "BACKTRACE ------------\n";
+        static const char end[] = "----------------------\n";
+
+        void *bt[1024];
+        int bt_size;
+        char **bt_syms;
+        int i;
+
+        bt_size = backtrace(bt, 1024);
+        bt_syms = backtrace_symbols(bt, bt_size);
+        write(STDERR_FILENO, start, strlen(start));
+        for (i = 1; i < bt_size; i++) {
+                size_t len = strlen(bt_syms[i]);
+                write(STDERR_FILENO, bt_syms[i], len);
+                write(STDERR_FILENO, "\n", 1);
+        }
+        write(STDERR_FILENO, end, strlen(end));
+    free(bt_syms);
+}
 
 void signalHandler( int signum ) {
 
@@ -39,6 +60,8 @@ void signalHandler( int signum ) {
     size = backtrace(array, 10);
 
     backtrace_symbols_fd(array, size, STDERR_FILENO);
+
+    print_backtrace();
 
     // cleanup and close up stuff here
     // terminate program
@@ -113,6 +136,9 @@ int main(void)
 	// register signal SIGINT and signal handler
 	signal(SIGFPE, signalHandler);
 	signal(SIGSEGV, signalHandler);
+	signal(SIGABRT, signalHandler);
+
+	// pipe handler
 	signal(SIGPIPE, pipeHandler);
 
 	LOG_INFO("Unit testing...");
