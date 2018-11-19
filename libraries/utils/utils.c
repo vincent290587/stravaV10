@@ -9,41 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#ifndef TDD
-#include "app_util_platform.h"
-#include "arm_math.h"
-#else
-#include "math.h"
-#endif
+#include "math_wrapper.h"
 #include "utils.h"
 #include "segger_wrapper.h"
 
-#ifndef _USE_MATH_DEFINES
-
-#define M_E		2.7182818284590452354
-#define M_LOG2E		1.4426950408889634074
-#define M_LOG10E	0.43429448190325182765
-#define M_LN2		_M_LN2
-#define M_LN10		2.30258509299404568402
-#define M_PI		3.14159265358979323846
-#define M_TWOPI         (M_PI * 2.0)
-#define M_PI_2		1.57079632679489661923
-#define M_PI_4		0.78539816339744830962
-#define M_3PI_4		2.3561944901923448370E0
-#define M_SQRTPI        1.77245385090551602792981
-#define M_1_PI		0.31830988618379067154
-#define M_2_PI		0.63661977236758134308
-#define M_2_SQRTPI	1.12837916709551257390
-#define M_SQRT2		1.41421356237309504880
-#define M_SQRT1_2	0.70710678118654752440
-#define M_LN2LO         1.9082149292705877000E-10
-#define M_LN2HI         6.9314718036912381649E-1
-#define M_SQRT3	1.73205080756887719000
-#define M_IVLN10        0.43429448190325182765 /* 1 / log(10) */
-#define M_LOG2_E        _M_LN2
-#define M_INVLN2        1.4426950408889633870E0  /* 1 / log(2) */
-
-#endif
 
 #define BATT_INT_RES                   0.155
 
@@ -126,7 +95,6 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
   return delta * 6369933.;
 }
 
-#ifndef TDD
 /**
  *
  * @param lat1 En degres
@@ -137,18 +105,18 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
  */
 float distance_between5(float lat1, float long1, float lat2, float long2) {
   float delta = 3.141592 * (long1 - long2) / 180.;
-  float sdlong = arm_sin_f32(delta);
-  float cdlong = arm_cos_f32(delta);
+  float sdlong = my_sin(delta);
+  float cdlong = my_cos(delta);
   lat1 = 3.141592 * (lat1) / 180.;
   lat2 = 3.141592 * (lat2) / 180.;
-  float slat1 = arm_sin_f32(lat1);
-  float clat1 = arm_cos_f32(lat1);
-  float slat2 = arm_sin_f32(lat2);
-  float clat2 = arm_cos_f32(lat2);
+  float slat1 = my_sin(lat1);
+  float clat1 = my_cos(lat1);
+  float slat2 = my_sin(lat2);
+  float clat2 = my_cos(lat2);
   delta = (clat1 * slat2) - (slat1 * clat2 * cdlong);
   delta = delta*delta;
   delta += clat2 * sdlong * clat2 * sdlong;
-  APP_ERROR_CHECK(arm_sqrt_f32(delta, &delta));
+  delta = my_sqrtf(delta);
   float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
   delta = atan2f(delta, denom);
   return delta * 6369933.;
@@ -170,29 +138,28 @@ float distance_between3(float lat1, float long1, float lat2, float long2) {
 
   float lat1rad = M_PI * lat1 / 180.;
 
-  float cos2lat1 = arm_cos_f32(lat1rad);
+  float cos2lat1 = my_cos(lat1rad);
   cos2lat1 *= cos2lat1;
 
   if (fabsf(latRm - lat1rad) > 0.008) {
 	  latRm = lat1rad;
-	  APP_ERROR_CHECK(arm_sqrt_f32(R1*R1*(1-cos2lat1) + R2*R2*cos2lat1, &Rm));
+	  Rm = my_sqrtf(R1*R1*(1-cos2lat1) + R2*R2*cos2lat1);
   }
 
   // petits angles: tan = Id
   float deltalat = M_PI * (lat2 -lat1) / 180.;
   float deltalon = M_PI * (long2-long1) / 180.;
 
-  float dhori  = deltalon * R2 * arm_cos_f32(lat1rad);
+  float dhori  = deltalon * R2 * my_cos(lat1rad);
   float dverti = deltalat * Rm;
 
   // projection plane et pythagore
   float res = dhori*dhori + dverti*dverti;
 
-  APP_ERROR_CHECK(arm_sqrt_f32(res, &res));
+  res = my_sqrtf(res);
 
   return res;
 }
-#endif
 
 /**
  * Approximation petits angles sur une Terre ellipsoidale
@@ -226,27 +193,6 @@ float distance_between4(float lat1, float long1, float lat2, float long2) {
 
   // projection plane et pythagore
   return sqrtf(dhori*dhori + dverti*dverti);
-}
-
-/**
- * distance_between5: 24ms
- * distance_between2: 24ms
- * distance_between3: 21ms
- * distance_between4: 40ms
- *
- *
- * @param lat1 En degres
- * @param long1 En degres
- * @param lat2 En degres
- * @param long2 En degres
- * @return
- */
-float distance_between(float lat1, float long1, float lat2, float long2) {
-#ifdef TDD
-  return distance_between2(lat1, long1, lat2, long2);
-#else
-  return distance_between5(lat1, long1, lat2, long2);
-#endif
 }
 
 void calculePos (const char *nom, float *lat, float *lon) {

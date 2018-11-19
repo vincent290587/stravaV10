@@ -6,7 +6,7 @@
  */
 
 #include "utils.h"
-#include <math.h>
+#include "math_wrapper.h"
 #include "Vecteur.h"
 #include "ListePoints.h"
 #include "assert_wrapper.h"

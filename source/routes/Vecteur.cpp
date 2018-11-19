@@ -5,7 +5,7 @@
  * Created on October 27, 2015, 3:07 PM
  */
 
-#include <cmath>
+#include "math_wrapper.h"
 #include "Vecteur.h"
 
 Vecteur Project(Vecteur const &v1, Vecteur const &v2) {
@@ -53,7 +53,7 @@ Vecteur::Vecteur(Point point1, Point point2) {
 
 float Vecteur::getNorm(void) {
 	float _norm_sq = _x*_x + _y*_y;
-	return sqrtf(_norm_sq);
+	return my_sqrtf(_norm_sq);
 }
 
 void Vecteur::project(Vecteur const &vecteur_) {
@@ -63,8 +63,9 @@ void Vecteur::project(Vecteur const &vecteur_) {
 
 void Vecteur::norm(void) {
 	float _norm_sq = this->getNorm();
-	_x /= sqrtf(_norm_sq);
-	_y /= sqrtf(_norm_sq);
+	if (_norm_sq < 0.001) return;
+	_x /= my_sqrtf(_norm_sq);
+	_y /= my_sqrtf(_norm_sq);
 }
 
 Vecteur Vecteur::operator=(const Point *point) {

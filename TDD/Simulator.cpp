@@ -47,6 +47,11 @@ void simulator_init(void) {
 
 void simulator_tasks(void) {
 
+	if (!g_fileObject) {
+		printf("No simulation file found");
+		exit(-3);
+	}
+
 	if (millis() < 5000) {
 		return;
 	}
@@ -94,6 +99,14 @@ void simulator_tasks(void) {
 			// rtime is missing: generate it
 			rtime += 1;
 		}
+
+#ifdef TDD_RANDOMIZE
+		int rnd_add;
+		rnd_add = (rand() % 20) - 10;
+		lat += (float)rnd_add / 150000.;
+		rnd_add = (rand() % 20) - 10;
+		lon += (float)rnd_add / 150000.;
+#endif
 
 		// build make NMEA sentence
 		GPRMC gprmc_(lat, lon, 0., (int)rtime);
