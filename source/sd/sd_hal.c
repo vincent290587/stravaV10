@@ -41,7 +41,7 @@ static bool configure_memory()
 			.io2_level = true,
 			.io3_level = true,
 			.wipwait   = true,
-			.wren      = true
+			.wren      = false
 	};
 
 	// Send reset enable
@@ -54,6 +54,12 @@ static bool configure_memory()
 	APP_ERROR_CHECK(err_code);
 
 	delay_ms(3);
+
+    // Reset input mode
+    cinstr_cfg.opcode = 0xF5;
+    cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_1B;
+    err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
+    APP_ERROR_CHECK(err_code);
 
 	// Get device ID
 	cinstr_cfg.opcode = 0x9F;
@@ -70,19 +76,13 @@ static bool configure_memory()
     err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, &temporary, NULL);
     APP_ERROR_CHECK(err_code);
 
-	// Global unlock SST26VF
-	cinstr_cfg.opcode = 0x98;
-	cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_1B;
-	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
-	APP_ERROR_CHECK(err_code);
-
     // Switch to 4-io-qspi mode
-//    cinstr_cfg.opcode = 0x38;
+//    cinstr_cfg.opcode = 0x35;
 //    cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_1B;
 //    err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
 //    APP_ERROR_CHECK(err_code);
 
-	return recv[0] == 0xBF;
+	return recv[0] == 0x20;
 }
 
 void format_memory() {

@@ -2893,7 +2893,7 @@
 
 
 #ifndef NRFX_QSPI_CONFIG_SCK_DELAY
-#define NRFX_QSPI_CONFIG_SCK_DELAY 1
+#define NRFX_QSPI_CONFIG_SCK_DELAY 2
 #endif
 
 // <o> NRFX_QSPI_CONFIG_XIP_OFFSET - Address offset in the external memory for Execute in Place operation. 
@@ -2961,7 +2961,7 @@
 // <15=> 32MHz/16 
 
 #ifndef NRFX_QSPI_CONFIG_FREQUENCY
-#define NRFX_QSPI_CONFIG_FREQUENCY 15
+#define NRFX_QSPI_CONFIG_FREQUENCY 0
 #endif
 
 // <s> NRFX_QSPI_PIN_SCK - SCK pin value.

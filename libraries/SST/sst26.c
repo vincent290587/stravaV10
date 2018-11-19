@@ -4,9 +4,9 @@
 
 static const nrf_serial_flash_params_t m_sflash_params[] = {
     {    /*SST26VF*/
-        .read_id = { 0xBF, 0x26, 0x42 },
+        .read_id = { 0x20, 0xBA, 0x18 },
         .capabilities = 0x00,
-        .size = 32 * 1024 * 1024 / 8,
+        .size = 128 * 1024 * 1024 / 8,
         .erase_size = 4 * 1024,
         .program_size = 256,
     }
