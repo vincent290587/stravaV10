@@ -58,6 +58,13 @@ nrfx_wdt_channel_id m_channel_id;
 
 static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
+typedef struct {
+	char _buffer[256];
+	uint8_t special;
+} sAppErrorDescr;
+
+static sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
+
 extern "C" void ble_init(void);
 
 
@@ -120,8 +127,6 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
-    static char _buffer[256] = {0};
-
     //nor_save_error(id, pc, info);
 
     switch (id)
@@ -137,31 +142,33 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ASSERT:
         {
             assert_info_t * p_info = (assert_info_t *)info;
-            snprintf(_buffer, sizeof(_buffer),
+        	m_app_error.special = 0xDB;
+            snprintf(m_app_error._buffer, sizeof(m_app_error._buffer),
         			"ASSERTION FAILED at %s:%u",
                     p_info->p_file_name,
                     p_info->line_num);
 #if USE_SVIEW
-            SEGGER_SYSVIEW_Error(_buffer);
+            SEGGER_SYSVIEW_Error(m_app_error._buffer);
 #else
-            NRF_LOG_ERROR(_buffer);
-            LOG_ERROR(_buffer);
+            NRF_LOG_ERROR(m_app_error._buffer);
+            LOG_ERROR(m_app_error._buffer);
 #endif
             break;
         }
         case NRF_FAULT_ID_SDK_ERROR:
         {
         	error_info_t * p_info = (error_info_t *)info;
-        	snprintf(_buffer, sizeof(_buffer),
+        	m_app_error.special = 0xDB;
+        	snprintf(m_app_error._buffer, sizeof(m_app_error._buffer),
         			"ERROR %u [%s] at %s:%u",
                     p_info->err_code,
 					  nrf_strerror_get(p_info->err_code),
                     p_info->p_file_name,
                     p_info->line_num);
 #if USE_SVIEW
-            SEGGER_SYSVIEW_Error(_buffer);
+            SEGGER_SYSVIEW_Error(m_app_error._buffer);
 #else
-            LOG_ERROR(_buffer);
+            LOG_ERROR(m_app_error._buffer);
 #endif
             break;
         }
@@ -401,6 +408,15 @@ int main(void)
     APP_ERROR_CHECK(err_code);
 
 	LOG_INFO("Init start");
+
+	// check for errors
+	if (m_app_error.special == 0xDB) {
+		// TODO check the no init for bootloader
+		m_app_error.special = 0x00;
+		LOG_ERROR(m_app_error._buffer);
+
+	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
+	}
 
 	// drivers
 	spi_init();

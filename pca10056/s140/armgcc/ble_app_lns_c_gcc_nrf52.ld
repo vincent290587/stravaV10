@@ -6,11 +6,16 @@ GROUP(-lgcc -lc -lnosys)
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0x26000, LENGTH = 0xda000
-  RAM (rwx) :  ORIGIN = 0x20003100, LENGTH = 0x3cf00
+  RAM (rwx) :  ORIGIN = 0x20003101, LENGTH = 0x3cf00
+  NOINIT (rwx) :  ORIGIN = 0x20003000, LENGTH = 0x101
 }
 
 SECTIONS
 {
+  .noinit(NOLOAD) :
+  {
+    *(.noinit*)
+  } > NOINIT
 }
 
 SECTIONS
