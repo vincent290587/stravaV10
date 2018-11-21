@@ -38,6 +38,12 @@ typedef struct {
 } SAtt;
 
 
+typedef struct {
+	char _buffer[256];
+	uint8_t special;
+} sAppErrorDescr;
+
+
 class Attitude {
 public:
 	Attitude();
