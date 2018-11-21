@@ -16,6 +16,7 @@
 #define VUE_FEC_NB_LINES            5
 
 VueFEC::VueFEC() : Adafruit_GFX(0, 0) {
+	m_el_time = 0;
 	m_fec_screen_mode = eVueFECScreenInit;
 }
 

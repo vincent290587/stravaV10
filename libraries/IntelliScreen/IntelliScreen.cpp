@@ -19,6 +19,9 @@ IntelliScreen::IntelliScreen() {
 
 	_mode_calcul = 0;
 	_mode_affi = 0;
+	_mode_affi_prec = 0;
+	_selectionMenu = 0;
+	_stored_mode = 0;
 
 	_is_menu_active = 0;
 	m_act_menu = 0;

@@ -17,6 +17,7 @@
  */
 ListePoints::ListePoints() {
 	m_dist = 0;
+    m_cur_dist = 0;
 }
 
 /** @brief Adds a point at the beginning
@@ -462,6 +463,8 @@ float ListePoints::getElevTot() {
 }
 
 ListePoints2D::ListePoints2D() {
+    m_dist = 0.;
+    m_cur_dist = 0.;
 }
 
 void ListePoints2D::ajouteFin(float lat, float lon) {

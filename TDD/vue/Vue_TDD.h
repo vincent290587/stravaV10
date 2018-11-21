@@ -25,6 +25,7 @@ typedef enum {
 class Vue_TDD: public VueCRS, public VueFEC, public VuePRC, public VueDebug, public NotifiableDevice {
 public:
 	Vue_TDD();
+	~Vue_TDD() {};
 
 	void init(void);
 
