@@ -76,6 +76,8 @@ extern sBacklightOrders     backlight;
 
 extern sNeopixelOrders      neopixel;
 
+extern sAppErrorDescr m_app_error;
+
 extern "C" {
 #endif // defined C++
 

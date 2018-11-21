@@ -41,6 +41,7 @@ typedef struct {
 typedef struct {
 	char _buffer[256];
 	uint8_t special;
+	SAtt saved_att;
 } sAppErrorDescr;
 
 

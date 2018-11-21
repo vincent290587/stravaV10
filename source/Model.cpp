@@ -57,6 +57,9 @@ sNeopixelOrders      neopixel;
 
 sTasksIDs     m_tasks_id;
 
+sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
+
+
 // init counters
 int Point2D::objectCount2D = 0;
 int Point::objectCount = 0;
