@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <cmath>
 #include <stdint.h>
 #include <stdbool.h>
 #include "Model_tdd.h"
@@ -38,13 +39,15 @@ bool test_projection (void) {
 #define U_LAT     (45.)
 #define D_LAT     (0.0001)
 #define D_LON     (0.0005)
+#define SEG_LENGTH           (15)
+#define SEG_POINTS_DELAY     (1.)
 
 bool test_liste (void) {
 
 	Segment mon_seg;
 	mon_seg.init();
-	for (int i=0; i < 15; i++) {
-		mon_seg.ajouterPointFin(U_LAT, D_LON/2 + i*D_LON, 0., 1.1*i + 30);
+	for (int i=0; i < SEG_LENGTH; i++) {
+		mon_seg.ajouterPointFin(U_LAT, D_LON/2 + i*D_LON, 0., (1+SEG_POINTS_DELAY)*i + 30);
 	}
 
 	ListePoints mes_points;
@@ -60,7 +63,13 @@ bool test_liste (void) {
 		LOG_INFO("Status: %d", mon_seg.getStatus());
 
 		cur_lon += D_LON;
-		mes_points.ajouteFinIso(U_LAT+D_LAT, cur_lon, 0., 5.+i, 7);
+		mes_points.ajouteFinIso(U_LAT+D_LAT, cur_lon, 0., 35886.+i, 7);
+
+		if (mon_seg.getStatus() < SEG_OFF) {
+			LOG_INFO("Avance: %f", mon_seg.getAvance());
+			if (fabs(mon_seg.getAvance() - (SEG_POINTS_DELAY*(SEG_LENGTH-1))) > 0.1) return false;
+			break;
+		}
 	}
 
 	mon_seg.uninit();
