@@ -47,7 +47,6 @@ public:
 
 	void addNewFECPoint(sFecInfo& fec_);
 
-
 private:
 	float m_last_save_dist;
 	float m_last_stored_ele;
