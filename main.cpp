@@ -58,8 +58,6 @@ nrfx_wdt_channel_id m_channel_id;
 
 static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
-static sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
-
 extern "C" void ble_init(void);
 
 
@@ -406,10 +404,9 @@ int main(void)
 
 	// check for errors
 	if (m_app_error.special == 0xDB) {
-		// TODO check the no init for bootloader
-		m_app_error.special = 0x00;
+		LOG_ERROR("Error identified:");
 		LOG_ERROR(m_app_error._buffer);
-
+		NRF_LOG_ERROR(m_app_error._buffer);
 	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
 	}
 

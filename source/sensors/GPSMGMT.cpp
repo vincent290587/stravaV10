@@ -23,7 +23,7 @@
 #include "parameters.h"
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_9600
 
 #if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD)
 #define GPS_BIN_CMD                PMTK_SET_BIN
@@ -39,7 +39,6 @@
 #define SEND_TO_GPS(X) do { \
 		const_char_to_buffer(X, buffer, sizeof(buffer)); \
 		GPS_UART_SEND(buffer, strlen(X)); } while(0)
-
 
 static uint8_t buffer[256];
 
@@ -89,7 +88,7 @@ void GPS_MGMT::init(void) {
 	gpio_clear(GPS_R);
 
 	nrf_gpio_cfg_output(GPS_S);
-	gpio_clear(GPS_S);
+	this->awake();
 
 	// configure fix pin
 	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
@@ -131,6 +130,7 @@ void GPS_MGMT::reset(void) {
 	delay_ms(100);
 
 	gps_uart_start();
+	delay_ms(1);
 }
 
 bool GPS_MGMT::isFix(void) {
@@ -152,15 +152,15 @@ void GPS_MGMT::awake(void) {
 void GPS_MGMT::standby(bool is_standby) {
 
 	if (is_standby) {
-		gpio_set(GPS_S);
-	} else {
 		gpio_clear(GPS_S);
+	} else {
+		gpio_set(GPS_S);
 	}
 
 }
 
 bool GPS_MGMT::isStandby(void) {
-	return gpio_get(GPS_S);
+	return !gpio_get(GPS_S);
 }
 
 bool GPS_MGMT::isEPOUpdating(void) {
@@ -316,8 +316,7 @@ void GPS_MGMT::tasks(void) {
  */
 uint32_t gps_encode_char(char c) {
 
-	//LOG_INFO("%c", c);
-	//LOG_FLUSH();
+	//LOG_RAW_INFO(c);
 
 	if (eGPSMgmtEPOIdle == m_epo_state) {
 
