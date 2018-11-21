@@ -394,6 +394,10 @@ void Locator::displayGPS2(void) {
 		vue.println("No fix");
 	}
 
+	line = "Time age: ";
+	line += String((int)gps.time.age());
+	vue.println(line);
+
 	vue.println("  ------");
 
 }

@@ -119,7 +119,6 @@ static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  
 static volatile bool m_nus_cts = false;
 static volatile bool m_connected = false;
 static uint16_t m_nus_packet_nb = 0;
-static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
@@ -130,22 +129,6 @@ static ble_gap_conn_params_t const m_connection_param =
 		(uint16_t)MAX_CONNECTION_INTERVAL,  /**< Maximum connection. */
 		(uint16_t)SLAVE_LATENCY,            /**< Slave latency. */
 		(uint16_t)SUPERVISION_TIMEOUT       /**< Supervision time-out. */
-};
-
-/**@brief Names which the central applications will scan for, and which will be advertised by the peripherals.
- *  if these are set to empty strings, the UUIDs defined below will be used
- */
-static const char m_target_periph_name[] = "";          /**< If you want to connect to a peripheral using a given advertising name, type its name here. */
-static bool  is_connect_per_addr = false;               /**< If you want to connect to a peripheral with a given address, set this to true and put the correct address in the variable below. */
-static const ble_gap_addr_t m_target_periph_addr =
-{
-		/* Possible values for addr_type:
-       BLE_GAP_ADDR_TYPE_PUBLIC,
-       BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
-       BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE,
-       BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE. */
-		.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
-		.addr      = {0x8D, 0xFE, 0x23, 0x86, 0x77, 0xD9}
 };
 
 #if (NRF_SD_BLE_API_VERSION==6)
@@ -284,64 +267,6 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 	}
 }
 
-
-/**
- * @brief Parses advertisement data, providing length and location of the field in case
- *        matching data is found.
- *
- * @param[in]  Type of data to be looked for in advertisement data.
- * @param[in]  Advertisement report length and pointer to report.
- * @param[out] If data type requested is found in the data report, type data length and
- *             pointer to data will be populated here.
- *
- * @retval NRF_SUCCESS if the data type is found in the report.
- * @retval NRF_ERROR_NOT_FOUND if the data type could not be found.
- */
-static uint32_t adv_report_parse(uint8_t type, data_t * p_advdata, data_t * p_typedata)
-{
-	uint32_t  index = 0;
-	uint8_t * p_data;
-
-	p_data = p_advdata->p_data;
-
-	while (index < p_advdata->data_len)
-	{
-		uint8_t field_length = p_data[index];
-		uint8_t field_type   = p_data[index + 1];
-
-		if (field_type == type)
-		{
-			p_typedata->p_data   = &p_data[index + 2];
-			p_typedata->data_len = field_length - 1;
-			return NRF_SUCCESS;
-		}
-		index += field_length + 1;
-	}
-	return NRF_ERROR_NOT_FOUND;
-}
-
-/**@brief Function for searching a given addr in the advertisement packets.
- *
- * @details Use this function to parse received advertising data and to find a given
- * addr in them.
- *
- * @param[in]   p_adv_report   advertising data to parse.
- * @param[in]   p_addr   name to search.
- * @return   true if the given name was found, false otherwise.
- */
-static bool find_peer_addr(const ble_gap_evt_adv_report_t *p_adv_report, const ble_gap_addr_t * p_addr)
-{
-	if (p_addr->addr_type == p_adv_report->peer_addr.addr_type)
-	{
-		if (memcmp(p_addr->addr, p_adv_report->peer_addr.addr, sizeof(p_adv_report->peer_addr.addr)) == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
 /**@brief Function for handling the advertising report BLE event.
  *
  * @param[in] p_adv_report  Advertising report from the SoftDevice.
@@ -352,26 +277,15 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 	ble_uuid_t target_uuid = {.uuid = TARGET_UUID, .type = BLE_UUID_TYPE_BLE};
 	bool do_connect = false;
 
-    if (is_connect_per_addr)
-    {
-        if (find_peer_addr(p_adv_report, &m_target_periph_addr))
-        {
-            LOG_INFO("Address match send connect_request.");
-            do_connect = true;
-        }
-    }
-    else
-    {
-        if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid))
-        {
-            do_connect = true;
-            LOG_INFO("UUID match send connect_request.");
-        }
-        if (ble_advdata_name_find(p_adv_report->data, p_adv_report->dlen, TARGET_NAME)) {
-            do_connect = true;
-            LOG_INFO("Name match send connect_request.");
-        }
-    }
+	if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid))
+	{
+		do_connect = true;
+		LOG_INFO("UUID match send connect_request.");
+	}
+	if (ble_advdata_name_find(p_adv_report->data, p_adv_report->dlen, TARGET_NAME)) {
+		do_connect = true;
+		LOG_INFO("Name match send connect_request.");
+	}
 
     if (do_connect)
     {
@@ -988,7 +902,7 @@ void ble_init(void)
 	scan_init();
 
 	// Start scanning for peripherals and initiate connection
-	// with devices that advertise LNS UUID.
+	// with devices
 	scan_start();
 }
 

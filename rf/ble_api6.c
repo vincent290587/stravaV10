@@ -119,7 +119,6 @@ static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  
 static volatile bool m_nus_cts = false;
 static volatile bool m_connected = false;
 static uint16_t m_nus_packet_nb = 0;
-static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
@@ -131,10 +130,6 @@ static ble_gap_conn_params_t const m_connection_param =
 		(uint16_t)SLAVE_LATENCY,            /**< Slave latency. */
 		(uint16_t)SUPERVISION_TIMEOUT       /**< Supervision time-out. */
 };
-
-/**@brief Names which the central applications will scan for, and which will be advertised by the peripherals.
- *  if these are set to empty strings, the UUIDs defined below will be used
- */
 
 #if (NRF_SD_BLE_API_VERSION==6)
 static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
@@ -270,42 +265,6 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 	default:
 		break;
 	}
-}
-
-
-/**
- * @brief Parses advertisement data, providing length and location of the field in case
- *        matching data is found.
- *
- * @param[in]  Type of data to be looked for in advertisement data.
- * @param[in]  Advertisement report length and pointer to report.
- * @param[out] If data type requested is found in the data report, type data length and
- *             pointer to data will be populated here.
- *
- * @retval NRF_SUCCESS if the data type is found in the report.
- * @retval NRF_ERROR_NOT_FOUND if the data type could not be found.
- */
-static uint32_t adv_report_parse(uint8_t type, data_t * p_advdata, data_t * p_typedata)
-{
-	uint32_t  index = 0;
-	uint8_t * p_data;
-
-	p_data = p_advdata->p_data;
-
-	while (index < p_advdata->data_len)
-	{
-		uint8_t field_length = p_data[index];
-		uint8_t field_type   = p_data[index + 1];
-
-		if (field_type == type)
-		{
-			p_typedata->p_data   = &p_data[index + 2];
-			p_typedata->data_len = field_length - 1;
-			return NRF_SUCCESS;
-		}
-		index += field_length + 1;
-	}
-	return NRF_ERROR_NOT_FOUND;
 }
 
 /**@brief Function for handling the advertising report BLE event.
@@ -933,7 +892,7 @@ void ble_init(void)
 	nus_c_init();
 
 	// Start scanning for peripherals and initiate connection
-	// with devices that advertise LNS UUID.
+	// with devices
 	scan_start();
 }
 
@@ -981,7 +940,7 @@ void ble_nus_tasks(void) {
 		char *p_xfer_str = NULL;
 		size_t length_ = 0;
 		p_xfer_str = log_file_read(&length_);
-		if (!p_xfer_str) {
+		if (!p_xfer_str || !length_) {
 			// problem or end of transfer
 			m_nus_xfer_state = eNusTransferStateFinish;
 			return;
