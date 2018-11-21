@@ -221,6 +221,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 		date_.secj = gps_loc.data.utc_time;
 		date_.date = gps_loc.data.date;
 		date_.timestamp = gps_loc.data.utc_timestamp;
+		break;
 	default:
 		break;
 	}
@@ -271,6 +272,7 @@ eLocationSource Locator::getDate(SDate& date_) {
 		date_.date = gps_loc.data.date;
 
 		date_.timestamp = gps_loc.data.utc_timestamp;
+		break;
 	default:
 		break;
 	}

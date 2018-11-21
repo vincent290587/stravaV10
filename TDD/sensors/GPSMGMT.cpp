@@ -79,6 +79,8 @@ void gps_uart_resume() {
 
 GPS_MGMT::GPS_MGMT() {
 
+	m_epo_packet_ind = 0;
+	m_epo_packet_nb = 0;
 	m_power_state = eGPSMgmtPowerOn;
 	m_epo_state   = eGPSMgmtEPOIdle;
 

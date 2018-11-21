@@ -41,6 +41,13 @@ static bool _nomCorrect(String nom) {
 
 
 sSegmentData::sSegmentData(void) {
+    _elevTot = 0.;
+    _monStart = 0.;
+    _monCur = 0.;
+    _monAvance = 0.;
+    _monElev0 = 0.;
+    _monPElev = 0.;
+    _monPDist = 0.;
 }
 
 sSegmentData::~sSegmentData(void) {

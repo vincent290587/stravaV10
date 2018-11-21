@@ -20,11 +20,16 @@ JScope jscope;
 
 Attitude::Attitude() {
 	m_last_save_dist = 0.;
-
-	m_st_buffer_nb_elem = 0;
+	m_last_stored_ele = 0.;
+	m_cur_ele = 0.;
+	m_climb = 0.;
+	m_vit_asc = 0.;
+	m_power = 0.;
 
 	m_is_init = false;
 	m_is_alt_init = false;
+
+	m_st_buffer_nb_elem = 0;
 }
 
 /**
