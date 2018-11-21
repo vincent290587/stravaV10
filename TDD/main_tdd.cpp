@@ -143,7 +143,10 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
-	test_liste ();
+	if (!test_liste ()) {
+		LOG_ERROR("Unit testing failed !");
+		exit(-1);
+	}
 
 	LOG_INFO("Program init");
 

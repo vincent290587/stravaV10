@@ -121,11 +121,21 @@ void simulator_tasks(void) {
 	} else {
 		fclose(g_fileObject);
 
+#ifdef TDD_RANDOMIZE
+		static int nb_tests = 0;
+		g_fileObject = fopen("GPX_simu.csv", "r");
+		if (++nb_tests < 750) {
+			LOG_WARNING("Starting next simulation");
+			return;
+		}
+		LOG_WARNING("%u simulations run", nb_tests);
+#endif
 		LOG_WARNING("Reached end of simulation file");
 
 		mes_segments._segs.empty();
 
 		exit(0);
+
 	}
 
 }
