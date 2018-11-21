@@ -11,6 +11,7 @@
 #include "sd_hal.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
+#include "sd_functions.h"
 #include <vue/Menuable.h>
 
 static void _retour_menu(int var) {
@@ -67,6 +68,17 @@ static void _page0_shutdown(int var) {
 	_retour_menu(0);
 }
 
+static void _page0_erase(int var) {
+
+	if (sd_erase_pos()) {
+		vue.addNotif("Erasing... ", "", 4, eNotificationTypePartial);
+	} else {
+		vue.addNotif("Erase failed", "", 4, eNotificationTypePartial);
+	}
+
+	_retour_menu(0);
+}
+
 static void _page0_format(int var) {
 
 	format_memory();
@@ -117,8 +129,9 @@ void Menuable::initMenu(void) {
 	menu_add_item(&m_menus.menu_page[0], "Mode FEC", _page0_mode_fec);
 	menu_add_item(&m_menus.menu_page[0], "Mode CRS", _page0_mode_crs);
 	menu_add_item(&m_menus.menu_page[0], "Mode PRC", _page0_mode_prc);
-	menu_add_item(&m_menus.menu_page[0], "Format", _page0_format);
 	menu_add_item(&m_menus.menu_page[0], "Mode DBG", _page0_mode_debug);
+	menu_add_item(&m_menus.menu_page[0], "Erase", _page0_erase);
+	menu_add_item(&m_menus.menu_page[0], "Format", _page0_format);
 
 	menu_add_item(&m_menus.menu_page[0], "Shutdown", _page0_shutdown);
 

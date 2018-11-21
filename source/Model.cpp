@@ -68,7 +68,7 @@ void model_dispatch_sensors_update(void) {
 
 	uint16_t light_level = veml.getRawUVA();
 
-	LOG_INFO("Light level: %u", light_level);
+	LOG_DEBUG("Light level: %u", light_level);
 	NRF_LOG_DEBUG("Temperature: %ld", (int)baro.m_temperature);
 	NRF_LOG_DEBUG("Pressure: %ld", (int)baro.m_pressure);
 

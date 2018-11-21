@@ -442,10 +442,6 @@ int main(void)
 	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
 #endif
 
-	// timers
-#ifdef ANT_STACK_SUPPORT_REQD
-#endif
-
 	backlighting_init();
 
 	buttons_leds_init();
