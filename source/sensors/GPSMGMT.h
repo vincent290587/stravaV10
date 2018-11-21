@@ -45,10 +45,13 @@ public:
 
 	void init(void);
 	bool isFix(void);
+	bool isStandby(void);
 	bool isEPOUpdating(void);
 
 	void standby(void);
 	void awake(void);
+	void standby(bool is_standby);
+	void reset(void);
 
 	void getAckResult(const char *result);
 
