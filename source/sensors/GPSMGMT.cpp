@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "uart.h"
 #include "utils.h"
+#include "gpio.h"
 #include "millis.h"
 #include "WString.h"
 #include "LocusCommands.h"
@@ -49,22 +50,20 @@ static bool m_is_uart_on = false;
 static nrf_uarte_baudrate_t m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
 
 
-/**
- *
- */
-void gps_uart_start() {
-
-	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
-	uart_timer_init();
-	uart_init(m_uart_baud);
-	m_is_uart_on = true;
-
-}
-
 void gps_uart_stop() {
 
 	if (m_is_uart_on) uart_uninit();
 	m_is_uart_on = false;
+
+}
+
+void gps_uart_start() {
+
+	if (m_is_uart_on) gps_uart_stop();
+	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
+//	uart_timer_init();
+	uart_init(m_uart_baud);
+	m_is_uart_on = true;
 
 }
 
@@ -86,18 +85,17 @@ GPS_MGMT::GPS_MGMT() {
 
 void GPS_MGMT::init(void) {
 
-	gps_uart_stop();
-	gps_uart_start();
-	// the baud is here always 9600
+	nrf_gpio_cfg_output(GPS_R);
+	gpio_clear(GPS_R);
+
+	nrf_gpio_cfg_output(GPS_S);
+	gpio_clear(GPS_S);
 
 	// configure fix pin
 	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
 
-	nrf_gpio_cfg_output(GPS_R);
-	nrf_gpio_pin_clear(GPS_R);
-	delay_ms(5);
-	nrf_gpio_pin_set(GPS_R);
-	delay_ms(100);
+	// HW reset
+	this->reset();
 
 #if GPS_USE_COLD_START
 	SEND_TO_GPS(PMTK_COLD);
@@ -120,41 +118,53 @@ void GPS_MGMT::init(void) {
 
 }
 
-bool GPS_MGMT::isFix(void) {
-	return nrf_gpio_pin_read(FIX_PIN);
+/**
+ * Auto sets the default UART baud rate and resets the GPS chip
+ */
+void GPS_MGMT::reset(void) {
+
+	gps_uart_stop();
+
+	gpio_clear(GPS_R);
+	delay_ms(5);
+	gpio_set(GPS_R);
+	delay_ms(100);
+
+	gps_uart_start();
 }
 
-bool GPS_MGMT::isEPOUpdating(void) {
-	return m_epo_state == eGPSMgmtEPOIdle;
+bool GPS_MGMT::isFix(void) {
+	return gpio_get(FIX_PIN);
 }
 
 void GPS_MGMT::standby(void) {
 
-	if (eGPSMgmtPowerOff == m_power_state) return;
+	this->standby(true);
 
-	LOG_INFO("GPS put in standby\r\n");
-
-	m_power_state = eGPSMgmtPowerOff;
-
-	SEND_TO_GPS(PMTK_STANDBY);
-
-	delay_ms(10);
-	gps_uart_stop();
-	delay_us(500);
-	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
-	gps_uart_resume();
 }
 
 void GPS_MGMT::awake(void) {
 
-	if (eGPSMgmtPowerOn == m_power_state) return;
+	this->standby(false);
 
-	LOG_INFO("GPS awoken\r\n");
+}
 
-	m_power_state = eGPSMgmtPowerOn;
+void GPS_MGMT::standby(bool is_standby) {
 
-	SEND_TO_GPS(PMTK_AWAKE);
+	if (is_standby) {
+		gpio_set(GPS_S);
+	} else {
+		gpio_clear(GPS_S);
+	}
 
+}
+
+bool GPS_MGMT::isStandby(void) {
+	return gpio_get(GPS_S);
+}
+
+bool GPS_MGMT::isEPOUpdating(void) {
+	return m_epo_state == eGPSMgmtEPOIdle;
 }
 
 void GPS_MGMT::startEpoUpdate(void) {
@@ -163,7 +173,7 @@ void GPS_MGMT::startEpoUpdate(void) {
 
 	//m_epo_state = eGPSMgmtEPOStart;
 
-	this->awake();
+	//this->awake();
 }
 
 /**
