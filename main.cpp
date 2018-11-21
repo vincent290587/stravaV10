@@ -58,11 +58,6 @@ nrfx_wdt_channel_id m_channel_id;
 
 static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
-typedef struct {
-	char _buffer[256];
-	uint8_t special;
-} sAppErrorDescr;
-
 static sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
 
 extern "C" void ble_init(void);
