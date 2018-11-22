@@ -78,6 +78,8 @@ extern sNeopixelOrders      neopixel;
 
 extern sAppErrorDescr m_app_error;
 
+extern TinyGPSPlus   gps;
+
 extern "C" {
 #endif // defined C++
 

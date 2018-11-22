@@ -30,12 +30,6 @@ extern "C" {
 
 uint32_t gps_encode_char(char c);
 
-void gps_uart_start(void);
-
-void gps_uart_stop(void);
-
-void gps_uart_resume(void);
-
 #if defined(__cplusplus)
 }
 
@@ -52,8 +46,6 @@ public:
 	void awake(void);
 	void standby(bool is_standby);
 	void reset(void);
-
-	void getAckResult(const char *result);
 
 	void setFixInterval(uint16_t interval);
 	void startHostAidingEPO(sLocationData& loc_data, uint32_t age_);
