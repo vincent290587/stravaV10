@@ -22,6 +22,10 @@
 #include "boards.h"
 #include "parameters.h"
 
+TinyGPSCustom gps_sys(gps, "PMKT010", 2);  // system message
+
+TinyGPSCustom gps_ack(gps, "PMKT001", 2);  // ACK, second element
+
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
 #define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_9600
 
@@ -45,32 +49,61 @@ static uint8_t buffer[256];
 static eGPSMgmtEPOState   m_epo_state  = eGPSMgmtEPOIdle;
 
 static bool m_is_uart_on = false;
+static bool m_uart_needs_reboot = true;
 
 static nrf_uarte_baudrate_t m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
 
+static int _get_cmd_result(const char *result) {
 
-void gps_uart_stop() {
+	int int_res = atoi(result);
+	return int_res;
+}
+
+static void gps_wait_boot(void) {
+
+	while (!gps_sys.isUpdated()) {
+		perform_system_tasks_light();
+	}
+
+	//int res = _get_cmd_result(gps_sys.value());
+}
+
+static void gps_uart_stop() {
 
 	if (m_is_uart_on) uart_uninit();
 	m_is_uart_on = false;
 
 }
 
-void gps_uart_start() {
+static void gps_uart_start() {
 
-	if (m_is_uart_on) gps_uart_stop();
-	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
-//	uart_timer_init();
+	if (m_is_uart_on) return;
+
+	if (m_uart_needs_reboot) {
+		m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
+	} else {
+		m_uart_baud = GPS_FAST_SPEED_BAUD;
+	}
+
 	uart_init(m_uart_baud);
 	m_is_uart_on = true;
+	delay_ms(100);
 
-}
+	if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD &&
+			m_uart_baud == GPS_DEFAULT_SPEED_BAUD) {
 
-void gps_uart_resume() {
+		// change GPS baudrate
+		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_115200);
 
-	if (!m_is_uart_on) uart_init(m_uart_baud);
-	m_is_uart_on = true;
+		// go to final baudrate
+		delay_ms(100);
+		gps_uart_stop();
 
+		delay_us(500);
+
+		m_uart_baud = GPS_FAST_SPEED_BAUD;
+		uart_init(m_uart_baud);
+	}
 }
 
 GPS_MGMT::GPS_MGMT() {
@@ -84,14 +117,14 @@ GPS_MGMT::GPS_MGMT() {
 
 void GPS_MGMT::init(void) {
 
+	// configure fix pin
+	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
+
 	nrf_gpio_cfg_output(GPS_R);
 	gpio_clear(GPS_R);
 
 	nrf_gpio_cfg_output(GPS_S);
-	this->awake();
-
-	// configure fix pin
-	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
+	gpio_set(GPS_R);
 
 	// HW reset
 	this->reset();
@@ -101,19 +134,6 @@ void GPS_MGMT::init(void) {
 	delay_us(500);
 #endif
 
-	if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD) {
-
-		// change GPS baudrate
-		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_115200);
-
-		// go to final baudrate
-		delay_ms(100);
-		gps_uart_stop();
-		delay_us(500);
-		m_uart_baud = GPS_FAST_SPEED_BAUD;
-		gps_uart_resume();
-
-	}
 
 }
 
@@ -124,13 +144,14 @@ void GPS_MGMT::reset(void) {
 
 	gps_uart_stop();
 
+	m_uart_needs_reboot = true;
+
 	gpio_clear(GPS_R);
 	delay_ms(5);
 	gpio_set(GPS_R);
-	delay_ms(100);
 
 	gps_uart_start();
-	delay_ms(1);
+	gps_wait_boot();
 }
 
 bool GPS_MGMT::isFix(void) {
@@ -151,10 +172,19 @@ void GPS_MGMT::awake(void) {
 
 void GPS_MGMT::standby(bool is_standby) {
 
+	m_uart_needs_reboot = true;
+
 	if (is_standby) {
+
+		gps_uart_stop();
+		m_uart_needs_reboot = true;
+
 		gpio_clear(GPS_S);
 	} else {
 		gpio_set(GPS_S);
+		delay_ms(100);
+
+		gps_uart_start();
 	}
 
 }
@@ -174,22 +204,6 @@ void GPS_MGMT::startEpoUpdate(void) {
 	//m_epo_state = eGPSMgmtEPOStart;
 
 	//this->awake();
-}
-
-/**
- *
- * @param result
- */
-void GPS_MGMT::getAckResult(const char *result) {
-
-	int int_res = atoi(result);
-
-	if (int_res == 3) {
-		vue.addNotif("GPSMGMT: ", "Result: success", 4, eNotificationTypeComplete);
-	} else {
-		vue.addNotif("GPSMGMT: ", "Result: failure", 4, eNotificationTypeComplete);
-	}
-
 }
 
 void GPS_MGMT::tasks(void) {
@@ -324,6 +338,7 @@ uint32_t gps_encode_char(char c) {
 
 	} else {
 
+		LOG_RAW_INFO(c);
 
 	}
 

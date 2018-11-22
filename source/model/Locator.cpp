@@ -15,7 +15,7 @@
 #include <Locator.h>
 
 
-static volatile bool m_is_updated;
+static bool m_is_updated = false;
 
 TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
@@ -27,8 +27,6 @@ TinyGPSCustom messageNumber(gps, "GPGSV", 2);      // $GPGSV sentence, second el
 TinyGPSCustom satsInView(gps, "GPGSV", 3);  // $GPGSV sentence, third element
 
 TinyGPSCustom satsInUse(gps, "GNGGA", 7);  // $GPGSV sentence, 7th element
-
-TinyGPSCustom gps_ack(gps, "PMKT001", 2);  // ACK, second element
 
 TinyGPSCustom satNumber[4]; // to be initialized later
 TinyGPSCustom elevation[4];
@@ -284,10 +282,6 @@ eLocationSource Locator::getDate(SDate& date_) {
  * Used to get the data from the GPS parsing module
  */
 void Locator::tasks() {
-
-	if (gps_ack.isUpdated()) {
-		gps_mgmt.getAckResult(gps_ack.value());
-	}
 
 	if (m_is_updated) {
 		m_is_updated = false;
