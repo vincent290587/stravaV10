@@ -60,9 +60,10 @@ static int _get_cmd_result(const char *result) {
 }
 
 static void gps_wait_boot(void) {
-
-	while (!gps_sys.isUpdated()) {
+	int timeout = 0;
+	while (!gps_sys.isUpdated() && timeout++ < 100) {
 		perform_system_tasks_light();
+		delay_ms(1);
 	}
 
 	//int res = _get_cmd_result(gps_sys.value());
