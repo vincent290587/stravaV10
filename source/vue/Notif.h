@@ -12,9 +12,12 @@
 #include <stdint.h>
 #include "WString.h"
 
+/**
+ *
+ */
 typedef enum {
-	eNotificationTypePartial,
-	eNotificationTypeComplete,
+	eNotificationTypePartial, //!< eNotificationTypePartial
+	eNotificationTypeComplete,//!< eNotificationTypeComplete
 } eNotificationType;
 
 class Notif {
@@ -40,6 +43,13 @@ public:
 		m_notifs.clear();
 	}
 
+	/**
+	 *
+	 * @param title_
+	 * @param msg_
+	 * @param persist_
+	 * @param type_ If partial, only the msg is printed
+	 */
 	void addNotif(const char *title_, const char *msg_, uint8_t persist_ = 5, eNotificationType type_ = eNotificationTypePartial) {
 		if (m_notifs.size() < 10) m_notifs.push_back(Notif(title_, msg_, persist_, type_));
 	}
