@@ -49,6 +49,7 @@ static uint8_t buffer[256];
 static eGPSMgmtEPOState   m_epo_state  = eGPSMgmtEPOIdle;
 
 static bool m_is_uart_on = false;
+static uint32_t m_uart_timestamp = 0;
 static bool m_uart_needs_reboot = true;
 
 static nrf_uarte_baudrate_t m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
@@ -61,9 +62,13 @@ static int _get_cmd_result(const char *result) {
 
 static void gps_wait_boot(void) {
 	int timeout = 0;
-	while (!gps_sys.isUpdated() && timeout++ < 100) {
+	while (!gps_sys.isUpdated()) {
 		perform_system_tasks_light();
 		delay_ms(1);
+		if (timeout++ > 300) {
+			LOG_WARNING("GPS wait boot timeout");
+			break;
+		}
 	}
 
 	//int res = _get_cmd_result(gps_sys.value());
@@ -211,6 +216,16 @@ void GPS_MGMT::tasks(void) {
 
 	switch (m_epo_state) {
 	case eGPSMgmtEPOIdle:
+	{
+		// check if GPS is in a good state
+		if (!this->isStandby() &&
+				millis() - m_uart_timestamp > 4000) {
+			this->reset();
+			m_uart_timestamp = millis();
+			LOG_ERROR("Resetting GPS....");
+			vue.addNotif("GPS", "Resetting...", 5, eNotificationTypeComplete);
+		}
+	}
 		break;
 
 	case eGPSMgmtEPOStart:
@@ -332,6 +347,7 @@ void GPS_MGMT::tasks(void) {
 uint32_t gps_encode_char(char c) {
 
 	//LOG_RAW_INFO(c);
+	m_uart_timestamp = millis();
 
 	if (eGPSMgmtEPOIdle == m_epo_state) {
 
