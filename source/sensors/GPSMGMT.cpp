@@ -61,11 +61,10 @@ static int _get_cmd_result(const char *result) {
 }
 
 static void gps_wait_boot(void) {
-	int timeout = 0;
+	uint32_t millis_ = millis();
 	while (!gps_sys.isUpdated()) {
 		perform_system_tasks_light();
-		delay_ms(1);
-		if (timeout++ > 300) {
+		if (millis() - millis_ > 300) {
 			LOG_WARNING("GPS wait boot timeout");
 			break;
 		}
