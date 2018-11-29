@@ -3,7 +3,7 @@
 #include "nrf_serial_flash_params.h"
 
 static const nrf_serial_flash_params_t m_sflash_params[] = {
-    {    /*SST26VF*/
+    {    /*MT25*/
         .read_id = { 0x20, 0xBA, 0x18 },
         .capabilities = 0x00,
         .size = 128 * 1024 * 1024 / 8,
