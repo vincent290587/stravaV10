@@ -393,7 +393,8 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     }
     else
     {
-        err_code = sd_ble_gap_scan_start(NULL);
+    	sd_ble_gap_scan_stop();
+        err_code = sd_ble_gap_scan_start(&m_scan_param);
         APP_ERROR_CHECK(err_code);
     }
 }
@@ -847,7 +848,7 @@ static void whitelist_load()
 
 /**@brief Function to start scanning.
  */
-static void scan_start(void)
+static void scan_init(void)
 {
 	if (nrf_fstorage_is_busy(NULL))
 	{
@@ -901,10 +902,15 @@ static void scan_start(void)
 		m_scan_param.timeout  = 0x001E; // 30 seconds.
 	}
 
+}
 
+/**@brief Function to start scanning.
+ */
+static void scan_start(void)
+{
 	LOG_INFO("Starting scan.");
 
-	ret = sd_ble_gap_scan_start(&m_scan_param);
+	uint32_t ret = sd_ble_gap_scan_start(&m_scan_param);
 	APP_ERROR_CHECK(ret);
 
 }
@@ -979,6 +985,7 @@ void ble_init(void)
 
 	lns_c_init();
 	nus_c_init();
+	scan_init();
 
 	// Start scanning for peripherals and initiate connection
 	// with devices that advertise LNS UUID.
