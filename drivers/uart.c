@@ -17,10 +17,6 @@
 #include "app_timer.h"
 #include "ring_buffer.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
 
 #define NRFX_UARTE_INDEX     0
 
@@ -174,7 +170,7 @@ void uart_timer_init(void) {
 	 if (!err_code) uart_xfer_done = false;
 
 	 while (!uart_xfer_done) {
-		 nrf_delay_ms(1);
+		 nrf_pwr_mgmt_run();
 	 }
  }
 

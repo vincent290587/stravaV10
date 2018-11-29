@@ -22,12 +22,12 @@
 #include "boards.h"
 #include "parameters.h"
 
-TinyGPSCustom gps_sys(gps, "PMKT010", 2);  // system message
+TinyGPSCustom gps_sys(gps, "PMTK010", 2);  // system message
 
-TinyGPSCustom gps_ack(gps, "PMKT001", 2);  // ACK, second element
+TinyGPSCustom gps_ack(gps, "PMTK001", 2);  // ACK, second element
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_9600
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
 
 #if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD)
 #define GPS_BIN_CMD                PMTK_SET_BIN
@@ -60,19 +60,6 @@ static int _get_cmd_result(const char *result) {
 	return int_res;
 }
 
-static void gps_wait_boot(void) {
-	uint32_t millis_ = millis();
-	while (!gps_sys.isUpdated()) {
-		perform_system_tasks_light();
-		if (millis() - millis_ > 300) {
-			LOG_WARNING("GPS wait boot timeout");
-			break;
-		}
-	}
-
-	//int res = _get_cmd_result(gps_sys.value());
-}
-
 static void gps_uart_stop() {
 
 	if (m_is_uart_on) uart_uninit();
@@ -86,13 +73,18 @@ static void gps_uart_start() {
 
 	if (m_uart_needs_reboot) {
 		m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
+		LOG_WARNING("UART needs reboot");
 	} else {
 		m_uart_baud = GPS_FAST_SPEED_BAUD;
 	}
 
 	uart_init(m_uart_baud);
 	m_is_uart_on = true;
-	delay_ms(100);
+
+	m_uart_needs_reboot = false;
+}
+
+static void gps_uart_update() {
 
 	if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD &&
 			m_uart_baud == GPS_DEFAULT_SPEED_BAUD) {
@@ -101,13 +93,10 @@ static void gps_uart_start() {
 		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_115200);
 
 		// go to final baudrate
-		delay_ms(100);
+		delay_ms(10);
 		gps_uart_stop();
 
-		delay_us(500);
-
-		m_uart_baud = GPS_FAST_SPEED_BAUD;
-		uart_init(m_uart_baud);
+		gps_uart_start();
 	}
 }
 
@@ -115,8 +104,9 @@ GPS_MGMT::GPS_MGMT() {
 
 	m_epo_packet_ind = 0;
 	m_epo_packet_nb = 0;
-	m_power_state = eGPSMgmtPowerOn;
+	m_power_state = eGPSMgmtStateInit;
 	m_epo_state   = eGPSMgmtEPOIdle;
+	m_is_stdby = false;
 
 }
 
@@ -129,16 +119,10 @@ void GPS_MGMT::init(void) {
 	gpio_clear(GPS_R);
 
 	nrf_gpio_cfg_output(GPS_S);
-	gpio_set(GPS_R);
+	gpio_set(GPS_S);
 
 	// HW reset
 	this->reset();
-
-#if GPS_USE_COLD_START
-	SEND_TO_GPS(PMTK_COLD);
-	delay_us(500);
-#endif
-
 
 }
 
@@ -156,7 +140,38 @@ void GPS_MGMT::reset(void) {
 	gpio_set(GPS_R);
 
 	gps_uart_start();
-	gps_wait_boot();
+
+	m_power_state = eGPSMgmtStateInit;
+}
+
+void GPS_MGMT::runWDT(void) {
+
+	// check if GPS is in a good state
+	if (!this->isStandby() &&
+			millis() - m_uart_timestamp > 4000) {
+
+		gps_uart_stop();
+
+		uart_init_tx_only(GPS_DEFAULT_SPEED_BAUD);
+		// change GPS baudrate to default
+		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_9600);
+
+		delay_ms(10);
+		uart_uninit();
+
+		uart_init_tx_only(GPS_FAST_SPEED_BAUD);
+		// change GPS baudrate to default
+		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_9600);
+
+		delay_ms(10);
+		uart_uninit();
+
+		this->reset();
+
+		m_uart_timestamp = millis();
+		LOG_WARNING("Resetting GPS....");
+		vue.addNotif("GPS", "Resetting...", 5, eNotificationTypeComplete);
+	}
 }
 
 bool GPS_MGMT::isFix(void) {
@@ -177,9 +192,12 @@ void GPS_MGMT::awake(void) {
 
 void GPS_MGMT::standby(bool is_standby) {
 
-	m_uart_needs_reboot = true;
-
 	if (is_standby) {
+
+		m_is_stdby = true;
+
+		// set to standby
+//		SEND_TO_GPS(PMTK_STANDBY);
 
 		gps_uart_stop();
 		m_uart_needs_reboot = true;
@@ -187,7 +205,8 @@ void GPS_MGMT::standby(bool is_standby) {
 		gpio_clear(GPS_S);
 	} else {
 		gpio_set(GPS_S);
-		delay_ms(100);
+
+		m_is_stdby = false;
 
 		gps_uart_start();
 	}
@@ -195,7 +214,7 @@ void GPS_MGMT::standby(bool is_standby) {
 }
 
 bool GPS_MGMT::isStandby(void) {
-	return !gpio_get(GPS_S);
+	return m_is_stdby;
 }
 
 bool GPS_MGMT::isEPOUpdating(void) {
@@ -204,7 +223,7 @@ bool GPS_MGMT::isEPOUpdating(void) {
 
 void GPS_MGMT::startEpoUpdate(void) {
 
-	LOG_INFO("EPO update started\r\n");
+//	LOG_INFO("EPO update started\r\n");
 
 	//m_epo_state = eGPSMgmtEPOStart;
 
@@ -213,17 +232,43 @@ void GPS_MGMT::startEpoUpdate(void) {
 
 void GPS_MGMT::tasks(void) {
 
+	if (gps_ack.isUpdated()) {
+		LOG_WARNING("GPS ack message %ums", millis());
+	}
+
+	switch (m_power_state) {
+	case eGPSMgmtStateInit:
+		if (gps_sys.isUpdated()) {
+			(void)gps_sys.value();
+			LOG_WARNING("GPS sys message %ums", millis());
+
+			m_power_state = eGPSMgmtStateRunSlow;
+		} else {
+			this->runWDT();
+			return;
+		}
+		break;
+	case eGPSMgmtStateRunSlow:
+	{
+#if GPS_USE_COLD_START
+		SEND_TO_GPS(PMTK_COLD);
+		delay_us(500);
+#endif
+		// update GPS UART speed
+		gps_uart_update();
+
+		m_power_state = eGPSMgmtStateRunFast;
+	}
+	break;
+	case eGPSMgmtStateRunFast:
+	default:
+		break;
+	}
+
 	switch (m_epo_state) {
 	case eGPSMgmtEPOIdle:
 	{
-		// check if GPS is in a good state
-		if (!this->isStandby() &&
-				millis() - m_uart_timestamp > 4000) {
-			this->reset();
-			m_uart_timestamp = millis();
-			LOG_ERROR("Resetting GPS....");
-			vue.addNotif("GPS", "Resetting...", 5, eNotificationTypeComplete);
-		}
+		this->runWDT();
 	}
 		break;
 
@@ -345,8 +390,9 @@ void GPS_MGMT::tasks(void) {
  */
 uint32_t gps_encode_char(char c) {
 
-	//LOG_RAW_INFO(c);
-	m_uart_timestamp = millis();
+	LOG_RAW_INFO(c);
+
+	if (c == '$') m_uart_timestamp = millis();
 
 	if (eGPSMgmtEPOIdle == m_epo_state) {
 

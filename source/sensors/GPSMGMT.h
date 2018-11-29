@@ -12,9 +12,10 @@
 #include "Locator.h"
 
 typedef enum {
-	eGPSMgmtPowerOn,
-	eGPSMgmtPowerOff,
-} eGPSMgmtPowerState;
+	eGPSMgmtStateInit,
+	eGPSMgmtStateRunSlow,
+	eGPSMgmtStateRunFast,
+} eGPSMgmtState;
 
 typedef enum {
 	eGPSMgmtEPOIdle,
@@ -42,6 +43,8 @@ public:
 	bool isStandby(void);
 	bool isEPOUpdating(void);
 
+	void runWDT();
+
 	void standby(void);
 	void awake(void);
 	void standby(bool is_standby);
@@ -53,12 +56,14 @@ public:
 	void startEpoUpdate(void);
 	void tasks(void);
 
-	eGPSMgmtPowerState getPowerState() const {
+	eGPSMgmtState getPowerState() const {
 		return m_power_state;
 	}
 
 private:
-	eGPSMgmtPowerState m_power_state;
+	eGPSMgmtState m_power_state;
+
+	bool m_is_stdby;
 
 	uint16_t m_epo_packet_ind;
 	uint16_t m_epo_packet_nb;
