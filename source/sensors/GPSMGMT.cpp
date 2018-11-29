@@ -129,7 +129,7 @@ void GPS_MGMT::init(void) {
 	gpio_clear(GPS_R);
 
 	nrf_gpio_cfg_output(GPS_S);
-	gpio_set(GPS_R);
+	gpio_set(GPS_S);
 
 	// HW reset
 	this->reset();
