@@ -34,6 +34,7 @@ make flash (or) make dfu
 - [x] Strava segments compete
 - [x] GPX file following on a map
 - [x] Connection to a BLE AP to unload recorded data
+- [ ] More LED interaction
 - [ ] Smarter interaction with the AP
 - [ ] Sensors fusion (for slope compute)
 - [ ] Better menu-system
