@@ -1,6 +1,6 @@
 
 #include "assert_wrapper.h"
-#include "math.h"
+#include "math_wrapper.h"
 #include "Segment.h"
 #include "segger_wrapper.h"
 
@@ -280,16 +280,17 @@ int Segment::testActivation(ListePoints& liste) {
 	PC = Vecteur(PPp, PPc);
 	PS = Vecteur(P1, P2);
 
-	p_scal = PC._x * PS._x + PC._y * PS._y;
-
-	if (sqrtf(PC._x * PC._x + PC._y * PC._y) * sqrtf(PS._x * PS._x + PS._y * PS._y) > 0.001) {
-		p_scal /= sqrtf(PC._x * PC._x + PC._y * PC._y);
-		p_scal /= sqrtf(PS._x * PS._x + PS._y * PS._y);
+	if (PC.getNorm() > 0.001 &&
+			PS.getNorm() > 0.001) {
+		PC.norm();
+		PS.norm();
+		p_scal = ScalarProduct(PC, PS);
 	} else {
-		p_scal = -10.;
+		p_scal = -1.;
 	}
 
-	if (distP2 * distP2 < distP1 * distP1 + distP1P2 * distP1P2 && p_scal > PSCAL_LIM) {
+	if (p_scal > PSCAL_LIM &&
+			distP2 * distP2 < distP1 * distP1 + distP1P2 * distP1P2) {
 		return 1;
 	} else {
 		return 0;
@@ -330,7 +331,8 @@ int Segment::testDesactivation(ListePoints& liste) {
 	distP1P2 = P1->dist(P2);
 
 	// pythagore
-	if (distP1 * distP1 > distP2 * distP2 + distP1P2 * distP1P2 && (distP1 < DIST_ACT ||  distP2 < DIST_ACT)) {
+	if (distP1 * distP1 > distP2 * distP2 + distP1P2 * distP1P2 &&
+			(distP1 < DIST_ACT ||  distP2 < DIST_ACT)) {
 		return 1;
 	}
 	else {

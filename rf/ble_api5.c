@@ -34,6 +34,7 @@
 #include "nrf_ble_gatt.h"
 #include "helper.h"
 #include "ble_bas_c.h"
+#include "ble_nus_c.h"
 #include "ble_advdata.h"
 #include "ble_lns_c.h"
 #include "ant.h"
@@ -71,7 +72,7 @@
 #define SUPERVISION_TIMEOUT         MSEC_TO_UNITS(4000, UNIT_10_MS)     /**< Determines supervision time-out in units of 10 millisecond. */
 
 #define TARGET_UUID                 BLE_UUID_LOCATION_AND_NAVIGATION_SERVICE         /**< Target device name that application is looking for. */
-
+#define TARGET_NAME                 "stravaAP"
 
 
 /**@breif Macro to unpack 16bit unsigned UUID from octet stream. */
@@ -91,9 +92,16 @@ typedef struct
 	uint16_t   data_len;    /**< Length of data. */
 } data_t;
 
+typedef enum {
+	eNusTransferStateIdle,
+	eNusTransferStateInit,
+	eNusTransferStateRun,
+	eNusTransferStateWait,
+	eNusTransferStateFinish
+} eNusTransferState;
 
+BLE_NUS_C_DEF(m_ble_nus_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
-BLE_BAS_C_DEF(m_ble_bas_c);                                             /**< Structure used to identify the Battery Service client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
 
@@ -108,6 +116,12 @@ static bool                  m_memory_access_in_progress;  /**< Flag to keep tra
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
 
+static volatile bool m_nus_cts = false;
+static volatile bool m_connected = false;
+static uint16_t m_nus_packet_nb = 0;
+static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
+
+static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
 /**@brief Connection parameters requested for connection. */
 static ble_gap_conn_params_t const m_connection_param =
@@ -161,7 +175,7 @@ static void scan_start(void);
 static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
 	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
-	ble_bas_on_db_disc_evt(&m_ble_bas_c, p_evt);
+	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
 }
 
 
@@ -306,62 +320,6 @@ static uint32_t adv_report_parse(uint8_t type, data_t * p_advdata, data_t * p_ty
 	return NRF_ERROR_NOT_FOUND;
 }
 
-
-
-/**@brief Function for searching a given name in the advertisement packets.
- *
- * @details Use this function to parse received advertising data and to find a given
- * name in them either as 'complete_local_name' or as 'short_local_name'.
- *
- * @param[in]   p_adv_report   advertising data to parse.
- * @param[in]   name_to_find   name to search.
- * @return   true if the given name was found, false otherwise.
- */
-static bool find_adv_name(const ble_gap_evt_adv_report_t *p_adv_report, const char * name_to_find)
-{
-	uint32_t err_code;
-	data_t   adv_data;
-	data_t   dev_name;
-
-	// Initialize advertisement report for parsing
-#if (NRF_SD_BLE_API_VERSION==5)
-	adv_data.p_data     = (uint8_t *)p_adv_report->data;
-	adv_data.data_len   = p_adv_report->dlen;
-#else
-	adv_data.p_data     = (uint8_t *)p_adv_report->data.p_data;
-	adv_data.data_len   = p_adv_report->data.len;
-#endif
-
-	//search for advertising names
-	err_code = adv_report_parse(BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME,
-			&adv_data,
-			&dev_name);
-	if (err_code == NRF_SUCCESS)
-	{
-		if (memcmp(name_to_find, dev_name.p_data, dev_name.data_len)== 0)
-		{
-			return true;
-		}
-	}
-	else
-	{
-		// Look for the short local name if it was not found as complete
-		err_code = adv_report_parse(BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME,
-				&adv_data,
-				&dev_name);
-		if (err_code != NRF_SUCCESS)
-		{
-			return false;
-		}
-		if (memcmp(m_target_periph_name, dev_name.p_data, dev_name.data_len )== 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
 /**@brief Function for searching a given addr in the advertisement packets.
  *
  * @details Use this function to parse received advertising data and to find a given
@@ -376,64 +334,6 @@ static bool find_peer_addr(const ble_gap_evt_adv_report_t *p_adv_report, const b
 	if (p_addr->addr_type == p_adv_report->peer_addr.addr_type)
 	{
 		if (memcmp(p_addr->addr, p_adv_report->peer_addr.addr, sizeof(p_adv_report->peer_addr.addr)) == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
-/**@brief Function for searching a UUID in the advertisement packets.
- *
- * @details Use this function to parse received advertising data and to find a given
- * UUID in them.
- *
- * @param[in]   p_adv_report   advertising data to parse.
- * @param[in]   uuid_to_find   UUIID to search.
- * @return   true if the given UUID was found, false otherwise.
- */
-static bool find_adv_uuid(const ble_gap_evt_adv_report_t *p_adv_report, const uint16_t uuid_to_find)
-{
-	uint32_t err_code;
-	data_t   adv_data;
-	data_t   type_data;
-
-	// Initialize advertisement report for parsing.
-#if (NRF_SD_BLE_API_VERSION==5)
-	adv_data.p_data     = (uint8_t *)p_adv_report->data;
-	adv_data.data_len   = p_adv_report->dlen;
-#else
-	adv_data.p_data     = (uint8_t *)p_adv_report->data.p_data;
-	adv_data.data_len   = p_adv_report->data.len;
-#endif
-
-	err_code = adv_report_parse(BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE,
-			&adv_data,
-			&type_data);
-
-	if (err_code != NRF_SUCCESS)
-	{
-		// Look for the services in 'complete' if it was not found in 'more available'.
-		err_code = adv_report_parse(BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE,
-				&adv_data,
-				&type_data);
-
-		if (err_code != NRF_SUCCESS)
-		{
-			// If we can't parse the data, then exit.
-			return false;
-		}
-	}
-
-	// Verify if any UUID match the given UUID.
-	for (uint32_t u_index = 0; u_index < (type_data.data_len / sizeof(uint16_t)); u_index++)
-	{
-		uint16_t extracted_uuid;
-
-		UUID16_EXTRACT(&extracted_uuid, &type_data.p_data[u_index * sizeof(uint16_t)]);
-
-		if (extracted_uuid == uuid_to_find)
 		{
 			return true;
 		}
@@ -462,10 +362,14 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     }
     else
     {
-        if (ble_advdata_uuid_find(p_adv_report->data.p_data, p_adv_report->data.len, &target_uuid))
+        if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid))
         {
             do_connect = true;
             LOG_INFO("UUID match send connect_request.");
+        }
+        if (ble_advdata_name_find(p_adv_report->data, p_adv_report->dlen, TARGET_NAME)) {
+            do_connect = true;
+            LOG_INFO("Name match send connect_request.");
         }
     }
 
@@ -473,7 +377,6 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     {
         // Stop scanning.
         (void) sd_ble_gap_scan_stop();
-        m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL,
 
         // Initiate connection.
         err_code = sd_ble_gap_connect(&p_adv_report->peer_addr,
@@ -490,7 +393,8 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     }
     else
     {
-        err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+    	sd_ble_gap_scan_stop();
+        err_code = sd_ble_gap_scan_start(&m_scan_param);
         APP_ERROR_CHECK(err_code);
     }
 }
@@ -511,6 +415,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	case BLE_GAP_EVT_CONNECTED:
 	{
 		LOG_INFO("Connected.");
+		m_connected = true;
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
@@ -541,6 +446,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 		LOG_INFO("Disconnected, reason 0x%x.",
 				p_ble_evt->evt.gap_evt.params.disconnected.reason);
+
+		m_connected = false;
 
 		// Reset DB discovery structure.
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
@@ -600,6 +507,16 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		APP_ERROR_CHECK(err_code);
 		break;
 
+	case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
+		NRF_LOG_INFO("GATTC HVX Complete");
+		// clear to send more packets
+		m_nus_cts = true;
+		break;
+
+	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
+		// unused here
+		break;
+
 	default:
 		break;
 	}
@@ -654,20 +571,21 @@ static void ble_stack_init(void)
 {
 	ret_code_t err_code;
 
-	err_code = nrf_sdh_enable_request();
-	APP_ERROR_CHECK(err_code);
-
-	ASSERT(nrf_sdh_is_enabled());
-
 	// Configure the BLE stack using the default settings.
 	// Fetch the start address of the application RAM.
 	uint32_t ram_start = 0;
 	err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
 	APP_ERROR_CHECK(err_code);
 
+	NRF_LOG_WARNING("Ram start1: %x", ram_start);
+	NRF_LOG_FLUSH();
+
 	// Enable BLE stack.
 	err_code = nrf_sdh_ble_enable(&ram_start);
 	APP_ERROR_CHECK(err_code);
+
+	NRF_LOG_WARNING("Ram start2: %x", ram_start);
+	NRF_LOG_FLUSH();
 
 	// Register handlers for BLE and SoC events.
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
@@ -809,49 +727,34 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 
 /**@brief Battery level Collector Handler.
  */
-static void bas_c_evt_handler(ble_bas_c_t * p_bas_c, ble_bas_c_evt_t * p_bas_c_evt)
+static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const * p_evt)
 {
-	uint32_t err_code;
+    ret_code_t err_code;
 
-	switch (p_bas_c_evt->evt_type)
-	{
-	case BLE_BAS_C_EVT_DISCOVERY_COMPLETE:
-	{
-		err_code = ble_bas_c_handles_assign(p_bas_c,
-				p_bas_c_evt->conn_handle,
-				&p_bas_c_evt->params.bas_db);
-		APP_ERROR_CHECK(err_code);
+    switch (p_evt->evt_type)
+    {
+        case BLE_NUS_C_EVT_DISCOVERY_COMPLETE:
+            LOG_INFO("Discovery complete.");
+            err_code = ble_nus_c_handles_assign(p_ble_nus_c, p_evt->conn_handle, &p_evt->handles);
+            APP_ERROR_CHECK(err_code);
 
-		// Initiate bonding.
-		err_code = pm_conn_secure(p_bas_c_evt->conn_handle, false);
-		if (err_code != NRF_ERROR_INVALID_STATE)
-		{
-			APP_ERROR_CHECK(err_code);
-		}
+            err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
+            APP_ERROR_CHECK(err_code);
+            LOG_INFO("Connected to stravaAP");
+            break;
 
-		// Batttery service discovered. Enable notification of Battery Level.
-		NRF_LOG_DEBUG("Battery Service discovered. Reading battery level.");
+        case BLE_NUS_C_EVT_NUS_TX_EVT:
+            // TODO handle received chars
+        	LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
+        	m_nus_xfer_state = eNusTransferStateInit;
+        	// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+            break;
 
-		err_code = ble_bas_c_bl_read(p_bas_c);
-		APP_ERROR_CHECK(err_code);
-
-		NRF_LOG_DEBUG("Enabling Battery Level Notification.");
-		err_code = ble_bas_c_bl_notif_enable(p_bas_c);
-		APP_ERROR_CHECK(err_code);
-
-	} break;
-
-	case BLE_BAS_C_EVT_BATT_NOTIFICATION:
-		LOG_INFO("Battery Level received %d %%.\r\n", p_bas_c_evt->params.battery_level);
-		break;
-
-	case BLE_BAS_C_EVT_BATT_READ_RESP:
-		LOG_INFO("Battery Level Read as %d %%.\r\n", p_bas_c_evt->params.battery_level);
-		break;
-
-	default:
-		break;
-	}
+        case BLE_NUS_C_EVT_DISCONNECTED:
+            LOG_INFO("Disconnected.");
+            scan_start();
+            break;
+    }
 }
 
 
@@ -872,13 +775,13 @@ static void lns_c_init(void)
 /**
  * @brief Battery level collector initialization.
  */
-static void bas_c_init(void)
+static void nus_c_init(void)
 {
-	ble_bas_c_init_t bas_c_init_obj;
+	ble_nus_c_init_t nus_c_init_obj;
 
-	bas_c_init_obj.evt_handler = bas_c_evt_handler;
+	nus_c_init_obj.evt_handler = nus_c_evt_handler;
 
-	uint32_t err_code = ble_bas_c_init(&m_ble_bas_c, &bas_c_init_obj);
+	uint32_t err_code = ble_nus_c_init(&m_ble_nus_c, &nus_c_init_obj);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -945,7 +848,7 @@ static void whitelist_load()
 
 /**@brief Function to start scanning.
  */
-static void scan_start(void)
+static void scan_init(void)
 {
 	if (nrf_fstorage_is_busy(NULL))
 	{
@@ -980,21 +883,34 @@ static void scan_start(void)
 			(m_whitelist_disabled))
 	{
 		// Don't use whitelist.
-		m_scan_param.timeout       = SCAN_DURATION;
-		m_scan_param.scan_phys     = BLE_GAP_PHY_1MBPS;
-		m_scan_param.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL;
+#if (NRF_SD_BLE_API_VERSION == 5)
+		m_scan_param.use_whitelist  = 0;
+		m_scan_param.adv_dir_report = 0;
+#endif
+
+		m_scan_param.timeout  = 0x0000; // No timeout.
 	}
 	else
 	{
 		// Use whitelist.
-		m_scan_param.scan_phys     = BLE_GAP_PHY_1MBPS;
-		m_scan_param.filter_policy = BLE_GAP_SCAN_FP_WHITELIST;
-		m_scan_param.timeout       = SCAN_DURATION_WITELIST;
+
+#if (NRF_SD_BLE_API_VERSION == 5)
+		m_scan_param.use_whitelist  = 1;
+		m_scan_param.adv_dir_report = 0;
+#endif
+
+		m_scan_param.timeout  = 0x001E; // 30 seconds.
 	}
 
+}
+
+/**@brief Function to start scanning.
+ */
+static void scan_start(void)
+{
 	LOG_INFO("Starting scan.");
 
-	ret = sd_ble_gap_scan_start(&m_scan_param, &m_scan_buffer);
+	uint32_t ret = sd_ble_gap_scan_start(&m_scan_param);
 	APP_ERROR_CHECK(ret);
 
 }
@@ -1008,9 +924,7 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 	{
 	case NRF_BLE_GATT_EVT_ATT_MTU_UPDATED:
 	{
-		LOG_INFO("GATT ATT MTU on connection 0x%x changed to %d.",
-				p_evt->conn_handle,
-				p_evt->params.att_mtu_effective);
+        LOG_INFO("ATT MTU exchange completed.");
 	} break;
 
 	case NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED:
@@ -1056,13 +970,13 @@ static void gatt_init(void)
 }
 
 
-void ble_ant_init(void)
+#ifdef BLE_STACK_SUPPORT_REQD
+/**
+ * Init BLE stack
+ */
+void ble_init(void)
 {
 	ble_stack_init();
-
-#ifdef ANT_STACK_SUPPORT_REQD
-	ant_stack_init();
-#endif
 
 	peer_manager_init();
 
@@ -1070,16 +984,97 @@ void ble_ant_init(void)
 	db_discovery_init();
 
 	lns_c_init();
-	bas_c_init();
-
-#ifdef ANT_STACK_SUPPORT_REQD
-	ant_setup_start();
-#endif
+	nus_c_init();
+	scan_init();
 
 	// Start scanning for peripherals and initiate connection
 	// with devices that advertise LNS UUID.
 	scan_start();
+}
+
+/**
+ * Send the log file to a remote computer
+ */
+#include "sd_functions.h"
+void ble_nus_tasks(void) {
+
+	if (m_nus_xfer_state == eNusTransferStateIdle) return;
+
+	switch (m_nus_xfer_state) {
+
+	case eNusTransferStateInit:
+	{
+		if (!log_file_start()) {
+			NRF_LOG_WARNING("Log file error start")
+			m_nus_xfer_state = eNusTransferStateIdle;
+		} else {
+			m_nus_packet_nb = 0;
+			m_nus_cts = true;
+			m_nus_xfer_state = eNusTransferStateRun;
+		}
+	}
+	break;
+
+	case eNusTransferStateRun:
+	break;
+
+	case eNusTransferStateFinish:
+		if (!log_file_stop(false)) {
+			NRF_LOG_WARNING("Log file error stop")
+		}
+		m_nus_xfer_state = eNusTransferStateIdle;
+		break;
+
+	default:
+		break;
+	}
+
+	if (m_connected &&
+			m_nus_xfer_state == eNusTransferStateRun &&
+			m_nus_cts) {
+
+		char *p_xfer_str = NULL;
+		size_t length_ = 0;
+		p_xfer_str = log_file_read(&length_);
+		if (!p_xfer_str || !length_) {
+			// problem or end of transfer
+			m_nus_xfer_state = eNusTransferStateFinish;
+			return;
+		} else {
+			// nothing
+		}
+
+		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)p_xfer_str, length_);
+
+		switch (err_code) {
+		case NRF_ERROR_BUSY:
+			NRF_LOG_INFO("NUS BUSY");
+			break;
+
+		case NRF_ERROR_RESOURCES:
+			NRF_LOG_INFO("NUS RESSSS %u", m_nus_packet_nb);
+			m_nus_cts = false;
+			break;
+
+		case NRF_ERROR_TIMEOUT:
+			NRF_LOG_ERROR("NUS timeout", err_code);
+			break;
+
+		case NRF_SUCCESS:
+			NRF_LOG_INFO("Packet %u sent size %u", m_nus_packet_nb, length_);
+			m_nus_packet_nb++;
+			break;
+
+		default:
+			NRF_LOG_ERROR("NUS unknown error: 0x%X", err_code);
+			break;
+		}
+
+	}
 
 }
+
+
+#endif
 
 

@@ -20,13 +20,13 @@ extern "C" {
  *
  * @return ID of active task.
  */
-inline task_id_t id_get(void) {
+static inline task_id_t id_get(void) {
 	return 0;
 }
 
 /**@brief Yield CPU to other tasks.
  */
-inline void yield(void) {
+static inline void yield(void) {
 	task_yield();
 }
 
@@ -36,7 +36,7 @@ inline void yield(void) {
  *
  * @return Mask with set events (can be a subset of evt_mask).
  */
-inline uint32_t events_wait(uint32_t evt_mask) {
+static inline uint32_t events_wait(uint32_t evt_mask) {
 	task_wait_event(evt_mask);
 	return 0;
 }
@@ -47,7 +47,7 @@ inline uint32_t events_wait(uint32_t evt_mask) {
  * @param[in]  evt_mask Events for the task.
  *
  */
-inline void events_set(task_id_t task_id, uint32_t evt_mask) {
+static inline void events_set(task_id_t task_id, uint32_t evt_mask) {
 	task_feed_event(task_id, evt_mask);
 }
 

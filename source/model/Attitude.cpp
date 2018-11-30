@@ -44,6 +44,8 @@ void Attitude::computeElevation(void) {
 
 	if (!baro.computeAlti(&ele)) return;
 
+	m_cur_ele = ele;
+
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;
 		m_last_stored_ele = ele;
@@ -60,8 +62,6 @@ void Attitude::computeElevation(void) {
 		// la plus basse
 		m_last_stored_ele = ele;
 	}
-
-	m_cur_ele = ele;
 }
 
 
@@ -104,7 +104,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 	}
 
-	// TODO update the computed power
+	// update the computed power
 	this->majPower(loc_.speed);
 
 	att.pwr = m_power;
@@ -225,9 +225,6 @@ void Attitude::majPower(float speed_) {
 		m_power += 0.204 * fSpeed * fSpeed * fSpeed; // air
 		m_power *= 1.025; // transmission (rendement velo)
 
-		if (fSpeed < 1.5) {
-			m_power = -100.;
-		}
 	} else {
 		LOG_INFO("dTime= %d ms", (int)(dTime*1000));
 	}

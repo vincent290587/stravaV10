@@ -47,6 +47,11 @@ void simulator_init(void) {
 
 void simulator_tasks(void) {
 
+	if (!g_fileObject) {
+		printf("No simulation file found");
+		exit(-3);
+	}
+
 	if (millis() < 5000) {
 		return;
 	}
@@ -95,6 +100,14 @@ void simulator_tasks(void) {
 			rtime += 1;
 		}
 
+#ifdef TDD_RANDOMIZE
+		int rnd_add;
+		rnd_add = (rand() % 20) - 10;
+		lat += (float)rnd_add / 150000.;
+		rnd_add = (rand() % 20) - 10;
+		lon += (float)rnd_add / 150000.;
+#endif
+
 		// build make NMEA sentence
 		GPRMC gprmc_(lat, lon, 0., (int)rtime);
 		int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
@@ -108,11 +121,21 @@ void simulator_tasks(void) {
 	} else {
 		fclose(g_fileObject);
 
+#ifdef TDD_RANDOMIZE
+		static int nb_tests = 0;
+		g_fileObject = fopen("GPX_simu.csv", "r");
+		if (++nb_tests < 750) {
+			LOG_WARNING("Starting next simulation");
+			return;
+		}
+		LOG_WARNING("%u simulations run", nb_tests);
+#endif
 		LOG_WARNING("Reached end of simulation file");
 
 		mes_segments._segs.empty();
 
 		exit(0);
+
 	}
 
 }

@@ -13,6 +13,7 @@ $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
 SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
+  $(PROJ_DIR)/rf/ble_api6.c \
   $(wildcard $(PROJ_DIR)/source/usb/*.c) \
   $(wildcard $(PROJ_DIR)/source/usb/*.cpp) \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd.c \

@@ -37,6 +37,7 @@ static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
 static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
+static FIL g_LogFileObject;   /* File object */
 
 /*!
  * @brief Main function
@@ -423,7 +424,6 @@ bool epo_file_start(int current_gps_hour) {
 	if (!is_fat_init()) return -1;
 
 	error = f_open(&g_EpoFileObject, fname, FA_READ);
-	if (error) error = f_open(&g_EpoFileObject, fname, FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -477,12 +477,6 @@ int epo_file_read(sEpoPacketSatData* sat_data, uint16_t size_) {
 			size_,              /* Number of bytes to read */
 			&size_read	        /* Pointer to number of bytes read */
 	);
-	if (error) error = f_read (
-			&g_EpoFileObject, 	/* Pointer to the file object */
-			g_bufferRead,	    /* Pointer to data buffer */
-			size_,              /* Number of bytes to read */
-			&size_read	        /* Pointer to number of bytes read */
-	);
 
 	if (error)
 	{
@@ -518,6 +512,80 @@ int epo_file_stop(bool toBeDeleted) {
 #ifndef DEBUG_CONFIG
 	if (toBeDeleted) {
 		error = f_unlink("MTK14.EPO");
+		if (error)
+		{
+			LOG_INFO("Unlink file failed.");
+			return -2;
+		}
+	}
+#endif
+
+	return 0;
+}
+
+
+/**
+ *
+ * @return True on success
+ */
+bool log_file_start(void) {
+
+	FRESULT error;
+	const char* fname = "histo.txt";
+
+	if (!is_fat_init()) return -1;
+
+	error = f_open(&g_LogFileObject, fname, FA_READ);
+	if (error)
+	{
+		LOG_INFO("Open file failed.");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ *
+ * @param log_buffer
+ * @param size_
+ * @return The pointer to read string, or NULL if problem
+ */
+char* log_file_read(size_t *r_length) {
+
+	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+
+	if (!is_fat_init()) return NULL;
+
+	if (!f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_LogFileObject))
+	{
+		LOG_INFO("Read LOG file failed.");
+		return NULL;
+	}
+
+	*r_length = strlen(g_bufferRead);
+
+	return g_bufferRead;
+}
+
+/**
+ *
+ * @return 0 on success
+ */
+int log_file_stop(bool toBeDeleted) {
+
+	if (!is_fat_init()) return -3;
+
+	FRESULT error = f_close (&g_LogFileObject);
+	if (error)
+	{
+		LOG_INFO("Close file failed.");
+		return -1;
+	}
+
+#ifndef DEBUG_CONFIG
+	if (toBeDeleted) {
+		error = f_unlink("histo.txt");
 		if (error)
 		{
 			LOG_INFO("Unlink file failed.");

@@ -5,7 +5,7 @@
  *      Author: Vincent
  */
 
-#include "math.h"
+#include "math_wrapper.h"
 #include "nrf.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"

@@ -5,7 +5,7 @@
  *      Author: Vincent
  */
 
-#include <math.h>
+#include "math_wrapper.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include "AltiBaro.h"
@@ -62,7 +62,7 @@ float AltiBaro::pressureToAltitude(float atmospheric)
 
   float res;
 
-  res = 44330.0 * (1.0 - pow(atmospheric / sea_level_pressure, 0.1903));
+  res = 44330.0 * (1.0 - powf(atmospheric / sea_level_pressure, 0.1903));
   res -= correction;
 
   return res;
@@ -87,7 +87,7 @@ void AltiBaro::seaLevelForAltitude(float altitude, float atmospheric)
   // at high altitude.  See this thread for more information:
   //  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
 
-  sea_level_pressure = atmospheric / pow(1.0 - (altitude/44330.0), 5.255);
+  sea_level_pressure = atmospheric / powf(1.0 - (altitude/44330.0), 5.255);
 
   m_is_init = true;
 

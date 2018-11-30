@@ -14,6 +14,11 @@
 #include "i2c_scheduler.h"
 #include "uart.h"
 
+#if defined (BLE_STACK_SUPPORT_REQD)
+extern "C" void ble_nus_tasks(void);
+#endif
+
+
 #ifdef USB_ENABLED
 #include "usb_cdc.h"
 #endif
@@ -176,6 +181,10 @@ void system_task(void * p_context)
     for(;;)
     {
 		perform_system_tasks();
+
+#if defined (BLE_STACK_SUPPORT_REQD)
+		ble_nus_tasks();
+#endif
 
 		// BSP tasks
 		bsp_tasks();
