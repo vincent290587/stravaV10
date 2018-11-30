@@ -197,7 +197,7 @@ void GPS_MGMT::standby(bool is_standby) {
 		m_is_stdby = true;
 
 		// set to standby
-//		SEND_TO_GPS(PMTK_STANDBY);
+		SEND_TO_GPS(PMTK_STANDBY);
 
 		gps_uart_stop();
 		m_uart_needs_reboot = true;
