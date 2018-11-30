@@ -28,10 +28,10 @@ TinyGPSCustom gps_ack(gps, "PMTK001", 2);  // ACK, second element
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
 
-//#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
-//#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_115200
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_921600
-#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_921600
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
+#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_115200
+//#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_921600
+//#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_921600
 
 
 #define GPS_UART_SEND(X,Y) do { \
@@ -145,7 +145,7 @@ void GPS_MGMT::runWDT(void) {
 
 	// check if GPS is in a good state
 	if (!this->isStandby() &&
-			millis() - m_uart_timestamp > 4000) {
+			millis() - m_uart_timestamp > 15000) {
 
 		// we put everything back to default
 
@@ -198,6 +198,7 @@ void GPS_MGMT::standby(bool is_standby) {
 
 		// set to standby
 		SEND_TO_GPS(PMTK_STANDBY);
+		delay_ms(5);
 
 		gps_uart_stop();
 		m_uart_needs_reboot = true;
@@ -209,6 +210,8 @@ void GPS_MGMT::standby(bool is_standby) {
 		m_is_stdby = false;
 
 		gps_uart_start();
+
+		SEND_TO_GPS(PMTK_AWAKE);
 	}
 
 }
@@ -233,7 +236,8 @@ void GPS_MGMT::startEpoUpdate(void) {
 void GPS_MGMT::tasks(void) {
 
 	if (gps_ack.isUpdated()) {
-		LOG_WARNING("GPS ack message %ums", millis());
+		LOG_WARNING("GPS ack message (%ums)", millis());
+		(void)gps_ack.value();
 	}
 
 	switch (m_power_state) {

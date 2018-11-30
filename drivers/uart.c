@@ -79,7 +79,7 @@ void uart_event_handler(nrfx_uarte_event_t const * p_event,
     		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
     			RING_BUFFER_ADD_ATOMIC(uart0_rb1, c);
     		} else {
-    			NRF_LOG_ERROR("Ring buffer full");
+    			LOG_ERROR("Ring buffer full");
 
     			// empty ring buffer
     			RING_BUFF_EMPTY(uart0_rb1);
@@ -181,7 +181,7 @@ void uart_timer_init(void) {
 
 	 if (NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) {
 
-		 NRF_LOG_ERROR("UART restarted 1");
+		 LOG_ERROR("UART restarted 1");
 
 		 // restart UART at default baud
 		 nrf_delay_us(100);
@@ -189,13 +189,15 @@ void uart_timer_init(void) {
 
 	 } else if(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask) {
 
-		 NRF_LOG_ERROR("UART restarted 2");
+		 LOG_ERROR("UART restarted 2");
 
 		 // restart UART at last baud
 		 nrf_delay_us(100);
 		 uart_init(m_baud);
 
 	 }
+
+	 m_error_mask = 0;
 
 	 /* If ring buffer is not empty, parse data. */
 	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
