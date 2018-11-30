@@ -39,6 +39,10 @@ public:
 	void changeMode(eBoucleGlobalModes new_mode);
 	void run(void);
 
+	eBoucleGlobalModes getGlobalMode() const {
+		return m_global_mode;
+	}
+
 protected:
 	eBoucleGlobalModes m_global_mode;
 };

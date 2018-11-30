@@ -148,8 +148,6 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	LOG_DEBUG("Refreshing sensors t=%u ms\r\n", millis());
 
-	fxos_tasks(&m_fxos_handle);
-
 	stc.refresh(&m_stc_buffer);
 
 	veml.refresh(m_veml_buffer);
@@ -158,6 +156,23 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 	m_last_polled_index++;
 
 	model_dispatch_sensors_update();
+
+}
+
+/**
+ *
+ * @param result
+ * @param p_user_data
+ */
+static void read_fxos_cb(ret_code_t result, void * p_user_data) {
+
+	APP_ERROR_CHECK(result);
+
+	if (m_last_polled_index == 0) {
+		_i2c_scheduling_sensors_init();
+	}
+
+	fxos_tasks(&m_fxos_handle);
 
 }
 
@@ -172,19 +187,43 @@ static void read_all(void)
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_regs[5] = VEML_READ_ALL_REGS;
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[2] = FXOS_READ_ALL_REGS;
-
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_regs[1]  = STC_READ_ALL_REGS;
 
     static nrf_twi_mngr_transfer_t const transfers[] =
     {
     	STC3100_READ_ALL (&stc_regs[0] , &m_stc_buffer.array[0]),
-		VEML6075_READ_ALL(&veml_regs[0], &m_veml_buffer[0]),
-		FXOS_READ_ALL    (&fxos_regs[0], &m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
+		VEML6075_READ_ALL(&veml_regs[0], &m_veml_buffer[0])
     };
     static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
     {
         .callback            = read_all_cb,
+        .p_user_data         = NULL,
+        .p_transfers         = transfers,
+        .number_of_transfers = sizeof(transfers) / sizeof(transfers[0])
+    };
+
+    i2c_schedule(&transaction);
+
+}
+
+/**
+ *
+ */
+static void read_fxos(void)
+{
+    // [these structures have to be "static" - they cannot be placed on stack
+    //  since the transaction is scheduled and these structures most likely
+    //  will be referred after this function returns]
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[2] = FXOS_READ_ALL_REGS;
+
+    static nrf_twi_mngr_transfer_t const transfers[] =
+    {
+		FXOS_READ_ALL    (&fxos_regs[0], &m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
+    };
+    static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
+    {
+        .callback            = read_fxos_cb,
         .p_user_data         = NULL,
         .p_transfers         = transfers,
         .number_of_transfers = sizeof(transfers) / sizeof(transfers[0])
@@ -294,12 +333,14 @@ static void timer_handler(void * p_context)
 
 	m_last_polled_index++;
 
-    read_ms();
+    if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) read_ms();
 
     if (m_last_polled_index >= 1000 / (MS5637_REFRESH_PER_MS * SENSORS_REFRESH_FREQ)) {
     	m_last_polled_index = 1;
 
     	read_all();
+
+    	if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) read_fxos();
     }
 
     W_SYSVIEW_RecordEnterISR();

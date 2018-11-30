@@ -101,14 +101,12 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/AdafruitGFX/Fonts \
   $(PROJ_DIR)/libraries/AltiBaro \
   $(PROJ_DIR)/libraries/GlobalTop \
-  $(PROJ_DIR)/libraries/IntelliScreen \
   $(PROJ_DIR)/libraries/jscope \
   $(PROJ_DIR)/libraries/sysview \
   $(PROJ_DIR)/libraries/TinyGPSPlus \
   $(PROJ_DIR)/libraries/VParser \
   $(PROJ_DIR)/libraries/utils \
   $(PROJ_DIR)/libraries/rtt \
-  $(PROJ_DIR)/libraries/spiffs \
   $(PROJ_DIR)/libraries/SST \
   $(PROJ_DIR)/rf \
   $(PROJ_DIR)/source \

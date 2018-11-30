@@ -254,8 +254,8 @@ void peripherals_task(void * p_context)
 			_counter = 0;
 			stc.refresh(nullptr);
 			veml.refresh(nullptr);
-			fxos_tasks(nullptr);
-			baro.refresh(nullptr);
+			if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
+			if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
 			W_SYSVIEW_OnTaskStopExec(I2C_TASK);
 		}
 

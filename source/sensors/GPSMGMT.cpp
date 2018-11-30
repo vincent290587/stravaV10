@@ -27,15 +27,12 @@ TinyGPSCustom gps_sys(gps, "PMTK010", 2);  // system message
 TinyGPSCustom gps_ack(gps, "PMTK001", 2);  // ACK, second element
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
 
-#if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD)
-#define GPS_BIN_CMD                PMTK_SET_BIN
-#define GPS_NMEA_CMD               PMTK_SET_NMEA_BAUD_115200
-#else
-#define GPS_BIN_CMD                PMTK_SET_BIN
-#define GPS_NMEA_CMD               PMTK_SET_NMEA_BAUD_9600
-#endif
+//#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
+//#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_115200
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_921600
+#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_921600
+
 
 #define GPS_UART_SEND(X,Y) do { \
 		uart_send(X, Y); } while(0)
@@ -90,7 +87,7 @@ static void gps_uart_update() {
 			m_uart_baud == GPS_DEFAULT_SPEED_BAUD) {
 
 		// change GPS baudrate
-		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_115200);
+		SEND_TO_GPS(GPS_FAST_SPEED_CMD);
 
 		// go to final baudrate
 		delay_ms(10);
@@ -121,6 +118,8 @@ void GPS_MGMT::init(void) {
 	nrf_gpio_cfg_output(GPS_S);
 	gpio_set(GPS_S);
 
+	m_uart_needs_reboot = true;
+
 	// HW reset
 	this->reset();
 
@@ -132,8 +131,6 @@ void GPS_MGMT::init(void) {
 void GPS_MGMT::reset(void) {
 
 	gps_uart_stop();
-
-	m_uart_needs_reboot = true;
 
 	gpio_clear(GPS_R);
 	delay_ms(5);
@@ -149,6 +146,8 @@ void GPS_MGMT::runWDT(void) {
 	// check if GPS is in a good state
 	if (!this->isStandby() &&
 			millis() - m_uart_timestamp > 4000) {
+
+		// we put everything back to default
 
 		gps_uart_stop();
 
@@ -166,6 +165,7 @@ void GPS_MGMT::runWDT(void) {
 		delay_ms(10);
 		uart_uninit();
 
+		m_uart_needs_reboot = true;
 		this->reset();
 
 		m_uart_timestamp = millis();
@@ -197,7 +197,7 @@ void GPS_MGMT::standby(bool is_standby) {
 		m_is_stdby = true;
 
 		// set to standby
-//		SEND_TO_GPS(PMTK_STANDBY);
+		SEND_TO_GPS(PMTK_STANDBY);
 
 		gps_uart_stop();
 		m_uart_needs_reboot = true;
