@@ -407,6 +407,19 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 	}
 }
 
+
+bool sd_erase_pos(void) {
+
+//	FRESULT error = f_unlink("histo.txt");
+//	if (error)
+//	{
+//		LOG_INFO("Unlink file failed.");
+//		return false;
+//	}
+
+	return true;
+}
+
 /**
  *
  * @return The size of the EPO file
