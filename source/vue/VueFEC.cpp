@@ -68,7 +68,9 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 
 		LOG_INFO("VueFEC update full data");
 
-		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(++m_el_time, ':'), NULL);
+		m_el_time++;
+
+		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(fec_info.el_time, ':'), NULL);
 
 		this->cadran(2, VUE_FEC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
