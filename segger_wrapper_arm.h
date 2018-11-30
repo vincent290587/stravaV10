@@ -40,12 +40,13 @@
 #ifdef USDB_ENABLED
 #include "usb_cdc.h"
 #define LOG_INFO(...)                  usb_printf(__VA_ARGS__)
-#else
+#else // USDB_ENABLED
 #define LOG_INFO(...)                  EMPTY_MACRO
-#endif
+#endif // USDB_ENABLED
 #define LOG_RAW_INFO(X)                EMPTY_MACRO
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 //#define LOG_ERROR(...)                 SEGGER_SYSVIEW_ErrorfHost(__VA_ARGS__)
+#define LOG_WARNING(...)               SEGGER_SYSVIEW_WarnfHost(__VA_ARGS__)
 #define LOG_ERROR(...)                 SEGGER_SYSVIEW_PrintfHost(__VA_ARGS__)
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
