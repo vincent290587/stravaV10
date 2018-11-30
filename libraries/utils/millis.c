@@ -11,6 +11,7 @@
 #include "nrf.h"
 #include "app_timer.h"
 #include "nrf_delay.h"
+#include "nrfx_clock.h"
 
 /*******************************************************************************
  * Definitions
@@ -21,6 +22,7 @@
             (TICKS) * 1000 * (APP_TIMER_CONFIG_RTC_FREQUENCY + 1),   \
             (uint64_t)APP_TIMER_CLOCK_FREQ))
 
+static uint32_t m_cur_time_ms = 0;
 
 /*******************************************************************************
  * Code
@@ -45,8 +47,16 @@ void millis_init(void) {
 uint32_t millis(void) {
 
 	// check
-	uint32_t ticks = app_timer_cnt_get();
-	return APP_TIMER_MS(ticks);
+	static uint32_t ticks_prev = 0;
+	uint32_t ticks_cur = app_timer_cnt_get();
+
+	uint32_t ticks = app_timer_cnt_diff_compute(ticks_cur, ticks_prev);
+
+	ticks_prev = ticks_cur;
+
+	m_cur_time_ms += APP_TIMER_MS(ticks);
+
+	return m_cur_time_ms;
 }
 
 /** @brief Delays execution by sleeping

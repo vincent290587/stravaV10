@@ -6,7 +6,7 @@
  */
 
 #include "Model.h"
-#include "nrf_assert.h"
+#include "assert_wrapper.h"
 #include "ant.h"
 #include "fec.h"
 #include <vue/VueFEC.h>
@@ -72,7 +72,8 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadran(2, VUE_FEC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadranH(3, VUE_FEC_NB_LINES, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
+		this->cadran(3, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
+		this->cadran(3, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
 
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();
@@ -82,7 +83,6 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		h_config.p_f_read    = _vue_fec_pw_rb_read;
 
 		this->HistoH(4, VUE_FEC_NB_LINES, h_config);
-		this->cadranH(4, VUE_FEC_NB_LINES, "Pwr", _imkstr(fec_info.power), "W");
 	}
 
 	this->cadran(5, VUE_FEC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");

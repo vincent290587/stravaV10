@@ -63,13 +63,13 @@ typedef struct _ms5637_handle
 }
 
 #define MS5637_INIT(r_buffer, p_buffer) \
-		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer  , p_buffer   , 2),  \
-		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+1, p_buffer+2 , 2),  \
-		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+2, p_buffer+4 , 2),  \
-		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+3, p_buffer+6 , 2),  \
-		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+4, p_buffer+8 , 2),  \
-		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+5, p_buffer+10, 2), \
-		I2C_READ_REG_REP_START(MS5637_ADDR, r_buffer+6, p_buffer+12, 2)
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, r_buffer  , p_buffer   , 2),  \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, r_buffer+1, p_buffer+2 , 2),  \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, r_buffer+2, p_buffer+4 , 2),  \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, r_buffer+3, p_buffer+6 , 2),  \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, r_buffer+4, p_buffer+8 , 2),  \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, r_buffer+5, p_buffer+10, 2), \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, r_buffer+6, p_buffer+12, 2)
 
 #define MS5637_CMD_TEMP_REG \
 {                                          \
@@ -86,7 +86,7 @@ typedef struct _ms5637_handle
 }
 
 #define MS5637_READ_TEMP(p_buffer, p_cmd) \
-		I2C_READ_REG_REP_START(MS5637_ADDR, p_cmd, p_buffer, 3), \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, p_cmd, p_buffer, 3), \
  		I2C_WRITE(MS5637_ADDR, p_cmd+1, 1)
 
 #define MS5637_READ_PRESS_REG \
@@ -96,7 +96,7 @@ typedef struct _ms5637_handle
 }
 
 #define MS5637_READ_PRESS(p_buffer, p_cmd) \
-		I2C_READ_REG_REP_START(MS5637_ADDR, p_cmd, p_buffer, 3), \
+		I2C_READ_REG_REP_STOP(MS5637_ADDR, p_cmd, p_buffer, 3), \
  		I2C_WRITE(MS5637_ADDR, p_cmd+1, 1)
 
 /*=========================================================================*/

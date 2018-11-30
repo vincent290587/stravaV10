@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdbool.h>
+#include "neopixel.h"
 #include "notifications.h"
 
 

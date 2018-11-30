@@ -5,20 +5,22 @@
  *      Author: Vincent
  */
 
-#ifndef LIBRARIES_GLOBALTOP_EPODEFINITIONS_H_
-#define LIBRARIES_GLOBALTOP_EPODEFINITIONS_H_
+#ifndef LIBRARIES_EPODEFINITIONS_H_
+#define LIBRARIES_EPODEFINITIONS_H_
 
-#define MTK_EMPTY_CMD_ID          0x0000
-#define MTK_ACK_CMD_ID            0x0001
+#define EPO_SAT_SEGMENTS_NUM        (32*4)
+#define EPO_SAT_SEGMENTS_NB         32
+#define EPO_SAT_DATA_SIZE_BYTES     72
+#define EPO_SAT_DATA_SIZE_WORDS     (EPO_SAT_DATA_SIZE_BYTES / 4)
+
 #define MTK_FMT_NMEA_CMD_ID       0x00FD
 #define MTK_EPO_BIN_CMD_ID        0x02D2
 #define MTK_EPO_BIN_ACK_CMD_ID    0x0002
-
 #define MTK_EPO_MAX_SAT_DATA      3
-#define MTK_EPO_SAT_DATA_SIZE     60
 
 typedef struct {
-	uint8_t sat[MTK_EPO_SAT_DATA_SIZE];
+	uint8_t sat_number;
+	uint8_t sat[EPO_SAT_DATA_SIZE_BYTES];
 } sEpoPacketSatData;
 
 typedef struct {

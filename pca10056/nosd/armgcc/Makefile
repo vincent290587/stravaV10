@@ -1,7 +1,6 @@
-PROJECT_NAME     := ble_app_lns_c_pca10052_s332
+PROJECT_NAME     := strava10_pca10052_nosd
 TARGETS          := nrf52840_xxaa
 OUTPUT_DIRECTORY := _build
-SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.0.0_softdevice.hex
 
 include Makefile.local
 
@@ -21,6 +20,8 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_serial_num.c \
   $(SDK_ROOT)/components/libraries/usbd/app_usbd_string_desc.c \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
+  $(SDK_ROOT)/components/libraries/usbd/class/msc/app_usbd_msc.c \
+  $(SDK_ROOT)/components/libraries/usbd/class/dummy/app_usbd_dummy.c \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_soc.c \
@@ -28,18 +29,22 @@ SRC_FILES += \
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
+  $(SDK_ROOT)/components/softdevice/mbr/nrf52840/headers \
   $(PROJ_DIR)/source/usb \
   $(SDK_ROOT)/components/drivers_nrf/usbd \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/ \
   $(SDK_ROOT)/components/libraries/usbd \
-  $(SDK_ROOT)/components/libraries/usbd/config \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
+  $(SDK_ROOT)/components/libraries/usbd/class/msc \
+  $(SDK_ROOT)/components/libraries/usbd/class/dummy \
   
 include $(PROJ_DIR)/Makefile.files
   
 # Libraries common to all targets
-LIB_FILES += -lm -lstdc++
+LIB_FILES += \
+  -lm -lstdc++ \
+  $(SDK_ROOT)/components/toolchain/cmsis/dsp/GCC/libarm_cortexM4lf_math.a \
 
 
 # Optimization flags
@@ -49,18 +54,22 @@ OPT = -O3 -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
-CFLAGS += -DUSB_ENABLED
-CFLAGS += -DUSE_VCOM_LOGS=1
-#CFLAGS += -DUSE_SVIEW=1
+CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
+CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
+CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
+#CFLAGS += -DNRF_LOG_BACKEND_UART_ENABLED=1 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
+CFLAGS += -DUSE_APP_CONFIG
+CFLAGS += -DNRF52840
 CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DCONFIG_NFCT_PINS_AS_GPIOS
 CFLAGS += -DBOARD_CUSTOM
-CFLAGS += -DNRF52840
-CFLAGS += -D__HEAP_SIZE=100000
+CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DSWI_DISABLE0
-CFLAGS += -mcpu=cortex-m4
+CFLAGS += -DFLOAT_ABI_HARD
+CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=0 -DFPU_INTERRUPT_MODE
+CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -74,13 +83,14 @@ CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 # Assembler flags common to all targets
 ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
+ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
-ASMFLAGS += -DBOARD_STRAVA5
+ASMFLAGS += -DARM_MATH_CM4
+ASMFLAGS += -DBOARD_CUSTOM
 ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
-ASMFLAGS += -D__HEAP_SIZE=100000
+ASMFLAGS += -D__HEAP_SIZE=150000
 ASMFLAGS += -DSWI_DISABLE0
-ASMFLAGS += -DS140
 
 # Linker flags
 LDFLAGS += $(OPT)
@@ -90,7 +100,7 @@ LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # let linker to dump unused sections
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
-LDFLAGS += --specs=nano.specs
+LDFLAGS += --specs=nano.specs -u _printf_float -u _scanf_float
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
@@ -123,13 +133,15 @@ settings:
 	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
 
 dfu:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xa9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p /dev/ttyS5
+	nrfutil dfu usb_serial -pkg stravaV10.zip -p /dev/ttyS8
 
 dfu_send:
 	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
 
+jumper: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
+	jumper run -g --fw $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --gpio --platform nrf52840
 
 SDK_CONFIG_FILE := ../config/sdk_config.h
 SDK_CONFIG_FILE_ANT := ../config/sdk_config_ant.h

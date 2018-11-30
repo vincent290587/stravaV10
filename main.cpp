@@ -20,16 +20,19 @@
 #include "spi.h"
 #include "i2c.h"
 #include "fec.h"
-#include "bsp.h"
+#include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
 #include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
-#include "nrf_drv_power.h"
+#include "nrf_drv_clock.h"
+#include "task_manager.h"
+#include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
+#include "diskio_nor.h"
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
 #include "Model.h"
@@ -40,14 +43,7 @@
 #include "usb_cdc.h"
 #endif
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
-
-#define DEAD_BEEF           0xDEADBEEF                                  /**< Value used as error code on stack dump. Can be used to identify stack location on stack unwind. */
-
-#define APP_DELAY           APP_TIMER_TICKS(APP_DELAY_MS)
+#define APP_DELAY           APP_TIMER_TICKS(APP_TIMEOUT_DELAY_MS)
 
 #define SCHED_MAX_EVENT_DATA_SIZE      APP_TIMER_SCHED_EVENT_DATA_SIZE              /**< Maximum size of scheduler events. */
 #ifdef SVCALL_AS_NORMAL_FUNCTION
@@ -60,10 +56,16 @@ APP_TIMER_DEF(m_job_timer);
 
 nrfx_wdt_channel_id m_channel_id;
 
-extern "C" void ble_ant_init(void);
+static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
+typedef struct {
+	char _buffer[256];
+	uint8_t special;
+} sAppErrorDescr;
 
-static volatile bool job_to_do = false;
+static sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
+
+extern "C" void ble_init(void);
 
 
 /**
@@ -71,7 +73,13 @@ static volatile bool job_to_do = false;
  */
 void timer_event_handler(void* p_context)
 {
-	job_to_do = true;
+	ASSERT(p_context);
+
+	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
+
+	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+		events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
+	}
 }
 
 
@@ -96,8 +104,8 @@ extern "C" void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name
     app_error_fault_handler(NRF_FAULT_ID_SDK_ASSERT, 0, (uint32_t)(&assert_info));
 
 #ifndef DEBUG_NRF_USER
-    NRF_LOG_WARNING("System reset");
-    NRF_LOG_FLUSH();
+    LOG_WARNING("System reset");
+    LOG_FLUSH();
     NVIC_SystemReset();
 #else
     NRF_BREAKPOINT_COND;
@@ -119,6 +127,8 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
+    //nor_save_error(id, pc, info);
+
     switch (id)
     {
 #if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
@@ -132,26 +142,33 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ASSERT:
         {
             assert_info_t * p_info = (assert_info_t *)info;
-            NRF_LOG_ERROR("ASSERTION FAILED at %s:%u",
-                          p_info->p_file_name,
-                          p_info->line_num);
+        	m_app_error.special = 0xDB;
+            snprintf(m_app_error._buffer, sizeof(m_app_error._buffer),
+        			"ASSERTION FAILED at %s:%u",
+                    p_info->p_file_name,
+                    p_info->line_num);
+#if USE_SVIEW
+            SEGGER_SYSVIEW_Error(m_app_error._buffer);
+#else
+            NRF_LOG_ERROR(m_app_error._buffer);
+            LOG_ERROR(m_app_error._buffer);
+#endif
             break;
         }
         case NRF_FAULT_ID_SDK_ERROR:
         {
+        	error_info_t * p_info = (error_info_t *)info;
+        	m_app_error.special = 0xDB;
+        	snprintf(m_app_error._buffer, sizeof(m_app_error._buffer),
+        			"ERROR %u [%s] at %s:%u",
+                    p_info->err_code,
+					  nrf_strerror_get(p_info->err_code),
+                    p_info->p_file_name,
+                    p_info->line_num);
 #if USE_SVIEW
-            error_info_t * p_info = (error_info_t *)info;
-            SEGGER_SYSVIEW_PrintfHost("ERROR %u at %s:%u",
-                          p_info->err_code,
-                          p_info->p_file_name,
-                          p_info->line_num);
+            SEGGER_SYSVIEW_Error(m_app_error._buffer);
 #else
-            error_info_t * p_info = (error_info_t *)info;
-            NRF_LOG_ERROR("ERROR %u [%s] at %s:%u",
-                          p_info->err_code,
-						  nrf_strerror_get(p_info->err_code),
-                          p_info->p_file_name,
-                          p_info->line_num);
+            LOG_ERROR(m_app_error._buffer);
 #endif
             break;
         }
@@ -194,13 +211,18 @@ static void log_init(void)
 	SVIEW_INIT();
 }
 
-
-/**@brief Function for handling bsp events.
+/**@brief Interrupt function for handling bsp events.
  */
 static void bsp_evt_handler(bsp_event_t evt)
 {
+	m_bsp_evt = evt;
+}
 
-	switch (evt)
+/**@brief Function for handling bsp events.
+ */
+void bsp_tasks(void)
+{
+	switch (m_bsp_evt)
 	{
 	case BSP_EVENT_KEY_0:
 		vue.tasks(eButtonsEventLeft);
@@ -215,8 +237,9 @@ static void bsp_evt_handler(bsp_event_t evt)
 		return; // no implementation needed
 	}
 
+	// clear event
+	m_bsp_evt = BSP_EVENT_NOTHING;
 }
-
 
 /**@brief Handler for shutdown preparation.
  *
@@ -233,9 +256,24 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 	if (NRF_PWR_MGMT_EVT_PREPARE_SYSOFF == event) {
 		nrf_gpio_pin_set(KILL_PIN);
 		return true;
+	} else if (NRF_PWR_MGMT_EVT_PREPARE_DFU == event) {
+
+#if 0
+		// TODO add flag
+		ret_code_t err_code = sd_power_gpregret_set(0, BOOTLOADER_DFU_START);
+		APP_ERROR_CHECK(err_code);
+#endif
+
+#ifdef USB_ENABLED
+		// stop USB
+		usb_cdc_close();
+#endif
+
+		LOG_INFO("Power management allowed to reset to DFU mode.");
+
+		return true;
 	}
 
-	LOG_INFO("Power management allowed to reset to DFU mode.");
 	return true;
 }
 
@@ -269,29 +307,44 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(FXOS_RST);
 	nrf_gpio_pin_clear(FXOS_RST);
 
-	// SDC_CS_PIN is configured later
 	// LS027_CS_PIN is configured later
 
 	nrf_gpio_cfg_output(BCK_PIN);
 	nrf_gpio_pin_clear(BCK_PIN);
 
-	nrf_gpio_cfg_output(SPK_IN);
-	nrf_gpio_pin_clear(SPK_IN);
-
-//	nrf_gpio_cfg_output(SCL_PIN_NUMBER);
-//	nrf_gpio_pin_set(SCL_PIN_NUMBER);
-//
-//	nrf_gpio_cfg_output(SDA_PIN_NUMBER);
-//	nrf_gpio_pin_set(SDA_PIN_NUMBER);
-
-	// PPS_PIN is configured later
 	// FIX_PIN is configured later
 
 	nrf_gpio_cfg_output(NEO_PIN);
 	nrf_gpio_pin_clear(NEO_PIN);
+
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
+
 }
+
+void wdt_reload() {
+	nrfx_wdt_channel_feed(m_channel_id);
+}
+
+
+#ifdef SOFTDEVICE_PRESENT
+/**@brief Function for initializing the softdevice
+ *
+ * @details Initializes the SoftDevice
+ */
+#include "nrf_sdh.h"
+static void sdh_init(void)
+{
+	ret_code_t err_code;
+
+	err_code = nrf_sdh_enable_request();
+	APP_ERROR_CHECK(err_code);
+
+	ASSERT(nrf_sdh_is_enabled());
+
+}
+#endif
+
 
 /**
  *
@@ -301,20 +354,17 @@ int main(void)
 {
 	ret_code_t err_code;
 
-	log_init();
+	// errata 20 RTC
+//	NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
+//	NRF_CLOCK->TASKS_LFCLKSTART     = 1;
+//	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
+//	NRF_RTC0->TASKS_STOP = 0;
+//	NRF_RTC1->TASKS_STOP = 0;
 
-    err_code = nrf_drv_power_init(NULL);
-    APP_ERROR_CHECK(err_code);
-
-	pins_init();
-
-	// Initialize timer module
-#ifdef USB_ENABLED
-	usb_cdc_init();
-#else
-	err_code = app_timer_init();
-    APP_ERROR_CHECK(err_code);
-#endif
+	m_tasks_id.boucle_id = TASK_ID_INVALID;
+	m_tasks_id.system_id = TASK_ID_INVALID;
+	m_tasks_id.peripherals_id = TASK_ID_INVALID;
+	m_tasks_id.ls027_id = TASK_ID_INVALID;
 
 	// Initialize.
     //Configure WDT.
@@ -325,27 +375,76 @@ int main(void)
     APP_ERROR_CHECK(err_code);
     nrfx_wdt_enable();
 
-	NRF_LOG_INFO("Init start");
+	log_init();
 
-	nrf_pwr_mgmt_init();
+#ifdef FPU_INTERRUPT_MODE
+    // Enable FPU interrupt
+    NVIC_SetPriority(FPU_IRQn, APP_IRQ_PRIORITY_LOWEST);
+    NVIC_ClearPendingIRQ(FPU_IRQn);
+    NVIC_EnableIRQ(FPU_IRQn);
+#endif
 
-	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+	pins_init();
+
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = 0xffffffff;
+	NRF_LOG_WARNING("Reset_reason: 0x%08x.\n", reset_reason);
+
+	if (reset_reason == 0)
+	{
+		// watchdog reset
+		//while(1) ;
+		NVIC_SystemReset();
+	}
+
+    char buff[100];
+    memset(buff, 0, sizeof(buff));
+    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
+    		reset_reason);
+    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
+
+
+    err_code = app_timer_init();
+    APP_ERROR_CHECK(err_code);
+
+	LOG_INFO("Init start");
+
+	// check for errors
+	if (m_app_error.special == 0xDB) {
+		// TODO check the no init for bootloader
+		m_app_error.special = 0x00;
+		LOG_ERROR(m_app_error._buffer);
+
+	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
+	}
 
 	// drivers
 	spi_init();
 	i2c_init();
-	//// uart is started later
+
+	nrf_delay_ms(1000);
+
+	// diskio + fatfs init
+	diskio_nor_init();
 
 	// LCD displayer
 	vue.init();
 
-	// SD functions
-	nrfx_wdt_channel_feed(m_channel_id);
-	sd_functions_init();
+	// Initialize timer module
+#ifdef USB_ENABLED
+	// apply correction 0x20 line 97 nrf_drv_usbd_errata.h
+	usb_cdc_init();
+	usb_cdc_tasks();
+#endif
+
+	nrf_pwr_mgmt_init();
+
+#if APP_SCHEDULER_ENABLED
+	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+#endif
 
 	// timers
 #ifdef ANT_STACK_SUPPORT_REQD
-	ant_timers_init();
 #endif
 
 	backlighting_init();
@@ -355,20 +454,27 @@ int main(void)
 	notifications_init(NEO_PIN);
 
 	// init BLE + ANT
-#ifdef BLE_STACK_SUPPORT_REQD
-	ble_ant_init();
+#ifdef SOFTDEVICE_PRESENT
+	sdh_init();
+#endif
+#if defined (BLE_STACK_SUPPORT_REQD)
+	ble_init();
+#endif
+#if defined (ANT_STACK_SUPPORT_REQD)
+	ant_stack_init();
+	ant_setup_start();
+	ant_timers_init();
 #endif
 
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
 	APP_ERROR_CHECK(err_code);
 
-	err_code = app_timer_start(m_job_timer, APP_DELAY, NULL);
+	err_code = app_timer_start(m_job_timer, APP_DELAY, &m_tasks_id);
 	APP_ERROR_CHECK(err_code);
 
 	sNeopixelOrders neo_order;
 	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);
-
 
 	gps_mgmt.init();
 
@@ -379,41 +485,18 @@ int main(void)
 
 	NRF_LOG_INFO("App init done");
 
-	for (;;)
-	{
-		if (job_to_do) {
-			// tasks to run non-continuously
+	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
+	m_tasks_id.system_id = task_create	(system_task, "system_task", NULL);
+	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
+	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
 
-			job_to_do = false;
+	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
+	W_SYSVIEW_OnTaskCreate(SYSTEM_TASK);
+	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
+	W_SYSVIEW_OnTaskCreate(LCD_TASK);
 
-#ifdef ANT_STACK_SUPPORT_REQD
-			roller_manager_tasks();
-#endif
+	// does not return
+	task_manager_start(idle_task, &m_tasks_id);
 
-			notifications_tasks();
-
-			backlighting_tasks();
-
-			boucle.tasks();
-
-			nrfx_wdt_channel_feed(m_channel_id);
-
-		}
-
-		// tasks
-		perform_system_tasks();
-
-#ifdef USB_ENABLED
-		usb_cdc_tasks();
-#endif
-
-		app_sched_execute();
-
-		if (NRF_LOG_PROCESS() == false)
-		{
-			nrf_pwr_mgmt_run();
-		}
-
-	}
 }
 

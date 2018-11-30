@@ -17,7 +17,15 @@ VueGPS::VueGPS() : Adafruit_GFX(0, 0) {
 
 void VueGPS::displayGPS() {
 
-	locator.displayGPS2();
+	vue.setCursor(20,20);
+	vue.setTextSize(2);
+
+	if (gps_mgmt.isEPOUpdating()) {
+		locator.displayGPS2();
+	} else {
+		vue.println("EPO update in progress");
+//		vue.println("EPO update in progress...");
+	}
 
 	this->cadranH(6, VUE_GPS_NB_LINES, "Time", _timemkstr(att.date, ':'), NULL);
 

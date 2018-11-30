@@ -5,7 +5,7 @@
  *      Author: Vincent
  */
 
-#include "math.h"
+#include "math_wrapper.h"
 #include "nrf.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
@@ -14,10 +14,7 @@
 #include "app_error.h"
 #include "nordic_common.h"
 #include "sdk_config.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
+#include "segger_wrapper.h"
 
 #include "helper.h"
 
@@ -26,16 +23,82 @@
 
 #define TICKS_TO_US(ticks)       (ticks * ( (APP_TIMER_PRESCALER + 1 ) * 1000 ) / APP_TIMER_CLOCK_FREQ)
 
+#define FPU_EXCEPTION_MASK               0x0000009F                      //!< FPU exception mask used to clear exceptions in FPSCR register.
+#define FPU_FPSCR_REG_STACK_OFF          0x40                            //!< Offset of FPSCR register stacked during interrupt handling in FPU part stack.
 
 
+#ifdef FPU_INTERRUPT_MODE
+
+register int *r0 __asm("r0");
+
+/**
+ * @brief FPU Interrupt handler. Clearing exception flag at the stack.
+ *
+ * Function clears exception flag in FPSCR register and at the stack. During interrupt handler
+ * execution FPU registers might be copied to the stack (see lazy stacking option) and
+ * it is necessary to clear data at the stack which will be recovered in the return from
+ * interrupt handling.
+ */
+void FPU_IRQHandler(void)
+{
+    // Prepare pointer to stack address with pushed FPSCR register.
+    uint32_t * fpscr = (uint32_t * )(FPU->FPCAR + FPU_FPSCR_REG_STACK_OFF);
+    // Execute FPU instruction to activate lazy stacking.
+    (void)__get_FPSCR();
+
+    /*
+     * The last chance to indicate an error in FPU to the user
+     * as the FPSCR is now cleared
+     *
+     * This assert is related to previous FPU operations
+     * and not power management.
+     *
+     * Critical FPU exceptions signaled:
+     * - IOC - Invalid Operation cumulative exception bit.
+     * - DZC - Division by Zero cumulative exception bit.
+     * - OFC - Overflow cumulative exception bit.
+     */
+    if (*fpscr & 0x7) {
+    	// https://stackoverflow.com/questions/38724658/find-where-the-interrupt-happened-on-cortex-m4
+    	__asm(  "TST lr, #4\n"
+    			"ITE EQ\n"
+    			"MRSEQ r0, MSP\n"
+    			"MRSNE r0, PSP\n" // stack pointer now in r0
+    			"ldr r0, [r0, #0x18]\n" // stored pc now in r0
+    			//"add r0, r0, #6\n" // address to stored pc now in r0
+    	);
+    }
+
+    // Clear flags in stacked FPSCR register.
+    *fpscr = *fpscr & ~(FPU_EXCEPTION_MASK);
+}
+
+void check_fpu(void) {
+	uint32_t PC = *r0;
+
+	if (PC) {
+		LOG_ERROR("FPU fault at PC=0x%08X", PC);
+	}
+	*r0 = 0x00;
+
+    /* Clear FPSCR register and clear pending FPU interrupts. This code is base on
+     * nRF5x_release_notes.txt in documentation folder. It is necessary part of code when
+     * application using power saving mode and after handling FPU errors in polling mode.
+     */
+    __set_FPSCR(__get_FPSCR() & ~(FPU_EXCEPTION_MASK));
+    (void) __get_FPSCR();
+    NVIC_ClearPendingIRQ(FPU_IRQn);
+}
+#else
+void check_fpu(void) {
+}
+#endif
 
 void delay(uint32_t p_time) {
 
 	nrf_delay_ms(p_time);
 
 }
-
-
 
 void pinMode(uint8_t p_pin, uint8_t p_mode) {
 

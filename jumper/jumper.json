@@ -1,0 +1,67 @@
+{
+    "description": "stravaV10",
+    "components": [
+        {
+            "name": "nrf52840",
+            "id": 0,
+            "type": "MCU",
+            "class": "MCU"
+        },
+        {
+            "name": "LED",
+            "id": 3,
+            "type": "Peripheral",
+            "class": "Led",
+            "config": {
+                "pins": {
+                    "out": 19
+                }
+            }
+        },
+        {
+            "name": "BUTTON1",
+            "id": 3,
+            "type": "Peripheral",
+            "class": "Button",
+            "config": {
+                "pins": {
+                    "in": 17
+                }
+            }
+        },
+        {
+            "name": "BUTTON2",
+            "id": 4,
+            "type": "Peripheral",
+            "class": "Button",
+            "config": {
+                "pins": {
+                    "in": 15
+                }
+            }
+        },
+        {
+            "name": "BUTTON3",
+            "id": 5,
+            "type": "Peripheral",
+            "class": "Button",
+            "config": {
+                "pins": {
+                    "in": 13
+                }
+            }
+        },
+        {
+            "name": "BME280Device",
+            "id": 9,
+            "type": "Peripheral",
+            "class": "BME280",
+            "config": {
+                "pins": {
+                    "sda": 46,
+                    "scl": 44
+                }
+            }
+        }
+    ]
+}

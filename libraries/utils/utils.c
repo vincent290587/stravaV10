@@ -7,37 +7,14 @@
 
 
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
+#include <stdint.h>
+#include "math_wrapper.h"
 #include "utils.h"
-#include "parameters.h"
+#include "segger_wrapper.h"
 
-/* Useful constants.  */
 
-#define MAXFLOAT	3.40282347e+38F
-
-#define M_E		2.7182818284590452354
-#define M_LOG2E		1.4426950408889634074
-#define M_LOG10E	0.43429448190325182765
-#define M_LN2		_M_LN2
-#define M_LN10		2.30258509299404568402
-#define M_PI		3.14159265358979323846
-#define M_TWOPI         (M_PI * 2.0)
-#define M_PI_2		1.57079632679489661923
-#define M_PI_4		0.78539816339744830962
-#define M_3PI_4		2.3561944901923448370E0
-#define M_SQRTPI        1.77245385090551602792981
-#define M_1_PI		0.31830988618379067154
-#define M_2_PI		0.63661977236758134308
-#define M_2_SQRTPI	1.12837916709551257390
-#define M_SQRT2		1.41421356237309504880
-#define M_SQRT1_2	0.70710678118654752440
-#define M_LN2LO         1.9082149292705877000E-10
-#define M_LN2HI         6.9314718036912381649E-1
-#define M_SQRT3	1.73205080756887719000
-#define M_IVLN10        0.43429448190325182765 /* 1 / log(10) */
-#define M_LOG2_E        _M_LN2
-#define M_INVLN2        1.4426950408889633870E0  /* 1 / log(2) */
+#define BATT_INT_RES                   0.155
 
 #define FACTOR 100000.
 
@@ -91,23 +68,58 @@ float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
   return res;
 }
 
+/**
+ *
+ * @param lat1 En degres
+ * @param long1 En degres
+ * @param lat2 En degres
+ * @param long2 En degres
+ * @return
+ */
 float distance_between2(float lat1, float long1, float lat2, float long2) {
   float delta = 3.141592 * (long1 - long2) / 180.;
-  float sdlong = sin(delta);
-  float cdlong = cos(delta);
+  float sdlong = sinf(delta);
+  float cdlong = cosf(delta);
   lat1 = 3.141592 * (lat1) / 180.;
   lat2 = 3.141592 * (lat2) / 180.;
-  float slat1 = sin(lat1);
-  float clat1 = cos(lat1);
-  float slat2 = sin(lat2);
-  float clat2 = cos(lat2);
+  float slat1 = sinf(lat1);
+  float clat1 = cosf(lat1);
+  float slat2 = sinf(lat2);
+  float clat2 = cosf(lat2);
   delta = (clat1 * slat2) - (slat1 * clat2 * cdlong);
   delta = delta*delta;
   delta += clat2 * sdlong * clat2 * sdlong;
-  delta = sqrt(delta);
+  delta = sqrtf(delta);
   float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
-  delta = atan2(delta, denom);
-  return delta * 6369933;
+  delta = atan2f(delta, denom);
+  return delta * 6369933.;
+}
+
+/**
+ *
+ * @param lat1 En degres
+ * @param long1 En degres
+ * @param lat2 En degres
+ * @param long2 En degres
+ * @return
+ */
+float distance_between5(float lat1, float long1, float lat2, float long2) {
+  float delta = 3.141592 * (long1 - long2) / 180.;
+  float sdlong = my_sin(delta);
+  float cdlong = my_cos(delta);
+  lat1 = 3.141592 * (lat1) / 180.;
+  lat2 = 3.141592 * (lat2) / 180.;
+  float slat1 = my_sin(lat1);
+  float clat1 = my_cos(lat1);
+  float slat2 = my_sin(lat2);
+  float clat2 = my_cos(lat2);
+  delta = (clat1 * slat2) - (slat1 * clat2 * cdlong);
+  delta = delta*delta;
+  delta += clat2 * sdlong * clat2 * sdlong;
+  delta = my_sqrtf(delta);
+  float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
+  delta = atan2f(delta, denom);
+  return delta * 6369933.;
 }
 
 /**
@@ -119,30 +131,68 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
  * @param long2 En degres
  * @return
  */
-float distance_between(float lat1, float long1, float lat2, float long2) {
+float distance_between3(float lat1, float long1, float lat2, float long2) {
+
+  static float Rm = 6356752.;
+  static float latRm = 0.;
+
+  float lat1rad = M_PI * lat1 / 180.;
+
+  float cos2lat1 = my_cos(lat1rad);
+  cos2lat1 *= cos2lat1;
+
+  if (fabsf(latRm - lat1rad) > 0.008) {
+	  latRm = lat1rad;
+	  Rm = my_sqrtf(R1*R1*(1-cos2lat1) + R2*R2*cos2lat1);
+  }
+
+  // petits angles: tan = Id
+  float deltalat = M_PI * (lat2 -lat1) / 180.;
+  float deltalon = M_PI * (long2-long1) / 180.;
+
+  float dhori  = deltalon * R2 * my_cos(lat1rad);
+  float dverti = deltalat * Rm;
+
+  // projection plane et pythagore
+  float res = dhori*dhori + dverti*dverti;
+
+  res = my_sqrtf(res);
+
+  return res;
+}
+
+/**
+ * Approximation petits angles sur une Terre ellipsoidale
+ *
+ * @param lat1 En degres
+ * @param long1 En degres
+ * @param lat2 En degres
+ * @param long2 En degres
+ * @return
+ */
+float distance_between4(float lat1, float long1, float lat2, float long2) {
 
   static float Rm = 6356752.;
   static float latRm = 0.;
 
   float lat1rad = 3.141592 * lat1 / 180.;
 
-  float cos2lat1 = pow(cos(lat1rad), 2.);
+  float cos2lat1 = powf(cosf(lat1rad), 2.);
 
-  if (fabs(latRm - lat1rad) > 0.008) {
+  if (fabsf(latRm - lat1rad) > 0.008) {
 	  latRm = lat1rad;
-	  Rm = sqrt(pow(R1,2.)*(1-cos2lat1) + pow(R2,2.)*cos2lat1);
+	  Rm = sqrtf(powf(R1,2.)*(1-cos2lat1) + powf(R2,2.)*cos2lat1);
   }
 
   // petits angles: tan = Id
   float deltalat = 3.141592 * (lat2 -lat1) / 180.;
   float deltalon = 3.141592 * (long2-long1) / 180.;
 
-  float dhori  = deltalon * R2 * cos(lat1rad);
+  float dhori  = deltalon * R2 * cosf(lat1rad);
   float dverti = deltalat * Rm;
 
   // projection plane et pythagore
-  return sqrt(dhori*dhori + dverti*dverti);
-
+  return sqrtf(dhori*dhori + dverti*dverti);
 }
 
 void calculePos (const char *nom, float *lat, float *lon) {
@@ -250,7 +300,7 @@ float percentageBatt(float tensionValue, float current) {
 		if (fp_ > 100.) fp_ = 100.;
 
     } else if (tensionValue > 3.2) {
-        fp_ = pow(10, -11.4) * pow(tensionValue, 22.315);
+        fp_ = powf(10, -11.4) * powf(tensionValue, 22.315);
     } else {
         fp_ = -1;
     }
@@ -299,4 +349,53 @@ void const_char_to_buffer(const char *str_, uint8_t *buff_, uint16_t max_size) {
 
 	}
 
+}
+
+/**
+ * http://en.wikipedia.org/wiki/Simple_linear_regression
+ *
+ * @param x input arrau horizontal
+ * @param y input arrau vertical
+ * @param lrCoef slope=lrCoef[0] and intercept=lrCoef[1]
+ * @param n length of the x and y arrays.
+ *
+ * @return Square of the correlation
+ */
+float simpLinReg(float* x, float* y, float* lrCoef, int n) {
+	// pass x and y arrays (pointers), lrCoef pointer, and n.  The lrCoef array is comprised of the slope=lrCoef[0] and intercept=lrCoef[1].  n is length of the x and y arrays.
+	// http://en.wikipedia.org/wiki/Simple_linear_regression
+
+	// initialize variables
+	float xbar = 0;
+	float ybar = 0;
+	float xybar = 0;
+	float xsqbar = 0;
+	float ysqbar = 0;
+
+	// calculations required for linear regression
+	for (int i = 0; i < n; i++) {
+		xbar = xbar + x[i];
+		ybar = ybar + y[i];
+		xybar = xybar + x[i] * y[i];
+		xsqbar = xsqbar + x[i] * x[i];
+		ysqbar = ysqbar + y[i] * y[i];
+	}
+	xbar = xbar / n;
+	ybar = ybar / n;
+	xybar = xybar / n;
+	xsqbar = xsqbar / n;
+	ysqbar = ysqbar / n;
+
+	float corr = xybar - xbar*ybar;
+	corr *= corr;
+	float corr_denomsq = (xsqbar - xbar*xbar)*(ysqbar - ybar*ybar);
+	if (corr_denomsq == 0.) return 0.;
+
+	corr /= corr_denomsq;
+
+	// simple linear regression algorithm
+	lrCoef[0] = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
+	lrCoef[1] = ybar - lrCoef[0] * xbar;
+
+	return corr;
 }

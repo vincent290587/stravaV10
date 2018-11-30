@@ -1,15 +1,16 @@
 /*
  * Menuable.cpp
  *
- *  Created on: 13 d�c. 2017
+ *  Created on: 13 dÃ©c. 2017
  *      Author: Vincent
  */
 
 #include "millis.h"
 #include "Model.h"
-#include "nrf_assert.h"
-#include "nrf_gpio.h"
-#include "boards.h"
+#include "gpio.h"
+#include "sd_hal.h"
+#include "assert_wrapper.h"
+#include "segger_wrapper.h"
 #include <vue/Menuable.h>
 
 static void _retour_menu(int var) {
@@ -33,6 +34,12 @@ static void _page0_mode_crs(int var) {
 
 static void _page0_mode_prc(int var) {
 
+	if (!mes_parcours.size()) {
+		vue.addNotif("Error", "No PRC in memory", 5, eNotificationTypeComplete);
+		LOG_ERROR("No PRC in memory");
+		return;
+	}
+
 	vue.setCurrentMode(eVueGlobalScreenPRC);
 	boucle.changeMode(eBoucleGlobalModesPRC);
 	_retour_menu(0);
@@ -45,10 +52,26 @@ static void _page0_mode_fec(int var) {
 	_retour_menu(0);
 }
 
+static void _page0_mode_debug(int var) {
+
+	vue.setCurrentMode(eVueGlobalScreenDEBUG);
+	boucle.changeMode(eBoucleGlobalModesCRS);
+	_retour_menu(0);
+}
+
 static void _page0_shutdown(int var) {
 
 	// shutdown
-	nrf_gpio_pin_set(KILL_PIN);
+	gpio_set(KILL_PIN);
+
+	_retour_menu(0);
+}
+
+static void _page0_format(int var) {
+
+	format_memory();
+
+	vue.addNotif("Formatting... ", "", 4, eNotificationTypePartial);
 
 	_retour_menu(0);
 }
@@ -94,6 +117,8 @@ void Menuable::initMenu(void) {
 	menu_add_item(&m_menus.menu_page[0], "Mode FEC", _page0_mode_fec);
 	menu_add_item(&m_menus.menu_page[0], "Mode CRS", _page0_mode_crs);
 	menu_add_item(&m_menus.menu_page[0], "Mode PRC", _page0_mode_prc);
+	menu_add_item(&m_menus.menu_page[0], "Format", _page0_format);
+	menu_add_item(&m_menus.menu_page[0], "Mode DBG", _page0_mode_debug);
 
 	menu_add_item(&m_menus.menu_page[0], "Shutdown", _page0_shutdown);
 
@@ -108,6 +133,8 @@ void Menuable::refreshMenu(void) {
 void Menuable::propagateEvent(eButtonsEvent event) {
 
 	if (millis() < 5000) return;
+
+	LOG_INFO("Menu event %u", event);
 
 	switch (event) {
 	case eButtonsEventLeft:
@@ -168,4 +195,6 @@ void Menuable::tasksMenu(void) {
 			}
 		}
 	}
+
+	LOG_INFO("Menu displayed");
 }

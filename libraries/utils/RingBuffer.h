@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <segger_wrapper.h>
-#include "nrf_assert.h"
+#include "assert_wrapper.h"
 
 typedef struct {
 	uint16_t size;

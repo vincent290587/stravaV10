@@ -8,22 +8,24 @@
 #ifndef SOURCE_VUE_VUE_H_
 #define SOURCE_VUE_VUE_H_
 
-#include "ls027.h"
 #include <vue/VueCommon.h>
 #include <vue/Notif.h>
 #include <vue/VueCRS.h>
 #include <vue/VueFEC.h>
 #include <vue/VuePRC.h>
+#include <vue/VueDebug.h>
 #include <vue/Menuable.h>
 #include <button.h>
+#include "ls027.h"
 
 typedef enum {
 	eVueGlobalScreenCRS,
 	eVueGlobalScreenFEC,
 	eVueGlobalScreenPRC,
+	eVueGlobalScreenDEBUG,
 } eVueGlobalScreenModes;
 
-class Vue: public VueCRS, public VueFEC, public VuePRC, public NotifiableDevice, public Menuable {
+class Vue: public VueCRS, public VueFEC, public VuePRC, public VueDebug, public NotifiableDevice, public Menuable {
 public:
 	Vue();
 
@@ -53,9 +55,14 @@ public:
 	{
 		LS027_UpdateFull();
 	}
+
+	uint32_t getLastRefreshed() const {
+		return m_last_refreshed;
+	}
+
 private:
 	eVueGlobalScreenModes m_global_mode;
-
+	uint32_t m_last_refreshed;
 
 };
 

@@ -6,6 +6,7 @@
  */
 
 #include <Boucle.h>
+#include "Model.h"
 #include "segger_wrapper.h"
 #include <sd/sd_functions.h>
 
@@ -23,9 +24,20 @@ void Boucle::init(void) {
 
 	LOG_INFO("Boucle init...");
 
-	init_liste_segments();
+	if (init_liste_segments()) {
+		LOG_ERROR("Boucle init fail");
+	}
 
 	m_global_mode = BOUCLE_DEFAULT_MODE;
+}
+
+void Boucle::uninit(void) {
+
+	LOG_INFO("Boucle uninit");
+
+	uninit_liste_segments();
+
+	m_global_mode = eBoucleGlobalModesMSC;
 }
 
 bool Boucle::isTime(void) {
@@ -96,6 +108,11 @@ void Boucle::run(void) {
 void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 
 	if (new_mode == m_global_mode) return;
+
+	// Unblock task
+	if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
+		events_set(m_tasks_id.boucle_id, TASK_EVENT_BOUCLE_RELEASE);
+	}
 
 	// finish old operations
 	switch (m_global_mode) {

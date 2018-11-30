@@ -18,10 +18,7 @@
 #include "ant_interface.h"
 
 #include "app_timer.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
+#include "segger_wrapper.h"
 
 
 #define FEC_CONTROL_DELAY           APP_TIMER_TICKS(1500)
@@ -117,12 +114,14 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 	{
 		fec_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
 		fec_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
+    	events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	}
 	break;
 
 	case ANT_FEC_PAGE_25_UPDATED:
 	{
 		fec_info.power = p_profile->page_25.inst_power;
+    	events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
 	}
 	break;
 

@@ -39,6 +39,7 @@
 #include "app_scheduler.h"
 #include "nrf_soc.h"
 #include "nrf_delay.h"
+#include "nrf_sdh.h"
 #include "app_timer.h"
 #include "nrf_drv_wdt.h"
 
@@ -52,14 +53,11 @@
 #include "ant_interface.h"
 #endif
 
+#include "Model.h"
 #include "segger_wrapper.h"
 
 #include "glasses.h"
 #include "fec.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 #define GPIO_BUTTON                     30
 
@@ -185,7 +183,7 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
 		if (!is_cad_init) {
 			sd_ant_channel_id_get (BSC_CHANNEL_NUMBER,
 					&pusDeviceNumber, &pucDeviceType, &pucTransmitType);
-//			printf("$ANCS,0,CAD 0x%x connected\n\r", pusDeviceNumber);
+//			LOG_INFO("$ANCS,0,CAD 0x%x connected\n\r", pusDeviceNumber);
 			if (pusDeviceNumber) {
 				is_cad_init = 1;
 
@@ -261,9 +259,7 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
  */
 void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 {
-//	W_SYSVIEW_RecordEnterISR();
-	W_SYSVIEW_OnTaskStartExec(ANT_TASK);
-	// TODO add to scheduler
+	W_SYSVIEW_RecordEnterISR();
 
 	switch(p_ant_evt->channel) {
 	case HRM_CHANNEL_NUMBER:
@@ -286,8 +282,7 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 		break;
 	}
 
-	W_SYSVIEW_OnTaskStopExec(ANT_TASK);
-//    W_SYSVIEW_RecordExitISR();
+    W_SYSVIEW_RecordExitISR();
 }
 NRF_SDH_ANT_OBSERVER(m_ant_observer, APP_ANT_OBSERVER_PRIO, ant_evt_handler, 0);
 
@@ -581,7 +576,7 @@ static void ant_profile_setup(void)
 
 //	err_code = ant_glasses_open(&m_ant_glasses);
 //	APP_ERROR_CHECK(err_code);
-
+	LOG_INFO("ANT ready");
 }
 
 

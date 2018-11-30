@@ -22,8 +22,6 @@ void delay_ms(uint32_t delay_);
 
 void delay_us(uint32_t delay_);
 
-void sleep(void);
-
 #ifdef	__cplusplus
 }
 #endif

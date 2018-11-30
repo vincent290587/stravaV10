@@ -10,14 +10,18 @@
 
 #include "utils.h"
 
+
 class Point2D {
 public:
-    Point2D();
+    Point2D(bool count = true);
     Point2D(const Point2D&);
     Point2D(float lat, float lon);
     ~Point2D();
     Point2D & operator=(const Point2D &point);
     Point2D & operator=(const Point2D *point);
+
+    virtual void increaseCount2D(void);
+    virtual void decreaseCount2D(void);
 
     int isValid();
 
@@ -40,6 +44,7 @@ public:
 
 private:
     static int objectCount2D;
+    bool m_count;
 };
 
 class Point : public Point2D {
@@ -52,6 +57,11 @@ public:
     Point & operator=(const Point *point);
     Point & operator=(const Point2D &point);
     Point & operator=(const Point2D *point);
+
+    virtual void increaseCount(void);
+    virtual void decreaseCount(void);
+    virtual void increaseCount2D(void);
+    virtual void decreaseCount2D(void);
 
     void toString();
 

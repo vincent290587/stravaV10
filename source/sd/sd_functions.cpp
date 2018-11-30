@@ -12,17 +12,14 @@
 #include "millis.h"
 #include "file_parser.h"
 #include "nrf_delay.h"
+#include "sd_hal.h"
 #include "WString.h"
 #include "segger_wrapper.h"
 
 #include "ff.h"
 #include "diskio_blkdev.h"
-#include "nrf_block_dev_sdc.h"
 #include "sd_functions.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 /*******************************************************************************
  * Definitions
@@ -40,7 +37,7 @@ static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
 static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
-
+static FIL g_LogFileObject;   /* File object */
 
 /*!
  * @brief Main function
@@ -51,6 +48,8 @@ int init_liste_segments(void)
 	DIR directory; /* Directory object */
 	FILINFO fileInformation;
 	uint16_t nb_files_errors = 0;
+
+	if (!is_fat_init()) return -2;
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
@@ -102,7 +101,6 @@ int init_liste_segments(void)
 
 			if (Segment::nomCorrect(fileInformation.fname)) {
 				LOG_DEBUG("Segment added : %s", (uint32_t)fileInformation.fname);
-//				LOG_INFO("Segment added");
 				mes_segments.push_back(Segment(fileInformation.fname));
 			} else if (Parcours::nomCorrect(fileInformation.fname)) {
 				// pas de chargement en double
@@ -129,6 +127,20 @@ int init_liste_segments(void)
 	return 0;
 }
 
+
+/*!
+ * @brief Main function
+ */
+void uninit_liste_segments(void)
+{
+
+	mes_segments._segs.clear();
+
+	mes_parcours._parcs.clear();
+
+	return;
+}
+
 /**
  * Loads a segment from the SD card
  * @param seg The reference of this segment
@@ -140,21 +152,27 @@ int load_segment(Segment& seg) {
 	FRESULT error;
 	float time_start = 0.;
 
+	if (!is_fat_init()) return -2;
+
 	time_start = 0.;
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
-	String fat_name = String("/") + seg.getName();
+	String fat_name = seg.getName();
 
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
-		LOG_INFO("Open file failed.");
+		NRF_LOG_ERROR("Open file failed. (error %u)", error);
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+
+	// allocate segment memory
+	if (!seg.init()) return -1;
 
 	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_fileObject)) {
 
@@ -172,7 +190,7 @@ int load_segment(Segment& seg) {
 	error = f_close (&g_fileObject);
 	if (error)
 	{
-		LOG_INFO("Close file failed.");
+		NRF_LOG_ERROR("Close file failed. (error %u)", error);
 		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
 		return -1;
 	}
@@ -194,14 +212,17 @@ int load_parcours(Parcours& mon_parcours) {
 	int res = 0;
 	FRESULT error;
 
+	if (!is_fat_init()) return -2;
+
 	// clear list
 	mon_parcours.desallouerPoints();
 
-	String fat_name = String("/") + mon_parcours.getName();
+	String fat_name = mon_parcours.getName();
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -256,6 +277,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 	static float tmp_lon = 0.;
 	float ret_val = 5000;
 
+	if (!is_fat_init()) return ret_val;
+
 	// le segment est rempli
 	if (mon_seg.isValid() && mon_seg.getStatus() == SEG_OFF) {
 
@@ -270,16 +293,14 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 				// on desalloue
 				LOG_INFO("Unallocate %s", mon_seg.getName());
 
-				mon_seg.desallouerPoints();
 				mon_seg.setStatus(SEG_OFF);
+				mon_seg.uninit();
 			}
 		}
 		else {
 
 			if (parseSegmentName(mon_seg.getName(), &tmp_lat, &tmp_lon) == 1) {
-//				Serial.println(F("Echec parsing du nom"));
-//				loggerMsg("Echec parsing du nom");
-//				loggerMsg(mon_seg->getName());
+				LOG_ERROR("Echec parsing du nom");
 				return ret_val;
 			}
 
@@ -295,11 +316,10 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 					mon_seg.desallouerPoints();
 				}
 
-
 				int res = load_segment(mon_seg);
 				LOG_INFO("-->> Loading segment %s", mon_seg.getName(), res);
 
-				if (res > 0) mon_seg.init();
+				mon_seg.init();
 			}
 		}
 
@@ -320,9 +340,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 			LOG_INFO("Desallocation non nominale !");
 
 			mon_seg.desallouerPoints();
+			mon_seg.uninit();
 			mon_seg.setStatus(SEG_OFF);
-
-//			display.notifyANCS(1, "WTCH", "Seg trop loin");
 		}
 
 
@@ -333,16 +352,58 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
 /**
  *
+ * @param att
+ * @param nb_pos
+ */
+void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
+
+	uint32_t millis_ = millis();
+
+	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	if (error)
+	{
+		LOG_INFO("Open file failed.");
+		return;
+	}
+
+	for (size_t i=0; i< nb_pos; i++) {
+		// print histo
+		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
+				att[i].loc.lat, att[i].loc.lon,
+				att[i].loc.alt, att[i].date.secj,
+				att[i].pwr);
+
+		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
+
+		yield();
+	}
+
+	error = f_close(&g_fileObject);
+	if (error)
+	{
+		LOG_INFO("Close file failed.");
+		return;
+	} else {
+		LOG_INFO("Points added to histo: %u %u", nb_pos, millis() - millis_);
+	}
+
+}
+
+/**
+ *
  * @return The size of the EPO file
  */
 int epo_file_size(void) {
 
 	FRESULT error;
-	const char* fname = "/MTK14.EPO";
+	const char* fname = "MTK14.EPO";
+
+	if (!is_fat_init()) return -1;
 
 	FILINFO file_info;
 	error = f_stat (fname, &file_info);
-
+	if (error) error = f_stat (fname, &file_info);
 	if (error) {
 		LOG_INFO("Stat file failed.");
 		return -1;
@@ -355,19 +416,45 @@ int epo_file_size(void) {
  *
  * @return
  */
-int epo_file_start(void) {
+bool epo_file_start(int current_gps_hour) {
 
 	FRESULT error;
-	const char* fname = "/MTK14.EPO";
+	const char* fname = "MTK14.EPO";
+
+	if (!is_fat_init()) return -1;
 
 	error = f_open(&g_EpoFileObject, fname, FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
-		return  -1;
+		return false;
 	}
 
-	return 0;
+	int gps_hour = 0;
+
+	UINT size_read = 0;
+	error = f_read (
+			&g_EpoFileObject, 	/* Pointer to the file object */
+			&gps_hour,	        /* Pointer to data buffer */
+			sizeof(uint32_t),   /* Number of bytes to read */
+			&size_read	        /* Pointer to number of bytes read */
+	);
+	if (error)
+	{
+		LOG_INFO("Read file failed.");
+		return false;
+	}
+
+	gps_hour &= 0x00FFFFFF;
+
+	// determine the segment to use
+	int segment = (current_gps_hour - gps_hour) / 6;
+	if ((segment < 0) || (segment >= EPO_SAT_SEGMENTS_NUM))
+	{
+		return false;
+	}
+
+	return (FR_OK == f_lseek(&g_EpoFileObject, segment*(EPO_SAT_DATA_SIZE_BYTES)*(EPO_SAT_SEGMENTS_NB)));
 }
 
 /**
@@ -375,17 +462,19 @@ int epo_file_start(void) {
  * @param epo_data
  * @return The number of sat_data read, or -1 if error
  */
-int epo_file_read(sEpoPacketSatData* sat_data) {
+int epo_file_read(sEpoPacketSatData* sat_data, uint16_t size_) {
 
 	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
 
 	ASSERT(sat_data);
 
+	if (!is_fat_init()) return -1;
+
 	UINT size_read = 0;
 	FRESULT error = f_read (
 			&g_EpoFileObject, 	/* Pointer to the file object */
 			g_bufferRead,	    /* Pointer to data buffer */
-			MTK_EPO_SAT_DATA_SIZE,/* Number of bytes to read */
+			size_,              /* Number of bytes to read */
 			&size_read	        /* Pointer to number of bytes read */
 	);
 
@@ -395,11 +484,11 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
 		return -1;
 	}
 
-	if (size_read != MTK_EPO_SAT_DATA_SIZE) {
+	if (size_read != size_) {
 		LOG_INFO("End of EPO file");
 		return 1;
 	} else {
-		memcpy(sat_data->sat, g_bufferRead, MTK_EPO_SAT_DATA_SIZE);
+		memcpy(sat_data->sat, g_bufferRead, size_);
 	}
 
 	return 0;
@@ -411,6 +500,8 @@ int epo_file_read(sEpoPacketSatData* sat_data) {
  */
 int epo_file_stop(bool toBeDeleted) {
 
+	if (!is_fat_init()) return -3;
+
 	FRESULT error = f_close (&g_EpoFileObject);
 	if (error)
 	{
@@ -420,7 +511,81 @@ int epo_file_stop(bool toBeDeleted) {
 
 #ifndef DEBUG_CONFIG
 	if (toBeDeleted) {
-		error = f_unlink("/MTK14.EPO");
+		error = f_unlink("MTK14.EPO");
+		if (error)
+		{
+			LOG_INFO("Unlink file failed.");
+			return -2;
+		}
+	}
+#endif
+
+	return 0;
+}
+
+
+/**
+ *
+ * @return True on success
+ */
+bool log_file_start(void) {
+
+	FRESULT error;
+	const char* fname = "histo.txt";
+
+	if (!is_fat_init()) return -1;
+
+	error = f_open(&g_LogFileObject, fname, FA_READ);
+	if (error)
+	{
+		LOG_INFO("Open file failed.");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ *
+ * @param log_buffer
+ * @param size_
+ * @return The pointer to read string, or NULL if problem
+ */
+char* log_file_read(size_t *r_length) {
+
+	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+
+	if (!is_fat_init()) return NULL;
+
+	if (!f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_LogFileObject))
+	{
+		LOG_INFO("Read LOG file failed.");
+		return NULL;
+	}
+
+	*r_length = strlen(g_bufferRead);
+
+	return g_bufferRead;
+}
+
+/**
+ *
+ * @return 0 on success
+ */
+int log_file_stop(bool toBeDeleted) {
+
+	if (!is_fat_init()) return -3;
+
+	FRESULT error = f_close (&g_LogFileObject);
+	if (error)
+	{
+		LOG_INFO("Close file failed.");
+		return -1;
+	}
+
+#ifndef DEBUG_CONFIG
+	if (toBeDeleted) {
+		error = f_unlink("histo.txt");
 		if (error)
 		{
 			LOG_INFO("Unlink file failed.");

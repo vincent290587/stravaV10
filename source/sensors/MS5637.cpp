@@ -84,10 +84,18 @@ bool MS5637::crc_check(uint16_t *n_prom, uint8_t crc) {
 	return (n_rem == crc);
 }
 
+/**
+ *
+ * @param _handle
+ * @return
+ */
 bool MS5637::setCx(ms5637_handle_t *_handle) {
 
-	if (this->reset() != 0)
+	if (this->reset()) {
+		LOG_ERROR("MS5637 reset failure");
 		return false;
+	}
+
 
 	uint16_t prom[MS5637_COEFFICIENT_COUNT+1];
 
@@ -116,7 +124,7 @@ bool MS5637::setCx(ms5637_handle_t *_handle) {
 
 	// Verify CRC4 in top 4 bits of prom[0] (follows AN520 but not directly...)
 	if (!this->crc_check(prom, (prom[MS5637_CRC_INDEX] & 0xF000) >> 12)) {
-		NRF_LOG_ERROR("MS5637 Cx CRC fail");
+		LOG_ERROR("MS5637 Cx CRC fail");
 		return false;
 	}
 
@@ -131,6 +139,8 @@ bool MS5637::setCx(ms5637_handle_t *_handle) {
 
 	initialised = true;
 
+	LOG_INFO("MS5637 init success");
+
 	return false;
 }
 
@@ -144,7 +154,27 @@ uint32_t MS5637::reset() {
 
 }
 
+#ifdef _DEBUG_TWI
 void MS5637::refresh(ms5637_handle_t *_handle) {
+
+	int32_t d2 = takeReading(CMD_START_D2(BARO_LEVEL), BARO_LEVEL);
+	if (d2 == 0) {
+		LOG_ERROR("d2 issue");
+		//return;
+	}
+
+	int32_t d1 = takeReading(CMD_START_D1(BARO_LEVEL), BARO_LEVEL);
+	if (d1 == 0) {
+		LOG_ERROR("d1 issue");
+		//return;
+	}
+
+	this->computeTempAndPressure(d1, d2);
+}
+#else
+void MS5637::refresh(ms5637_handle_t *_handle) {
+
+	ASSERT(_handle);
 
 	uint32_t temp = (uint32_t) _handle->temp_adc[0] << 16;
 	temp |= (uint32_t) _handle->temp_adc[1] << 8;
@@ -152,7 +182,7 @@ void MS5637::refresh(ms5637_handle_t *_handle) {
 
 	int32_t d1 = temp;
 
-	NRF_LOG_DEBUG("Calculating d1: %d", d1);
+	LOG_DEBUG("Calculating d1: %d", d1);
 
 	temp = (uint32_t) _handle->press_adc[0] << 16;
 	temp |= (uint32_t) _handle->press_adc[1] << 8;
@@ -160,14 +190,15 @@ void MS5637::refresh(ms5637_handle_t *_handle) {
 
 	int32_t d2 = temp;
 
-	NRF_LOG_DEBUG("Calculating d2: %d", d2);
+	LOG_DEBUG("Calculating d2: %d", d2);
 
 	this->computeTempAndPressure(d1, d2);
 }
+#endif
 
 uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample_level) {
 
-	if (this->wireWriteByte(trigger_cmd) != 0) {
+	if (!this->wireWriteByte(trigger_cmd)) {
 		return 0;
 	}
 
@@ -175,8 +206,8 @@ uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample
 
 	delay_ms(sampling_delay);
 
-	uint8_t adc[4];
-	if (this->wireReadDataBlock(CMD_READ_ADC, adc, 3) != 0) {
+	uint8_t adc[3] = {0};
+	if (!this->wireReadDataBlock(CMD_READ_ADC, adc, sizeof(adc))) {
 		return 0;
 	}
 
@@ -193,16 +224,9 @@ bool MS5637::computeTempAndPressure(int32_t d1, int32_t d2) {
 	if (m_err || !initialised)
 		return false;
 
-	if (d2 == 0) {
+	if (d1 == 0 || d2 == 0) {
 		return false;
 	}
-
-#ifdef _DEBUG_TWI
-	d2 = takeReading(CMD_START_D2(BARO_LEVEL), BARO_LEVEL);
-	if (d2 == 0) {
-		return false;
-	}
-#endif
 
 	int64_t dt = d2 - c5 * (1L << 8);
 
@@ -219,17 +243,6 @@ bool MS5637::computeTempAndPressure(int32_t d1, int32_t d2) {
 	}
 
 	m_temperature = (float) (temp - t2) / 100;
-
-#ifdef _DEBUG_TWI
-	d1 = takeReading(CMD_START_D1(BARO_LEVEL), BARO_LEVEL);
-	if (d1 == 0) {
-		return false;
-	}
-#endif
-
-	if (d1 == 0) {
-		return false;
-	}
 
 	int64_t off = c2 * (1LL << 17) + (c4 * dt) / (1LL << 6);
 	int64_t sens = c1 * (1LL << 16) + (c3 * dt) / (1LL << 7);
@@ -254,6 +267,9 @@ bool MS5637::computeTempAndPressure(int32_t d1, int32_t d2) {
 
 	int32_t p = ((int64_t) d1 * sens / (1LL << 21) - off) / (1LL << 15);
 	m_pressure = (float) p / 100;
+
+	LOG_INFO("Pressure: %d mbar", (int) (m_pressure));
+	LOG_INFO("Temperature: %d°", (int) (m_temperature));
 
 	return true;
 }
@@ -286,7 +302,10 @@ bool MS5637::wireWriteByte(uint8_t val) {
  */
 int MS5637::wireReadDataBlock(uint8_t reg, uint8_t *val, unsigned int len) {
 #ifdef _DEBUG_TWI
-	if (!i2c_read_reg_n(MS5637_ADDR, reg, val, len)) {
+	i2c_write8(MS5637_ADDR, reg);
+	// repeated stop
+	// repeated start
+	if (!i2c_read_n(MS5637_ADDR, val, len)) {
 		return 0;
 	}
 #endif

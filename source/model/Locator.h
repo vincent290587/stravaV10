@@ -15,6 +15,20 @@
 #define MAX_SATELLITES     40
 #define ACTIVE_VAL         5
 
+typedef struct {
+	float lat;
+	float lon;
+	float alt;
+	float speed;
+	float course;
+} SLoc;
+
+typedef struct {
+	uint32_t secj;
+	uint32_t date;
+	uint32_t timestamp;
+} SDate;
+
 typedef struct
 {
 	int active;
@@ -67,6 +81,8 @@ public:
 	void tasks();
 
 	void displayGPS2(void);
+
+	bool getGPSDate(int &iYr, int &iMo, int &iDay, int &iHr);
 
 	eLocationSource getDate(SDate& date_);
 	eLocationSource getPosition(SLoc& loc_, SDate& date_);

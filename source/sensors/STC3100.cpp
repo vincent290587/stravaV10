@@ -5,8 +5,6 @@
  *      Author: Vincent
  */
 
-#define USE_RTT 0
-
 
 #include "millis.h"
 #include "helper.h"
@@ -59,8 +57,6 @@ bool STC3100::init(uint32_t r_sens, stc3100_res_t res) {
 
 	// read device ID
 	i2c_read_reg_8(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID);
-	LOG_INFO("Device ID: %x\r\n", _deviceID);
-
 	LOG_INFO("Device ID: %x\r\n", _deviceID);
 #endif
 
@@ -117,6 +113,10 @@ bool STC3100::refresh(tSTC31000Data *_data)
 {
 	memcpy(&_stc_data, _data, sizeof(_stc_data));
 
+#ifdef _DEBUG_TWI
+	this->readChip();
+#endif
+
 	this->computeVoltage ();
 	this->computeCharge  ();
 	this->computeCurrent ();
@@ -129,6 +129,8 @@ bool STC3100::refresh(tSTC31000Data *_data)
 		this->reset();
 		m_soft_reset = true;
 	}
+
+	LOG_INFO("Voltage %dmV", (int) (_voltage*1000));
 
 	return true;
 }

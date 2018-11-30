@@ -15,7 +15,7 @@
 #include <Locator.h>
 
 
-static bool m_is_updated;
+static volatile bool m_is_updated;
 
 TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
@@ -25,7 +25,10 @@ TinyGPSCustom totalGPGSVMessages(gps, "GPGSV", 1); // $GPGSV sentence, first ele
 TinyGPSCustom messageNumber(gps, "GPGSV", 2);      // $GPGSV sentence, second element
 
 TinyGPSCustom satsInView(gps, "GPGSV", 3);  // $GPGSV sentence, third element
-TinyGPSCustom satsInUse(gps, "GPGGA", 7);  // $GPGSV sentence, 7th element
+
+TinyGPSCustom satsInUse(gps, "GNGGA", 7);  // $GPGSV sentence, 7th element
+
+TinyGPSCustom gps_ack(gps, "PMKT001", 2);  // ACK, second element
 
 TinyGPSCustom satNumber[4]; // to be initialized later
 TinyGPSCustom elevation[4];
@@ -36,7 +39,7 @@ sSatellite sats[MAX_SATELLITES];
 
 /**
  *
- * @param csatNumber
+ * @param c Character to encode
  * @return
  */
 uint32_t locator_encode_char(char c) {
@@ -69,6 +72,9 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 	locator.nrf_loc.data.date = lns_info->date;
 
 	locator.nrf_loc.setIsUpdated();
+
+	// notify task
+    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 }
 
 
@@ -87,6 +93,7 @@ Locator::Locator() {
 	    azimuth[i].begin(  gps, "GPGSV", 6 + 4 * i); // offsets 6, 10, 14, 18
 	    snr[i].begin(      gps, "GPGSV", 7 + 4 * i); // offsets 7, 11, 15, 19
 	}
+
 }
 
 /**
@@ -99,18 +106,20 @@ eLocationSource Locator::getUpdateSource() {
 
 	if (sim_loc.isUpdated()) {
 		return eLocationSourceSimu;
+	} else if (sim_loc.getAge() < 2000) {
+		return eLocationSourceNone;
 	}
 
 	if (gps_loc.isUpdated()) {
 		return eLocationSourceGPS;
+	} else if (gps_loc.getAge() < 1500) {
+		return eLocationSourceNone;
 	}
 
-	// NRF has newer data (> LNS_OVER_GPS_DTIME_S) than GPS
-	if (nrf_loc.isUpdated() &&
-			millis() - gps_loc.getLastUpdateTime() > S_TO_MS(LNS_OVER_GPS_DTIME_S)) {
+	if (nrf_loc.isUpdated() && !gps_mgmt.isFix()) {
 		return eLocationSourceNRF;
 	} else if (nrf_loc.isUpdated()) {
-		LOG_INFO("LNS data refused: GPS data too recent\r\n");
+		LOG_INFO("LNS data refused: GPS data valid");
 	}
 
 	return eLocationSourceNone;
@@ -125,7 +134,7 @@ bool Locator::isUpdated()      {
 	eLocationSource source = this->getUpdateSource();
 
 	if (eLocationSourceNone != source) {
-		LOG_DEBUG("Locator source: %u\r\n", source);
+		LOG_DEBUG("Locator source: %u", source);
 		return true;
 	}
 	return false;
@@ -165,6 +174,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = sim_loc.data.lat;
 		loc_.lon = sim_loc.data.lon;
+		loc_.alt = sim_loc.data.alt / 100.;
 		loc_.speed = 20.;
 		loc_.course = -1;
 		date_.secj = sim_loc.data.utc_time;
@@ -177,6 +187,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = nrf_loc.data.lat;
 		loc_.lon = nrf_loc.data.lon;
+		loc_.alt = nrf_loc.data.alt;
 		loc_.speed = nrf_loc.data.speed;
 		loc_.course = -1;
 		date_.secj = nrf_loc.data.utc_time;
@@ -193,10 +204,9 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	break;
 	case eLocationSourceGPS:
 	{
-		LOG_INFO("Lat: %d", (int)(gps_loc.data.lat*1000));
-
 		loc_.lat = gps_loc.data.lat;
 		loc_.lon = gps_loc.data.lon;
+		loc_.alt = gps_loc.data.alt;
 		loc_.speed = gps_loc.data.speed;
 		loc_.course = gps_loc.data.course;
 		date_.secj = gps_loc.data.utc_time;
@@ -273,6 +283,10 @@ eLocationSource Locator::getDate(SDate& date_) {
  */
 void Locator::tasks() {
 
+	if (gps_ack.isUpdated()) {
+		gps_mgmt.getAckResult(gps_ack.value());
+	}
+
 	if (m_is_updated) {
 		m_is_updated = false;
 
@@ -284,9 +298,13 @@ void Locator::tasks() {
 			gps_loc.data.date = gps.date.year()   % 100;
 			gps_loc.data.date += gps.date.day()   * 10000;
 			gps_loc.data.date += gps.date.month() * 100;
+
 		}
 
 		if (gps.location.isValid()) {
+
+			// notify task
+		    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 
 			gps_loc.data.speed  = gps.speed.kmph();
 			gps_loc.data.alt    = gps.altitude.meters();
@@ -295,12 +313,12 @@ void Locator::tasks() {
 
 			gps_loc.data.course = gps.course.deg();
 
-			LOG_INFO("GPS location set\r\n");
+			LOG_INFO("GPS location set");
 
 			gps_loc.setIsUpdated();
 
 		} else if (gps.time.isValid()) {
-			LOG_DEBUG("GPS location invalid\r\n");
+			LOG_DEBUG("GPS location invalid !");
 			// trick to force taking LNS data
 			gps_loc.data.utc_time -= (LNS_OVER_GPS_DTIME_S + 3);
 		}
@@ -325,8 +343,28 @@ void Locator::tasks() {
 }
 
 /**
+ * Returns the GPS date
+ *
+ * @param iYr
+ * @param iMo
+ * @param iDay
+ * @param iHr
+ */
+bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
+
+	iYr = gps.date.year();
+	iMo = gps.date.month();
+	iDay = gps.date.day();
+	iHr = gps.time.hour();
+
+	return (gps.date.isValid() && gps.time.isValid());
+}
+
+
+/**
  *
  */
+#ifndef TDD
 void Locator::displayGPS2(void) {
 
 //	int totalMessages = atoi(totalGPGSVMessages.value());
@@ -340,27 +378,29 @@ void Locator::displayGPS2(void) {
 	vue.println(satsInView.value());
 	vue.println("");
 
-	for (int i=0; i<MAX_SATELLITES; ++i) {
-
-		if (sats[i].active) {
-
-			sats[i].active--;
-
-			// i+1 is here also the satellite number
-			vue.print(i+1);
-			vue.print(F(": "));
-
-			vue.print(sats[i].elevation);
-			vue.print(F("el "));
-
-			vue.print(sats[i].azimuth);
-			vue.print(F("az "));
-
-			vue.print(sats[i].snr);
-			vue.println(F("dBi"));
-
-		}
+	if (gps.location.isValid()) {
+		vue.println("Loc valid");
+	} else {
+		vue.println("Loc pb");
 	}
 
+	String line = "Loc age: ";
+	line += String((int)gps.location.age());
+	vue.println(line);
+
+	if (gps_mgmt.isFix()) {
+		vue.println("FIX pin high");
+	} else {
+		vue.println("No fix");
+	}
+
+	vue.println("  ------");
 
 }
+
+#else
+void Locator::displayGPS2(void) {
+	vue.setCursor(20,20);
+	vue.setTextSize(2);
+}
+#endif

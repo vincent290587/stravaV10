@@ -5,7 +5,7 @@
  *      Author: Vincent
  */
 
-#include "nrf_ASSERT.h"
+#include "assert_wrapper.h"
 #include "ant.h"
 #include "Model.h"
 #include "segger_wrapper.h"
@@ -24,7 +24,7 @@ VuePRC::VuePRC() : Adafruit_GFX(0, 0) {
 
 	m_distance_prc = 0.;
 
-	m_parcours_sel = 10 * mes_parcours.size();
+	m_parcours_sel = 0;
 
 	m_s_parcours = nullptr;
 
@@ -125,7 +125,7 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 			if (m_s_parcours) this->decreaseZoom();
 
 			if (!m_selec_en) pass_event_menu = true;
-			else             m_parcours_sel--;
+			else             m_parcours_sel += mes_parcours.size() - 1;
 			break;
 		}
 		case eButtonsEventRight:
@@ -134,7 +134,6 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 
 			if (!m_selec_en) pass_event_menu = true;
 			else             m_parcours_sel++;
-
 			break;
 		}
 		case eButtonsEventCenter:
@@ -432,19 +431,19 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 
 	// limit position when segment is finished
-	float _lat, _lon;
-	if (p_seg->getStatus() < SEG_OFF) {
-		_lon = pCourant._lon;
-		_lat = pCourant._lat;
-	} else {
-		_lon = att.loc.lon;
-		_lat = att.loc.lat;
-	}
-
+//	float _lat, _lon;
+//	if (p_seg->getStatus() < SEG_OFF) {
+//		_lon = pCourant._lon;
+//		_lat = pCourant._lat;
+//	} else {
+//		_lon = att.loc.lon;
+//		_lat = att.loc.lat;
+//	}
+//
 	// ma position
-	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
-	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);
-	fillCircle(maDpex, maDpey, 4, LS027_PIXEL_BLACK);
+//	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
+//	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);
+//	fillCircle(maDpex, maDpey, 4, LS027_PIXEL_BLACK);
 
 	// return before printing text
 	if (p_seg->getStatus() == SEG_OFF) {

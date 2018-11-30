@@ -8,6 +8,8 @@
 #ifndef SOURCE_VUE_VUECOMMON_H_
 #define SOURCE_VUE_VUECOMMON_H_
 
+#include "stdint.h"
+
 #define CLR_NRM                  1,0
 
 typedef uint16_t tHistoValue;

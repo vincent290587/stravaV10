@@ -12,7 +12,6 @@
 #define NB_RECORDING 9
 
 #include <list>
-#include "utils.h"
 #include "Points.h"
 #include "Vecteur.h"
 

@@ -62,45 +62,31 @@ extern "C" {
 #define RTS_PIN_NUMBER   8
 #define HWFC             false
 
-#define SPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 24)
-#define SPI_SS_PIN       0xFF
+#define LS027_MOSI_PIN    NRF_GPIO_PIN_MAP(0, 22)
+#define LS027_SCK_PIN     NRF_GPIO_PIN_MAP(0, 20)
 
-//#define SPI_MOSI_PIN     NRF_GPIO_PIN_MAP(1, 2)
-//#define SPI_SCK_PIN      NRF_GPIO_PIN_MAP(1, 3)
-
-#define SPI_MOSI_PIN     NRF_GPIO_PIN_MAP(0, 22)
-#define SPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 20)
-
-// Low frequency clock source to be used by the SoftDevice
-#define NRF_CLOCK_LFCLKSRC      {.source       = NRF_CLOCK_LF_SRC_XTAL,      \
-                                 .rc_ctiv      = 0,                          \
-                                 .rc_temp_ctiv = 0,                          \
-                                 .accuracy     = NRF_CLOCK_LF_ACCURACY_20_PPM}
-
+#define QSPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 24)
+#define QSPI_MOSI_PIN     NRF_GPIO_PIN_MAP(1, 4)
+#define QSPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 6) // 6 for proto
+#define QSPI_SS_PIN       NRF_GPIO_PIN_MAP(1, 2)
 
 #define FXOS_INT1         NRF_GPIO_PIN_MAP(0, 31)
 #define FXOS_INT2         NRF_GPIO_PIN_MAP(0, 29)
 #define FXOS_RST          NRF_GPIO_PIN_MAP(0, 2)
 
-#define SST_CS            NRF_GPIO_PIN_MAP(1, 2)
-
-#define SDC_CS_PIN        NRF_GPIO_PIN_MAP(1, 4)
-
 #define LS027_CS_PIN      NRF_GPIO_PIN_MAP(1, 6)
 
 #define BCK_PIN           NRF_GPIO_PIN_MAP(1, 0)
 
-#define SPK_IN            NRF_GPIO_PIN_MAP(0, 26)
-
-#define PPS_PIN           NRF_GPIO_PIN_MAP(0, 6)
+#define GPS_R             NRF_GPIO_PIN_MAP(0, 26) // 26 for proto
 
 #define FIX_PIN           NRF_GPIO_PIN_MAP(0, 8)
 
-// map (SPK_IN ?)
-#define KILL_PIN          SST_CS
+#define KILL_PIN          NRF_GPIO_PIN_MAP(1, 10)
 
-// map (SST_CS ?)
-#define NEO_PIN           SPK_IN
+#define NEO_PIN           NRF_GPIO_PIN_MAP(0, 4)
+
+//#define USB_PRES          NRF_GPIO_PIN_MAP(0, 6)
 
 #ifdef __cplusplus
 }

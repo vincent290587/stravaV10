@@ -6,10 +6,13 @@
  */
 
 #include <vue/Vue.h>
+#include "millis.h"
+#include "Model.h"
 #include "nordic_common.h"
-#include "nrf_assert.h"
+#include "assert_wrapper.h"
 #include "WString.h"
-
+#include "segger_wrapper.h"
+#include "Org_01.h"
 
 Vue::Vue() : Adafruit_GFX(LS027_HW_WIDTH, LS027_HW_HEIGHT) {
 
@@ -20,6 +23,8 @@ Vue::Vue() : Adafruit_GFX(LS027_HW_WIDTH, LS027_HW_HEIGHT) {
 void Vue::init(void) {
 	this->setRotation(3);
 	this->initMenu();
+	this->setTextWrap(false);
+	this->setFont(&Org_01);
 	LS027_Init();
 }
 
@@ -46,6 +51,12 @@ void Vue::tasks(eButtonsEvent event) {
 		}
 		break;
 	}
+	case eVueGlobalScreenDEBUG:
+	{
+		// propagate to the inner menu
+		this->propagateEvent(event);
+		break;
+	}
 	default:
 		break;
 	}
@@ -60,6 +71,8 @@ void Vue::setCurrentMode(eVueGlobalScreenModes mode_) {
 
 void Vue::refresh(void) {
 
+	this->clearDisplay();
+
 	if (m_is_menu_selected) {
 		this->tasksMenu();
 	} else {
@@ -72,6 +85,9 @@ void Vue::refresh(void) {
 			break;
 		case eVueGlobalScreenPRC:
 			this->tasksPRC();
+			break;
+		case eVueGlobalScreenDEBUG:
+			this->displayDebug();
 			break;
 
 		default:
@@ -102,7 +118,13 @@ void Vue::refresh(void) {
 		}
 	}
 
-	this->writeWhole();
+    if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+    	events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
+    } else {
+    	this->writeWhole();
+    }
+
+	m_last_refreshed = millis();
 }
 
 void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {
@@ -133,7 +155,7 @@ void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi
 	int x = _width / 2 * 0.5;
 	int y = _height / nb_lig * (p_lig - 1);
 
-	setCursor(5, y + 5);
+	setCursor(5, y + 8);
 	setTextSize(1);
 
 	if (champ) print(champ);
@@ -150,7 +172,7 @@ void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi
 
 	setTextSize(1);
 	x = _width / 2;
-	setCursor(x + 105, y + 5);// y + 42
+	setCursor(x + 105, y + 8);// y + 42
 
 	if (p_unite) print(p_unite);
 
@@ -166,7 +188,7 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 	int x = _width / 2 * (p_col - 1);
 	int y = _height / nb_lig * (p_lig - 1);
 
-	setCursor(x + 5, y + 5);
+	setCursor(x + 5, y + 8);
 	setTextSize(1);
 
 	if (champ) print(champ);
@@ -182,7 +204,7 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 	print(affi);
 
 	setTextSize(1);
-	setCursor(x + 95, y + 5); // y + 42
+	setCursor(x + 95, y + 8); // y + 42
 
 	if (p_unite) print(p_unite);
 

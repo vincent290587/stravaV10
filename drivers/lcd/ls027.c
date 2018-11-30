@@ -84,10 +84,8 @@ static void ls027_spi_init() {
 	nrf_gpio_pin_clear(LS027_CS_PIN);
 	nrf_gpio_cfg_output(LS027_CS_PIN);
 
-	m_spi_ls027_cfg.frequency      = NRF_SPIM_FREQ_4M;
 	m_spi_ls027_cfg.handler        = ls027_cs_off;
-	m_spi_ls027_cfg.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
-	m_spi_ls027_cfg.blocking       = true;
+	m_spi_ls027_cfg.blocking       = false;
 }
 
 static int ls027_prepare_buffer(void)
@@ -118,6 +116,22 @@ static int ls027_prepare_buffer(void)
 	ASSERT(addr == sizeof(LS027_SpiBuf));
 
 	return 0;
+}
+
+static void ls027_hw_clear(void) {
+
+	static uint8_t ls027_clear_buffer[2];
+
+	ls027_clear_buffer[0] = m_M1_bit | LS027_M0_L | LS027_M2_H;
+	ls027_clear_buffer[1] = 0x00;
+
+	LS027_TOGGLE_VCOM;
+
+	ls027_cs_on();
+
+	/* Start master transfer */
+	spi_schedule(&m_spi_ls027_cfg, ls027_clear_buffer, 2, NULL, 0);
+
 }
 
 /**
@@ -172,20 +186,7 @@ static void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
  */
 void LS027_Clear(void)
 {
-	static uint8_t ls027_clear_buffer[2];
-
-	ls027_clear_buffer[0] = m_M1_bit | LS027_M0_L | LS027_M2_H;
-	ls027_clear_buffer[1] = 0x00;
-
-	LS027_TOGGLE_VCOM;
-
-	ls027_cs_on();
-
-	/* Start master transfer */
-	spi_schedule(&m_spi_ls027_cfg, ls027_clear_buffer, 2, NULL, 0);
-
-	ls027_cs_off(NULL, NULL);
-
+	ls027_spi_buffer_clear(0, NULL);
 	return;
 }
 
@@ -205,10 +206,7 @@ void LS027_Init(void)
 
 	ls027_spi_init();
 
-	LS027_Clear();
-
-	// TODO remove
-	nrf_delay_ms(700);
+	ls027_hw_clear();
 
 	// copy buffer
 	uint16_t offset = 0;
@@ -289,6 +287,4 @@ void LS027_UpdateFull(void)
 
 	/* Start master transfer */
 	spi_schedule(&m_spi_ls027_cfg, LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
-
-	ls027_spi_buffer_clear(0, NULL);
 }

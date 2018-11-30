@@ -7,12 +7,12 @@
 
 #include <GPSMGMT.h>
 #include <stdio.h>
-#include "MTK.h"
 #include "uart.h"
 #include "utils.h"
 #include "millis.h"
 #include "WString.h"
 #include "LocusCommands.h"
+#include "EPONmeaPacket.h"
 #include "Screenutils.h"
 #include "sd_functions.h"
 #include "segger_wrapper.h"
@@ -20,10 +20,6 @@
 #include "Model.h"
 #include "boards.h"
 #include "parameters.h"
-
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
 #define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
@@ -46,57 +42,64 @@
 
 static uint8_t buffer[256];
 
-static eGPSMgmtTransType  m_trans_type = eGPSMgmtTransNMEA;
 static eGPSMgmtEPOState   m_epo_state  = eGPSMgmtEPOIdle;
 
-static MTK m_rec_packet;
+static bool m_is_uart_on = false;
 
 static nrf_uarte_baudrate_t m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
 
+
+/**
+ *
+ */
 void gps_uart_start() {
 
 	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
-
 	uart_timer_init();
-
 	uart_init(m_uart_baud);
+	m_is_uart_on = true;
 
 }
 
 void gps_uart_stop() {
 
-	uart_uninit();
+	if (m_is_uart_on) uart_uninit();
+	m_is_uart_on = false;
 
 }
 
 void gps_uart_resume() {
 
-	uart_init(m_uart_baud);
+	if (!m_is_uart_on) uart_init(m_uart_baud);
+	m_is_uart_on = true;
 
 }
 
 GPS_MGMT::GPS_MGMT() {
 
 	m_power_state = eGPSMgmtPowerOn;
-	m_trans_type  = eGPSMgmtTransNMEA;
 	m_epo_state   = eGPSMgmtEPOIdle;
 
 }
 
 void GPS_MGMT::init(void) {
 
+	gps_uart_stop();
 	gps_uart_start();
-
-	// configure PPS pin
-	nrf_gpio_cfg_input(PPS_PIN, NRF_GPIO_PIN_NOPULL);
+	// the baud is here always 9600
 
 	// configure fix pin
 	nrf_gpio_cfg_input(FIX_PIN, NRF_GPIO_PIN_PULLDOWN);
 
-	SEND_TO_GPS(PMTK_AWAKE);
+	nrf_gpio_cfg_output(GPS_R);
+	nrf_gpio_pin_clear(GPS_R);
+	delay_ms(5);
+	nrf_gpio_pin_set(GPS_R);
+	delay_ms(100);
 
 #if GPS_USE_COLD_START
 	SEND_TO_GPS(PMTK_COLD);
+	delay_us(500);
 #endif
 
 	if (GPS_FAST_SPEED_BAUD > GPS_DEFAULT_SPEED_BAUD) {
@@ -105,10 +108,10 @@ void GPS_MGMT::init(void) {
 		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_115200);
 
 		// go to final baudrate
-		delay_us(500);
-		m_uart_baud = GPS_FAST_SPEED_BAUD;
+		delay_ms(100);
 		gps_uart_stop();
 		delay_us(500);
+		m_uart_baud = GPS_FAST_SPEED_BAUD;
 		gps_uart_resume();
 
 	}
@@ -117,6 +120,10 @@ void GPS_MGMT::init(void) {
 
 bool GPS_MGMT::isFix(void) {
 	return nrf_gpio_pin_read(FIX_PIN);
+}
+
+bool GPS_MGMT::isEPOUpdating(void) {
+	return m_epo_state == eGPSMgmtEPOIdle;
 }
 
 void GPS_MGMT::standby(void) {
@@ -128,6 +135,12 @@ void GPS_MGMT::standby(void) {
 	m_power_state = eGPSMgmtPowerOff;
 
 	SEND_TO_GPS(PMTK_STANDBY);
+
+	delay_ms(10);
+	gps_uart_stop();
+	delay_us(500);
+	m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
+	gps_uart_resume();
 }
 
 void GPS_MGMT::awake(void) {
@@ -146,9 +159,25 @@ void GPS_MGMT::startEpoUpdate(void) {
 
 	LOG_INFO("EPO update started\r\n");
 
-	m_epo_state = eGPSMgmtEPOStart;
+	//m_epo_state = eGPSMgmtEPOStart;
 
 	this->awake();
+}
+
+/**
+ *
+ * @param result
+ */
+void GPS_MGMT::getAckResult(const char *result) {
+
+	int int_res = atoi(result);
+
+	if (int_res == 3) {
+		vue.addNotif("GPSMGMT: ", "Result: success", 4, eNotificationTypeComplete);
+	} else {
+		vue.addNotif("GPSMGMT: ", "Result: failure", 4, eNotificationTypeComplete);
+	}
+
 }
 
 void GPS_MGMT::tasks(void) {
@@ -162,11 +191,29 @@ void GPS_MGMT::tasks(void) {
 		m_epo_packet_nb = 0;
 		m_epo_packet_ind = 0;
 
-		int size = epo_file_size();
-		int res  = epo_file_start();
+		// determine the time
+		int iYr, iMo, iDay, iHr;
+		if (!locator.getGPSDate(iYr, iMo, iDay, iHr)) {
+			LOG_INFO("EPO start: date not valid");
 
-		if (size <= 0 || res < 0) {
-			LOG_ERROR("EPO start failure, size=%ld\r\n", size);
+			if (millis() < 2*60*1000) return;
+			else m_epo_state = eGPSMgmtEPOIdle; // stop the process completely
+
+		}
+		int current_gps_hour = utc_to_gps_hour(iYr, iMo, iDay, iHr);
+
+		int size = epo_file_size();
+		bool res  = epo_file_start(current_gps_hour);
+
+		if (size <= 0) {
+
+			LOG_ERROR("EPO start failure: file empty");
+
+			m_epo_state = eGPSMgmtEPOIdle;
+
+		} else if (!res) {
+
+			LOG_ERROR("EPO start date wrong");
 
 			m_epo_state = eGPSMgmtEPOIdle;
 
@@ -175,14 +222,7 @@ void GPS_MGMT::tasks(void) {
 
 			m_epo_state = eGPSMgmtEPORunning;
 
-			// set transport to binary
-			SEND_TO_GPS(GPS_BIN_CMD);
-
 			vue.addNotif("GPSMGMT: ", "EPO update started", 4, eNotificationTypeComplete);
-
-			delay_ms(500);
-
-			m_trans_type = eGPSMgmtTransBIN;
 		}
 	}
 	break;
@@ -190,54 +230,45 @@ void GPS_MGMT::tasks(void) {
 	case eGPSMgmtEPORunning:
 	{
 		// fill the packet
-		if (m_epo_packet_ind < 0xFFFF) {
+		if (m_epo_packet_ind < EPO_SAT_SEGMENTS_NB) {
 
-			sEpoPacketBinData epo_data;
+			sEpoPacketSatData epo_data;
 			memset(&epo_data, 0, sizeof(epo_data));
 
-			for (int i=0; i < MTK_EPO_MAX_SAT_DATA; i++) {
-				// read file
-				int ret_code = epo_file_read(&epo_data.sat_data[epo_data.nb_sat]);
+			int ret_code = epo_file_read(&epo_data, sizeof(epo_data.sat));
 
-				if (ret_code < 0) {
-					// error
-				} else if (ret_code == 1) {
-					// end
-				} else {
-					epo_data.nb_sat  += 1;
-				}
+			if (ret_code < 0) {
+				// error
+			} else if (ret_code == 1) {
+				// end
+			} else {
+				epo_data.sat_number += 1;
 			}
 
+			uint16_t written = antenova_epo_packet(&epo_data, buffer, sizeof(buffer));
+
 			// prepare the packet to be sent
-			if (epo_data.nb_sat > 0) {
-				epo_data.epo_seq = m_epo_packet_ind++;
+			if (epo_data.sat_number < EPO_SAT_SEGMENTS_NB) {
+				epo_data.sat_number += 1;
 
-				LOG_INFO("EPO sending packet #%u - %u sats\r\n",
-						epo_data.epo_seq, epo_data.nb_sat);
+				m_epo_packet_ind++;
 
-				LOG_DEBUG("Sat data 1: %X %X\r\n",
-						epo_data.sat_data[0].sat[0],
-						epo_data.sat_data[0].sat[1]);
+				LOG_INFO("EPO sending packet sat#%u", epo_data.sat_number);
 
-				MTK tmp_mtk(&epo_data);
-				tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
+				GPS_UART_SEND(buffer, written);
 			} else {
 				// process is finished
 				m_epo_packet_ind = 0xFFFF;
 
-				epo_data.epo_seq = m_epo_packet_ind;
+				epo_data.sat_number = m_epo_packet_ind;
 
 				LOG_INFO("EPO last packet\r\n");
 
-				MTK tmp_mtk(&epo_data);
-				tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-				GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
+				GPS_UART_SEND(buffer, written);
 			}
 
-			m_epo_state = eGPSMgmtEPOWaitForEvent;
+			// TODO check remove
+			//m_epo_state = eGPSMgmtEPOWaitForEvent;
 		}
 	}
 	break;
@@ -255,18 +286,6 @@ void GPS_MGMT::tasks(void) {
 
 		// the file should be deleted only upon success
 		(void)epo_file_stop(m_epo_packet_ind == 0xFFFF);
-
-		// NMEA + baud rate default
-		uint8_t cmd[5] = {0x00,0x00,0x00,0x00,0x00};
-		encode_uint32 (cmd + 1, GPS_FAST_SPEED_BAUD);
-
-		// set transport to NMEA
-		MTK tmp_mtk(MTK_FMT_NMEA_CMD_ID, cmd, sizeof(cmd));
-		tmp_mtk.toBuffer(buffer, sizeof(buffer));
-
-		LOG_INFO("MTK switched to NMEA\r\n");
-
-		GPS_UART_SEND(buffer, tmp_mtk.getPacketLength());
 
 		m_epo_state = eGPSMgmtEPOIdle;
 
@@ -288,67 +307,23 @@ uint32_t gps_encode_char(char c) {
 	//LOG_INFO("%c", c);
 	//LOG_FLUSH();
 
-	if (eGPSMgmtTransNMEA == m_trans_type) {
+	if (eGPSMgmtEPOIdle == m_epo_state) {
 
 		locator_encode_char(c);
 
 	} else {
 
-		if (m_rec_packet.encode(c)) {
-
-			// the packet is valid
-			switch (m_rec_packet.getCommandId()) {
-			case MTK_EPO_BIN_ACK_CMD_ID:
-				if (eGPSMgmtEPOWaitForEvent == m_epo_state) {
-
-					if (m_rec_packet.m_packet.raw_packet.data[2] == 0x01) {
-						LOG_INFO("Packet ack recv\r\n");
-
-						uint16_t epo_seq = decode_uint16(m_rec_packet.m_packet.raw_packet.data);
-
-						// resume sending packets
-						if (epo_seq < 0xFFFF) m_epo_state = eGPSMgmtEPORunning;
-						else                  m_epo_state = eGPSMgmtEPOEnd;
-
-					} else {
-						LOG_ERROR("Packet ack recv with error %X\r\n",
-								m_rec_packet.m_packet.raw_packet.data[2]);
-
-						// end it
-						m_epo_state = eGPSMgmtEPOEnd;
-					}
-				}
-				break;
-
-			case MTK_ACK_CMD_ID:
-			{
-				uint16_t cmd_id = decode_uint16(m_rec_packet.m_packet.raw_packet.data);
-				uint8_t status  = m_rec_packet.m_packet.raw_packet.data[2];
-				LOG_INFO("Binary ACK to cmd 0x%X with status=%u\r\n", cmd_id, status);
-
-				if (MTK_FMT_NMEA_CMD_ID == cmd_id &&
-						status == 3) {
-					m_trans_type = eGPSMgmtTransNMEA;
-				}
-			}
-			break;
-
-			case MTK_EMPTY_CMD_ID:
-				break;
-
-			default:
-				break;
-			}
-
-			// reset packet
-			m_rec_packet.clear();
-		}
 
 	}
 
 	return 0;
 }
 
+/**
+ *
+ * @param loc_data
+ * @param age_
+ */
 void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 
 	String _lat = _fmkstr(loc_data.lat, 6U);
@@ -387,6 +362,10 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 	vue.addNotif("EPO", "Host aiding sent", 5, eNotificationTypeComplete);
 }
 
+/**
+ *
+ * @param interval
+ */
 void GPS_MGMT::setFixInterval(uint16_t interval) {
 
 	String cmd = "$PMTK220," + interval;

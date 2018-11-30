@@ -13,34 +13,49 @@
 #include "utils.h"
 #include "VEML6075.h"
 
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
+#define VEML_NOMINAL_CONF     (VEML6075_CONF_PW_ON | VEML6075_CONF_HD_NORM | VEML6075_CONF_IT_200MS)
 
 VEML6075::VEML6075() {
 
 	// Despite the datasheet saying this isn't the default on startup, it appears
 	// like it is. So tell the thing to actually start gathering data.
-	this->config = VEML6075_CONF_PW_ON;
+	this->config = VEML_NOMINAL_CONF;
 
-	this->config |= VEML6075_CONF_HD_HIGH;
+}
 
-	// App note only provided math for this one...
-	this->config |= VEML6075_CONF_IT_100MS;
+void VEML6075::reset(void) {
+
+	NRF_LOG_WARNING("VEML reset");
+
+	// Despite the datasheet saying this isn't the default on startup, it appears
+	// like it is. So tell the thing to actually start gathering data.
+	this->config = VEML_NOMINAL_CONF;
+
+	this->init();
 }
 
 bool VEML6075::init(uint16_t dev_id) {
 
+#ifdef _DEBUG_TWI
+	this->off();
+
+	nrf_delay_ms(5);
+
 	this->on();
 
-#ifdef _DEBUG_TWI
 	nrf_delay_ms(1);
 	dev_id = this->getDevID();
 #endif
 
 	if (dev_id != VEML6075_DEVID) {
-		LOG_ERROR("VEML wrong device ID: %u\r\n", dev_id);
+		LOG_ERROR("VEML wrong device ID: %u", dev_id);
 		return false;
 	} else {
-		LOG_INFO("VEML device ID: 0x%X\r\n", dev_id);
+		LOG_INFO("VEML device ID: 0x%X", dev_id);
 	}
 
 	return true;
@@ -48,9 +63,11 @@ bool VEML6075::init(uint16_t dev_id) {
 
 void VEML6075::on() {
 #ifdef _DEBUG_TWI
-	// Write config to make sure device is disabled
-	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_ON);
+	// Write config to make sure device is enabled
+	this->write16(VEML6075_REG_CONF, this->config & 0b11111110);
 	nrf_delay_ms(1);
+#else
+	this->config &= ~VEML6075_CONF_PW_OFF;
 #endif
 }
 
@@ -58,6 +75,8 @@ void VEML6075::off() {
 #ifdef _DEBUG_TWI
 	// Write config to make sure device is disabled
 	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_OFF);
+#else
+	this->config |= VEML6075_CONF_PW_OFF;
 #endif
 }
 
@@ -70,12 +89,26 @@ void VEML6075::refresh(uint8_t *_data) {
 	this->raw_vis  = decode_uint16(_data+6);
 	this->raw_ir   = decode_uint16(_data+8);
 #else
+
+	this->config = this->read16(VEML6075_REG_CONF);
+	LOG_DEBUG("Config: %u", this->config);
+	if (!this->config) {
+		this->reset();
+		return;
+	}
+
 	this->raw_uva  = this->read16(VEML6075_REG_UVA);
 	this->raw_uvb  = this->read16(VEML6075_REG_UVB);
 	this->raw_dark = this->read16(VEML6075_REG_DUMMY);
 	this->raw_vis  = this->read16(VEML6075_REG_UVCOMP1);
 	this->raw_ir   = this->read16(VEML6075_REG_UVCOMP2);
+
 #endif
+
+	LOG_DEBUG ("Raw IR : %u", this->raw_ir);
+	LOG_DEBUG ("Raw VIS: %u", this->raw_vis);
+	LOG_DEBUG ("Raw UVA: %u", this->raw_uva);
+	LOG_DEBUG ("UV index: %d", (int)this->getUVIndex());
 }
 
 uint16_t VEML6075::getRawUVA() {
@@ -146,11 +179,13 @@ uint16_t VEML6075::read16(uint8_t reg) {
 		if (res != 0xFFFF) {
 			// success
 			return res;
+		} else {
+			NRF_LOG_WARNING("VEML retry");
 		}
 	}
 
 	if (!retries) {
-		APP_ERROR_CHECK(0x4);
+		LOG_ERROR("VEML error");
 		return 0xFFFF;
 	}
 #endif
@@ -160,8 +195,7 @@ uint16_t VEML6075::read16(uint8_t reg) {
 uint16_t VEML6075::read16_raw(uint8_t reg) {
 	uint16_t res = 0;
 #ifdef _DEBUG_TWI
-	if (!i2c_write8(VEML6075_ADDR, reg)) {
-		//NRF_LOG_ERROR("Error on I2C\r\n");
+	if (!i2c_write8_cont(VEML6075_ADDR, reg)) {
 		return 0xFFFF;
 	}
 
@@ -191,6 +225,6 @@ void VEML6075::write16(uint8_t reg, uint16_t raw_data) {
 		}
 	}
 
-	if (!retries) APP_ERROR_CHECK(0x5);
+	if (!retries) LOG_ERROR("VEML no retry left");
 #endif
 }
