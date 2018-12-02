@@ -195,17 +195,16 @@ void GPS_MGMT::standby(bool is_standby) {
 		// set to standby
 		SEND_TO_GPS(PMTK_STANDBY);
 
-		m_uart_needs_reboot = true;
-
 		gpio_clear(GPS_S);
 	} else {
-		gps_uart_stop();
 
 		gpio_set(GPS_S);
 
 		m_is_stdby = false;
 
-		gps_uart_start();
+		m_uart_timestamp = millis();
+
+		SEND_TO_GPS(PMTK_AWAKE);
 	}
 
 }
