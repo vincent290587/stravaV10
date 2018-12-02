@@ -80,6 +80,8 @@ extern "C" {
 
 #define GPS_R             NRF_GPIO_PIN_MAP(0, 26) // 26 for proto
 
+#define GPS_S             NRF_GPIO_PIN_MAP(0, 25) // unconnected
+
 #define FIX_PIN           NRF_GPIO_PIN_MAP(0, 8)
 
 #define KILL_PIN          NRF_GPIO_PIN_MAP(1, 10)

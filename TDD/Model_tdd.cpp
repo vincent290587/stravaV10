@@ -42,6 +42,8 @@ STC3100       stc;
 
 AltiBaro      baro;
 
+sAppErrorDescr m_app_error;
+
 sHrmInfo hrm_info;
 sBscInfo bsc_info;
 sFecInfo fec_info;

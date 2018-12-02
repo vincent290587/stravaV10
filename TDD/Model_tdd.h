@@ -65,6 +65,8 @@ extern sNeopixelOrders      neopixel;
 
 extern STC3100              stc;
 
+extern sAppErrorDescr m_app_error;
+
 extern AltiBaro      baro;
 
 extern sHrmInfo hrm_info;

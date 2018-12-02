@@ -16,8 +16,6 @@
 extern "C" {
 #endif
 
-void uart_timer_init(void);
-
 void uart_init(nrf_uarte_baudrate_t baud);
 
 void uart_init_tx_only(nrf_uarte_baudrate_t baud);
