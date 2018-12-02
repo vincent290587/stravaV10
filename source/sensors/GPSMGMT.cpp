@@ -28,10 +28,10 @@ TinyGPSCustom gps_ack(gps, "PMTK001", 2);  // ACK, second element
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
 
-//#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
-//#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_115200
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_921600
-#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_921600
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
+#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_115200
+//#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_921600
+//#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_921600
 
 
 #define GPS_UART_SEND(X,Y) do { \
@@ -143,30 +143,26 @@ void GPS_MGMT::reset(void) {
 
 void GPS_MGMT::runWDT(void) {
 
-	// check if GPS is in a good state
-	if (!this->isStandby() &&
-			millis() - m_uart_timestamp > 4000) {
+	if (m_epo_state != eGPSMgmtEPOIdle || this->isStandby()) return;
 
-		// we put everything back to default
+	// check if GPS is in a good state
+	if (millis() - m_uart_timestamp > 3000) {
 
 		gps_uart_stop();
 
-		uart_init_tx_only(GPS_DEFAULT_SPEED_BAUD);
-		// change GPS baudrate to default
-		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_9600);
+		if (m_uart_baud != GPS_DEFAULT_SPEED_BAUD) {
 
-		delay_ms(10);
-		uart_uninit();
+			m_uart_needs_reboot = true;
+			m_power_state = eGPSMgmtStateRunSlow;
 
-		uart_init_tx_only(GPS_FAST_SPEED_BAUD);
-		// change GPS baudrate to default
-		SEND_TO_GPS(PMTK_SET_NMEA_BAUD_9600);
+		} else if (GPS_DEFAULT_SPEED_BAUD != GPS_FAST_SPEED_BAUD) {
 
-		delay_ms(10);
-		uart_uninit();
+			m_uart_needs_reboot = false;
+			m_power_state = eGPSMgmtStateRunFast;
 
-		m_uart_needs_reboot = true;
-		this->reset();
+		}
+
+		gps_uart_start();
 
 		m_uart_timestamp = millis();
 		LOG_WARNING("Resetting GPS....");
@@ -199,16 +195,16 @@ void GPS_MGMT::standby(bool is_standby) {
 		// set to standby
 		SEND_TO_GPS(PMTK_STANDBY);
 
-		gps_uart_stop();
-		m_uart_needs_reboot = true;
-
 		gpio_clear(GPS_S);
 	} else {
+
 		gpio_set(GPS_S);
 
 		m_is_stdby = false;
 
-		gps_uart_start();
+		m_uart_timestamp = millis();
+
+		SEND_TO_GPS(PMTK_AWAKE);
 	}
 
 }
@@ -234,17 +230,17 @@ void GPS_MGMT::tasks(void) {
 
 	if (gps_ack.isUpdated()) {
 		LOG_WARNING("GPS ack message %ums", millis());
+		(void)gps_ack.value();
 	}
 
 	switch (m_power_state) {
 	case eGPSMgmtStateInit:
 		if (gps_sys.isUpdated()) {
 			(void)gps_sys.value();
-			LOG_WARNING("GPS sys message %ums", millis());
+			LOG_WARNING("GPS sys message (%ums)", millis());
 
 			m_power_state = eGPSMgmtStateRunSlow;
 		} else {
-			this->runWDT();
 			return;
 		}
 		break;
@@ -268,7 +264,6 @@ void GPS_MGMT::tasks(void) {
 	switch (m_epo_state) {
 	case eGPSMgmtEPOIdle:
 	{
-		this->runWDT();
 	}
 		break;
 

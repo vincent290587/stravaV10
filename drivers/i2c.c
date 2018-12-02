@@ -12,6 +12,7 @@
 #include "app_timer.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "nrf_pwr_mgmt.h"
 #include "Model.h"
 #include "segger_wrapper.h"
 
@@ -35,6 +36,8 @@
 /* TWI instance. */
 static const nrfx_twim_t m_twi = NRFX_TWIM_INSTANCE(TWI_INSTANCE_ID);
 
+static volatile bool m_twim_xfer_complete = false;
+
 #else
 
 #define MAX_PENDING_TRANSACTIONS    40
@@ -43,7 +46,31 @@ NRF_TWI_MNGR_DEF(m_nrf_twi_mngr, MAX_PENDING_TRANSACTIONS, TWI_INSTANCE_ID);
 
 #endif
 
+static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
+                                         void *p_context) {
+	if (p_event->type == NRFX_TWIM_EVT_DONE) {
 
+	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+	    	events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_TWI_WAIT);
+	    }
+
+		m_twim_xfer_complete = true;
+	}
+}
+
+static void wait_xfer(uint32_t err_code) {
+	if (!err_code) {
+    	m_twim_xfer_complete = false;
+	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+	    	events_wait(TASK_EVENT_PERIPH_TWI_WAIT);
+	    } else {
+	    	while (!m_twim_xfer_complete) {
+	    		nrf_pwr_mgmt_run();
+	    	}
+	    }
+	}
+	return;
+}
 
 /**
  *
@@ -75,7 +102,7 @@ void i2c_init(void) {
 			.hold_bus_uninit    = true
     };
 
-    err_code = nrfx_twim_init(&m_twi, &config, NULL, NULL);
+    err_code = nrfx_twim_init(&m_twi, &config, twim_evt_handler, NULL);
     APP_ERROR_CHECK(err_code);
 
     nrfx_twim_enable(&m_twi);
@@ -162,6 +189,7 @@ static const nrfx_twim_t* i2c_get_ref() {
 bool i2c_read8(uint8_t address, uint8_t *val) {
 
 	uint32_t err_code = nrfx_twim_rx(i2c_get_ref(), address, val, 1);
+	wait_xfer(err_code);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI read8 problem at address 0x%x.", address);
 		NRF_LOG_FLUSH();
@@ -177,6 +205,7 @@ bool i2c_read8(uint8_t address, uint8_t *val) {
 bool i2c_read_n(uint8_t address, uint8_t *val, unsigned int len) {
 
 	uint32_t err_code = nrfx_twim_rx(i2c_get_ref(), address, val, len);
+	wait_xfer(err_code);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI readn error 0x%X at address 0x%x.", err_code, address);
 		return false;
@@ -196,6 +225,7 @@ bool i2c_write8(uint8_t address, uint8_t val) {
 	uint8_t sample_data = val;
 
 	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &sample_data, 1, FLAG_REP_STOP);
+	wait_xfer(err_code);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI write8 error 0x%X at address 0x%x value= 0x%x.", err_code, address, val);
 		return false;
@@ -209,6 +239,7 @@ bool i2c_write8_cont(uint8_t address, uint8_t val) {
 	uint8_t sample_data = val;
 
 	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &sample_data, 1, FLAG_NO_STOP);
+	wait_xfer(err_code);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI write8_c problem at address 0x%x.", address);
 		return false;
@@ -230,6 +261,7 @@ bool i2c_write_n(uint8_t address, uint8_t *val, unsigned int len) {
 
 	/* Indicate which register we want to write from */
 	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, val, len, FLAG_REP_STOP);
+	wait_xfer(err_code);
 
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI i2c_write_n problem at address 0x%x.", address);
@@ -252,6 +284,7 @@ bool i2c_write_reg_8(uint8_t address, uint8_t reg, uint8_t val) {
 	uint8_t sample_data[2] = {reg, val};
 
 	uint32_t err_code = nrfx_twim_tx(i2c_get_ref(), address, sample_data, 2, FLAG_REP_STOP);
+	wait_xfer(err_code);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI write_reg_8 error 0x%X @ 0x%x reg=0x%x val=0x%x.", err_code, address, reg, val);
 		return false;
@@ -271,9 +304,11 @@ bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
 
 	/* Indicate which register we want to read from */
 	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &reg, 1, FLAG_NO_STOP);
+	wait_xfer(err_code);
 
 	// read from I2C
 	err_code |= nrfx_twim_rx(i2c_get_ref(), address, val, 1);
+	wait_xfer(err_code);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI read_reg_8 problem at address 0x%x.", address);
 		return false;
@@ -293,9 +328,11 @@ bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len
 
 	/* Indicate which register we want to read from */
 	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &reg, 1, FLAG_NO_STOP);
+	wait_xfer(err_code);
 
 	// read from I2C
 	err_code |= nrfx_twim_rx(i2c_get_ref(), address, val, len);
+	wait_xfer(err_code);
 	if (err_code != NRF_SUCCESS) {
 		LOG_ERROR("TWI read_reg_n error 0x%X at address 0x%x.", err_code, address);
 		return false;

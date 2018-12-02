@@ -33,6 +33,8 @@ static tHistoValue _vue_fec_pw_rb_read(uint16_t ind_) {
 
 eVueFECScreenModes VueFEC::tasksFEC() {
 
+	static uint8_t el_time_prev = 0;
+
 	eVueFECScreenModes res = m_fec_screen_mode;
 
 	if (m_fec_screen_mode == eVueFECScreenInit) {
@@ -46,29 +48,28 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 
 		if (!m_el_time) vue.addNotif("FEC", "Connecting...", 5, eNotificationTypeComplete);
 
-		m_el_time++;
+		m_el_time = 1;
 
 		if (fec_info.el_time) {
 			// FEC just became active
 			m_fec_screen_mode = eVueFECScreenDataFull;
-
-			m_el_time = 0;
-
-			// blink neopixel
-			if (fec_info.power > 200) {
-				neopixel.event_type = 1;
-				neopixel.on_time = 5;
-				neopixel.rgb[0] = 0x00;
-				neopixel.rgb[1] = 0xFF;
-				neopixel.rgb[2] = 0x00;
-			}
+			el_time_prev = fec_info.el_time;
 		}
 
 	} else if (m_fec_screen_mode == eVueFECScreenDataFull) {
 
 		LOG_INFO("VueFEC update full data");
 
-		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(++m_el_time, ':'), NULL);
+		// treat rollover at 256
+		uint8_t rollof = fec_info.el_time;
+		rollof -= el_time_prev;
+		rollof &= 0x3F;
+		if (rollof) {
+			m_el_time += rollof;
+			el_time_prev = fec_info.el_time;
+		}
+
+		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(m_el_time, ':'), NULL);
 
 		this->cadran(2, VUE_FEC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");

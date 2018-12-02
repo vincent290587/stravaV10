@@ -250,13 +250,11 @@ void peripherals_task(void * p_context)
 		static uint32_t _counter = 0;
 
 		if (++_counter >= 1000 / (SENSORS_REFRESH_FREQ * APP_TIMEOUT_DELAY_MS)) {
-			W_SYSVIEW_OnTaskStartExec(I2C_TASK);
 			_counter = 0;
 			stc.refresh(nullptr);
 			veml.refresh(nullptr);
 			if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
 			if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
-			W_SYSVIEW_OnTaskStopExec(I2C_TASK);
 		}
 
 		model_dispatch_sensors_update();
@@ -271,6 +269,8 @@ void peripherals_task(void * p_context)
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
 			vue.refresh();
 		}
+
+		gps_mgmt.runWDT();
 
 		// update date
 		SDate dat;
