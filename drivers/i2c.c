@@ -12,6 +12,7 @@
 #include "app_timer.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "nrf_pwr_mgmt.h"
 #include "Model.h"
 #include "segger_wrapper.h"
 
@@ -57,7 +58,7 @@ static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
 	}
 }
 
-static volatile void wait_xfer(uint32_t err_code) {
+static void wait_xfer(uint32_t err_code) {
 	if (!err_code) {
     	m_twim_xfer_complete = false;
 	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
@@ -68,6 +69,7 @@ static volatile void wait_xfer(uint32_t err_code) {
 	    	}
 	    }
 	}
+	return;
 }
 
 /**
