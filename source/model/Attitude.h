@@ -38,6 +38,13 @@ typedef struct {
 } SAtt;
 
 
+typedef struct {
+	char _buffer[256];
+	uint8_t special;
+	SAtt saved_att;
+} sAppErrorDescr;
+
+
 class Attitude {
 public:
 	Attitude();
@@ -46,7 +53,6 @@ public:
 	void addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_);
 
 	void addNewFECPoint(sFecInfo& fec_);
-
 
 private:
 	float m_last_save_dist;

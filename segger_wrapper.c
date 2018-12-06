@@ -13,8 +13,7 @@
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-/* System clock frequency. */
-extern uint32_t SystemCoreClock;
+
 
 #if USE_SVIEW
 #include "SEGGER_SYSVIEW.h"
@@ -125,6 +124,8 @@ void segger_init(void) {
 
 }
 
+/* System clock frequency. */
+//extern uint32_t SystemCoreClock;
 //void segger_update_clocks() {
 //#if USE_SVIEW
 //	SEGGER_SYSVIEW_UpdateClocks(SystemCoreClock, SystemCoreClock);

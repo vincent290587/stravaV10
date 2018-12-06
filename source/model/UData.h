@@ -103,6 +103,7 @@ public:
 	}
 
 	NData(NData const& copy) {
+		m_new_data = false;
 		memcpy(&m_data, &copy, sizeof(T));
 	}
 

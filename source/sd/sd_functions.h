@@ -41,6 +41,8 @@ bool log_file_start(void);
 char* log_file_read(size_t *r_length);
 int log_file_stop(bool toBeDeleted);
 
+bool sd_erase_pos(void);
+
 #if defined(__cplusplus)
 }
 #endif /* _cplusplus */

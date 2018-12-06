@@ -36,10 +36,9 @@ static task_t s_main;
 
 static task_t m_tasks[MAX_TASKS_NB];
 static uint32_t m_tasks_nb = 0;
-static uint32_t m_cur_task_id = 0;
 
 // Reference running task
-static task_t* s_running = &s_main;
+static task_t* s_running = NULL;
 
 static char *s_top; // top of stack
 
@@ -51,6 +50,8 @@ bool task_begin(size_t stackSize)
 	s_main.prev = &s_main;
 	s_main.next = &s_main;
 	s_main.stack = NULL;
+
+	s_running = &s_main;
 
 	memset(m_tasks, 0, sizeof(m_tasks));
 

@@ -23,6 +23,12 @@ VParser::VParser() {
   _ele = 0;
   _ancs_type = 0;
   _dbg_type = 0;
+  _sentence_type = 0;
+  _btn = 0;
+  _gps_speed = 0;
+  _lon = 0;
+  _lat = 0;
+  _pc = 0;
   _cad_speed = 0.;
   _sec_jour = 0;
   _dbg_code = 0;
