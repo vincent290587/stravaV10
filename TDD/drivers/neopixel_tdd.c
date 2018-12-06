@@ -47,6 +47,7 @@
 
 #include <stddef.h>
 #include "neopixel.h"
+#include "segger_wrapper.h"
 
 #define NRF_RADIO_NOTIFICATION_DISTANCE_NEOPIXEL_US
 
@@ -92,12 +93,12 @@ void neopixel_clear(neopixel_strip_t *strip)
 //		strip->leds[i].simple.r = 0;
 //		strip->leds[i].simple.b = 0;
 //	}
-//	neopixel_show(strip);
+	neopixel_show(strip);
 }
 
 
-static void _neopixel_show(neopixel_strip_t *strip)
-{
+//static void _neopixel_show(neopixel_strip_t *strip)
+//{
 //	const uint8_t PIN =  strip->pin_num;
 //
 //	NRF_GPIO->OUTCLR = (1UL << PIN);
@@ -149,13 +150,18 @@ static void _neopixel_show(neopixel_strip_t *strip)
 //		}
 //	}
 
-}
+//}
 
+extern void neopixel_update(uint8_t red, uint8_t green, uint8_t blue);
 
 void neopixel_show(neopixel_strip_t *strip)
 {
 	m_neo_orders_ready = true;
 	m_p_strip = strip;
+
+	LOG_INFO("NeoPixel updated");
+
+	neopixel_update(strip->leds[0].simple.r, strip->leds[0].simple.g, strip->leds[0].simple.b);
 }
 
 uint8_t neopixel_set_color(neopixel_strip_t *strip, uint16_t index, uint8_t red, uint8_t green, uint8_t blue )

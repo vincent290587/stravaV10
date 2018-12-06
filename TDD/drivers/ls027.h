@@ -16,6 +16,9 @@
 #endif
 
 
+#define LS027_BUFFER_SIZE               ((LS027_DISPLAY_HW_NOF_ROWS * LS027_DISPLAY_HW_NOF_COLUMNS) / 8)
+
+
 typedef bool LS027_PixelColor; /* one bit is enough to describe the color as we have a monochrome display */
 
 #define LS027_PIXEL_BLACK          1 /* 0 is a black pixel */

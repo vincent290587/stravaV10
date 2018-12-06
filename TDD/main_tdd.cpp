@@ -17,6 +17,7 @@
 #include "Simulator.h"
 #include "Model_tdd.h"
 #include "segger_wrapper.h"
+#include "GUI_connector.h"
 #include "unit_testing.hpp"
 #include "task_scheduler.h"
 
@@ -148,6 +149,8 @@ int main(void)
 		exit(-1);
 	}
 
+	GUI_connector_init();
+
 	LOG_INFO("Program init");
 
 	m_tasks_id.boucle_id = TASK_ID_INVALID;
@@ -166,6 +169,12 @@ int main(void)
 	baro.init();
 
 	vue.init();
+
+	notifications_init(0);
+
+	sNeopixelOrders neo_order;
+	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
+	notifications_setNotify(&neo_order);
 
 	delay_ms(1);
 
