@@ -19,6 +19,8 @@
 BoucleCRS::BoucleCRS() : BoucleInterface() {
 	m_dist_next_seg = 5000;
 
+	m_s_parcours = nullptr;
+
 	memset(&att, 0, sizeof(SAtt));
 }
 
@@ -51,8 +53,6 @@ void BoucleCRS::init() {
 	gps_mgmt.awake();
  	gps_mgmt.startEpoUpdate();
 
-	m_needs_init = false;
-
 	m_last_refresh = 0;
 
 	m_dist_next_seg = 9999;
@@ -65,6 +65,10 @@ void BoucleCRS::init() {
 
 		LOG_WARNING("Last stored date: %u", m_app_error.saved_att.date.date);
 	}
+
+	if (m_s_parcours) this->loadPRC();
+
+	m_needs_init = false;
 }
 
 /**
@@ -160,4 +164,37 @@ void BoucleCRS::run() {
 
 	m_last_refresh.setUpdateTime();
 
+}
+
+/**
+ *
+ */
+void BoucleCRS::loadPRC() {
+
+	if (!m_s_parcours) return;
+
+	if (load_parcours(m_s_parcours[0]) > 0) {
+		vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
+	} else {
+		vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
+	}
+
+}
+
+/**
+ *
+ */
+void BoucleCRS::parcoursSelect(int prc_ind) {
+
+	LOG_INFO("Selection PRC %d", prc_ind);
+	m_s_parcours = mes_parcours.getParcoursAt(prc_ind-1);
+}
+
+/**
+ *
+ */
+void BoucleCRS::invalidate(void) {
+	BoucleInterface::invalidate();
+	if (m_s_parcours) m_s_parcours->desallouerPoints();
+	m_s_parcours = nullptr;
 }

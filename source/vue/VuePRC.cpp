@@ -23,8 +23,6 @@ VuePRC::VuePRC() : Adafruit_GFX(0, 0) {
 	m_prc_screen_mode = eVuePRCScreenInit;
 
 	m_distance_prc = 0.;
-
-	m_s_parcours = nullptr;
 }
 
 eVuePRCScreenModes VuePRC::tasksPRC() {
@@ -44,11 +42,17 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 		m_prc_screen_mode = eVuePRCScreenDataFull;
 	}
 
+	Parcours *p_parcours = boucle_crs.m_s_parcours;
+
 	switch (m_prc_screen_mode) {
 	case eVuePRCScreenInit:
 	{
-		if (m_s_parcours && m_s_parcours->longueur()) this->displayGPS();
-		m_prc_screen_mode = eVuePRCScreenGps;
+		this->displayLoading();
+		// boucle has finished init
+		if (!boucle_crs.needsInit()) {
+			this->displayGPS();
+			m_prc_screen_mode = eVuePRCScreenGps;
+		}
 		break;
 	}
 	case eVuePRCScreenGps:
@@ -59,7 +63,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 	}
 	case eVuePRCScreenDataFull:
 	{
-		if (m_s_parcours) {
+		if (p_parcours) {
 
 			LOG_INFO("Printing PRC\r\n");
 
@@ -76,7 +80,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			this->cadran(4, VUE_PRC_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 
 			// display parcours
-			this->afficheParcours(5, m_s_parcours->getListePoints());
+			this->afficheParcours(5, p_parcours->getListePoints());
 
 			// display the segments
 			for (int j=0; j < segMngr.getNbSegs() && j < NB_SEG_ON_DISPLAY - 1; j++) {
@@ -129,21 +133,6 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 	}
 
 	return true;
-}
-
-/**
- *
- */
-void VuePRC::parcoursSelect(int prc_ind) {
-
-	LOG_INFO("Selection PRC %d", prc_ind);
-	m_s_parcours = mes_parcours.getParcoursAt(prc_ind-1);
-
-	if (load_parcours(m_s_parcours[0]) > 0) {
-		vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
-	} else {
-		vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
-	}
 }
 
 /**
@@ -408,7 +397,17 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK4);
 }
 
-void VuePRC::invalidatePRC(void) {
-	if (m_s_parcours) m_s_parcours->desallouerPoints();
-	m_s_parcours = nullptr;
+void VuePRC::displayLoading() {
+
+	static uint8_t nb_dots = 0;
+
+	vue.setCursor(0, 20);
+	vue.setTextSize(3);
+
+	vue.print("Loading");
+	for (int i=0; i < nb_dots; i++) vue.print(".");
+	vue.println(".");
+
+	nb_dots++;
+	nb_dots = nb_dots % 10;
 }

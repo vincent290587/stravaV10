@@ -67,9 +67,6 @@ void Vue::setCurrentMode(eVueGlobalScreenModes mode_) {
 
 	m_global_mode = mode_;
 
-	// clear PRC list of points
-	if (mode_ != eVueGlobalScreenPRC) this->invalidatePRC();
-
 }
 
 void Vue::refresh(void) {

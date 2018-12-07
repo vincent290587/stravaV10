@@ -31,10 +31,11 @@ static eFuncMenuAction _page0_mode_crs(int var) {
 static eFuncMenuAction _page0_mode_prc_go(int var) {
 
 	LOG_INFO("parcoursSelect %d", var);
-	vue.parcoursSelect(var);
 
 	vue.setCurrentMode(eVueGlobalScreenPRC);
 	boucle.changeMode(eBoucleGlobalModesPRC);
+
+	boucle_crs.parcoursSelect(var);
 
 	return eFuncMenuActionEndMenu;
 }

@@ -211,6 +211,8 @@ int load_parcours(Parcours& mon_parcours) {
 
 	int res = 0;
 	FRESULT error;
+	TCHAR g_bufferReadPRC[BUFFER_SIZE];  /* Read buffer */
+	FIL g_fileObjectPRC;   /* File object */
 
 	if (!is_fat_init()) return -2;
 
@@ -221,35 +223,36 @@ int load_parcours(Parcours& mon_parcours) {
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
-	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
+
+	if (error) error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
 		return -1;
 	}
 
-	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+	memset(g_bufferReadPRC, 0U, sizeof(g_bufferReadPRC));
 
-	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_fileObject)) {
+	while (f_gets(g_bufferReadPRC, sizeof(g_bufferReadPRC)-1, &g_fileObjectPRC)) {
 
 		// on se met au bon endroit
-		if (strstr(g_bufferRead, "<")) {
+		if (strstr(g_bufferReadPRC, "<")) {
 			// meta data
-		} else if (strstr(g_bufferRead, " ")) {
+		} else if (strstr(g_bufferReadPRC, " ")) {
 			// on est pret a charger le point
-			if (!chargerPointPar(g_bufferRead, mon_parcours))
+			if (!chargerPointPar(g_bufferReadPRC, mon_parcours))
 				res++;
 		}
 
 		if (check_memory_exception()) return -1;
 
 		// continue to perform the critical system tasks
-		perform_system_tasks();
+		yield();
 
 	} // fin du fichier
 
-	error = f_close(&g_fileObject);
+	error = f_close(&g_fileObjectPRC);
 	if (error)
 	{
 		LOG_INFO("Close file failed.");
