@@ -99,6 +99,8 @@ void BoucleCRS::run() {
 
 	eLocationSource loc_source = locator.getPosition(loc, dat);
 
+	if (eLocationSourceNone == loc_source) return;
+
 	attitude.addNewLocation(loc, dat, loc_source);
 
 	// update sements
