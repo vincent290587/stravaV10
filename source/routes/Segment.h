@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <list>
+#include <vector>
 #include "WString.h"
 
 using namespace std;
@@ -111,7 +112,7 @@ class ListeSegments {
 
     int size() {return _segs.size();}
 
-    std::list<Segment> _segs;
+    std::vector<Segment> _segs;
   private:
 };
 

@@ -95,6 +95,7 @@ set(SRCS
 	source/model/Locator.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
+    source/vue/MenuObjects.cpp
 	source/vue/Vue.cpp
 	source/vue/VueCRS.cpp
 	source/vue/VueDebug.cpp

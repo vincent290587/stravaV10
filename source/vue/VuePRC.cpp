@@ -24,13 +24,7 @@ VuePRC::VuePRC() : Adafruit_GFX(0, 0) {
 
 	m_distance_prc = 0.;
 
-	m_parcours_sel = 0;
-
 	m_s_parcours = nullptr;
-
-	m_selec_en   = false;
-
-	m_start_loading = false;
 }
 
 eVuePRCScreenModes VuePRC::tasksPRC() {
@@ -53,23 +47,21 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 	switch (m_prc_screen_mode) {
 	case eVuePRCScreenInit:
 	{
-		m_selec_en = true;
-
-		// let the user select one parcours
-		this->parcoursSelector();
-
+		if (m_s_parcours && m_s_parcours->longueur()) this->displayGPS();
+		m_prc_screen_mode = eVuePRCScreenGps;
 		break;
 	}
 	case eVuePRCScreenGps:
 	{
 		// display GPS page
 		this->displayGPS();
-
 		break;
 	}
 	case eVuePRCScreenDataFull:
 	{
 		if (m_s_parcours) {
+
+			LOG_INFO("Printing PRC\r\n");
 
 			this->cadran(1, VUE_PRC_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
 			this->cadran(1, VUE_PRC_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
@@ -95,8 +87,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			}
 
 		} else {
-			// let the user select one parcours
-			m_prc_screen_mode = eVuePRCScreenInit;
+			LOG_INFO("No PRC in memory");
 		}
 
 		this->cadran(7, VUE_PRC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
@@ -117,98 +108,41 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
  */
 bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 
-	bool pass_event_menu = false;
-
 	switch (event) {
 		case eButtonsEventLeft:
 		{
-			if (m_s_parcours) this->decreaseZoom();
-
-			if (!m_selec_en) pass_event_menu = true;
-			else             m_parcours_sel += mes_parcours.size() - 1;
+			this->decreaseZoom();
 			break;
 		}
+
 		case eButtonsEventRight:
 		{
-			if (m_s_parcours) this->increaseZoom();
-
-			if (!m_selec_en) pass_event_menu = true;
-			else             m_parcours_sel++;
+			this->increaseZoom();
 			break;
 		}
+
 		case eButtonsEventCenter:
-		{
-			if (m_selec_en && !m_s_parcours) {
-				m_start_loading = true;
-			} else if (!m_selec_en) {
-				pass_event_menu = true;
-			}
-
-			break;
-		}
 		default:
 		{
-			pass_event_menu = true;
 			break;
 		}
 	}
 
-	return pass_event_menu;
+	return true;
 }
 
 /**
  *
  */
-void VuePRC::parcoursSelector(void) {
+void VuePRC::parcoursSelect(int prc_ind) {
 
-	this->setTextSize(2);
-	this->setCursor(0, 20);
+	LOG_INFO("Selection PRC %d", prc_ind);
+	m_s_parcours = mes_parcours.getParcoursAt(prc_ind-1);
 
-	if (!mes_parcours.size()) {
-
-		LOG_ERROR("No PRC in memory\r\n");
-		this->println(" No PRC in memory");
-
-		return;
-	}
-
-	m_parcours_sel = m_parcours_sel % mes_parcours.size();
-
-	uint8_t i=0;
-	for (auto& prc : mes_parcours._parcs) {
-
-		this->print(" ");
-		this->print(prc.getName());
-
-		if (i==m_parcours_sel) {
-			this->println(" <<--");
-		} else {
-			this->println();
-		}
-
-		i++;
-	}
-
-	if (m_selec_en && m_start_loading) {
-
-		m_start_loading = false;
-
-		LOG_INFO("Parcours %u chosen\r\n", m_parcours_sel);
-
-		m_s_parcours = mes_parcours.getParcoursAt(m_parcours_sel);
-
-		ASSERT(m_s_parcours);
-
-		if (load_parcours(m_s_parcours[0]) > 0) {
-			m_prc_screen_mode = eVuePRCScreenGps;
-
-			m_selec_en = false;
-
-			vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
-		} else {
-			vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
-		}
-
+	if (load_parcours(m_s_parcours[0]) > 0) {
+		vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
+	} else {
+		vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
 	}
 }
 
@@ -472,4 +406,9 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 
 	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK4);
+}
+
+void VuePRC::invalidatePRC(void) {
+	if (m_s_parcours) m_s_parcours->desallouerPoints();
+	m_s_parcours = nullptr;
 }

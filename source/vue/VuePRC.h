@@ -30,6 +30,10 @@ public:
 
 	bool propagateEventsPRC(eButtonsEvent event);
 
+	void parcoursSelect(int prc_ind);
+
+	void invalidatePRC(void);
+
 	virtual void cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite)=0;
 	virtual void cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite)=0;
 
@@ -41,12 +45,7 @@ private:
 	void afficheSegment(uint8_t ligne, Segment *p_seg);
 	void afficheParcours(uint8_t ligne, ListePoints2D *p_liste);
 
-	void parcoursSelector(void);
-
 	Parcours *m_s_parcours;
-	uint8_t   m_parcours_sel;
-	bool      m_selec_en;
-	bool      m_start_loading;
 };
 
 #endif /* SOURCE_VUE_VUEPRC_H_ */

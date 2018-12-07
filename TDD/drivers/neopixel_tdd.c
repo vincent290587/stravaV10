@@ -100,14 +100,14 @@ void neopixel_clear(neopixel_strip_t *strip)
 static void _neopixel_show(neopixel_strip_t *strip)
 {
 	neopixel_update(strip->leds[0].simple.r, strip->leds[0].simple.g, strip->leds[0].simple.b);
+
+	LOG_INFO("NeoPixel updated");
 }
 
 void neopixel_show(neopixel_strip_t *strip)
 {
 	m_neo_orders_ready = true;
 	m_p_strip = strip;
-
-	LOG_INFO("NeoPixel updated");
 }
 
 uint8_t neopixel_set_color(neopixel_strip_t *strip, uint16_t index, uint8_t red, uint8_t green, uint8_t blue )
