@@ -30,12 +30,6 @@ void SegmentManager::addSegment(Segment &seg) {
 
 void SegmentManager::computeOrder(void) {
 
-	if (seg_list.size() > 1)
-		sort(seg_list.begin(), seg_list.end(), _compareScores);
+	if (seg_list.size() > 1) sort(seg_list.begin(), seg_list.end(), _compareScores);
 
-	LOG_INFO("<< %u segments sorted", seg_list.size());
-
-	for (auto& object : seg_list) {
-		LOG_INFO("<< Score: %u", object.score);
-	}
 }

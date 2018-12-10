@@ -43,19 +43,18 @@ int Location::isValid() {
 }
 
 
-Point2D::Point2D() {
-	_lat = 0.;
-	_lon = 0.;
+Point2D::Point2D(bool count) : Location() {
+	if (count) this->increaseCount2D();
 }
 
-Point2D::Point2D(const Point2D& pt) {
+Point2D::Point2D(const Point2D& pt) : Point2D(false) {
 	_lat = pt._lat;
 	_lon = pt._lon;
 
 	this->increaseCount2D();
 }
 
-Point2D::Point2D(const Point2D* pt) {
+Point2D::Point2D(const Point2D* pt) : Point2D(false) {
 	if (pt) {
 		_lat = pt->_lat;
 		_lon = pt->_lon;
@@ -64,14 +63,14 @@ Point2D::Point2D(const Point2D* pt) {
 	this->increaseCount2D();
 }
 
-Point2D::Point2D(const Location& pt) {
+Point2D::Point2D(const Location& pt) : Point2D(false) {
 	_lat = pt._lat;
 	_lon = pt._lon;
 
 	this->increaseCount2D();
 }
 
-Point2D::Point2D(const Location* pt) {
+Point2D::Point2D(const Location* pt) : Point2D(false) {
 	if (pt) {
 		_lat = pt->_lat;
 		_lon = pt->_lon;
@@ -80,7 +79,7 @@ Point2D::Point2D(const Location* pt) {
 	this->increaseCount2D();
 }
 
-Point2D::Point2D(float lat, float lon) {
+Point2D::Point2D(float lat, float lon) : Point2D(false) {
 	_lat = lat;
 	_lon = lon;
 
@@ -111,12 +110,13 @@ void Point2D::decreaseCount2D(void) {
 	objectCount2D--;
 }
 
-Point::Point() : Location() {
+Point::Point(bool count) : Location() {
 	_alt = 0;
 	_rtime = 0;
+	if (count) this->increaseCount();
 }
 
-Point::Point(float lat, float lon, float alt, float rtime) {
+Point::Point(float lat, float lon, float alt, float rtime) : Point(false) {
 	_lat = lat;
 	_lon = lon;
 	_alt = alt;
@@ -125,7 +125,7 @@ Point::Point(float lat, float lon, float alt, float rtime) {
 	this->increaseCount();
 }
 
-Point::Point(const Location& pt) {
+Point::Point(const Location& pt) : Point(false) {
 	_lat = pt._lat;
 	_lon = pt._lon;
 	_alt = 0.;
@@ -134,7 +134,7 @@ Point::Point(const Location& pt) {
 	this->increaseCount();
 }
 
-Point::Point(const Location* pt) {
+Point::Point(const Location* pt) : Point(false) {
 	if (pt) {
 		_lat = pt->_lat;
 		_lon = pt->_lon;
@@ -145,7 +145,7 @@ Point::Point(const Location* pt) {
 	this->increaseCount();
 }
 
-Point::Point(const Point& pt) {
+Point::Point(const Point& pt) : Point(false) {
 	_lat = pt._lat;
 	_lon = pt._lon;
 	_alt = pt._alt;
@@ -154,7 +154,7 @@ Point::Point(const Point& pt) {
 	this->increaseCount();
 }
 
-Point::Point(const Point* pt) {
+Point::Point(const Point* pt) : Point(false) {
 	if (pt) {
 		_lat = pt->_lat;
 		_lon = pt->_lon;

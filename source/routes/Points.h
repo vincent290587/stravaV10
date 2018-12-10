@@ -38,7 +38,7 @@ public:
 
 class Point2D : public Location {
 public:
-	Point2D();
+	Point2D(bool count = true);
 	Point2D(const Location&);
 	Point2D(const Location*);
 	Point2D(const Point2D&);
@@ -62,7 +62,7 @@ private:
 
 class Point : public Location {
 public:
-    Point();
+    Point(bool count = true);
     Point(const Location&);
     Point(const Location*);
 	Point(const Point&);

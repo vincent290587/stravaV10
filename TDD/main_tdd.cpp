@@ -144,12 +144,12 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
-	if (!test_nb_points ()) {
+	if (!test_liste ()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);
 	}
 
-	if (!test_liste ()) {
+	if (!test_nb_points ()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);
 	}

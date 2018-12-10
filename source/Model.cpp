@@ -141,11 +141,11 @@ void model_go_to_msc_mode(void) {
  */
 bool check_memory_exception(void) {
 
-	int tot_point_mem = 0;
-	tot_point_mem += Point::getObjectCount() * sizeof(Point);
-	tot_point_mem += (Point2D::getObjectCount()-Point::getObjectCount()) * sizeof(Point2D);
+	int tot_point_mem = Point::getObjectCount() * sizeof(Point);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
 
-	if (tot_point_mem > TOT_HEAP_MEM_AVAILABLE) {
+	if (tot_point_mem + 1000 > TOT_HEAP_MEM_AVAILABLE) {
 
 		LOG_ERROR("Memory exhausted");
 

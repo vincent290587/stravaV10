@@ -14,6 +14,9 @@
 
 bool test_nb_points (void) {
 
+	int nb_p2D = Point2D::getObjectCount();
+	int nb_p3D = Point::getObjectCount();
+
 	LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
 
 	{
@@ -30,11 +33,14 @@ bool test_nb_points (void) {
 		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
 		Point2D P2d_4 = &P2d_1;
 		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+
+		Point P5 = P2d_1;
+		Point P6 = &P2d_1;
 	}
 
-	if (Point2D::getObjectCount() || Point::getObjectCount()) return false;
-
 	LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+
+	if (nb_p2D != Point2D::getObjectCount() || nb_p3D != Point::getObjectCount()) return false;
 
 	return true;
 }
