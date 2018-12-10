@@ -100,7 +100,7 @@ public:
     std::list<Point> *getLPTS() {return &m_lpoints;}
 
     Point m_P1, m_P2;
-
+    uint16_t ind_P1;
 protected:
     std::list<Point> m_lpoints;
     Vecteur m_pos_r;

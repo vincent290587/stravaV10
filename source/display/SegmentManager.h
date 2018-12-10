@@ -8,40 +8,37 @@
 #ifndef SOURCE_DISPLAY_SEGMENTMANAGER_H_
 #define SOURCE_DISPLAY_SEGMENTMANAGER_H_
 
+#include <vector>
 #include "parameters.h"
 #include "Segment.h"
 
 typedef struct {
-	uint8_t  is_prio;
+	int  score;
 	Segment* p_seg;
 } sVueCRSPSeg;
-
-typedef struct {
-	uint8_t     nb_segs;
-	sVueCRSPSeg s_segs[NB_SEG_ON_DISPLAY];
-} sVueCRSSegArray;
 
 class SegmentManager {
 public:
 	SegmentManager();
 
-	void addSegment(Segment*);
-	void addSegmentPrio(Segment*);
+	void addSegment(Segment&);
 
 	uint8_t getNbSegs() {
-		return m_segs.nb_segs;
+		return seg_list.size();
 	}
 
-	sVueCRSPSeg* getSeg(uint8_t i) {
-		return &m_segs.s_segs[i % NB_SEG_ON_DISPLAY];
+	void computeOrder(void);
+
+	sVueCRSPSeg* getSeg(size_t i) {
+		if (i < 0 ||  i > seg_list.size() + 1) return nullptr;
+		return &seg_list[i];
 	}
 
 	void clearSegs() {
-		memset(&m_segs, 0, sizeof(m_segs));
+		seg_list.clear();
 	}
 
-private:
-	sVueCRSSegArray    m_segs;
+	std::vector<sVueCRSPSeg> seg_list;
 };
 
 #endif /* SOURCE_DISPLAY_SEGMENTMANAGER_H_ */

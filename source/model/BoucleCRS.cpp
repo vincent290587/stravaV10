@@ -117,18 +117,14 @@ void BoucleCRS::run() {
 			// we don't possess enough points to continue calculating...
 			if (mes_points.size() < 2) continue;
 
+			segMngr.addSegment(seg);
+
 			if (seg.getStatus() != SEG_OFF) {
 
 				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
 				seg.majPerformance(mes_points);
 				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
 				att.nbact += 1;
-
-				if (seg.getStatus() < SEG_OFF) {
-					segMngr.addSegmentPrio(&seg);
-				} else if (seg.getStatus() > SEG_OFF) {
-					segMngr.addSegment(&seg);
-				}
 
 				if (seg.getStatus() == SEG_FIN) {
 
@@ -149,13 +145,13 @@ void BoucleCRS::run() {
 				seg.majPerformance(mes_points);
 				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
 
-				segMngr.addSegment(&seg);
-
 			}
 
 		} // fin isValid
 
 	} // fin for
+
+	segMngr.computeOrder();
 
 	att.next = m_dist_next_seg;
 

@@ -77,6 +77,8 @@ class Segment {
     float getCur();
     float getTempsTot();
 
+    int getScore(void);
+
     void ajouterPointFin(float lat, float lon, float alt, float msec);
     void ajouterPointDebutIso(float lat, float lon, float alt, float msec);
 

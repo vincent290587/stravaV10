@@ -11,6 +11,34 @@
 #include "Model_tdd.h"
 
 
+
+bool test_nb_points (void) {
+
+	LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+
+	{
+		Point P1(0., 0., 0., 0.);
+		Point P2(P1);
+		Point P3 = P1;
+		Point P4 = &P1;
+
+		Point2D P2d_1(0.00015, -0.0001);
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+		Point2D P2d_2(P2d_1);
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+		Point2D P2d_3 = P2d_1;
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+		Point2D P2d_4 = &P2d_1;
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+	}
+
+	if (Point2D::getObjectCount() || Point::getObjectCount()) return false;
+
+	LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+
+	return true;
+}
+
 bool test_projection (void) {
 
 	Point P1(0., 0., 0., 0.);
