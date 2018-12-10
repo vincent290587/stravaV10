@@ -6,26 +6,13 @@
  */
 
 
-#ifdef LS027_GUI
-#include <stdlib.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <arpa/inet.h>
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <millis.h>
 #include <stdbool.h>
 #include "ls027.h"
+#include "GUI_connector.h"
 #include "segger_wrapper.h"
 
 #define PORT 8080
@@ -41,15 +28,8 @@ static const uint8_t clr[] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F };
 
 static bool m_is_color_inverted = false;
 
-static uint8_t ls027_tdd_buffer[LS027_BUFFER_SIZE];
+uint8_t ls027_tdd_buffer[LS027_BUFFER_SIZE];
 
-#ifdef LS027_GUI
-int sockfd = -1;
-static int server_fd = -1;
-
-struct sockaddr_in address;
-static int addrlen;
-#endif
 
 /////////  STATIC FUNCTIONS
 
@@ -79,44 +59,6 @@ void LS027_Init(void) {
 
 	LOG_INFO("LS027 Init");
 
-#ifdef LS027_GUI
-
-	int valread;
-	int opt = 1;
-
-	addrlen = sizeof(address);
-
-	// Creating socket file descriptor
-	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-	{
-		perror("socket failed");
-		exit(EXIT_FAILURE);
-	}
-
-	// Forcefully attaching socket to the port 8080
-	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-			&opt, sizeof(opt)))
-	{
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons( PORT );
-
-	// Forcefully attaching socket to the port 8080
-	if (bind(server_fd, (struct sockaddr *)&address,
-			sizeof(address))<0)
-	{
-		perror("bind failed");
-		exit(EXIT_FAILURE);
-	}
-	if (listen(server_fd, 3) < 0)
-	{
-		perror("listen");
-		exit(EXIT_FAILURE);
-	}
-#endif
 }
 
 void LS027_InvertColors(void) {
@@ -125,13 +67,7 @@ void LS027_InvertColors(void) {
 
 void LS027_UpdateFull(void) {
 
-#ifdef LS027_GUI
-	if (sockfd > 0) {
-		send(sockfd, ls027_tdd_buffer, sizeof(ls027_tdd_buffer), 0 );
-	} else {
-		sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
-	}
-#endif
+	GUI_UpdateLS027();
 
 	LOG_INFO("LS027 Updated");
 

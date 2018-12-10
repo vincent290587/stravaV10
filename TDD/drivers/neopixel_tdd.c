@@ -47,6 +47,8 @@
 
 #include <stddef.h>
 #include "neopixel.h"
+#include "segger_wrapper.h"
+
 
 #define NRF_RADIO_NOTIFICATION_DISTANCE_NEOPIXEL_US
 
@@ -56,106 +58,56 @@ volatile bool m_neo_orders_ready = false;
 
 ////////////       FUNCTIONS
 
+extern void neopixel_update(uint8_t red, uint8_t green, uint8_t blue);
+
 static void _neopixel_show(neopixel_strip_t *strip);
 
 void neopixel_radio_callback_handler(bool radio_active)
 {
-//	if (radio_active == false && m_neo_orders_ready)
-//	{
-//		m_neo_orders_ready = false;
-//		_neopixel_show(m_p_strip);
-//	}
+	if (radio_active == false && m_neo_orders_ready)
+	{
+		m_neo_orders_ready = false;
+		_neopixel_show(m_p_strip);
+	}
 }
 
 void neopixel_init(neopixel_strip_t *strip, uint8_t pin_num, uint16_t num_leds)
 {
-//	strip->pin_num = pin_num;
-//	strip->num_leds = num_leds;
-//
-//	nrf_gpio_cfg_output(pin_num);
-//	NRF_GPIO->OUTCLR = (1UL << pin_num);
-//
-//	for (int i = 0; i < num_leds; i++)
-//	{
-//		strip->leds[i].simple.g = 0;
-//		strip->leds[i].simple.r = 0;
-//		strip->leds[i].simple.b = 0;
-//	}
+	strip->pin_num = pin_num;
+	strip->num_leds = num_leds;
+
+	for (int i = 0; i < num_leds; i++)
+	{
+		strip->leds[i].simple.g = 0;
+		strip->leds[i].simple.r = 0;
+		strip->leds[i].simple.b = 0;
+	}
 
 }
 
 void neopixel_clear(neopixel_strip_t *strip)
 {
-//	for (int i = 0; i < strip->num_leds; i++)
-//	{
-//		strip->leds[i].simple.g = 0;
-//		strip->leds[i].simple.r = 0;
-//		strip->leds[i].simple.b = 0;
-//	}
-//	neopixel_show(strip);
+	for (int i = 0; i < strip->num_leds; i++)
+	{
+		strip->leds[i].simple.g = 0;
+		strip->leds[i].simple.r = 0;
+		strip->leds[i].simple.b = 0;
+	}
+	neopixel_show(strip);
 }
 
 
 static void _neopixel_show(neopixel_strip_t *strip)
 {
-//	const uint8_t PIN =  strip->pin_num;
-//
-//	NRF_GPIO->OUTCLR = (1UL << PIN);
-//	nrf_delay_us(55);
-//
-//	for (int i = 0; i < strip->num_leds; i++) {
-//
-//		for (int j = 0; j < 3; j++) {
-//
-//			if ((strip->leds[i].grb[j] & 128) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//
-//			if ((strip->leds[i].grb[j] & 64) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//
-//			if ((strip->leds[i].grb[j] & 32) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//
-//			if ((strip->leds[i].grb[j] & 16) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//
-//			if ((strip->leds[i].grb[j] & 8) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//
-//			if ((strip->leds[i].grb[j] & 4) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//
-//			if ((strip->leds[i].grb[j] & 2) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//
-//			if ((strip->leds[i].grb[j] & 1) > 0)	{NEOPIXEL_SEND_ONE}
-//			else	{NEOPIXEL_SEND_ZERO}
-//
-////			NEOPIXEL_COMPLETE_CYCLE
-//		}
-//	}
-
+	neopixel_update(strip->leds[0].simple.r, strip->leds[0].simple.g, strip->leds[0].simple.b);
 }
-
 
 void neopixel_show(neopixel_strip_t *strip)
 {
 	m_neo_orders_ready = true;
 	m_p_strip = strip;
+
+	LOG_INFO("NeoPixel updated");
 }
 
 uint8_t neopixel_set_color(neopixel_strip_t *strip, uint16_t index, uint8_t red, uint8_t green, uint8_t blue )

@@ -9,6 +9,7 @@
 #include "Model.h"
 #include "uart_tdd.h"
 #include "Simulator.h"
+#include "neopixel.h"
 #include "gpio.h"
 #include "segger_wrapper.h"
 
@@ -211,6 +212,8 @@ void peripherals_task(void * p_context)
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
 			vue.refresh();
 		}
+
+		neopixel_radio_callback_handler(false);
 
 		// update date
 		SDate dat;
