@@ -3010,7 +3010,7 @@
 // <3=> Read4O 
 // <4=> Read4IO 
 #ifndef NRFX_QSPI_CONFIG_READOC
-#define NRFX_QSPI_CONFIG_READOC 1
+#define NRFX_QSPI_CONFIG_READOC 0
 #endif
 
 // <o> NRFX_QSPI_CONFIG_WRITEOC  - Number of data lines and opcode used for writing.
@@ -3021,7 +3021,7 @@
 // <3=> PP4IO 
 
 #ifndef NRFX_QSPI_CONFIG_WRITEOC
-#define NRFX_QSPI_CONFIG_WRITEOC 1
+#define NRFX_QSPI_CONFIG_WRITEOC 0
 #endif
 
 // <o> NRFX_QSPI_CONFIG_ADDRMODE  - Addressing mode.
@@ -3062,7 +3062,7 @@
 // <15=> 32MHz/16 
 
 #ifndef NRFX_QSPI_CONFIG_FREQUENCY
-#define NRFX_QSPI_CONFIG_FREQUENCY 15
+#define NRFX_QSPI_CONFIG_FREQUENCY 7
 #endif
 
 // <s> NRFX_QSPI_PIN_SCK - SCK pin value.
@@ -10950,14 +10950,14 @@
 
 // <o> NRF_SDH_BLE_CENTRAL_LINK_COUNT - Maximum number of central links. 
 #ifndef NRF_SDH_BLE_CENTRAL_LINK_COUNT
-#define NRF_SDH_BLE_CENTRAL_LINK_COUNT 2
+#define NRF_SDH_BLE_CENTRAL_LINK_COUNT 1
 #endif
 
 // <o> NRF_SDH_BLE_TOTAL_LINK_COUNT - Total link count. 
 // <i> Maximum number of total concurrent connections using the default configuration.
 
 #ifndef NRF_SDH_BLE_TOTAL_LINK_COUNT
-#define NRF_SDH_BLE_TOTAL_LINK_COUNT 2
+#define NRF_SDH_BLE_TOTAL_LINK_COUNT 1
 #endif
 
 // <o> NRF_SDH_BLE_GAP_EVENT_LENGTH - GAP event length. 

@@ -35,6 +35,9 @@
 static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
+static TCHAR g_bufferReadPRC[BUFFER_SIZE];  /* Read buffer */
+static FIL g_fileObjectPRC;   /* File object */
+
 static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
 static FIL g_LogFileObject;   /* File object */
@@ -211,8 +214,6 @@ int load_parcours(Parcours& mon_parcours) {
 
 	int res = 0;
 	FRESULT error;
-	TCHAR g_bufferReadPRC[BUFFER_SIZE];  /* Read buffer */
-	FIL g_fileObjectPRC;   /* File object */
 
 	if (!is_fat_init()) return -2;
 
@@ -271,7 +272,7 @@ int load_parcours(Parcours& mon_parcours) {
  * @param mon_seg
  * @param lat1
  * @param long1
- * @return
+ * @return distance to segment if success, negative number if error
  */
 float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
@@ -321,6 +322,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
 				int res = load_segment(mon_seg);
 				LOG_INFO("-->> Loading segment %s", mon_seg.getName(), res);
+
+				if (res <= 0) return res;
 
 				mon_seg.init();
 			}
