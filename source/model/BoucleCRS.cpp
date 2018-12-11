@@ -117,8 +117,6 @@ void BoucleCRS::run() {
 			// we don't possess enough points to continue calculating...
 			if (mes_points.size() < 2) continue;
 
-			segMngr.addSegment(seg);
-
 			if (seg.getStatus() != SEG_OFF) {
 
 				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
@@ -146,6 +144,8 @@ void BoucleCRS::run() {
 				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
 
 			}
+
+			segMngr.addSegment(seg);
 
 		} // fin isValid
 

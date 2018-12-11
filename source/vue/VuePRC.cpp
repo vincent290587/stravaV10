@@ -257,8 +257,6 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	float minLon = 400.;
 	float maxLat = -100.;
 	float maxLon = -400.;
-	float maDpex = 0;
-	float maDpey = 0;
 	uint16_t points_nb = 0;
 	ListePoints *liste = nullptr;
 	Point pCourant, pSuivant;
@@ -327,7 +325,12 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 			}
 		}
 
-		if (points_nb) {
+		// print only points in the current zoom
+		if (points_nb &&
+				(((pCourant._lon > minLon && pCourant._lon < maxLon) &&
+						(pCourant._lat > minLat && pCourant._lat < maxLat)) ||
+						((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+								(pSuivant._lat > minLat && pSuivant._lat < maxLat)))) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
@@ -344,42 +347,26 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 	// draw a circle at the end of the segment
 	if (p_seg->getStatus() != SEG_OFF) {
-		drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
-				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+		if (((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+				(pSuivant._lat > minLat && pSuivant._lat < maxLat)))
+			drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
 	} else {
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
-		drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0, _width),
-				regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+		if (((maPos->_lon > minLon && maPos->_lon < maxLon) &&
+				(maPos->_lat > minLat && maPos->_lat < maxLat)))
+			drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0, _width),
+					regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
 	}
-
-	// limit position when segment is finished
-//	float _lat, _lon;
-//	if (p_seg->getStatus() < SEG_OFF) {
-//		_lon = pCourant._lon;
-//		_lat = pCourant._lat;
-//	} else {
-//		_lon = att.loc.lon;
-//		_lat = att.loc.lat;
-//	}
-//
-	// ma position
-//	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
-//	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);
-//	fillCircle(maDpex, maDpey, 4, LS027_PIXEL_BLACK);
 
 	// return before printing text
 	if (p_seg->getStatus() == SEG_OFF) {
 		return;
 	}
 
-	if (maDpey > fin_cadran - 30) {
-		setCursor(maDpex > _width - 70 ? _width - 70 : maDpex, maDpey - 20);
-	} else {
-		setCursor(maDpex > _width - 70 ? _width - 70 : maDpex, maDpey + 15);
-	}
-
 	setTextSize(2);
+	setCursor(_width / 2 + 10, 0.5 * (debut_cadran + fin_cadran) + 10);
 
 	print(_fmkstr(p_seg->getAvance(), 1U));
 

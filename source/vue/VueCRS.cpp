@@ -282,10 +282,6 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	bool pourc_found = 0;
 	for (auto& pPt : *liste->getLPTS()) {
 
-		if (p_seg->getStatus() == SEG_OFF && points_nb > SEG_OFF_NB_POINTS) {
-			break;
-		}
-
 		pSuivant = pPt;
 
 		if (!pourc_found) {
@@ -295,7 +291,11 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 			}
 		}
 
-		if (points_nb) {
+		if (points_nb &&
+				(((pCourant._lon > minLon && pCourant._lon < maxLon) &&
+						(pCourant._lat > minLat && pCourant._lat < maxLat)) ||
+						((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+								(pSuivant._lat > minLat && pSuivant._lat < maxLat)))) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
