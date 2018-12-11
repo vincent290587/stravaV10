@@ -46,6 +46,7 @@ NRF_TWI_MNGR_DEF(m_nrf_twi_mngr, MAX_PENDING_TRANSACTIONS, TWI_INSTANCE_ID);
 
 #endif
 
+#ifdef _DEBUG_TWI
 static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
                                          void *p_context) {
 	if (p_event->type == NRFX_TWIM_EVT_DONE) {
@@ -71,6 +72,7 @@ static void wait_xfer(uint32_t err_code) {
 	}
 	return;
 }
+#endif
 
 /**
  *

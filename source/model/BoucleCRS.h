@@ -9,6 +9,7 @@
 #define SOURCE_MODEL_BOUCLECRS_H_
 
 #include "UData.h"
+#include "Parcours.h"
 #include <model/BoucleInterface.h>
 
 
@@ -20,8 +21,15 @@ public:
 	bool isTime();
 	void run();
 
+	void loadPRC();
+
+	void parcoursSelect(int prc_ind);
+
+	void invalidate(void);
+
 	uint16_t m_dist_next_seg;
 
+	Parcours *m_s_parcours;
 protected:
 
 	UData<uint8_t> m_last_refresh;

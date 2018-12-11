@@ -41,9 +41,8 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			m_crs_screen_mode = eVueCRSScreenDataSS;
 			break;
 		case 2:
-			m_crs_screen_mode = eVueCRSScreenDataDS;
-			break;
 		default:
+			m_crs_screen_mode = eVueCRSScreenDataDS;
 			break;
 		}
 	}
@@ -93,7 +92,7 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
 		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 
-		ASSERT(segMngr.getSeg(0)->p_seg);
+		ASSERT(segMngr.getSeg(0));
 
 		this->afficheSegment(5, segMngr.getSeg(0)->p_seg);
 
@@ -112,8 +111,8 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 		this->cadran(1, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		ASSERT(segMngr.getSeg(0)->p_seg);
-		ASSERT(segMngr.getSeg(1)->p_seg);
+		ASSERT(segMngr.getSeg(0));
+		ASSERT(segMngr.getSeg(1));
 
 		if (SEG_OFF == segMngr.getSeg(0)->p_seg->getStatus() &&
 				SEG_OFF == segMngr.getSeg(1)->p_seg->getStatus()) {
@@ -283,10 +282,6 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	bool pourc_found = 0;
 	for (auto& pPt : *liste->getLPTS()) {
 
-		if (p_seg->getStatus() == SEG_OFF && points_nb > SEG_OFF_NB_POINTS) {
-			break;
-		}
-
 		pSuivant = pPt;
 
 		if (!pourc_found) {
@@ -296,7 +291,11 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 			}
 		}
 
-		if (points_nb) {
+		if (points_nb &&
+				(((pCourant._lon > minLon && pCourant._lon < maxLon) &&
+						(pCourant._lat > minLat && pCourant._lat < maxLat)) ||
+						((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+								(pSuivant._lat > minLat && pSuivant._lat < maxLat)))) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 

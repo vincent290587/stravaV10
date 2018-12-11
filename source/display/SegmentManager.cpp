@@ -5,41 +5,31 @@
  *      Author: Vincent
  */
 
-#include <SegmentManager.h>
+#include <algorithm>
+#include "SegmentManager.h"
+#include "segger_wrapper.h"
+
+static bool _compareScores(const sVueCRSPSeg& i1, const sVueCRSPSeg& i2)
+{
+    return (i1.score > i2.score);
+}
 
 SegmentManager::SegmentManager() {
-
-	memset(&m_segs, 0, sizeof(m_segs));
-
 }
 
+void SegmentManager::addSegment(Segment &seg) {
 
-void SegmentManager::addSegment(Segment *p_seg) {
+	if (seg.getScore() >= 0) {
+		sVueCRSPSeg p_seg;
+		p_seg.score = seg.getScore();
+		p_seg.p_seg = &seg;
 
-	if (m_segs.nb_segs < NB_SEG_ON_DISPLAY) {
-		m_segs.s_segs[m_segs.nb_segs].p_seg   = p_seg;
-		m_segs.s_segs[m_segs.nb_segs].is_prio = 0;
-		m_segs.nb_segs++;
+		seg_list.push_back(p_seg);
 	}
-
 }
 
+void SegmentManager::computeOrder(void) {
 
-void SegmentManager::addSegmentPrio(Segment *p_seg) {
+	if (seg_list.size() > 1) sort(seg_list.begin(), seg_list.end(), _compareScores);
 
-	if (m_segs.nb_segs < NB_SEG_ON_DISPLAY) {
-		m_segs.s_segs[m_segs.nb_segs].p_seg   = p_seg;
-		m_segs.s_segs[m_segs.nb_segs].is_prio = 1;
-		m_segs.nb_segs++;
-	} else {
-
-		for (uint8_t i=0; i < NB_SEG_ON_DISPLAY; i++) {
-			if (!m_segs.s_segs[i].is_prio) {
-				m_segs.s_segs[i].p_seg   = p_seg;
-				m_segs.s_segs[i].is_prio = 1;
-				return;
-			}
-		}
-
-	}
 }

@@ -23,14 +23,6 @@ VuePRC::VuePRC() : Adafruit_GFX(0, 0) {
 	m_prc_screen_mode = eVuePRCScreenInit;
 
 	m_distance_prc = 0.;
-
-	m_parcours_sel = 0;
-
-	m_s_parcours = nullptr;
-
-	m_selec_en   = false;
-
-	m_start_loading = false;
 }
 
 eVuePRCScreenModes VuePRC::tasksPRC() {
@@ -50,26 +42,30 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 		m_prc_screen_mode = eVuePRCScreenDataFull;
 	}
 
+	Parcours *p_parcours = boucle_crs.m_s_parcours;
+
 	switch (m_prc_screen_mode) {
 	case eVuePRCScreenInit:
 	{
-		m_selec_en = true;
-
-		// let the user select one parcours
-		this->parcoursSelector();
-
+		this->displayLoading();
+		// boucle has finished init
+		if (!boucle_crs.needsInit()) {
+			this->displayGPS();
+			m_prc_screen_mode = eVuePRCScreenGps;
+		}
 		break;
 	}
 	case eVuePRCScreenGps:
 	{
 		// display GPS page
 		this->displayGPS();
-
 		break;
 	}
 	case eVuePRCScreenDataFull:
 	{
-		if (m_s_parcours) {
+		if (p_parcours) {
+
+			LOG_INFO("Printing PRC\r\n");
 
 			this->cadran(1, VUE_PRC_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
 			this->cadran(1, VUE_PRC_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
@@ -84,7 +80,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			this->cadran(4, VUE_PRC_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 
 			// display parcours
-			this->afficheParcours(5, m_s_parcours->getListePoints());
+			this->afficheParcours(5, p_parcours->getListePoints());
 
 			// display the segments
 			for (int j=0; j < segMngr.getNbSegs() && j < NB_SEG_ON_DISPLAY - 1; j++) {
@@ -95,8 +91,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			}
 
 		} else {
-			// let the user select one parcours
-			m_prc_screen_mode = eVuePRCScreenInit;
+			LOG_INFO("No PRC in memory");
 		}
 
 		this->cadran(7, VUE_PRC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
@@ -117,99 +112,27 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
  */
 bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
 
-	bool pass_event_menu = false;
-
 	switch (event) {
 		case eButtonsEventLeft:
 		{
-			if (m_s_parcours) this->decreaseZoom();
-
-			if (!m_selec_en) pass_event_menu = true;
-			else             m_parcours_sel += mes_parcours.size() - 1;
+			this->decreaseZoom();
 			break;
 		}
+
 		case eButtonsEventRight:
 		{
-			if (m_s_parcours) this->increaseZoom();
-
-			if (!m_selec_en) pass_event_menu = true;
-			else             m_parcours_sel++;
+			this->increaseZoom();
 			break;
 		}
+
 		case eButtonsEventCenter:
-		{
-			if (m_selec_en && !m_s_parcours) {
-				m_start_loading = true;
-			} else if (!m_selec_en) {
-				pass_event_menu = true;
-			}
-
-			break;
-		}
 		default:
 		{
-			pass_event_menu = true;
 			break;
 		}
 	}
 
-	return pass_event_menu;
-}
-
-/**
- *
- */
-void VuePRC::parcoursSelector(void) {
-
-	this->setTextSize(2);
-	this->setCursor(0, 20);
-
-	if (!mes_parcours.size()) {
-
-		LOG_ERROR("No PRC in memory\r\n");
-		this->println(" No PRC in memory");
-
-		return;
-	}
-
-	m_parcours_sel = m_parcours_sel % mes_parcours.size();
-
-	uint8_t i=0;
-	for (auto& prc : mes_parcours._parcs) {
-
-		this->print(" ");
-		this->print(prc.getName());
-
-		if (i==m_parcours_sel) {
-			this->println(" <<--");
-		} else {
-			this->println();
-		}
-
-		i++;
-	}
-
-	if (m_selec_en && m_start_loading) {
-
-		m_start_loading = false;
-
-		LOG_INFO("Parcours %u chosen\r\n", m_parcours_sel);
-
-		m_s_parcours = mes_parcours.getParcoursAt(m_parcours_sel);
-
-		ASSERT(m_s_parcours);
-
-		if (load_parcours(m_s_parcours[0]) > 0) {
-			m_prc_screen_mode = eVuePRCScreenGps;
-
-			m_selec_en = false;
-
-			vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
-		} else {
-			vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
-		}
-
-	}
+	return true;
 }
 
 /**
@@ -334,8 +257,6 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	float minLon = 400.;
 	float maxLat = -100.;
 	float maxLon = -400.;
-	float maDpex = 0;
-	float maDpey = 0;
 	uint16_t points_nb = 0;
 	ListePoints *liste = nullptr;
 	Point pCourant, pSuivant;
@@ -404,7 +325,12 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 			}
 		}
 
-		if (points_nb) {
+		// print only points in the current zoom
+		if (points_nb &&
+				(((pCourant._lon > minLon && pCourant._lon < maxLon) &&
+						(pCourant._lat > minLat && pCourant._lat < maxLat)) ||
+						((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+								(pSuivant._lat > minLat && pSuivant._lat < maxLat)))) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
@@ -421,42 +347,26 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 	// draw a circle at the end of the segment
 	if (p_seg->getStatus() != SEG_OFF) {
-		drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
-				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+		if (((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+				(pSuivant._lat > minLat && pSuivant._lat < maxLat)))
+			drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
 	} else {
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
-		drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0, _width),
-				regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+		if (((maPos->_lon > minLon && maPos->_lon < maxLon) &&
+				(maPos->_lat > minLat && maPos->_lat < maxLat)))
+			drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0, _width),
+					regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
 	}
-
-	// limit position when segment is finished
-//	float _lat, _lon;
-//	if (p_seg->getStatus() < SEG_OFF) {
-//		_lon = pCourant._lon;
-//		_lat = pCourant._lat;
-//	} else {
-//		_lon = att.loc.lon;
-//		_lat = att.loc.lat;
-//	}
-//
-	// ma position
-//	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
-//	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);
-//	fillCircle(maDpex, maDpey, 4, LS027_PIXEL_BLACK);
 
 	// return before printing text
 	if (p_seg->getStatus() == SEG_OFF) {
 		return;
 	}
 
-	if (maDpey > fin_cadran - 30) {
-		setCursor(maDpex > _width - 70 ? _width - 70 : maDpex, maDpey - 20);
-	} else {
-		setCursor(maDpex > _width - 70 ? _width - 70 : maDpex, maDpey + 15);
-	}
-
 	setTextSize(2);
+	setCursor(_width / 2 + 10, 0.5 * (debut_cadran + fin_cadran) + 10);
 
 	print(_fmkstr(p_seg->getAvance(), 1U));
 
@@ -472,4 +382,19 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 
 	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK4);
+}
+
+void VuePRC::displayLoading() {
+
+	static uint8_t nb_dots = 0;
+
+	vue.setCursor(0, 20);
+	vue.setTextSize(3);
+
+	vue.print("Loading");
+	for (int i=0; i < nb_dots; i++) vue.print(".");
+	vue.println(".");
+
+	nb_dots++;
+	nb_dots = nb_dots % 10;
 }

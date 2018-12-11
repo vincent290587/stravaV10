@@ -45,10 +45,10 @@ void Vue::tasks(eButtonsEvent event) {
 	}
 	case eVueGlobalScreenPRC:
 	{
-		if (this->propagateEventsPRC(event)) {
-			// propagate to the inner menu
-			this->propagateEvent(event);
+		if (!m_is_menu_selected) {
+			this->propagateEventsPRC(event);
 		}
+		this->propagateEvent(event);
 		break;
 	}
 	case eVueGlobalScreenDEBUG:

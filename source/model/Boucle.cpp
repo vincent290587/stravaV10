@@ -142,17 +142,17 @@ void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 	switch (new_mode) {
 	case eBoucleGlobalModesCRS:
 	{
-		boucle_crs.invalidate();
+//		boucle_crs.invalidate();
 	}
 	break;
 	case eBoucleGlobalModesFEC:
 	{
-		boucle_fec.invalidate();
+//		boucle_fec.invalidate();
 	}
 	break;
 	case eBoucleGlobalModesPRC:
 	{
-		boucle_crs.invalidate();
+//		boucle_crs.invalidate();
 	}
 	break;
 

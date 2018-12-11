@@ -14,6 +14,6 @@ bool test_projection (void);
 
 bool test_liste (void);
 
-
+bool test_nb_points(void);
 
 #endif /* TDD_UNIT_TESTING_HPP_ */
