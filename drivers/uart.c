@@ -12,6 +12,7 @@
 #include "boards.h"
 #include "segger_wrapper.h"
 #include "nrf_soc.h"
+#include "nrf_pwr_mgmt.h"
 #include "GPSMGMT.h"
 #include "nrf_delay.h"
 #include "app_timer.h"

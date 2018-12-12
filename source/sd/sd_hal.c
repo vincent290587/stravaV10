@@ -6,10 +6,12 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "boards.h"
 #include "millis.h"
 #include "nrfx_qspi.h"
+#include "nor_defines.h"
 #include "sd_hal.h"
 #include "segger_wrapper.h"
 
@@ -22,68 +24,13 @@ static FATFS fs;
 
 static bool m_is_fat_mounted = false;
 
-#define QSPI_STD_CMD_WRSR   0x01
-#define QSPI_STD_CMD_RSTEN  0x66
-#define QSPI_STD_CMD_RST    0x99
-
 #define QSPI_TEST_DATA_SIZE 32
 static uint8_t m_buffer_tx[QSPI_TEST_DATA_SIZE];
 static uint8_t m_buffer_rx[QSPI_TEST_DATA_SIZE];
 
 static void fatfs_mkfs(void);
 
-static bool configure_memory()
-{
-	uint32_t err_code;
-	nrf_qspi_cinstr_conf_t cinstr_cfg = {
-			.opcode    = QSPI_STD_CMD_RSTEN,
-			.length    = NRF_QSPI_CINSTR_LEN_1B,
-			.io2_level = true,
-			.io3_level = true,
-			.wipwait   = true,
-			.wren      = true
-	};
-
-	// Send reset enable
-	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
-	APP_ERROR_CHECK(err_code);
-
-	// Send reset command
-	cinstr_cfg.opcode = QSPI_STD_CMD_RST;
-	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
-	APP_ERROR_CHECK(err_code);
-
-	delay_ms(3);
-
-	// Get device ID
-	cinstr_cfg.opcode = 0x9F;
-	cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_4B;
-	uint8_t recv[3] = {0};
-	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, recv);
-	APP_ERROR_CHECK(err_code);
-	LOG_INFO("JEDEC ID: 0x%02X 0x%02X 0x%02X", recv[0], recv[1], recv[2]);
-
-	// write status register
-    cinstr_cfg.opcode = 0x01;
-    uint8_t temporary[2] = {0};
-    cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_3B;
-    err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, &temporary, NULL);
-    APP_ERROR_CHECK(err_code);
-
-	// Global unlock SST26VF
-	cinstr_cfg.opcode = 0x98;
-	cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_1B;
-	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
-	APP_ERROR_CHECK(err_code);
-
-    // Switch to 4-io-qspi mode
-//    cinstr_cfg.opcode = 0x38;
-//    cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_1B;
-//    err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
-//    APP_ERROR_CHECK(err_code);
-
-	return recv[0] == 0xBF;
-}
+extern bool configure_memory();
 
 void format_memory() {
 
@@ -215,24 +162,22 @@ int fatfs_init(void) {
 
 	LOG_INFO("Initializing disk 0 (QSPI)...");
 	LOG_FLUSH();
-	for (uint32_t retries = 3; retries && disk_state; --retries)
+	for (uint32_t retries = 5; retries && disk_state; --retries)
 	{
 		disk_state = disk_initialize(0);
-
 		configure_memory();
 
 		if (!disk_state) break;
-	    delay_ms(30);
+
+		LOG_INFO("Disk initialization failed %u", disk_state);
+
+		delay_ms(1000);
 	}
 
 	//test_memory();
 
-	//configure_memory();
-
 	if (disk_state)
 	{
-		LOG_INFO("Disk initialization failed.");
-
 		return -1;
 	}
 
