@@ -63,7 +63,6 @@ Revision: $Rev: 4351 $
 */
 #include "SEGGER_RTT.h"
 #include "SEGGER_RTT_Conf.h"
-#include "segger_wrapper.h"
 
 /*********************************************************************
 *
