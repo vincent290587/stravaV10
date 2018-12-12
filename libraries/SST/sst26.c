@@ -1,8 +1,9 @@
 
+#include "boards.h"
+
 #if !defined (PROTO_V10)
 
 #include <stdbool.h>
-#include "boards.h"
 #include "nrfx_qspi.h"
 #include "nor_defines.h"
 #include "segger_wrapper.h"
