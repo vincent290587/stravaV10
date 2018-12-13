@@ -8,11 +8,13 @@
 #ifndef TASK_MANAGER_WRAPPER_H_
 #define TASK_MANAGER_WRAPPER_H_
 
-#include "task_manager.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#endif
+#endif /* _cplusplus */
+
+
+void segger_init(void);
 
 void sysview_task_block(uint32_t);
 void sysview_task_transfer(uint32_t);
@@ -20,56 +22,68 @@ void sysview_task_void_enter(uint32_t);
 void sysview_task_void_exit(void);
 void sysview_task_idle(void);
 
-#ifdef __cplusplus
+
+#if defined(__cplusplus)
 }
+#endif /* _cplusplus */
+
+
+#define TASK_EVENT_1          (1 << 0)
+#define TASK_EVENT_2          (1 << 1)
+#define TASK_EVENT_3          (1 << 2)
+#define TASK_EVENT_4          (1 << 3)
+#define TASK_EVENT_5          (1 << 4)
+#define TASK_EVENT_6          (1 << 5)
+#define TASK_EVENT_7          (1 << 6)
+#define TASK_EVENT_8          (1 << 7)
+
+#define TASK_EVENT_LOCATION           TASK_EVENT_1
+#define TASK_EVENT_FEC_INFO           TASK_EVENT_2
+#define TASK_EVENT_FEC_POWER          TASK_EVENT_3
+#define TASK_EVENT_BOUCLE_RELEASE     (TASK_EVENT_LOCATION | TASK_EVENT_FEC_INFO | TASK_EVENT_FEC_POWER)
+
+#define TASK_EVENT_PERIPH_TRIGGER     TASK_EVENT_3
+#define TASK_EVENT_PERIPH_TWI_WAIT    TASK_EVENT_6
+#define TASK_EVENT_PERIPH_MS_WAIT     TASK_EVENT_7
+
+#define TASK_EVENT_LS027_TRIGGER      TASK_EVENT_4
+#define TASK_EVENT_LS027_WAIT_SPI     TASK_EVENT_5
+
+
+
+#define SYSVIEW_MAX_NOF_TASKS          30
+
+#define TASK_BASE_NRF                  (36u)
+
+#define BOUCLE_TASK                    (TASK_BASE_NRF + 0u)
+#define SYSTEM_TASK                    (TASK_BASE_NRF + 1u)
+#define PERIPH_TASK                    (TASK_BASE_NRF + 2u)
+#define LCD_TASK                       (TASK_BASE_NRF + 3u)
+
+#define TASK_BASE                      (TASK_BASE_NRF + 5u)
+
+#define I2C_TASK                       (TASK_BASE + 0u)
+#define SPI_TASK                       (TASK_BASE + 1u)
+#define UART_TASK                      (TASK_BASE + 2u)
+
+//#define ANT_TASK                       (TASK_BASE + 6u)
+#define BLE_TASK                       (TASK_BASE + 7u)
+#define SD_ACCESS_TASK                 (TASK_BASE + 8u)
+#define SEG_PERF_TASK                  (TASK_BASE + 9u)
+#define NRF52_TASK                     (TASK_BASE + 10u)
+#define DISPLAY_TASK3                  (TASK_BASE + 12u)
+#define DISPLAY_TASK4                  (TASK_BASE + 13u)
+#define USB_VCOM_TASK                  (TASK_BASE + 14u)
+#define SST_TASK                       (TASK_BASE + 15u)
+#define EMPTY1                         (TASK_BASE + 16u)
+#define EMPTY2                         (TASK_BASE + 17u)
+
+
+#ifdef TDD
+#include "task_manager_wrapper_tdd.h"
+#else
+#include "task_manager_wrapper_arm.h"
 #endif
-
-
-/**@brief Returns ID of currently running task.
- *
- * @return ID of active task.
- */
-inline task_id_t sysview_id_get(void) {
-	return (task_id_get() + TASK_BASE_NRF);
-}
-
-/**@brief Yield CPU to other tasks.
- */
-inline void yield(void) {
-	if (task_id_get() == TASK_ID_INVALID) return;
-
-	task_yield();
-	sysview_task_transfer(sysview_id_get());
-
-}
-
-/**@brief Wait for events. Set events are cleared after this function returns.
- *
- * @param[in] evt_mask Mask of events to wait
- *
- * @return Mask with set events (can be a subset of evt_mask).
- */
-inline uint32_t events_wait(uint32_t evt_mask) {
-	if (task_id_get() == TASK_ID_INVALID) return 0;
-
-	sysview_task_block(evt_mask);
-	uint32_t mask = task_events_wait(evt_mask);
-	sysview_task_transfer(sysview_id_get());
-
-	return mask;
-}
-
-/**@brief Set events for given task.
- *
- * @param[in]  task_id  Id of the task which shall receive events.
- * @param[in]  evt_mask Events for the task.
- *
- */
-inline void events_set(task_id_t task_id, uint32_t evt_mask) {
-	if (task_id == TASK_ID_INVALID) return;
-
-	task_events_set(task_id, evt_mask);
-}
 
 
 #endif /* TASK_MANAGER_WRAPPER_H_ */

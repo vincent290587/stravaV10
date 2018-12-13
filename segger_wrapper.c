@@ -7,12 +7,21 @@
 
 
 #include "segger_wrapper.h"
-#include "app_util_platform.h"
-#include "app_error.h"
+#include "task_manager_wrapper.h"
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
+
+
+
+#if USE_SVIEW
+#include "SEGGER_SYSVIEW.h"
+static SEGGER_SYSVIEW_TASKINFO pInfo[SYSVIEW_MAX_NOF_TASKS];
+static uint32_t nb_tasks;
+
+SEGGER_SYSVIEW_OS_API os_api;
+#endif
 
 #if USE_SVIEW
 
@@ -35,17 +44,10 @@
 #define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
 #define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
 
+#define W_SYSVIEW_RecordVoid(X)          EMPTY_MACRO
+#define W_SYSVIEW_RecordEndCall(X)       EMPTY_MACRO
+
 #endif
-
-
-#if USE_SVIEW
-#include "SEGGER_SYSVIEW.h"
-static SEGGER_SYSVIEW_TASKINFO pInfo[SYSVIEW_MAX_NOF_TASKS];
-static uint32_t nb_tasks;
-
-SEGGER_SYSVIEW_OS_API os_api;
-#endif
-
 
 static uint32_t m_cur_task_id;
 static uint32_t m_cur_void_id;

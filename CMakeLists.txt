@@ -56,6 +56,7 @@ include_directories(
 # Cree des variables avec les fichiers à compiler
 set(SRCS
     main_tdd.cpp
+    segger_wrapper.c
     GUI_connector.cpp
     scheduler/task_scheduler.c
     unit_testing.cpp
