@@ -195,7 +195,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		return;
 	}
 
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK3);
+	sysview_task_void_enter(DISPLAY_TASK3);
 
 	uint16_t debut_cadran = _height / VUE_CRS_NB_LINES * (ligne - 1);
 	uint16_t fin_cadran   = _height / VUE_CRS_NB_LINES * (ligne + 1);
@@ -273,8 +273,8 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 	}
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK3);
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK4);
+	sysview_task_void_exit();
+	sysview_task_void_enter(DISPLAY_TASK4);
 
 	// on affiche
 	points_nb = 0;
@@ -379,7 +379,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		print("%");
 	}
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK4);
+	sysview_task_void_exit();
 }
 
 

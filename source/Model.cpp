@@ -166,11 +166,12 @@ void idle_task(void * p_context)
     {
     	while (NRF_LOG_PROCESS()) { }
 
+    	sysview_task_idle();
+
     	//No more logs to process, go to sleep
     	nrf_pwr_mgmt_run();
 
     	task_yield();
-    	W_SYSVIEW_OnIdle();
     }
 }
 

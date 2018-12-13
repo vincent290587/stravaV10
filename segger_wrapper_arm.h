@@ -94,30 +94,11 @@
 #if USE_SVIEW
 #define W_SYSVIEW_RecordEnterISR(...)  SEGGER_SYSVIEW_RecordEnterISR()
 #define W_SYSVIEW_RecordExitISR(...)   SEGGER_SYSVIEW_RecordExitISR()
-//#define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
-//#define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
-#define W_SYSVIEW_OnIdle(...)          SEGGER_SYSVIEW_OnIdle()
-// TODO
-#if 1
-#define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_OnTaskStartExec(X)
-#define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_OnTaskStopExec()
 #define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)
-#define W_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
-#define W_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
-#else
-#define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_RecordVoid(X)
-#define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_RecordEndCall(X)
-#define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)
-#endif
 #else
 #define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
 #define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
-#define W_SYSVIEW_OnIdle(...)          EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStartExec(X)   EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStopExec(X)    EMPTY_MACRO
 #define W_SYSVIEW_OnTaskCreate(X)      EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
 #endif
 
 #define SYSVIEW_MAX_NOF_TASKS          30

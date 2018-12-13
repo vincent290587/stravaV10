@@ -216,7 +216,8 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         {
         	m_is_xfer_done = true;
 
-			W_SYSVIEW_OnTaskStopExec(USB_VCOM_TASK);
+
+        	sysview_task_void_exit();
         } break;
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
         {
@@ -300,7 +301,7 @@ static void usb_cdc_trigger_xfer(void) {
 		if (!ret) {
 			m_is_xfer_done = false;
 
-			W_SYSVIEW_OnTaskStartExec(USB_VCOM_TASK);
+			sysview_task_void_enter(USB_VCOM_TASK);
 		}
 
 	} else if (!m_is_xfer_done) {

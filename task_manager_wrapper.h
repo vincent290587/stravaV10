@@ -10,21 +10,37 @@
 
 #include "task_manager.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void sysview_task_block(uint32_t);
+void sysview_task_transfer(uint32_t);
+void sysview_task_void_enter(uint32_t);
+void sysview_task_void_exit(void);
+void sysview_task_idle(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+
 /**@brief Returns ID of currently running task.
  *
  * @return ID of active task.
  */
-inline task_id_t id_get(void) {
+inline task_id_t sysview_id_get(void) {
 	return (task_id_get() + TASK_BASE_NRF);
 }
 
 /**@brief Yield CPU to other tasks.
  */
 inline void yield(void) {
-	if (task_id_get() < 0) return;
-	W_SYSVIEW_OnTaskStopExec(id_get());
+	if (task_id_get() == TASK_ID_INVALID) return;
+
 	task_yield();
-	W_SYSVIEW_OnTaskStartExec(id_get());
+	sysview_task_transfer(sysview_id_get());
+
 }
 
 /**@brief Wait for events. Set events are cleared after this function returns.
@@ -34,11 +50,12 @@ inline void yield(void) {
  * @return Mask with set events (can be a subset of evt_mask).
  */
 inline uint32_t events_wait(uint32_t evt_mask) {
-	if (task_id_get() < 0) return 0;
-	W_SYSVIEW_OnTaskStopReady(id_get(), evt_mask);
-	W_SYSVIEW_OnTaskStopExec(id_get());
+	if (task_id_get() == TASK_ID_INVALID) return 0;
+
+	sysview_task_block(evt_mask);
 	uint32_t mask = task_events_wait(evt_mask);
-	W_SYSVIEW_OnTaskStartExec(id_get());
+	sysview_task_transfer(sysview_id_get());
+
 	return mask;
 }
 
@@ -49,8 +66,8 @@ inline uint32_t events_wait(uint32_t evt_mask) {
  *
  */
 inline void events_set(task_id_t task_id, uint32_t evt_mask) {
-	if (task_id < 0) return;
-	W_SYSVIEW_OnTaskStartReady(task_id);
+	if (task_id == TASK_ID_INVALID) return;
+
 	task_events_set(task_id, evt_mask);
 }
 

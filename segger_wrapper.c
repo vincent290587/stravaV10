@@ -14,6 +14,29 @@
  * Variables
  ******************************************************************************/
 
+#if USE_SVIEW
+
+#define W_SYSVIEW_OnIdle(...)            SEGGER_SYSVIEW_OnIdle()
+
+#define W_SYSVIEW_OnTaskStartExec(X)     SEGGER_SYSVIEW_OnTaskStartExec(X)
+#define W_SYSVIEW_OnTaskStopExec(X)      SEGGER_SYSVIEW_OnTaskStopExec()
+#define W_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
+#define W_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
+
+#define W_SYSVIEW_RecordVoid(X)          SEGGER_SYSVIEW_RecordVoid(X)
+#define W_SYSVIEW_RecordEndCall(X)       SEGGER_SYSVIEW_RecordEndCall(X)
+
+#else
+
+#define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStartExec(X)     EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStopExec(X)      EMPTY_MACRO
+#define W_SYSVIEW_OnTaskCreate(X)        EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
+
+#endif
+
 
 #if USE_SVIEW
 #include "SEGGER_SYSVIEW.h"
@@ -22,6 +45,10 @@ static uint32_t nb_tasks;
 
 SEGGER_SYSVIEW_OS_API os_api;
 #endif
+
+
+static uint32_t m_cur_task_id;
+static uint32_t m_cur_void_id;
 
 /*******************************************************************************
  * Functions
@@ -40,6 +67,34 @@ void cbSendTaskList(void) {
 
 }
 
+void sysview_task_block(uint32_t evt_mask) {
+	W_SYSVIEW_OnTaskStopReady(sysview_id_get(), evt_mask);
+	W_SYSVIEW_OnTaskStopExec(sysview_id_get());
+}
+
+void sysview_task_transfer(uint32_t task_id) {
+	W_SYSVIEW_OnTaskStartExec(task_id);
+	m_cur_task_id = task_id;
+}
+
+void sysview_task_void_enter(uint32_t void_id) {
+	// TODO
+	m_cur_void_id = void_id;
+	W_SYSVIEW_RecordVoid(m_cur_void_id);
+}
+
+void sysview_task_void_exit(void) {
+	// TODO
+	W_SYSVIEW_RecordEndCall(m_cur_void_id);
+	m_cur_void_id = 0;
+}
+
+void sysview_task_idle(void) {
+	if (m_cur_task_id != 0) {
+		m_cur_task_id = 0;
+		W_SYSVIEW_OnIdle();
+	}
+}
 
 void segger_init(void) {
 

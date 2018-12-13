@@ -119,9 +119,9 @@ void BoucleCRS::run() {
 
 			if (seg.getStatus() != SEG_OFF) {
 
-				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				sysview_task_void_enter(SEG_PERF_TASK);
 				seg.majPerformance(mes_points);
-				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
+				sysview_task_void_exit();
 				att.nbact += 1;
 
 				if (seg.getStatus() == SEG_FIN) {
@@ -139,9 +139,9 @@ void BoucleCRS::run() {
 
 			} else if (tmp_dist < 250) {
 
-				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				sysview_task_void_enter(SEG_PERF_TASK);
 				seg.majPerformance(mes_points);
-				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
+				sysview_task_void_exit();
 
 			}
 
