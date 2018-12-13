@@ -19,6 +19,7 @@ public:
     Vecteur(Point& point1, Point& point2);
 
     Vecteur operator=(const Point *point);
+    Vecteur operator/(const float cst);
 
     float getNorm();
     void project(Vecteur const &vecteur_);

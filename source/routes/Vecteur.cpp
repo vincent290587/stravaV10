@@ -76,3 +76,8 @@ Vecteur Vecteur::operator=(const Point *point) {
     }
 }
 
+Vecteur Vecteur::operator/(const float cst) {
+	_x /= cst;
+	_y /= cst;
+	return *this;
+}
