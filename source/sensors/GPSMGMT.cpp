@@ -405,38 +405,38 @@ uint32_t gps_encode_char(char c) {
  */
 void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 
-	String _lat = _fmkstr(loc_data.lat, 6U);
-	String _lon = _fmkstr(loc_data.lon, 6U);
-	String _alt = _fmkstr(loc_data.alt, 0U);
-
 	LOG_INFO("Host aiding alt: %d", (int)loc_data.alt);
 
 	uint16_t _year  = 2000 + (loc_data.date % 100);
 	uint16_t _month = (loc_data.date / 100) % 100;
 	uint16_t _day   = (loc_data.date / 10000) % 100;
 
-	String _time = _secjmkstr(loc_data.utc_time + (age_ / 1000), ',');
-
-	String cmd = "$PMTK741," + _lat + "," + _lon;
-	cmd += "," + _alt;
-	cmd += "," + String(_year) + "," + String(_month) + "," + String(_day);
-	cmd += "," + _time;
-
 	memset(buffer, 0, sizeof(buffer));
 
-	cmd.toCharArray((char*)buffer, sizeof(buffer), 0);
+	uint32_t value = loc_data.utc_time;
+	uint8_t hours   = (uint8_t) (value / 3600);
+	value -= hours * 3600;
+	uint8_t minutes = (uint8_t) (value / 60);
+	value -= minutes * 60;
+	uint8_t seconds = (uint8_t) (value % 60);
+
+	int res = snprintf((char*)buffer, sizeof(buffer), "$PMTK741,%.6f,%.6f,%d,%u,%u,%u,%02u,%02u,%02u",
+			loc_data.lat, loc_data.lon, (int)loc_data.alt, _year, _month, _day,
+			hours, minutes, seconds);
+
+	ASSERT(res + 10 < sizeof(buffer));
 
 	// handle checksum
 	uint8_t ret = 0;
-	for (uint16_t i = 1; i < cmd.length(); i++) {
+	for (uint16_t i = 1; i < res; i++) {
 		ret ^= buffer[i];
 	}
 
-	snprintf((char*)buffer + cmd.length(), sizeof(buffer) - cmd.length(), "*%02X\r\n", ret);
+	res += snprintf((char*)buffer + res, sizeof(buffer) - res, "*%02X\r\n", ret);
 
-	GPS_UART_SEND(buffer, cmd.length() + 5);
+	GPS_UART_SEND(buffer, res);
 
-	LOG_INFO("Host aiding: %s", (uint32_t)buffer);
+	LOG_INFO("Host aiding: %s", (char*)buffer);
 
 	vue.addNotif("EPO", "Host aiding sent", 5, eNotificationTypeComplete);
 }
