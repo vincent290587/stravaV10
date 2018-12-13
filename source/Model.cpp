@@ -93,10 +93,6 @@ void model_dispatch_sensors_update(void) {
  */
 void perform_system_tasks(void) {
 
-	gps_mgmt.tasks();
-
-	locator.tasks();
-
 	uart_tasks();
 
 #ifdef USB_ENABLED
@@ -164,8 +160,6 @@ void idle_task(void * p_context)
 {
     for(;;)
     {
-    	while (NRF_LOG_PROCESS()) { }
-
     	sysview_task_idle();
 
     	//No more logs to process, go to sleep
@@ -272,6 +266,10 @@ void peripherals_task(void * p_context)
 		}
 
 		gps_mgmt.runWDT();
+
+		gps_mgmt.tasks();
+
+		locator.tasks();
 
 		// update date
 		SDate dat;

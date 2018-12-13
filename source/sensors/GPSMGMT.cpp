@@ -46,7 +46,6 @@ static uint8_t buffer[256];
 static eGPSMgmtEPOState   m_epo_state  = eGPSMgmtEPOIdle;
 
 static bool m_is_uart_on = false;
-static uint32_t m_uart_timestamp = 0;
 static bool m_uart_needs_reboot = true;
 
 static nrf_uarte_baudrate_t m_uart_baud = GPS_DEFAULT_SPEED_BAUD;
@@ -146,7 +145,9 @@ void GPS_MGMT::runWDT(void) {
 	if (m_epo_state != eGPSMgmtEPOIdle || this->isStandby()) return;
 
 	// check if GPS is in a good state
-	if (millis() - m_uart_timestamp > 3000) {
+	if (gps.time.age() > 3000) {
+
+		LOG_WARNING("GPS WDT timeout: %u", gps.location.age());
 
 		gps_uart_stop();
 
@@ -164,7 +165,6 @@ void GPS_MGMT::runWDT(void) {
 
 		gps_uart_start();
 
-		m_uart_timestamp = millis();
 		LOG_WARNING("Resetting GPS....");
 		vue.addNotif("GPS", "Resetting...", 5, eNotificationTypeComplete);
 	}
@@ -201,8 +201,6 @@ void GPS_MGMT::standby(bool is_standby) {
 		gpio_set(GPS_S);
 
 		m_is_stdby = false;
-
-		m_uart_timestamp = millis();
 
 		SEND_TO_GPS(PMTK_AWAKE);
 	}
@@ -386,8 +384,6 @@ void GPS_MGMT::tasks(void) {
 uint32_t gps_encode_char(char c) {
 
 	LOG_RAW_INFO(c);
-
-	if (c == '$') m_uart_timestamp = millis();
 
 	if (eGPSMgmtEPOIdle == m_epo_state) {
 
