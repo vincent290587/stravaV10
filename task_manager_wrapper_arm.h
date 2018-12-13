@@ -54,6 +54,7 @@ inline uint32_t events_wait(uint32_t evt_mask) {
 inline void events_set(task_id_t task_id, uint32_t evt_mask) {
 	if (task_id == TASK_ID_INVALID) return;
 
+	sysview_task_event(task_id, evt_mask);
 	task_events_set(task_id, evt_mask);
 }
 

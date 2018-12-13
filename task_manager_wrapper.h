@@ -18,6 +18,7 @@ void segger_init(void);
 
 void sysview_task_block(uint32_t);
 void sysview_task_transfer(uint32_t);
+void sysview_task_event(uint32_t, uint32_t);
 void sysview_task_void_enter(uint32_t);
 void sysview_task_void_exit(void);
 void sysview_task_idle(void);
@@ -60,7 +61,9 @@ void sysview_task_idle(void);
 #define PERIPH_TASK                    (TASK_BASE_NRF + 2u)
 #define LCD_TASK                       (TASK_BASE_NRF + 3u)
 
-#define TASK_BASE                      (TASK_BASE_NRF + 5u)
+#define TASK_RECV_EVENT                499u
+
+#define TASK_BASE                      (500u)
 
 #define I2C_TASK                       (TASK_BASE + 0u)
 #define SPI_TASK                       (TASK_BASE + 1u)

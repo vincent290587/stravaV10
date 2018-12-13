@@ -35,6 +35,8 @@ SEGGER_SYSVIEW_OS_API os_api;
 #define W_SYSVIEW_RecordVoid(X)          SEGGER_SYSVIEW_RecordVoid(X)
 #define W_SYSVIEW_RecordEndCall(X)       SEGGER_SYSVIEW_RecordEndCall(X)
 
+#define W_SYSVIEW_RecordU32x2(...)       SEGGER_SYSVIEW_RecordU32x2(__VA_ARGS__)
+
 #else
 
 #define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
@@ -46,6 +48,8 @@ SEGGER_SYSVIEW_OS_API os_api;
 
 #define W_SYSVIEW_RecordVoid(X)          EMPTY_MACRO
 #define W_SYSVIEW_RecordEndCall(X)       EMPTY_MACRO
+
+#define W_SYSVIEW_RecordU32x2(...)       EMPTY_MACRO
 
 #endif
 
@@ -77,6 +81,10 @@ void sysview_task_block(uint32_t evt_mask) {
 void sysview_task_transfer(uint32_t task_id) {
 	W_SYSVIEW_OnTaskStartExec(task_id);
 	m_cur_task_id = task_id;
+}
+
+void sysview_task_event(uint32_t task_id, uint32_t event_mask) {
+	W_SYSVIEW_RecordU32x2(TASK_RECV_EVENT, task_id, event_mask);
 }
 
 void sysview_task_void_enter(uint32_t void_id) {
@@ -128,44 +136,57 @@ void segger_init(void) {
 	  pInfo[nb_tasks].TaskID = LCD_TASK;
 	  pInfo[nb_tasks++].sName  = "LCD_TASK";
 
-	  pInfo[nb_tasks].TaskID = I2C_TASK;
-	  pInfo[nb_tasks++].sName  = "I2C_TASK";
+// copy to system view config file
+//	  499       OS_Task_Recv_evt            Task=%t EventMask=%b
+//	  500       I2C_TASK
+//	  501       SPI_TASK
+//	  502       UART_TASK
+//	  503       SD_ACCESS_TASK
+//	  504       SEG_PERF_TASK
+//	  505       NRF52_TASK
+//	  506       DISPLAY_TASK3
+//	  507       DISPLAY_TASK4
+//	  508       USB_VCOM_TASK
+//	  509       SST_TASK
 
-	  pInfo[nb_tasks].TaskID = SPI_TASK;
-	  pInfo[nb_tasks++].sName  = "SPI_TASK";
-
-	  pInfo[nb_tasks].TaskID = UART_TASK;
-	  pInfo[nb_tasks++].sName  = "UART_TASK";
-
-	  pInfo[nb_tasks].TaskID = BLE_TASK;
-	  pInfo[nb_tasks++].sName  = "BLE_TASK";
-
-	  pInfo[nb_tasks].TaskID = SD_ACCESS_TASK;
-	  pInfo[nb_tasks++].sName  = "SD_ACCESS_TASK";
-
-	  pInfo[nb_tasks].TaskID = SEG_PERF_TASK;
-	  pInfo[nb_tasks++].sName  = "SEG_PERF_TASK";
-
-	  pInfo[nb_tasks].TaskID = NRF52_TASK;
-	  pInfo[nb_tasks++].sName  = "NRF52_TASK";
-
-	  pInfo[nb_tasks].TaskID = DISPLAY_TASK3;
-	  pInfo[nb_tasks++].sName  = "DISPLAY_TASK3";
-
-	  pInfo[nb_tasks].TaskID = DISPLAY_TASK4;
-	  pInfo[nb_tasks++].sName  = "DISPLAY_TASK4";
-
-	  pInfo[nb_tasks].TaskID = USB_VCOM_TASK;
-	  pInfo[nb_tasks++].sName  = "USB_VCOM_TASK";
-
-	  pInfo[nb_tasks].TaskID = SST_TASK;
-	  pInfo[nb_tasks++].sName  = "SST_TASK";
-
-	  pInfo[nb_tasks].TaskID = EMPTY1;
-	  pInfo[nb_tasks++].sName  = "EMPTY1";
-
-	  pInfo[nb_tasks].TaskID = EMPTY2;
-	  pInfo[nb_tasks++].sName  = "EMPTY2";
+//	  pInfo[nb_tasks].TaskID = I2C_TASK;
+//	  pInfo[nb_tasks++].sName  = "I2C_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = SPI_TASK;
+//	  pInfo[nb_tasks++].sName  = "SPI_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = UART_TASK;
+//	  pInfo[nb_tasks++].sName  = "UART_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = BLE_TASK;
+//	  pInfo[nb_tasks++].sName  = "BLE_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = SD_ACCESS_TASK;
+//	  pInfo[nb_tasks++].sName  = "SD_ACCESS_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = SEG_PERF_TASK;
+//	  pInfo[nb_tasks++].sName  = "SEG_PERF_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = NRF52_TASK;
+//	  pInfo[nb_tasks++].sName  = "NRF52_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = DISPLAY_TASK3;
+//	  pInfo[nb_tasks++].sName  = "DISPLAY_TASK3";
+//
+//	  pInfo[nb_tasks].TaskID = DISPLAY_TASK4;
+//	  pInfo[nb_tasks++].sName  = "DISPLAY_TASK4";
+//
+//	  pInfo[nb_tasks].TaskID = USB_VCOM_TASK;
+//	  pInfo[nb_tasks++].sName  = "USB_VCOM_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = SST_TASK;
+//	  pInfo[nb_tasks++].sName  = "SST_TASK";
+//
+//	  pInfo[nb_tasks].TaskID = EMPTY1;
+//	  pInfo[nb_tasks++].sName  = "EMPTY1";
+//
+//	  pInfo[nb_tasks].TaskID = EMPTY2;
+//	  pInfo[nb_tasks++].sName  = "EMPTY2";
 
 	  SEGGER_SYSVIEW_Conf();
 
