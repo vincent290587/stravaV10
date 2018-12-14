@@ -50,29 +50,39 @@ NRF_TWI_MNGR_DEF(m_nrf_twi_mngr, MAX_PENDING_TRANSACTIONS, TWI_INSTANCE_ID);
 static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
                                          void *p_context) {
 	W_SYSVIEW_RecordEnterISR();
-	if (p_event->type == NRFX_TWIM_EVT_DONE) {
 
-	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-	    	events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_TWI_WAIT);
-	    }
+//	sTasksIDs* _tasks_id = (sTasksIDs*)p_context;
 
-		m_twim_xfer_complete = true;
-	}
+//	if (_tasks_id->peripherals_id != TASK_ID_INVALID) {
+//		events_set(_tasks_id->peripherals_id, TASK_EVENT_PERIPH_TWI_WAIT);
+//	}
+
+	m_twim_xfer_complete = true;
+
 	W_SYSVIEW_RecordExitISR();
 }
 
 static void wait_xfer(uint32_t err_code) {
-	if (!err_code) {
-    	m_twim_xfer_complete = false;
-	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-	    	events_wait(TASK_EVENT_PERIPH_TWI_WAIT);
-	    } else {
-	    	while (!m_twim_xfer_complete) {
-	    		nrf_pwr_mgmt_run();
-	    	}
-	    }
+
+
+	if (err_code) {
+		LOG_WARNING("TWI driver error: %u", err_code);
 	}
-	return;
+
+	{
+		m_twim_xfer_complete = false;
+//		if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+//			events_wait(TASK_EVENT_PERIPH_TWI_WAIT);
+//		} else {
+//			while (!m_twim_xfer_complete) {
+//				nrf_pwr_mgmt_run();
+//			}
+//		}
+
+		while (!m_twim_xfer_complete) {
+			nrf_pwr_mgmt_run();
+		}
+	}
 }
 #endif
 
@@ -101,12 +111,13 @@ void i2c_init(void) {
     nrfx_twim_config_t const config = {
     		.scl                = SCL_PIN_NUMBER,
 			.sda                = SDA_PIN_NUMBER,
-			.frequency          = NRF_TWIM_FREQ_100K,
+			.frequency          = NRF_TWIM_FREQ_400K,
 			.interrupt_priority = APP_IRQ_PRIORITY_LOWEST,
 			.hold_bus_uninit    = true
     };
 
-    err_code = nrfx_twim_init(&m_twi, &config, twim_evt_handler, NULL);
+    err_code = nrfx_twim_init(&m_twi, &config, twim_evt_handler, &m_tasks_id);
+//    err_code = nrfx_twim_init(&m_twi, &config, NULL, NULL);
     APP_ERROR_CHECK(err_code);
 
     nrfx_twim_enable(&m_twi);
