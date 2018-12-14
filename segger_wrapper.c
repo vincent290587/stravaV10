@@ -93,13 +93,11 @@ void sysview_task_event(uint32_t task_id, uint32_t event_mask) {
 }
 
 void sysview_task_void_enter(uint32_t void_id) {
-	// TODO
 	m_cur_void_id = void_id;
 	W_SYSVIEW_RecordVoid(m_cur_void_id);
 }
 
 void sysview_task_void_exit(uint32_t void_id) {
-	// TODO
 	W_SYSVIEW_RecordEndCall(void_id);
 	m_cur_void_id = 0;
 }
@@ -139,61 +137,6 @@ void segger_init(void) {
 	  pInfo[nb_tasks].TaskID = LCD_TASK;
 	  pInfo[nb_tasks++].sName  = "LCD_TASK";
 
-//	  pInfo[nb_tasks].TaskID = SYSTEM_TASK;
-//	  pInfo[nb_tasks++].sName  = "SYSTEM_TASK";
-
-// copy to system view config file
-//	  499       OS_Task_Recv_evt            Task=%t EventMask=%b
-//	  500       I2C_TASK
-//	  501       SPI_TASK
-//	  502       UART_TASK
-//	  503       SD_ACCESS_TASK
-//	  504       SEG_PERF_TASK
-//	  505       NRF52_TASK
-//	  506       DISPLAY_TASK3
-//	  507       DISPLAY_TASK4
-//	  508       USB_VCOM_TASK
-//	  509       SST_TASK
-
-//	  pInfo[nb_tasks].TaskID = I2C_TASK;
-//	  pInfo[nb_tasks++].sName  = "I2C_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = SPI_TASK;
-//	  pInfo[nb_tasks++].sName  = "SPI_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = UART_TASK;
-//	  pInfo[nb_tasks++].sName  = "UART_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = BLE_TASK;
-//	  pInfo[nb_tasks++].sName  = "BLE_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = SD_ACCESS_TASK;
-//	  pInfo[nb_tasks++].sName  = "SD_ACCESS_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = SEG_PERF_TASK;
-//	  pInfo[nb_tasks++].sName  = "SEG_PERF_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = NRF52_TASK;
-//	  pInfo[nb_tasks++].sName  = "NRF52_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = DISPLAY_TASK3;
-//	  pInfo[nb_tasks++].sName  = "DISPLAY_TASK3";
-//
-//	  pInfo[nb_tasks].TaskID = DISPLAY_TASK4;
-//	  pInfo[nb_tasks++].sName  = "DISPLAY_TASK4";
-//
-//	  pInfo[nb_tasks].TaskID = USB_VCOM_TASK;
-//	  pInfo[nb_tasks++].sName  = "USB_VCOM_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = SST_TASK;
-//	  pInfo[nb_tasks++].sName  = "SST_TASK";
-//
-//	  pInfo[nb_tasks].TaskID = EMPTY1;
-//	  pInfo[nb_tasks++].sName  = "EMPTY1";
-//
-//	  pInfo[nb_tasks].TaskID = EMPTY2;
-//	  pInfo[nb_tasks++].sName  = "EMPTY2";
-
 	  SEGGER_SYSVIEW_Conf();
 
 	  SEGGER_SYSVIEW_Start();
@@ -209,33 +152,3 @@ void segger_init(void) {
 #endif
 
 }
-
-/* System clock frequency. */
-//extern uint32_t SystemCoreClock;
-//void segger_update_clocks() {
-//#if USE_SVIEW
-//	SEGGER_SYSVIEW_UpdateClocks(SystemCoreClock, SystemCoreClock);
-//#endif
-//}
-//
-//void segger_send(UART_Type* base, const uint8_t* buffer, size_t length) {
-//#if USE_RTT
-//
-//	SEGGER_RTT_Write(RTT_LOG_CHANNEL, buffer, (unsigned) length);
-//
-//#endif
-//}
-//
-//status_t segger_recv(UART_Type* base, uint8_t* buffer, size_t length) {
-//#if USE_RTT
-//
-//	unsigned read_bytes = 0;
-//
-//	read_bytes = SEGGER_RTT_Read(RTT_LOG_CHANNEL, buffer + read_bytes, length);
-//
-//	if (!read_bytes) return 1;
-//
-//#endif
-//
-//	return 0;
-//}
