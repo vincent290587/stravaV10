@@ -139,27 +139,7 @@ void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 	}
 
 	// prepare new operations
-	switch (new_mode) {
-	case eBoucleGlobalModesCRS:
-	{
-//		boucle_crs.invalidate();
-	}
-	break;
-	case eBoucleGlobalModesFEC:
-	{
-//		boucle_fec.invalidate();
-	}
-	break;
-	case eBoucleGlobalModesPRC:
-	{
-//		boucle_crs.invalidate();
-	}
-	break;
-
-	case eBoucleGlobalModesInit:
-	default:
-		break;
-	}
+	stc.reset();
 
 	m_global_mode = new_mode;
 }
