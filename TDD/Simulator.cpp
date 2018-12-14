@@ -38,6 +38,7 @@ static FIL* g_fileObject;   /* File object */
 #endif
 
 static uint32_t last_point_ms = 0;
+static uint32_t nb_gps_loc = 0;
 
 void simulator_init(void) {
 
@@ -117,6 +118,17 @@ void simulator_tasks(void) {
 		// send to uart_tdd
 		for (int i=0; i < nmea_length; i++)
 			uart_rx_handler(g_bufferWrite[i]);
+
+		if (++nb_gps_loc == 1) {
+			sLocationData loc_data;
+			loc_data.alt = 9.5;
+			loc_data.lat = lat;
+			loc_data.lon = lon;
+			loc_data.utc_time = 15 * 3600 + 5 * 60 + 39;
+			loc_data.date = 11218;
+
+			gps_mgmt.startHostAidingEPO(loc_data, 350);
+		}
 
 	} else {
 		fclose(g_fileObject);

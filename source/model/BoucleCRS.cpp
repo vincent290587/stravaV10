@@ -104,6 +104,8 @@ void BoucleCRS::run() {
 	attitude.addNewLocation(loc, dat, loc_source);
 
 	// update sements
+
+	sysview_task_void_enter(MainSegLoop);
 	for (auto& seg : mes_segments._segs) {
 
 		if (seg.isValid()) {
@@ -119,9 +121,9 @@ void BoucleCRS::run() {
 
 			if (seg.getStatus() != SEG_OFF) {
 
-				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				sysview_task_void_enter(ComputeSegmentPerf);
 				seg.majPerformance(mes_points);
-				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
+				sysview_task_void_exit(ComputeSegmentPerf);
 				att.nbact += 1;
 
 				if (seg.getStatus() == SEG_FIN) {
@@ -139,9 +141,9 @@ void BoucleCRS::run() {
 
 			} else if (tmp_dist < 250) {
 
-				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				sysview_task_void_enter(ComputeSegmentPerf);
 				seg.majPerformance(mes_points);
-				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
+				sysview_task_void_exit(ComputeSegmentPerf);
 
 			}
 
@@ -150,6 +152,7 @@ void BoucleCRS::run() {
 		} // fin isValid
 
 	} // fin for
+	sysview_task_void_exit(MainSegLoop);
 
 	segMngr.computeOrder();
 

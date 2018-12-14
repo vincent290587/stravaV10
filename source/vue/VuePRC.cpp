@@ -149,7 +149,7 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 	uint16_t points_nb = 0;
 	Point2D pCourant, pSuivant;
 
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK3);
+	sysview_task_void_enter(ComputeZoom);
 
 	uint16_t debut_cadran = _height / VUE_PRC_NB_LINES * (ligne - 1);
 	uint16_t fin_cadran   = _height / VUE_PRC_NB_LINES * (ligne + 1);
@@ -184,8 +184,8 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 	maxLat += dZoom_v;
 	maxLon += dZoom_h;
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK3);
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK4);
+	sysview_task_void_exit(ComputeZoom);
+	sysview_task_void_enter(DisplayPoints);
 
 	// on affiche
 	points_nb = 0;
@@ -215,6 +215,9 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 		points_nb++;
 	}
 
+	sysview_task_void_exit(DisplayPoints);
+	sysview_task_void_enter(DisplayMyself);
+
 	LOG_INFO("VuePRC %u / %u points printed\r\n", printed_nb, points_nb);
 
 	// ma position
@@ -243,7 +246,7 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 	print((int)this->getLastZoom());
 	print("m");
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK4);
+	sysview_task_void_exit(DisplayMyself);
 }
 
 /**
@@ -269,7 +272,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		return;
 	}
 
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK3);
+	sysview_task_void_enter(ComputeZoom);
 
 	uint16_t debut_cadran = _height / VUE_PRC_NB_LINES * (ligne - 1);
 	uint16_t fin_cadran   = _height / VUE_PRC_NB_LINES * (ligne + 1);
@@ -303,8 +306,8 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	maxLat += dZoom_v;
 	maxLon += dZoom_h;
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK3);
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK4);
+	sysview_task_void_exit(ComputeZoom);
+	sysview_task_void_enter(DisplayPoints);
 
 	// on affiche
 	points_nb = 0;
@@ -381,7 +384,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		print("%");
 	}
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK4);
+	sysview_task_void_exit(DisplayPoints);
 }
 
 void VuePRC::displayLoading() {

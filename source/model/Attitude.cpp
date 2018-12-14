@@ -126,6 +126,8 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 	if (m_is_init &&
 			att.dist > m_last_save_dist + 15) {
 
+		sysview_task_void_enter(SaveUserPosition);
+
 		m_last_save_dist = att.dist;
 
 		// save position on queue
@@ -144,6 +146,8 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		m_st_buffer[m_st_buffer_nb_elem].pwr = att.pwr;
 
 		m_st_buffer_nb_elem++;
+
+		sysview_task_void_exit(SaveUserPosition);
 
 	} else if (att.dist > m_last_save_dist + 25) {
 		// first position

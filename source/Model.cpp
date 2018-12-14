@@ -93,10 +93,6 @@ void model_dispatch_sensors_update(void) {
  */
 void perform_system_tasks(void) {
 
-	gps_mgmt.tasks();
-
-	locator.tasks();
-
 	uart_tasks();
 
 #ifdef USB_ENABLED
@@ -164,25 +160,6 @@ void idle_task(void * p_context)
 {
     for(;;)
     {
-    	while (NRF_LOG_PROCESS()) { }
-
-    	//No more logs to process, go to sleep
-    	nrf_pwr_mgmt_run();
-
-    	task_yield();
-    	W_SYSVIEW_OnIdle();
-    }
-}
-
-/**
- * System continuous tasks
- *
- * @param p_context
- */
-void system_task(void * p_context)
-{
-    for(;;)
-    {
 		perform_system_tasks();
 
 #if defined (BLE_STACK_SUPPORT_REQD)
@@ -192,9 +169,12 @@ void system_task(void * p_context)
 		// BSP tasks
 		bsp_tasks();
 
-    	if (!NRF_LOG_PROCESS()) {
-        	task_yield();
-    	}
+    	sysview_task_idle();
+
+    	//No more logs to process, go to sleep
+    	nrf_pwr_mgmt_run();
+
+    	task_yield();
     }
 }
 
@@ -271,6 +251,10 @@ void peripherals_task(void * p_context)
 		}
 
 		gps_mgmt.runWDT();
+
+		gps_mgmt.tasks();
+
+		locator.tasks();
 
 		// update date
 		SDate dat;

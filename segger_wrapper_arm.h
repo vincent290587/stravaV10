@@ -5,8 +5,8 @@
  *      Author: Vincent
  */
 
-#ifndef LIBRARIES_UTILS_SEGGER_WRAPPER_H_
-#define LIBRARIES_UTILS_SEGGER_WRAPPER_H_
+#ifndef LIBRARIES_UTILS_SEGGER_WRAPPER_ARM_H_
+#define LIBRARIES_UTILS_SEGGER_WRAPPER_ARM_H_
 
 #include "nrf_log.h"
 #include <stddef.h>
@@ -94,59 +94,12 @@
 #if USE_SVIEW
 #define W_SYSVIEW_RecordEnterISR(...)  SEGGER_SYSVIEW_RecordEnterISR()
 #define W_SYSVIEW_RecordExitISR(...)   SEGGER_SYSVIEW_RecordExitISR()
-//#define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
-//#define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
-#define W_SYSVIEW_OnIdle(...)          SEGGER_SYSVIEW_OnIdle()
-// TODO
-#if 1
-#define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_OnTaskStartExec(X)
-#define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_OnTaskStopExec()
 #define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)
-#define W_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
-#define W_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
-#else
-#define W_SYSVIEW_OnTaskStartExec(X)   SEGGER_SYSVIEW_RecordVoid(X)
-#define W_SYSVIEW_OnTaskStopExec(X)    SEGGER_SYSVIEW_RecordEndCall(X)
-#define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)
-#endif
 #else
 #define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
 #define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
-#define W_SYSVIEW_OnIdle(...)          EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStartExec(X)   EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStopExec(X)    EMPTY_MACRO
 #define W_SYSVIEW_OnTaskCreate(X)      EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
 #endif
-
-#define SYSVIEW_MAX_NOF_TASKS          30
-
-#define TASK_BASE_NRF                  (36u)
-
-#define BOUCLE_TASK                    (TASK_BASE_NRF + 0u)
-#define SYSTEM_TASK                    (TASK_BASE_NRF + 1u)
-#define PERIPH_TASK                    (TASK_BASE_NRF + 2u)
-#define LCD_TASK                       (TASK_BASE_NRF + 3u)
-
-#define TASK_BASE                      (TASK_BASE_NRF + 5u)
-
-#define I2C_TASK                       (TASK_BASE + 0u)
-#define SPI_TASK                       (TASK_BASE + 1u)
-#define UART_TASK                      (TASK_BASE + 2u)
-
-//#define ANT_TASK                       (TASK_BASE + 6u)
-#define BLE_TASK                       (TASK_BASE + 7u)
-#define SD_ACCESS_TASK                 (TASK_BASE + 8u)
-#define SEG_PERF_TASK                  (TASK_BASE + 9u)
-#define NRF52_TASK                     (TASK_BASE + 10u)
-#define DISPLAY_TASK3                  (TASK_BASE + 12u)
-#define DISPLAY_TASK4                  (TASK_BASE + 13u)
-#define USB_VCOM_TASK                  (TASK_BASE + 14u)
-#define SST_TASK                       (TASK_BASE + 15u)
-#define EMPTY1                         (TASK_BASE + 16u)
-#define EMPTY2                         (TASK_BASE + 17u)
-
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -154,18 +107,5 @@
 
 #include "task_manager_wrapper.h"
 
-/////////    FUNCTIONS
-
-#if defined(__cplusplus)
-extern "C" {
-#endif /* _cplusplus */
-
-
-void segger_init(void);
-
-
-#if defined(__cplusplus)
-}
-#endif /* _cplusplus */
 
 #endif /* LIBRARIES_UTILS_SEGGER_WRAPPER_H_ */

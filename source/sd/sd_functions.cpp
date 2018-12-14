@@ -54,7 +54,7 @@ int init_liste_segments(void)
 
 	if (!is_fat_init()) return -2;
 
-	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
+	sysview_task_void_enter(SdAccess);
 
 	mes_segments._segs.clear();
 
@@ -63,7 +63,7 @@ int init_liste_segments(void)
 	if (error)
 	{
 		LOG_INFO("Change drive failed.");
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit();
 		return -1;
 	}
 #endif
@@ -72,7 +72,7 @@ int init_liste_segments(void)
 	if (f_opendir(&directory, "/"))
 	{
 		LOG_INFO("Open directory failed.");
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
@@ -125,7 +125,7 @@ int init_liste_segments(void)
 
 	NRF_LOG_FLUSH();
 
-	W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+	sysview_task_void_exit(SdAccess);
 
 	return 0;
 }
@@ -159,7 +159,7 @@ int load_segment(Segment& seg) {
 
 	time_start = 0.;
 
-	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
+	sysview_task_void_enter(SdAccess);
 
 	String fat_name = seg.getName();
 
@@ -168,7 +168,7 @@ int load_segment(Segment& seg) {
 	if (error)
 	{
 		NRF_LOG_ERROR("Open file failed. (error %u)", error);
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
@@ -194,11 +194,11 @@ int load_segment(Segment& seg) {
 	if (error)
 	{
 		NRF_LOG_ERROR("Close file failed. (error %u)", error);
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
-	W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+	sysview_task_void_exit(SdAccess);
 
 	LOG_INFO("%d points loaded", res);
 
@@ -222,7 +222,7 @@ int load_parcours(Parcours& mon_parcours) {
 
 	String fat_name = mon_parcours.getName();
 
-	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
+	sysview_task_void_enter(SdAccess);
 
 	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 
@@ -230,6 +230,7 @@ int load_parcours(Parcours& mon_parcours) {
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
@@ -257,10 +258,13 @@ int load_parcours(Parcours& mon_parcours) {
 	if (error)
 	{
 		LOG_INFO("Close file failed.");
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	} else {
 		LOG_INFO("%u points added to PRC", res);
 	}
+
+	sysview_task_void_exit(SdAccess);
 
 	return res;
 }
@@ -363,10 +367,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  */
 void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
-	uint32_t millis_ = millis();
-
 	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -382,7 +383,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
 
-		yield();
+//		yield();
 	}
 
 	error = f_close(&g_fileObject);

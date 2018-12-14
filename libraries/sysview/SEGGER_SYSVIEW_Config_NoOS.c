@@ -118,9 +118,12 @@ extern unsigned int SystemCoreClock;
 *  Function description
 *    Sends SystemView description strings.
 */
-static void _cbSendSystemDesc(void) {
+void _cbSendSystemDesc(void) {
   SEGGER_SYSVIEW_SendSysDesc("N="SYSVIEW_APP_NAME",D="SYSVIEW_DEVICE_NAME);
-  SEGGER_SYSVIEW_SendSysDesc("I#15=SysTick");
+  SEGGER_SYSVIEW_SendSysDesc("I#18=UARTE0_IRQn");
+  SEGGER_SYSVIEW_SendSysDesc("I#19=SPIM0_IRQn");
+  SEGGER_SYSVIEW_SendSysDesc("I#20=TWIM1_IRQn");
+  SEGGER_SYSVIEW_SendSysDesc("I#38=Radio_IRQn");
 }
 
 /*********************************************************************
