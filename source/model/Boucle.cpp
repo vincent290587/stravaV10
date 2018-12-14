@@ -139,7 +139,7 @@ void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 	}
 
 	// prepare new operations
-	stc.reset();
+	stc.resetCharge();
 
 	m_global_mode = new_mode;
 }

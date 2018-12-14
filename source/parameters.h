@@ -51,7 +51,7 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define MS5637_REFRESH_PER_MS          5000
+#define MS5637_REFRESH_PER_MS          350
 
 #define SENSORS_REFRESH_FREQ           2
 

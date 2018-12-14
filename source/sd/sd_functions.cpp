@@ -392,7 +392,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 		LOG_INFO("Close file failed.");
 		return;
 	} else {
-		LOG_INFO("Points added to histo: %u %u", nb_pos, millis() - millis_);
+		LOG_INFO("Points added to histo: %u", nb_pos);
 	}
 
 }

@@ -123,6 +123,10 @@ public:
 
 	float getAverageCurrent(void);
 
+	void resetCharge(void) {
+		m_charge_offset = _charge;
+	}
+
 	float getCharge() const {
 		return _charge;
 	}
@@ -144,7 +148,7 @@ private:
 	/**Value of the temperature in °C*/
 	float _temperature;
 	/**Value of the charge which went through the batt in mA.h */
-	float _charge;
+	float _charge, m_charge_offset;
 	// counter
 	float _counter;
 
