@@ -473,12 +473,10 @@ int main(void)
 	NRF_LOG_INFO("App init done");
 
 	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
-	m_tasks_id.system_id = task_create	(system_task, "system_task", NULL);
 	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
 	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
 
 	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
-	W_SYSVIEW_OnTaskCreate(SYSTEM_TASK);
 	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
 	W_SYSVIEW_OnTaskCreate(LCD_TASK);
 

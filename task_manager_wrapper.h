@@ -20,7 +20,7 @@ void sysview_task_block(uint32_t);
 void sysview_task_transfer(uint32_t);
 void sysview_task_event(uint32_t, uint32_t);
 void sysview_task_void_enter(uint32_t);
-void sysview_task_void_exit(void);
+void sysview_task_void_exit(uint32_t);
 void sysview_task_idle(void);
 
 
@@ -57,29 +57,27 @@ void sysview_task_idle(void);
 #define TASK_BASE_NRF                  (36u)
 
 #define BOUCLE_TASK                    (TASK_BASE_NRF + 0u)
-#define SYSTEM_TASK                    (TASK_BASE_NRF + 1u)
-#define PERIPH_TASK                    (TASK_BASE_NRF + 2u)
-#define LCD_TASK                       (TASK_BASE_NRF + 3u)
+#define PERIPH_TASK                    (TASK_BASE_NRF + 1u)
+#define LCD_TASK                       (TASK_BASE_NRF + 2u)
+#define SYSTEM_TASK                    (TASK_BASE_NRF + 3u)
 
-#define TASK_RECV_EVENT                499u
+#define TASK_BASE                      (512u)
 
-#define TASK_BASE                      (500u)
+#define TASK_RECV_EVENT                (TASK_BASE + 0u)
 
-#define I2C_TASK                       (TASK_BASE + 0u)
-#define SPI_TASK                       (TASK_BASE + 1u)
-#define UART_TASK                      (TASK_BASE + 2u)
+#define I2cReadSensors                 (TASK_BASE + 1u)
+#define SpiSendBuffer                  (TASK_BASE + 2u)
+#define UART_TASK                      (TASK_BASE + 3u)
 
-//#define ANT_TASK                       (TASK_BASE + 6u)
-#define BLE_TASK                       (TASK_BASE + 7u)
-#define SD_ACCESS_TASK                 (TASK_BASE + 8u)
-#define SEG_PERF_TASK                  (TASK_BASE + 9u)
-#define NRF52_TASK                     (TASK_BASE + 10u)
-#define DISPLAY_TASK3                  (TASK_BASE + 12u)
-#define DISPLAY_TASK4                  (TASK_BASE + 13u)
-#define USB_VCOM_TASK                  (TASK_BASE + 14u)
-#define SST_TASK                       (TASK_BASE + 15u)
-#define EMPTY1                         (TASK_BASE + 16u)
-#define EMPTY2                         (TASK_BASE + 17u)
+#define MainSegLoop                    (TASK_BASE + 4u)
+#define SdAccess                       (TASK_BASE + 5u)
+#define ComputeSegmentPerf             (TASK_BASE + 6u)
+#define ComputeZoom                    (TASK_BASE + 7u)
+#define DisplayPoints                  (TASK_BASE + 8u)
+#define DisplayMyself                  (TASK_BASE + 9u)
+#define SaveUserPosition               (TASK_BASE + 10u)
+#define USB_VCOM_TASK                  (TASK_BASE + 11u)
+#define SST_TASK                       (TASK_BASE + 12u)
 
 
 #ifdef TDD

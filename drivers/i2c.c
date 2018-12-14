@@ -49,6 +49,7 @@ NRF_TWI_MNGR_DEF(m_nrf_twi_mngr, MAX_PENDING_TRANSACTIONS, TWI_INSTANCE_ID);
 #ifdef _DEBUG_TWI
 static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
                                          void *p_context) {
+	W_SYSVIEW_RecordEnterISR();
 	if (p_event->type == NRFX_TWIM_EVT_DONE) {
 
 	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
@@ -57,6 +58,7 @@ static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
 
 		m_twim_xfer_complete = true;
 	}
+	W_SYSVIEW_RecordExitISR();
 }
 
 static void wait_xfer(uint32_t err_code) {

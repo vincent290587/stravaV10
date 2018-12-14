@@ -217,7 +217,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
         	m_is_xfer_done = true;
 
 
-        	sysview_task_void_exit();
+        	sysview_task_void_exit(USB_VCOM_TASK);
         } break;
         case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
         {

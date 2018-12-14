@@ -142,10 +142,15 @@ void GPS_MGMT::reset(void) {
 
 void GPS_MGMT::runWDT(void) {
 
+	static uint32_t last_toggled = 0;
+
 	if (m_epo_state != eGPSMgmtEPOIdle || this->isStandby()) return;
 
 	// check if GPS is in a good state
-	if (gps.time.age() > 3000) {
+	if (millis() - last_toggled > 3000 &&
+			gps.time.age() > 3000) {
+
+		last_toggled = millis();
 
 		LOG_WARNING("GPS WDT timeout: %u", gps.location.age());
 

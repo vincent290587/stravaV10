@@ -160,24 +160,6 @@ void idle_task(void * p_context)
 {
     for(;;)
     {
-    	sysview_task_idle();
-
-    	//No more logs to process, go to sleep
-    	nrf_pwr_mgmt_run();
-
-    	task_yield();
-    }
-}
-
-/**
- * System continuous tasks
- *
- * @param p_context
- */
-void system_task(void * p_context)
-{
-    for(;;)
-    {
 		perform_system_tasks();
 
 #if defined (BLE_STACK_SUPPORT_REQD)
@@ -187,9 +169,12 @@ void system_task(void * p_context)
 		// BSP tasks
 		bsp_tasks();
 
-    	if (!NRF_LOG_PROCESS()) {
-        	task_yield();
-    	}
+    	sysview_task_idle();
+
+    	//No more logs to process, go to sleep
+    	nrf_pwr_mgmt_run();
+
+    	task_yield();
     }
 }
 

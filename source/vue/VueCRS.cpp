@@ -195,7 +195,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		return;
 	}
 
-	sysview_task_void_enter(DISPLAY_TASK3);
+	sysview_task_void_enter(ComputeZoom);
 
 	uint16_t debut_cadran = _height / VUE_CRS_NB_LINES * (ligne - 1);
 	uint16_t fin_cadran   = _height / VUE_CRS_NB_LINES * (ligne + 1);
@@ -273,8 +273,8 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 	}
 
-	sysview_task_void_exit();
-	sysview_task_void_enter(DISPLAY_TASK4);
+	sysview_task_void_exit(ComputeZoom);
+	sysview_task_void_enter(DisplayPoints);
 
 	// on affiche
 	points_nb = 0;
@@ -331,6 +331,9 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		_lat = att.loc.lat;
 	}
 
+	sysview_task_void_exit(DisplayPoints);
+	sysview_task_void_enter(DisplayMyself);
+
 	// ma position
 	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
 	maDpey = regFenLim(_lat, minLat, maxLat, fin_cadran, debut_cadran);
@@ -379,7 +382,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		print("%");
 	}
 
-	sysview_task_void_exit();
+	sysview_task_void_exit(DisplayMyself);
 }
 
 

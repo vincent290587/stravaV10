@@ -13,14 +13,19 @@
  * Variables
  ******************************************************************************/
 
-
-
 #if USE_SVIEW
 #include "SEGGER_SYSVIEW.h"
 static SEGGER_SYSVIEW_TASKINFO pInfo[SYSVIEW_MAX_NOF_TASKS];
 static uint32_t nb_tasks;
 
 SEGGER_SYSVIEW_OS_API os_api;
+
+SEGGER_SYSVIEW_MODULE m_module = {
+		"M=stravaV10",
+		30,
+		0,
+};
+
 #endif
 
 #if USE_SVIEW
@@ -59,7 +64,7 @@ static uint32_t m_cur_void_id;
 /*******************************************************************************
  * Functions
  ******************************************************************************/
-void cbSendTaskList(void) {
+static void cbSendTaskList(void) {
 
 #if USE_SVIEW
 
@@ -93,9 +98,9 @@ void sysview_task_void_enter(uint32_t void_id) {
 	W_SYSVIEW_RecordVoid(m_cur_void_id);
 }
 
-void sysview_task_void_exit(void) {
+void sysview_task_void_exit(uint32_t void_id) {
 	// TODO
-	W_SYSVIEW_RecordEndCall(m_cur_void_id);
+	W_SYSVIEW_RecordEndCall(void_id);
 	m_cur_void_id = 0;
 }
 
@@ -105,6 +110,7 @@ void sysview_task_idle(void) {
 		W_SYSVIEW_OnIdle();
 	}
 }
+
 
 void segger_init(void) {
 
@@ -127,14 +133,14 @@ void segger_init(void) {
 	  pInfo[nb_tasks].TaskID = BOUCLE_TASK;
 	  pInfo[nb_tasks++].sName  = "BOUCLE_TASK";
 
-	  pInfo[nb_tasks].TaskID = SYSTEM_TASK;
-	  pInfo[nb_tasks++].sName  = "SYSTEM_TASK";
-
 	  pInfo[nb_tasks].TaskID = PERIPH_TASK;
 	  pInfo[nb_tasks++].sName  = "PERIPH_TASK";
 
 	  pInfo[nb_tasks].TaskID = LCD_TASK;
 	  pInfo[nb_tasks++].sName  = "LCD_TASK";
+
+//	  pInfo[nb_tasks].TaskID = SYSTEM_TASK;
+//	  pInfo[nb_tasks++].sName  = "SYSTEM_TASK";
 
 // copy to system view config file
 //	  499       OS_Task_Recv_evt            Task=%t EventMask=%b
@@ -197,6 +203,8 @@ void segger_init(void) {
 		  SEGGER_SYSVIEW_OnTaskCreate(pInfo[i].TaskID);
 
 	  }
+
+	  SEGGER_SYSVIEW_RegisterModule(&m_module);
 
 #endif
 
