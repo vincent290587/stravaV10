@@ -232,8 +232,7 @@ void GPS_MGMT::startEpoUpdate(void) {
 void GPS_MGMT::tasks(void) {
 
 	if (gps_ack.isUpdated()) {
-		LOG_WARNING("GPS ack message %ums", millis());
-		(void)gps_ack.value();
+		LOG_WARNING("GPS ack %d message %ums", _get_cmd_result(gps_ack.value()), millis());
 	}
 
 	switch (m_power_state) {

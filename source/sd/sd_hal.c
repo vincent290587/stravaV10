@@ -69,9 +69,8 @@ void test_memory(void)
 
     NRF_LOG_INFO("QSPI write and read example");
 
-    srand(0);
     for (i = 0; i < QSPI_TEST_DATA_SIZE; ++i) {
-      m_buffer_tx[i] = (uint8_t)rand();
+      m_buffer_tx[i] = (uint8_t)i;
     }
     m_buffer_tx[0] = 0xDB;
 

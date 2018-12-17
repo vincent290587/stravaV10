@@ -782,11 +782,10 @@ static void scan_init(void)
 	// Reload the whitelist and whitelist all peers.
 	whitelist_load();
 
-	ret_code_t ret;
-
 	// Get the whitelist previously set using pm_whitelist_set().
-	ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
+	ret_code_t ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
 			whitelist_irks,  &irk_cnt);
+	APP_ERROR_CHECK(ret);
 
 	m_scan_param.active   = 0;
 	m_scan_param.interval = SCAN_INTERVAL;

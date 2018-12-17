@@ -218,7 +218,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 float Attitude::filterPower(float speed_) {
 
 	float res = 0.;
-	float m_power;
+	float power = 0.;
 	float fSpeed = -1.;
 	Point P1, P2, Pc;
 	float dTime;
@@ -281,17 +281,17 @@ float Attitude::filterPower(float speed_) {
 		fSpeed = speed_ / 3.6;
 
 		// STEP 2 : Calcul
-		m_power = 9.81 * MASSE * m_vit_asc; // grav
-		m_power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
-		m_power += 0.204 * fSpeed * fSpeed * fSpeed; // air
-		m_power *= 1.025; // transmission (rendement velo)
-		res = m_power;
+		power = 9.81 * MASSE * m_vit_asc; // grav
+		power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
+		power += 0.204 * fSpeed * fSpeed * fSpeed; // air
+		power *= 1.025; // transmission (rendement velo)
+		res = power;
 
 	} else {
 		LOG_INFO("dTime= %d ms", (int)(dTime*1000));
 	}
 
-	res = m_power;
+	res = power;
 
 	return res;
 }
