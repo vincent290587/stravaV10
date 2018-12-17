@@ -45,6 +45,7 @@ void simulator_init(void) {
 	g_fileObject = fopen("GPX_simu.csv", "r");
 
 	m_app_error.special = 0xDB;
+	m_app_error.crc_att = 0xFB;
 	snprintf(m_app_error._buffer, sizeof(m_app_error._buffer), "Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
 	m_app_error.saved_att.climb = 562.;
 	m_app_error.saved_att.dist = 17700;

@@ -25,9 +25,9 @@ Attitude::Attitude() {
 	m_cur_ele = 0.;
 	m_climb = 0.;
 	m_vit_asc = 0.;
-	m_power = 0.;
 
 	m_is_init = false;
+	m_is_acc_init = false;
 	m_is_alt_init = false;
 
 	m_st_buffer_nb_elem = 0;
@@ -44,18 +44,18 @@ void Attitude::addNewDate(SDate *date_) {
 }
 
 
-void Attitude::computeElevation(void) {
+float Attitude::filterElevation(void) {
 
 	float ele = 0.;
 
-	if (!baro.computeAlti(&ele)) return;
+	if (!baro.computeAlti(&ele)) return 0.;
 
 	m_cur_ele = ele;
 
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;
 		m_last_stored_ele = ele;
-		return;
+		return 0.;
 	}
 
 	if (ele > m_last_stored_ele + 1.) {
@@ -68,17 +68,14 @@ void Attitude::computeElevation(void) {
 		// la plus basse
 		m_last_stored_ele = ele;
 	}
+
+	return m_climb;
 }
 
 
-/**
- *
- * @param loc_
- */
-void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_) {
+float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
-	// small correction to allow time with millisecond precision
-	float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
+	float res = 0.;
 
 	// init the altitude model
 	if ((eLocationSourceGPS == source_ ||
@@ -90,15 +87,14 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		baro.seaLevelForAltitude(loc_.alt, baro.m_pressure);
 
 		// treat elevation
-		this->computeElevation();
+		this->filterElevation();
 
 		// reset accumulated data
 		m_climb = 0.;
 		m_last_stored_ele = m_cur_ele;
 
-		if (m_app_error.special == 0xDB) {
-
-			m_app_error.special = 0x00;
+		if (m_app_error.special == 0xDB &&
+				m_app_error.crc_att == 0xFB) {
 
 			// restoring position and accumulated climb
 			att.climb = m_app_error.saved_att.climb;
@@ -106,8 +102,6 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 			att.dist = m_app_error.saved_att.dist;
 			m_last_save_dist = att.dist;
-			
-			memcpy(&loc_, &m_app_error.saved_att.loc, sizeof(SLoc));
 
 			att.pr = m_app_error.saved_att.pr;
 
@@ -116,77 +110,104 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 		}
 
+		m_app_error.special = 0x00;
+
 	} else if ((eLocationSourceGPS == source_ ||
 			eLocationSourceNRF == source_) &&
 			baro.hasSeaLevelRef()) {
 
-		// treat elevation
-		this->computeElevation();
-
-		att.climb = m_climb;
+		res = att.climb = this->filterElevation();
 
 		// overwrite GPS/NRF's elevation
 		loc_.alt = m_cur_ele;
 
 	}
 
-	// update the computed power
-	this->majPower(loc_.speed);
+	return res;
+}
 
-	att.pwr = m_power;
 
-	// add this point to our historic
-	mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
+void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_) {
 
 	float tmp_dist = distance_between(att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
 
-	if (tmp_dist > 400000) LOG_WARNING("Weird pos: %f %f %f %f", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
+	char buffer[100];
+	snprintf(buffer, sizeof(buffer), "Weird pos: %f %f %f %f\r\n", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
+	if (tmp_dist > 400000) LOG_WARNING(buffer);
 
-	if (tmp_dist < 400000) {
+	att.dist += tmp_dist;
 
-		att.dist += tmp_dist;
+	// save attitude to a buffer for later saving to memory
+	if (m_is_acc_init &&
+			att.dist > m_last_save_dist + 15.) {
 
-		// save attitude to a buffer for later saving to memory
-		if (m_is_init &&
-				att.dist > m_last_save_dist + 15) {
+		sysview_task_void_enter(SaveUserPosition);
 
-			sysview_task_void_enter(SaveUserPosition);
+		m_last_save_dist = att.dist;
 
-			m_last_save_dist = att.dist;
+		// save position on queue
+		if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
 
-			// save position on queue
-			if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
+			// save on SD
+			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
 
-				// save on SD
-				sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			m_st_buffer_nb_elem = 0;
 
-				m_st_buffer_nb_elem = 0;
-
-			}
-
-			// save on buffer
-			memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
-			memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
-			m_st_buffer[m_st_buffer_nb_elem].pwr = att.pwr;
-
-			m_st_buffer_nb_elem++;
-
-			sysview_task_void_exit(SaveUserPosition);
-
-		} else if (att.dist > m_last_save_dist + 25) {
-			// first position
-			att.dist = m_last_save_dist;
-			m_is_init = true;
 		}
 
+		// save on buffer
+		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
+		memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
+		m_st_buffer[m_st_buffer_nb_elem].pwr = att.pwr;
+
+		m_st_buffer_nb_elem++;
+
+		// save position and stuff in case of crash
+		memcpy(&m_app_error.saved_att, &att, sizeof(SAtt));
+		m_app_error.crc_att = 0xFB;
+
+		sysview_task_void_exit(SaveUserPosition);
+
+	} else if (att.dist > m_last_save_dist + 25.) {
+		// first position
+		att.dist = m_last_save_dist;
+		m_is_acc_init = true;
 	}
+
+}
+
+
+
+/**
+ *
+ * @param loc_
+ */
+void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_) {
+
+	if (m_is_init) {
+
+		// small correction to allow time with millisecond precision
+		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
+
+		// add this point to our historic
+		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
+
+		// calculate elevation shifts
+		this->computeElevation(loc_, source_);
+
+		// update the computed power
+		att.pwr = this->filterPower(loc_.speed);
+
+		this->computeDistance(loc_, date_, source_);
+
+	}
+
+	m_is_init = true;
 
 	// update global location
 	memcpy(&att.loc , &loc_ , sizeof(SLoc));
 	// update date
 	memcpy(&att.date, &date_, sizeof(SDate));
-	// save position and stuff
-	memcpy(&m_app_error.saved_att, &att, sizeof(SAtt));
 }
 
 
@@ -194,8 +215,10 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
  *
  * @param speed_
  */
-void Attitude::majPower(float speed_) {
+float Attitude::filterPower(float speed_) {
 
+	float res = 0.;
+	float m_power;
 	float fSpeed = -1.;
 	Point P1, P2, Pc;
 	float dTime;
@@ -205,7 +228,7 @@ void Attitude::majPower(float speed_) {
 	float _x[FILTRE_NB+1];
 	float _lrCoef[2];
 
-	if (mes_points.size() <= FILTRE_NB + 1) return;
+	if (mes_points.size() <= FILTRE_NB + 1) return res;
 
 	P1 = mes_points.getFirstPoint();
 	P2 = mes_points.getPointAt(FILTRE_NB);
@@ -262,12 +285,15 @@ void Attitude::majPower(float speed_) {
 		m_power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
 		m_power += 0.204 * fSpeed * fSpeed * fSpeed; // air
 		m_power *= 1.025; // transmission (rendement velo)
+		res = m_power;
 
 	} else {
 		LOG_INFO("dTime= %d ms", (int)(dTime*1000));
 	}
 
-	return;
+	res = m_power;
+
+	return res;
 }
 
 
