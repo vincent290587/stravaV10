@@ -181,6 +181,11 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 extern "C" void HardFault_process(HardFault_stack_t * p_stack)
 {
+	LOG_ERROR("HardFault: pc=%u", p_stack->pc);
+
+	m_app_error.special = 0xDC;
+	m_app_error._buffer[0] = p_stack->pc;
+
 #ifdef DEBUG_NRF
     NRF_BREAKPOINT_COND;
     // On hardfault, the system can only recover with a reset.
@@ -402,10 +407,9 @@ int main(void)
 	LOG_INFO("Init start");
 
 	// check for errors
-	if (m_app_error.special == 0xDB) {
-		LOG_ERROR("Error identified:");
-		LOG_ERROR(m_app_error._buffer);
-		NRF_LOG_ERROR(m_app_error._buffer);
+	if (m_app_error.special == 0xDC) {
+		LOG_ERROR("Hard Fault found");
+		m_app_error.special = 0;
 	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
 	}
 

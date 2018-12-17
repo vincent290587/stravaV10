@@ -24,6 +24,12 @@ void Boucle::init(void) {
 
 	LOG_INFO("Boucle init...");
 
+	if (m_app_error.special == 0xDB) {
+		LOG_ERROR("Error identified:");
+		LOG_ERROR(m_app_error._buffer);
+	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
+	}
+
 	if (init_liste_segments()) {
 		LOG_ERROR("Boucle init fail");
 	}

@@ -57,15 +57,6 @@ void BoucleCRS::init() {
 
 	m_dist_next_seg = 9999;
 
-	if (m_app_error.special == 0xDB) {
-
-		m_app_error.special = 0x00;
-		// restoring position and stuff
-		memcpy(&att, &m_app_error.saved_att, sizeof(SAtt));
-
-		LOG_WARNING("Last stored date: %u", m_app_error.saved_att.date.date);
-	}
-
 	if (m_s_parcours) this->loadPRC();
 
 	m_needs_init = false;

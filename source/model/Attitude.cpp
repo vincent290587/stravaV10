@@ -96,6 +96,26 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		m_climb = 0.;
 		m_last_stored_ele = m_cur_ele;
 
+		if (m_app_error.special == 0xDB) {
+
+			m_app_error.special = 0x00;
+
+			// restoring position and accumulated climb
+			att.climb = m_app_error.saved_att.climb;
+			m_climb = att.climb;
+
+			att.dist = m_app_error.saved_att.dist;
+			m_last_save_dist = att.dist;
+			
+			memcpy(&loc_, &m_app_error.saved_att.loc, sizeof(SLoc));
+
+			att.pr = m_app_error.saved_att.pr;
+
+			LOG_WARNING("Last stored date: %u", m_app_error.saved_att.date.date);
+			LOG_WARNING("Last stored dist: %f", att.dist);
+
+		}
+
 	} else if ((eLocationSourceGPS == source_ ||
 			eLocationSourceNRF == source_) &&
 			baro.hasSeaLevelRef()) {
@@ -120,39 +140,45 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 	float tmp_dist = distance_between(att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
 
-	att.dist += tmp_dist;
+	if (tmp_dist > 400000) LOG_WARNING("Weird pos: %f %f %f %f", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
 
-	// save attitude to a buffer for later saving to memory
-	if (m_is_init &&
-			att.dist > m_last_save_dist + 15) {
+	if (tmp_dist < 400000) {
 
-		sysview_task_void_enter(SaveUserPosition);
+		att.dist += tmp_dist;
 
-		m_last_save_dist = att.dist;
+		// save attitude to a buffer for later saving to memory
+		if (m_is_init &&
+				att.dist > m_last_save_dist + 15) {
 
-		// save position on queue
-		if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
+			sysview_task_void_enter(SaveUserPosition);
 
-			// save on SD
-			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			m_last_save_dist = att.dist;
 
-			m_st_buffer_nb_elem = 0;
+			// save position on queue
+			if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
 
+				// save on SD
+				sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+
+				m_st_buffer_nb_elem = 0;
+
+			}
+
+			// save on buffer
+			memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
+			memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
+			m_st_buffer[m_st_buffer_nb_elem].pwr = att.pwr;
+
+			m_st_buffer_nb_elem++;
+
+			sysview_task_void_exit(SaveUserPosition);
+
+		} else if (att.dist > m_last_save_dist + 25) {
+			// first position
+			att.dist = m_last_save_dist;
+			m_is_init = true;
 		}
 
-		// save on buffer
-		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
-		memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
-		m_st_buffer[m_st_buffer_nb_elem].pwr = att.pwr;
-
-		m_st_buffer_nb_elem++;
-
-		sysview_task_void_exit(SaveUserPosition);
-
-	} else if (att.dist > m_last_save_dist + 25) {
-		// first position
-		att.dist = 0;
-		m_is_init = true;
 	}
 
 	// update global location
