@@ -25,6 +25,7 @@ STC3100::STC3100(int32_t sensorID) {
 	_charge = 0;
 	_deviceID = 0;
 	_r_sens = 0;
+	m_start_av = 0;
 	_stc3100Mode = STC3100_MODE_ULTRAHIGHRES;
 
 	m_soft_reset = false;
@@ -225,9 +226,9 @@ float STC3100::getCorrectedVoltage(float int_res) {
  */
 float STC3100::getAverageCurrent(void) {
 
-	if (!millis()) return 0.;
+	if (!(millis() - m_start_av)) return 0.;
 
-	float res = (_charge - m_charge_offset) * 3600 * 1000 / millis();
+	float res = (_charge - m_charge_offset) * 3600 * 1000 / (millis() - m_start_av);
 	return res;
 }
 
