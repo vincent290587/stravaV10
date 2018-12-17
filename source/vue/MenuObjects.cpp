@@ -105,6 +105,7 @@ void MenuPage::render(void) {
 
 	uint8_t i = 0;
 	for (auto& item : m_items) {
+		vue.print("  ");
 		vue.print(item.getName());
 		if (i++ == ind_sel) vue.println(" <=");
 		else vue.println();
