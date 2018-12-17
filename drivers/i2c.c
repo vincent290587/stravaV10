@@ -58,6 +58,10 @@ static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
 //		events_set(_tasks_id->peripherals_id, TASK_EVENT_PERIPH_TWI_WAIT);
 //	}
 
+	if (p_event->type != NRFX_TWIM_EVT_DONE) {
+		LOG_ERROR("I2c event %u", p_event->type);
+	}
+
 	m_twim_xfer_complete = true;
 
 	W_SYSVIEW_RecordExitISR();
@@ -80,8 +84,17 @@ static void wait_xfer(uint32_t err_code) {
 //			}
 //		}
 
+		uint32_t millis_ = millis();
 		while (!m_twim_xfer_complete) {
+
+			perform_system_tasks_light();
 			nrf_pwr_mgmt_run();
+
+			if (millis() - millis_ > 200) {
+				LOG_ERROR("I2c timeout");
+				err_code = NRFX_ERROR_TIMEOUT;
+				break;
+			}
 		}
 	}
 }
