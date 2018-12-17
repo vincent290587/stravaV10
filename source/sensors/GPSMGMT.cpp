@@ -152,7 +152,7 @@ void GPS_MGMT::runWDT(void) {
 
 		last_toggled = millis();
 
-		LOG_WARNING("GPS WDT timeout: %u", gps.location.age());
+		LOG_WARNING("GPS WDT timeout: %u", gps.time.age());
 
 		gps_uart_stop();
 
@@ -429,7 +429,9 @@ void GPS_MGMT::startHostAidingEPO(sLocationData& loc_data, uint32_t age_) {
 			loc_data.lat, loc_data.lon, (int)loc_data.alt, _year, _month, _day,
 			hours, minutes, seconds);
 
-	ASSERT(res + 10 < sizeof(buffer));
+	if (res <= 0) return;
+
+	ASSERT((uint32_t)res + 10 < sizeof(buffer));
 
 	// handle checksum
 	uint8_t ret = 0;
