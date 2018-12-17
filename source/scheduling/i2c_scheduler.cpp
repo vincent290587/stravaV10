@@ -343,7 +343,7 @@ static void timer_handler(void * p_context)
     	if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) read_fxos();
     }
 
-    W_SYSVIEW_RecordEnterISR();
+    W_SYSVIEW_RecordExitISR();
 }
 
 #endif

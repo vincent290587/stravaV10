@@ -123,6 +123,7 @@ void _cbSendSystemDesc(void) {
   SEGGER_SYSVIEW_SendSysDesc("I#18=UARTE0_IRQn");
   SEGGER_SYSVIEW_SendSysDesc("I#19=SPIM0_IRQn");
   SEGGER_SYSVIEW_SendSysDesc("I#20=TWIM1_IRQn");
+  SEGGER_SYSVIEW_SendSysDesc("I#33=RTC1_IRQn");
   SEGGER_SYSVIEW_SendSysDesc("I#38=Radio_IRQn");
 }
 

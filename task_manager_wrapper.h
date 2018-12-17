@@ -20,6 +20,7 @@ void sysview_task_block(uint32_t);
 void sysview_task_transfer(uint32_t);
 void sysview_task_event(uint32_t, uint32_t);
 void sysview_task_void_enter(uint32_t);
+void sysview_task_u32_enter(uint32_t, uint32_t);
 void sysview_task_void_exit(uint32_t);
 void sysview_task_idle(void);
 
@@ -78,6 +79,8 @@ void sysview_task_idle(void);
 #define SaveUserPosition               (TASK_BASE + 10u)
 #define USB_VCOM_TASK                  (TASK_BASE + 11u)
 #define SST_TASK                       (TASK_BASE + 12u)
+#define I2cReadReg8                    (TASK_BASE + 13u)
+#define I2cReadRegN                    (TASK_BASE + 14u)
 
 
 #ifdef TDD

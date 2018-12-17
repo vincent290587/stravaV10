@@ -40,6 +40,7 @@ SEGGER_SYSVIEW_MODULE m_module = {
 #define W_SYSVIEW_RecordVoid(X)          SEGGER_SYSVIEW_RecordVoid(X)
 #define W_SYSVIEW_RecordEndCall(X)       SEGGER_SYSVIEW_RecordEndCall(X)
 
+#define W_SYSVIEW_RecordU32(...)         SEGGER_SYSVIEW_RecordU32(__VA_ARGS__)
 #define W_SYSVIEW_RecordU32x2(...)       SEGGER_SYSVIEW_RecordU32x2(__VA_ARGS__)
 
 #else
@@ -54,6 +55,7 @@ SEGGER_SYSVIEW_MODULE m_module = {
 #define W_SYSVIEW_RecordVoid(X)          EMPTY_MACRO
 #define W_SYSVIEW_RecordEndCall(X)       EMPTY_MACRO
 
+#define W_SYSVIEW_RecordU32(...)         EMPTY_MACRO
 #define W_SYSVIEW_RecordU32x2(...)       EMPTY_MACRO
 
 #endif
@@ -95,6 +97,11 @@ void sysview_task_event(uint32_t task_id, uint32_t event_mask) {
 void sysview_task_void_enter(uint32_t void_id) {
 	m_cur_void_id = void_id;
 	W_SYSVIEW_RecordVoid(m_cur_void_id);
+}
+
+void sysview_task_u32_enter(uint32_t void_id, uint32_t data) {
+	m_cur_void_id = void_id;
+	W_SYSVIEW_RecordU32(m_cur_void_id, data);
 }
 
 void sysview_task_void_exit(uint32_t void_id) {

@@ -12,6 +12,7 @@
 #include "app_timer.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "millis.h"
 #include "nrf_pwr_mgmt.h"
 #include "Model.h"
 #include "segger_wrapper.h"
@@ -317,6 +318,7 @@ bool i2c_write_reg_8(uint8_t address, uint8_t reg, uint8_t val) {
  */
 bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
 
+	sysview_task_u32_enter(I2cReadReg8, address);
 	/* Indicate which register we want to read from */
 	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &reg, 1, FLAG_NO_STOP);
 	wait_xfer(err_code);
@@ -328,6 +330,8 @@ bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
 		LOG_ERROR("TWI read_reg_8 problem at address 0x%x.", address);
 		return false;
 	}
+
+	sysview_task_void_exit(I2cReadReg8);
 
 	return true;
 }
@@ -341,6 +345,7 @@ bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
  */
 bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len) {
 
+	sysview_task_u32_enter(I2cReadRegN, address);
 	/* Indicate which register we want to read from */
 	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &reg, 1, FLAG_NO_STOP);
 	wait_xfer(err_code);
@@ -352,6 +357,8 @@ bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len
 		LOG_ERROR("TWI read_reg_n error 0x%X at address 0x%x.", err_code, address);
 		return false;
 	}
+
+	sysview_task_void_exit(I2cReadRegN);
 
 	return true;
 }
