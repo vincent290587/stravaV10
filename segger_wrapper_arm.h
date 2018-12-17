@@ -66,7 +66,7 @@
 #define SVIEW_INIT(...)                EMPTY_MACRO
 //#undef NRF_LOG_BACKEND_RTT_ENABLED
 //#define NRF_LOG_BACKEND_RTT_ENABLED 0
-#elif NRF_LOG_BACKEND_RTT_ENABLED
+#elif NRF_LOG_ENABLED
 #define LOG_INFO(...)                  NRF_LOG_INFO(__VA_ARGS__)
 #define LOG_RAW_INFO(X)                NRF_LOG_RAW_INFO("%c", X)
 #define LOG_WARNING(...)               NRF_LOG_WARNING(__VA_ARGS__)

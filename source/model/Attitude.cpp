@@ -31,6 +31,10 @@ Attitude::Attitude() {
 	m_is_alt_init = false;
 
 	m_st_buffer_nb_elem = 0;
+
+#ifdef USE_JSCOPE
+		jscope.init();
+#endif
 }
 
 /**
