@@ -159,6 +159,11 @@ int main(void)
 		exit(-1);
 	}
 
+	if (!test_score ()) {
+		LOG_ERROR("Unit testing failed !");
+		exit(-1);
+	}
+
 	GUI_connector_init();
 
 	LOG_INFO("Program init");

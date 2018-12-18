@@ -195,6 +195,8 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 		// add this point to our historic
 		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
+		if (loc_.speed > 7.) att.nbsec_act++;
+		att.nbpts++;
 
 		// calculate elevation shifts
 		this->computeElevation(loc_, source_);

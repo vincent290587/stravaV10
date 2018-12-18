@@ -13,7 +13,7 @@
 #include <vue/Screenutils.h>
 #include "segger_wrapper.h"
 
-#define VUE_FEC_NB_LINES            5
+#define VUE_FEC_NB_LINES            6
 
 VueFEC::VueFEC() : Adafruit_GFX(0, 0) {
 	m_el_time = 0;
@@ -74,8 +74,11 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadran(2, VUE_FEC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadran(3, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
-		this->cadran(3, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
+		this->cadran(3, VUE_FEC_NB_LINES, 1, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
+//		this->cadran(3, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
+
+		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
+		this->cadran(4, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
 
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();
@@ -84,11 +87,11 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		h_config.nb_elem_tot = FEC_PW_BUFFER_NB_ELEM;
 		h_config.p_f_read    = _vue_fec_pw_rb_read;
 
-		this->HistoH(4, VUE_FEC_NB_LINES, h_config);
+		this->HistoH(5, VUE_FEC_NB_LINES, h_config);
 	}
 
-	this->cadran(5, VUE_FEC_NB_LINES, 1, "Avg", _imkstr((int)stc.getCurrent()), "mA");
-	this->cadran(5, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
+	this->cadran(6, VUE_FEC_NB_LINES, 1, "Cur", _imkstr((int)stc.getCurrent()), "mA");
+	this->cadran(6, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
 	return res;
 }

@@ -25,6 +25,8 @@ extern "C" void ble_nus_tasks(void);
 
 SAtt att;
 
+SufferScore   suffer_score;
+
 Attitude      attitude;
 
 ListeSegments mes_segments;
@@ -189,10 +191,6 @@ void boucle_task(void * p_context)
 	{
 		LOG_INFO("\r\nTask %u", millis());
 
-#ifdef ANT_STACK_SUPPORT_REQD
-		roller_manager_tasks();
-#endif
-
 		boucle.run();
 
 		if (!millis()) NRF_LOG_WARNING("No millis");
@@ -243,6 +241,12 @@ void peripherals_task(void * p_context)
 #ifndef BLE_STACK_SUPPORT_REQD
 		neopixel_radio_callback_handler(false);
 #endif
+
+#ifdef ANT_STACK_SUPPORT_REQD
+		roller_manager_tasks();
+		suffer_score.addHrmData(hrm_info.bpm, millis());
+#endif
+
 		// check screen update & unlock task
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
 			vue.refresh();

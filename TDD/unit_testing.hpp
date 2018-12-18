@@ -8,7 +8,7 @@
 #ifndef TDD_UNIT_TESTING_HPP_
 #define TDD_UNIT_TESTING_HPP_
 
-
+bool test_score(void);
 
 bool test_projection (void);
 

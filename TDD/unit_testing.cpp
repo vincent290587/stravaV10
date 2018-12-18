@@ -72,6 +72,25 @@ bool test_projection (void) {
 	return true;
 }
 
+bool test_score(void) {
+
+	SufferScore test_score;
+	uint32_t timestamp = 0;
+
+	LOG_INFO("Testing suffer score...");
+
+	for (int i=0; i < 116; i++) test_score.addHrmData(110, (timestamp++)*1000);
+	for (int i=0; i < 158; i++) test_score.addHrmData(130, (timestamp++)*1000);
+	for (int i=0; i < 1831; i++) test_score.addHrmData(155, (timestamp++)*1000);
+	for (int i=0; i < 812; i++) test_score.addHrmData(170, (timestamp++)*1000);
+	for (int i=0; i < 330; i++) test_score.addHrmData(180, (timestamp++)*1000);
+
+	LOG_INFO("Score is %f on %f", test_score.getScore(), 71.);
+
+	if (fabsf(test_score.getScore() - 66.46) > 4) return false;
+
+	return true;
+}
 
 #define U_LAT     (45.)
 #define D_LAT     (0.0001)

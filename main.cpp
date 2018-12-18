@@ -157,7 +157,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
                     p_info->err_code,
 					  nrf_strerror_get(p_info->err_code),
                     p_info->p_file_name,
-                    p_info->line_num);
+                    (uint16_t)p_info->line_num);
 #if USE_SVIEW
             SEGGER_SYSVIEW_Error(m_app_error._buffer);
 #else
@@ -394,11 +394,11 @@ int main(void)
 		NVIC_SystemReset();
 	}
 
-    char buff[100];
-    memset(buff, 0, sizeof(buff));
-    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
-    		reset_reason);
-    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
+//    char buff[100];
+//    memset(buff, 0, sizeof(buff));
+//    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
+//    		reset_reason);
+//    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
 
 
     err_code = app_timer_init();

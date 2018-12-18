@@ -70,8 +70,10 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 
 		this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
 
-		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
-		this->cadran(6, VUE_CRS_NB_LINES, 2, "Temp", _fmkstr(stc.getTemperature(), 1U), "C");
+		float avg_speed = 0.;
+		if (att.nbsec_act) avg_speed = att.dist * 3.6 / att.nbsec_act;
+		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg", _fmkstr(avg_speed, 2U), "km/h");
+		this->cadran(6, VUE_CRS_NB_LINES, 2, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
 
 		this->cadran(7, VUE_CRS_NB_LINES, 1, "STC", _imkstr((int)stc.getCurrent()), "mA");
 		this->cadran(7, VUE_CRS_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
