@@ -383,16 +383,16 @@ int main(void)
 
 	pins_init();
 
-//	uint32_t reset_reason = NRF_POWER->RESETREAS;
-//	NRF_POWER->RESETREAS = 0xffffffff;
-//	NRF_LOG_WARNING("Reset_reason: 0x%08x.\n", reset_reason);
+	uint32_t reset_reason = NRF_POWER->RESETREAS;
+	NRF_POWER->RESETREAS = 0xffffffff;
+	NRF_LOG_WARNING("Reset_reason: 0x%08x.\n", reset_reason);
 
-//	if (reset_reason == 0)
-//	{
-//		// watchdog reset
-//		//while(1) ;
-//		NVIC_SystemReset();
-//	}
+	if (reset_reason == 0)
+	{
+		// watchdog reset
+		//while(1) ;
+		NVIC_SystemReset();
+	}
 
 //    char buff[100];
 //    memset(buff, 0, sizeof(buff));
