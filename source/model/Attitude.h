@@ -1,7 +1,7 @@
 /*
  * Attitude.h
  *
- *  Created on: 29 déc. 2017
+ *  Created on: 29 dÃ©c. 2017
  *      Author: Vincent
  */
 
@@ -41,7 +41,7 @@ typedef struct {
 typedef struct {
 	char _buffer[256];
 	uint8_t special;
-	SAtt saved_att;;
+ 	SAtt saved_att;
 	uint8_t crc_att;
 } sAppErrorDescr;
 
