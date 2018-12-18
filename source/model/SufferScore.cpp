@@ -8,6 +8,21 @@
 #include <string.h>
 #include "SufferScore.h"
 
+
+#define HRM_Z1_LIM			80
+#define HRM_Z2_LIM			120
+#define HRM_Z3_LIM			144
+#define HRM_Z4_LIM			165
+#define HRM_Z5_LIM			176
+
+
+#define HRM_Z1_PTS_PER_HOUR			(16./3600.)
+#define HRM_Z2_PTS_PER_HOUR			(33./3600.)
+#define HRM_Z3_PTS_PER_HOUR			(72./3600.)
+#define HRM_Z4_PTS_PER_HOUR			(85./3600.)
+#define HRM_Z5_PTS_PER_HOUR			(95./3600.)
+
+
 SufferScore::SufferScore() {
 	m_score = 0.;
 	m_last_timestamp = 0;
