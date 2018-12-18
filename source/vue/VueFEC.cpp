@@ -74,7 +74,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadran(2, VUE_FEC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadran(3, VUE_FEC_NB_LINES, 1, "Score", _imkstr((int)suffer_score.getScore()), NULL);
+		this->cadran(3, VUE_FEC_NB_LINES, 1, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
 //		this->cadran(3, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
 
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
@@ -90,7 +90,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->HistoH(5, VUE_FEC_NB_LINES, h_config);
 	}
 
-	this->cadran(6, VUE_FEC_NB_LINES, 1, "Avg", _imkstr((int)stc.getCurrent()), "mA");
+	this->cadran(6, VUE_FEC_NB_LINES, 1, "Cur", _imkstr((int)stc.getCurrent()), "mA");
 	this->cadran(6, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
 	return res;

@@ -14,11 +14,12 @@
 #define HRM_Z4_LIM			165
 #define HRM_Z5_LIM			176
 
-#define HRM_Z1_PTS_PER_HOUR			(25./3600.)
-#define HRM_Z2_PTS_PER_HOUR			(60./3600.)
-#define HRM_Z3_PTS_PER_HOUR			(115./3600.)
-#define HRM_Z4_PTS_PER_HOUR			(250./3600.)
-#define HRM_Z5_PTS_PER_HOUR			(300./3600.)
+
+#define HRM_Z1_PTS_PER_HOUR			(16./3600.)
+#define HRM_Z2_PTS_PER_HOUR			(33./3600.)
+#define HRM_Z3_PTS_PER_HOUR			(72./3600.)
+#define HRM_Z4_PTS_PER_HOUR			(85./3600.)
+#define HRM_Z5_PTS_PER_HOUR			(95./3600.)
 
 #define HRM_ZONES_NB        5
 
@@ -28,7 +29,7 @@ class SufferScore {
 public:
 	SufferScore();
 
-	void addHrmData(int hrm_meas);
+	void addHrmData(int hrm_meas, uint32_t timestamp);
 
 	float getScore() const {
 		return m_score;
@@ -37,7 +38,8 @@ public:
 private:
 	float m_score;
 
-	uint16_t m_hrm_bins[HRM_ZONES_NB];
+	uint32_t m_last_timestamp;
+	float m_hrm_bins[HRM_ZONES_NB];
 
 	void updateScore(void);
 };
