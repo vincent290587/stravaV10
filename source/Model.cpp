@@ -229,7 +229,7 @@ void peripherals_task(void * p_context)
 #ifdef _DEBUG_TWI
 		static uint32_t _counter = 0;
 
-		if (++_counter >= 1000 / (SENSORS_REFRESH_FREQ * APP_TIMEOUT_DELAY_MS)) {
+		if (++_counter >= SENSORS_REFRESH_PER_MS / APP_TIMEOUT_DELAY_MS) {
 			_counter = 0;
 			stc.refresh(nullptr);
 			veml.refresh(nullptr);
