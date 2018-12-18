@@ -94,6 +94,7 @@ set(SRCS
 	source/model/BoucleCRS.cpp
 	source/model/BoucleFEC.cpp
 	source/model/Locator.cpp
+	source/model/SufferScore.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
     source/vue/MenuObjects.cpp

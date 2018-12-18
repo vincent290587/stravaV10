@@ -25,6 +25,8 @@ extern "C" void ble_nus_tasks(void);
 
 SAtt att;
 
+SufferScore   suffer_score;
+
 Attitude      attitude;
 
 ListeSegments mes_segments;
@@ -191,6 +193,8 @@ void boucle_task(void * p_context)
 
 #ifdef ANT_STACK_SUPPORT_REQD
 		roller_manager_tasks();
+
+		suffer_score.addHrmData(hrm_info.bpm);
 #endif
 
 		boucle.run();

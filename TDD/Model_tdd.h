@@ -34,6 +34,7 @@ extern sTasksIDs m_tasks_id;
 #include "AltiBaro.h"
 #include "GPSMGMT.h"
 #include "Attitude.h"
+#include "SufferScore.h"
 #include "mk64f_parser.h"
 #include "Vue.h"
 
@@ -68,6 +69,8 @@ extern STC3100              stc;
 extern sAppErrorDescr m_app_error;
 
 extern AltiBaro      baro;
+
+extern SufferScore   suffer_score;
 
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;

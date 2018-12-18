@@ -40,6 +40,7 @@ extern sTasksIDs m_tasks_id;
 #include "AltiBaro.h"
 #include "Attitude.h"
 #include "VParser.h"
+#include "SufferScore.h"
 #include "mk64f_parser.h"
 
 extern SAtt          att;
@@ -79,6 +80,12 @@ extern sNeopixelOrders      neopixel;
 extern sAppErrorDescr m_app_error;
 
 extern TinyGPSPlus   gps;
+
+extern SufferScore   suffer_score;
+
+extern sHrmInfo hrm_info;
+extern sBscInfo bsc_info;
+extern sFecInfo fec_info;
 
 extern "C" {
 #endif // defined C++

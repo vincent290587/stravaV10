@@ -45,6 +45,8 @@ AltiBaro      baro;
 
 sAppErrorDescr m_app_error;
 
+SufferScore   suffer_score;
+
 sHrmInfo hrm_info;
 sBscInfo bsc_info;
 sFecInfo fec_info;
