@@ -123,8 +123,6 @@ void GUI_UpdateLS027(void) {
 		sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
 	}
 
-
-	LOG_INFO("LS027 Updated");
 #endif
 }
 
@@ -148,7 +146,6 @@ extern "C" void neopixel_update(uint8_t red, uint8_t green, uint8_t blue) {
 		sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
 	}
 
-	LOG_INFO("Neopixel Updated");
 #endif
 }
 

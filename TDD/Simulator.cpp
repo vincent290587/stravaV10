@@ -38,11 +38,19 @@ static FIL* g_fileObject;   /* File object */
 #endif
 
 static uint32_t last_point_ms = 0;
+static uint32_t nb_gps_loc = 0;
 
 void simulator_init(void) {
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
 
+	m_app_error.special = 0xDB;
+	m_app_error.crc_att = 0xFB;
+	snprintf(m_app_error._buffer, sizeof(m_app_error._buffer), "Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
+	m_app_error.saved_att.climb = 562.;
+	m_app_error.saved_att.dist = 17700;
+	m_app_error.saved_att.pr = 3;
+	m_app_error.saved_att.date.date = 211218;
 }
 
 void simulator_tasks(void) {
@@ -117,6 +125,17 @@ void simulator_tasks(void) {
 		// send to uart_tdd
 		for (int i=0; i < nmea_length; i++)
 			uart_rx_handler(g_bufferWrite[i]);
+
+		if (++nb_gps_loc == 1) {
+			sLocationData loc_data;
+			loc_data.alt = 9.5;
+			loc_data.lat = lat;
+			loc_data.lon = lon;
+			loc_data.utc_time = 15 * 3600 + 5 * 60 + 39;
+			loc_data.date = 11218;
+
+			gps_mgmt.startHostAidingEPO(loc_data, 350);
+		}
 
 	} else {
 		fclose(g_fileObject);

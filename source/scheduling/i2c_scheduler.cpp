@@ -19,6 +19,8 @@
 
 #ifndef _DEBUG_TWI
 
+#define I2C_SCHEDULING_PERIOD_MS      (MS5637_REFRESH_PER_MS / 2)
+
 static uint32_t m_last_polled_index = 0;
 
 // Buffer for data read from sensors.
@@ -39,7 +41,7 @@ static void _i2c_scheduling_sensors_post_init(void) {
 
 	baro.setCx(&m_ms5637_handle);
 
-	LOG_INFO("Sensors initialized");
+	LOG_WARNING("Sensors initialized");
 }
 
 
@@ -142,10 +144,6 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
 
-	if (m_last_polled_index == 0) {
-		_i2c_scheduling_sensors_init();
-	}
-
 	LOG_DEBUG("Refreshing sensors t=%u ms\r\n", millis());
 
 	stc.refresh(&m_stc_buffer);
@@ -153,8 +151,6 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 	veml.refresh(m_veml_buffer);
 
 	// dispatch to model
-	m_last_polled_index++;
-
 	model_dispatch_sensors_update();
 
 }
@@ -167,10 +163,6 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 static void read_fxos_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
-
-	if (m_last_polled_index == 0) {
-		_i2c_scheduling_sensors_init();
-	}
 
 	fxos_tasks(&m_fxos_handle);
 
@@ -331,19 +323,17 @@ static void timer_handler(void * p_context)
 {
 	W_SYSVIEW_RecordEnterISR();
 
-	m_last_polled_index++;
-
     if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) read_ms();
 
-    if (m_last_polled_index >= 1000 / (MS5637_REFRESH_PER_MS * SENSORS_REFRESH_FREQ)) {
-    	m_last_polled_index = 1;
+    if (++m_last_polled_index >= SENSORS_REFRESH_PER_MS / I2C_SCHEDULING_PERIOD_MS) {
+    	m_last_polled_index = 0;
 
     	read_all();
 
     	if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) read_fxos();
     }
 
-    W_SYSVIEW_RecordEnterISR();
+    W_SYSVIEW_RecordExitISR();
 }
 
 #endif
@@ -358,17 +348,13 @@ void i2c_scheduling_init(void) {
 
 	nrf_delay_ms(3);
 
-    ret_code_t err_code;
+	ret_code_t err_code;
+	err_code = app_timer_create(&m_timer, APP_TIMER_MODE_REPEATED, timer_handler);
+	APP_ERROR_CHECK(err_code);
 
-    if (!m_last_polled_index) {
-    	err_code = app_timer_create(&m_timer, APP_TIMER_MODE_REPEATED, timer_handler);
-    	APP_ERROR_CHECK(err_code);
+	err_code = app_timer_start(m_timer, APP_TIMER_TICKS(I2C_SCHEDULING_PERIOD_MS), NULL);
+	APP_ERROR_CHECK(err_code);
 
-    	err_code = app_timer_start(m_timer, APP_TIMER_TICKS(MS5637_REFRESH_PER_MS), NULL);
-    	APP_ERROR_CHECK(err_code);
-
-    	m_last_polled_index = 1;
-    }
 #else
     stc.init(100);
     veml.init();

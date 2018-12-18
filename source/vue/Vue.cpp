@@ -45,10 +45,10 @@ void Vue::tasks(eButtonsEvent event) {
 	}
 	case eVueGlobalScreenPRC:
 	{
-		if (this->propagateEventsPRC(event)) {
-			// propagate to the inner menu
-			this->propagateEvent(event);
+		if (!m_is_menu_selected) {
+			this->propagateEventsPRC(event);
 		}
+		this->propagateEvent(event);
 		break;
 	}
 	case eVueGlobalScreenDEBUG:
@@ -98,10 +98,9 @@ void Vue::refresh(void) {
 	// Notifications tasks
 	if (m_notifs.size()) {
 
-		Notif& notif = m_notifs.front();
+		this->setTextWrap(true);
 
-		this->fillRect(0, 0, _width, 60, textbgcolor);
-		this->drawFastHLine(0, 60, _width, textcolor);
+		Notif& notif = m_notifs.front();
 
 		this->setCursor(5, 5);
 		this->setTextSize(2);
@@ -110,12 +109,21 @@ void Vue::refresh(void) {
 			this->print(notif.m_title);
 			this->println(":");
 		}
+
+		int16_t x1; int16_t y1; uint16_t w; uint16_t h;
+		this->getTextBounds((char*)notif.m_msg.c_str(), this->getCursorX(), this->getCursorY(), &x1, &y1, &w, &h);
+
+		h += this->getCursorY() + 15;
+		this->drawFastHLine(0, h, _width, textcolor);
+		this->fillRect(0, 0, _width, h, textbgcolor);
 		this->print(notif.m_msg);
 
 		notif.m_persist--;
 		if (notif.m_persist == 0) {
 			m_notifs.pop_front();
 		}
+
+		this->setTextWrap(false);
 	}
 
     if (m_tasks_id.ls027_id != TASK_ID_INVALID) {

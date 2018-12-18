@@ -322,7 +322,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	ret_code_t            err_code;
 	ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;
 
-	W_SYSVIEW_OnTaskStartExec(BLE_TASK);
+	W_SYSVIEW_RecordEnterISR();
 
 	switch (p_ble_evt->header.evt_id)
 	{
@@ -435,8 +435,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		break;
 	}
 
-
-	W_SYSVIEW_OnTaskStopExec(BLE_TASK);
+	W_SYSVIEW_RecordExitISR();
 
 }
 
@@ -783,11 +782,10 @@ static void scan_init(void)
 	// Reload the whitelist and whitelist all peers.
 	whitelist_load();
 
-	ret_code_t ret;
-
 	// Get the whitelist previously set using pm_whitelist_set().
-	ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
+	ret_code_t ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
 			whitelist_irks,  &irk_cnt);
+	APP_ERROR_CHECK(ret);
 
 	m_scan_param.active   = 0;
 	m_scan_param.interval = SCAN_INTERVAL;

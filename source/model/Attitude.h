@@ -1,7 +1,7 @@
 /*
  * Attitude.h
  *
- *  Created on: 29 déc. 2017
+ *  Created on: 29 dÃ©c. 2017
  *      Author: Vincent
  */
 
@@ -41,7 +41,8 @@ typedef struct {
 typedef struct {
 	char _buffer[256];
 	uint8_t special;
-	SAtt saved_att;
+ 	SAtt saved_att;
+	uint8_t crc_att;
 } sAppErrorDescr;
 
 
@@ -55,21 +56,23 @@ public:
 	void addNewFECPoint(sFecInfo& fec_);
 
 private:
+	float m_climb;
 	float m_last_save_dist;
 	float m_last_stored_ele;
 	float m_cur_ele;
-	float m_climb;
 	float m_vit_asc;
-	float m_power;
 
 	bool m_is_init;
+	bool m_is_acc_init;
 	bool m_is_alt_init;
 
 	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
 	uint16_t m_st_buffer_nb_elem;
 
-	void computeElevation(void);
-	void majPower(float speed_);
+	float filterElevation(void);
+	float computeElevation(SLoc& loc_, eLocationSource source_);
+	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
+	float filterPower(float speed_);
 };
 
 #endif /* SOURCE_MODEL_ATTITUDE_H_ */

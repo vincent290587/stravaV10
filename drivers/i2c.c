@@ -12,6 +12,7 @@
 #include "app_timer.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
+#include "millis.h"
 #include "nrf_pwr_mgmt.h"
 #include "Model.h"
 #include "segger_wrapper.h"
@@ -46,31 +47,58 @@ NRF_TWI_MNGR_DEF(m_nrf_twi_mngr, MAX_PENDING_TRANSACTIONS, TWI_INSTANCE_ID);
 
 #endif
 
+#ifdef _DEBUG_TWI
 static void twim_evt_handler(nrfx_twim_evt_t const * p_event,
                                          void *p_context) {
-	if (p_event->type == NRFX_TWIM_EVT_DONE) {
+	W_SYSVIEW_RecordEnterISR();
 
-	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-	    	events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_TWI_WAIT);
-	    }
+//	sTasksIDs* _tasks_id = (sTasksIDs*)p_context;
 
-		m_twim_xfer_complete = true;
+//	if (_tasks_id->peripherals_id != TASK_ID_INVALID) {
+//		events_set(_tasks_id->peripherals_id, TASK_EVENT_PERIPH_TWI_WAIT);
+//	}
+
+	if (p_event->type != NRFX_TWIM_EVT_DONE) {
+		LOG_ERROR("I2c event %u", p_event->type);
 	}
+
+	m_twim_xfer_complete = true;
+
+	W_SYSVIEW_RecordExitISR();
 }
 
 static void wait_xfer(uint32_t err_code) {
-	if (!err_code) {
-    	m_twim_xfer_complete = false;
-	    if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-	    	events_wait(TASK_EVENT_PERIPH_TWI_WAIT);
-	    } else {
-	    	while (!m_twim_xfer_complete) {
-	    		nrf_pwr_mgmt_run();
-	    	}
-	    }
+
+
+	if (err_code) {
+		LOG_WARNING("TWI driver error: %u", err_code);
 	}
-	return;
+
+	{
+		m_twim_xfer_complete = false;
+//		if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+//			events_wait(TASK_EVENT_PERIPH_TWI_WAIT);
+//		} else {
+//			while (!m_twim_xfer_complete) {
+//				nrf_pwr_mgmt_run();
+//			}
+//		}
+
+		uint32_t millis_ = millis();
+		while (!m_twim_xfer_complete) {
+
+			perform_system_tasks_light();
+			nrf_pwr_mgmt_run();
+
+			if (millis() - millis_ > 200) {
+				LOG_ERROR("I2c timeout");
+				err_code = NRFX_ERROR_TIMEOUT;
+				break;
+			}
+		}
+	}
 }
+#endif
 
 /**
  *
@@ -97,12 +125,13 @@ void i2c_init(void) {
     nrfx_twim_config_t const config = {
     		.scl                = SCL_PIN_NUMBER,
 			.sda                = SDA_PIN_NUMBER,
-			.frequency          = NRF_TWIM_FREQ_100K,
+			.frequency          = NRF_TWIM_FREQ_400K,
 			.interrupt_priority = APP_IRQ_PRIORITY_LOWEST,
 			.hold_bus_uninit    = true
     };
 
-    err_code = nrfx_twim_init(&m_twi, &config, twim_evt_handler, NULL);
+    err_code = nrfx_twim_init(&m_twi, &config, twim_evt_handler, &m_tasks_id);
+//    err_code = nrfx_twim_init(&m_twi, &config, NULL, NULL);
     APP_ERROR_CHECK(err_code);
 
     nrfx_twim_enable(&m_twi);
@@ -302,6 +331,7 @@ bool i2c_write_reg_8(uint8_t address, uint8_t reg, uint8_t val) {
  */
 bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
 
+	sysview_task_u32_enter(I2cReadReg8, address);
 	/* Indicate which register we want to read from */
 	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &reg, 1, FLAG_NO_STOP);
 	wait_xfer(err_code);
@@ -313,6 +343,8 @@ bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
 		LOG_ERROR("TWI read_reg_8 problem at address 0x%x.", address);
 		return false;
 	}
+
+	sysview_task_void_exit(I2cReadReg8);
 
 	return true;
 }
@@ -326,6 +358,7 @@ bool i2c_read_reg_8(uint8_t address, uint8_t reg, uint8_t *val) {
  */
 bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len) {
 
+	sysview_task_u32_enter(I2cReadRegN, address);
 	/* Indicate which register we want to read from */
 	ret_code_t err_code = nrfx_twim_tx(i2c_get_ref(), address, &reg, 1, FLAG_NO_STOP);
 	wait_xfer(err_code);
@@ -337,6 +370,8 @@ bool i2c_read_reg_n(uint8_t address, uint8_t reg, uint8_t *val, unsigned int len
 		LOG_ERROR("TWI read_reg_n error 0x%X at address 0x%x.", err_code, address);
 		return false;
 	}
+
+	sysview_task_void_exit(I2cReadRegN);
 
 	return true;
 }

@@ -51,9 +51,9 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define MS5637_REFRESH_PER_MS          5000
+#define MS5637_REFRESH_PER_MS          350
 
-#define SENSORS_REFRESH_FREQ           2
+#define SENSORS_REFRESH_PER_MS         1000
 
 #define ATT_BUFFER_NB_ELEM             8
 
@@ -63,7 +63,7 @@
 
 ///// CODE FLAGS
 
-#define _DEBUG_TWI
+//#define _DEBUG_TWI
 
 
 #endif /* SOURCE_PARAMETERS_H_ */

@@ -25,6 +25,7 @@ STC3100::STC3100(int32_t sensorID) {
 	_charge = 0;
 	_deviceID = 0;
 	_r_sens = 0;
+	m_start_av = 0;
 	_stc3100Mode = STC3100_MODE_ULTRAHIGHRES;
 
 	m_soft_reset = false;
@@ -50,10 +51,12 @@ bool STC3100::init(uint32_t r_sens, stc3100_res_t res) {
 
 	_r_sens = r_sens;
 
+	m_charge_offset = 0;
+
 #ifdef _DEBUG_TWI
     // reset
 	writeCommand(REG_CONTROL, STC_RESET);
-	delay(1);
+	delay_ms(1);
 
 	// read device ID
 	i2c_read_reg_8(STC3100_ADDRESS, REG_DEVICE_ID, &_deviceID);
@@ -84,6 +87,7 @@ void STC3100::reset(void) {
 
 	// reset
 	this->writeCommand(REG_CONTROL, STC_RESET);
+	delay_ms(5);
 
 }
 
@@ -222,9 +226,9 @@ float STC3100::getCorrectedVoltage(float int_res) {
  */
 float STC3100::getAverageCurrent(void) {
 
-	if (!millis()) return 0.;
+	if (!(millis() - m_start_av)) return 0.;
 
-	float res = _charge * 3600 * 1000 / millis();
+	float res = (_charge - m_charge_offset) * 3600 * 1000 / (millis() - m_start_av);
 	return res;
 }
 

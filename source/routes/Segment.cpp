@@ -390,6 +390,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 			m_p_data->_monElev0 = vect._z;
 			m_p_data->_monPElev = 0.;
 			m_p_data->_elevTot = delta._z;
+			m_p_data->_monPDist = 0.;
 			m_p_data->_monAvance = 0.;
 			_actif = SEG_START;
 
@@ -414,6 +415,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 				m_p_data->_monAvance = (vect._t - pp->_rtime) - m_p_data->_monCur;
 
 				m_p_data->_monElev0 = m_p_data->_lpts.getFirstPoint()->_alt;
+				m_p_data->_monPDist = (float)m_p_data->_lpts.ind_P1 / (float)m_p_data->_lpts.size();
 
 				if (m_p_data->_elevTot > 5.) {
 					m_p_data->_monPElev = vect._z;
@@ -441,6 +443,8 @@ void Segment::majPerformance(ListePoints& mes_points) {
 			m_p_data->_monCur = vect._t - m_p_data->_monStart;
 			m_p_data->_monAvance = delta._t - m_p_data->_monCur;
 
+			m_p_data->_monPDist = 1.;
+
 			_actif = SEG_FIN;
 
 		}
@@ -448,4 +452,29 @@ void Segment::majPerformance(ListePoints& mes_points) {
 	} else if (_actif < SEG_OFF) {
 		_actif += 1;
 	}
+}
+
+/**
+ *
+ * @return The segment priority score, between -1 and 10
+ */
+int Segment::getScore(void) {
+
+	if (this->longueur() == 0) return -1;
+
+	// max score for segments just finished
+	if (this->_actif < SEG_OFF) return 10;
+	if (this->_actif == SEG_OFF) return 1;
+	if (this->_actif == SEG_START) return 2;
+
+	// we are in START or ON
+	int score = 1;
+	if (this->_actif == SEG_ON && m_p_data) {
+
+		LOG_DEBUG("Calculated pDist: %f", m_p_data->_monPDist);
+		score = (int)regFenLim(m_p_data->_monPDist, 0., 1., 1., 10.);
+
+	}
+
+	return score;
 }

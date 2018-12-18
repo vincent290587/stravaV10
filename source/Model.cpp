@@ -93,10 +93,6 @@ void model_dispatch_sensors_update(void) {
  */
 void perform_system_tasks(void) {
 
-	gps_mgmt.tasks();
-
-	locator.tasks();
-
 	uart_tasks();
 
 #ifdef USB_ENABLED
@@ -141,11 +137,11 @@ void model_go_to_msc_mode(void) {
  */
 bool check_memory_exception(void) {
 
-	int tot_point_mem = 0;
-	tot_point_mem += Point::getObjectCount() * sizeof(Point);
-	tot_point_mem += (Point2D::getObjectCount()-Point::getObjectCount()) * sizeof(Point2D);
+	int tot_point_mem = Point::getObjectCount() * sizeof(Point);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
 
-	if (tot_point_mem > TOT_HEAP_MEM_AVAILABLE) {
+	if (tot_point_mem + 1000 > TOT_HEAP_MEM_AVAILABLE) {
 
 		LOG_ERROR("Memory exhausted");
 
@@ -164,25 +160,6 @@ void idle_task(void * p_context)
 {
     for(;;)
     {
-    	while (NRF_LOG_PROCESS()) { }
-
-    	//No more logs to process, go to sleep
-    	nrf_pwr_mgmt_run();
-
-    	task_yield();
-    	W_SYSVIEW_OnIdle();
-    }
-}
-
-/**
- * System continuous tasks
- *
- * @param p_context
- */
-void system_task(void * p_context)
-{
-    for(;;)
-    {
 		perform_system_tasks();
 
 #if defined (BLE_STACK_SUPPORT_REQD)
@@ -192,9 +169,12 @@ void system_task(void * p_context)
 		// BSP tasks
 		bsp_tasks();
 
-    	if (!NRF_LOG_PROCESS()) {
-        	task_yield();
-    	}
+    	sysview_task_idle();
+
+    	//No more logs to process, go to sleep
+    	nrf_pwr_mgmt_run();
+
+    	task_yield();
     }
 }
 
@@ -249,7 +229,7 @@ void peripherals_task(void * p_context)
 #ifdef _DEBUG_TWI
 		static uint32_t _counter = 0;
 
-		if (++_counter >= 1000 / (SENSORS_REFRESH_FREQ * APP_TIMEOUT_DELAY_MS)) {
+		if (++_counter >= SENSORS_REFRESH_PER_MS / APP_TIMEOUT_DELAY_MS) {
 			_counter = 0;
 			stc.refresh(nullptr);
 			veml.refresh(nullptr);
@@ -261,9 +241,7 @@ void peripherals_task(void * p_context)
 #endif
 
 #ifndef BLE_STACK_SUPPORT_REQD
-		CRITICAL_REGION_ENTER();
 		neopixel_radio_callback_handler(false);
-		CRITICAL_REGION_EXIT();
 #endif
 		// check screen update & unlock task
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
@@ -271,6 +249,10 @@ void peripherals_task(void * p_context)
 		}
 
 		gps_mgmt.runWDT();
+
+		gps_mgmt.tasks();
+
+		locator.tasks();
 
 		// update date
 		SDate dat;

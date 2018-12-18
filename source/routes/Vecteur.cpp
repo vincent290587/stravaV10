@@ -33,7 +33,7 @@ Vecteur::Vecteur(float x, float y, float z, float t) {
 }
 
 
-Vecteur::Vecteur(Point point1, Point point2) {
+Vecteur::Vecteur(Point &point1, Point &point2) {
 
     _x = distance_between(point1._lat, point1._lon, point1._lat, point2._lon);
 
@@ -76,3 +76,8 @@ Vecteur Vecteur::operator=(const Point *point) {
     }
 }
 
+Vecteur Vecteur::operator/(const float cst) {
+	_x /= cst;
+	_y /= cst;
+	return *this;
+}

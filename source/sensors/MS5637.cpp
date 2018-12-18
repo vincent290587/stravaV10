@@ -7,12 +7,14 @@
 
 #include "i2c.h"
 #include "utils.h"
+#include "Model.h"
 #include "MS5637.h"
 #include "millis.h"
 #include "parameters.h"
-#include "segger_wrapper.h"
 #include "pgmspace.h"
-
+#include "app_timer.h"
+#include "segger_wrapper.h"
+#include "task_manager_wrapper.h"
 
 /* error codes */
 #define NO_ERR          0
@@ -20,11 +22,23 @@
 #define ERR_BAD_READLEN -2
 #define ERR_NEEDS_BEGIN -3
 
+APP_TIMER_DEF(m_ms5637_update);
+
 
 /* delay to wait for sampling to complete, on each OSR level */
 static const uint8_t SamplingDelayMs[6] PROGMEM = { 2, 4, 6, 10, 18, 34 };
 
 #define NAN (-1.)
+
+static void ms5637_timer_callback(void * p_context) {
+
+	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
+
+	if (_tasks_ids->peripherals_id != TASK_ID_INVALID) {
+		events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_MS_WAIT);
+	}
+
+}
 
 MS5637::MS5637 () {
 
@@ -39,6 +53,10 @@ void MS5637::init(void) {
 
 #ifdef _DEBUG_TWI
 	this->setCx(nullptr);
+
+	// Create timer.
+	uint32_t err_code = app_timer_create(&m_ms5637_update, APP_TIMER_MODE_SINGLE_SHOT, ms5637_timer_callback);
+	APP_ERROR_CHECK(err_code);
 #endif
 
 	return;
@@ -204,7 +222,16 @@ uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample
 
 	uint8_t sampling_delay = pgm_read_byte(SamplingDelayMs + (int )oversample_level);
 
-	delay_ms(sampling_delay);
+	// arm the timer to later unblock the task
+	uint32_t timeout_ticks = APP_TIMER_TICKS(sampling_delay);
+	uint32_t err_code = app_timer_start(m_ms5637_update, timeout_ticks, &m_tasks_id);
+	APP_ERROR_CHECK(err_code);
+	// we block the task while performing the measurement
+	if (!err_code) {
+		events_wait(TASK_EVENT_PERIPH_MS_WAIT);
+	} else {
+		delay_ms(sampling_delay);
+	}
 
 	uint8_t adc[3] = {0};
 	if (!this->wireReadDataBlock(CMD_READ_ADC, adc, sizeof(adc))) {

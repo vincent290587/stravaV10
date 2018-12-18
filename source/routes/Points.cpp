@@ -9,25 +9,97 @@
 #include "Points.h"
 
 
-Point2D::Point2D(bool count) : m_count(count) {
+Location::Location() {
 	_lat = 0;
 	_lon = 0;
-
-	if (m_count) this->increaseCount2D();
 }
 
-Point2D::Point2D(float lat, float lon) : Point2D(true) {
+Location::Location(float lat, float lon) {
 	_lat = lat;
 	_lon = lon;
 }
 
-Point2D::Point2D(const Point2D& pt) : Point2D(true) {
+Location::Location(const Location& pt) {
 	_lat = pt._lat;
 	_lon = pt._lon;
 }
 
+Location::Location(const Location* pt) {
+	if (pt) {
+		_lat = pt->_lat;
+		_lon = pt->_lon;
+	}
+}
+
+Location::~Location() {
+}
+
+int Location::isValid() {
+	if (_lat == 0. || _lon == 0. || fabsf(_lat) > 89. || fabsf(_lon) > 189.) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
+
+Point2D::Point2D(bool count) : Location() {
+	if (count) this->increaseCount2D();
+}
+
+Point2D::Point2D(const Point2D& pt) : Point2D(false) {
+	_lat = pt._lat;
+	_lon = pt._lon;
+
+	this->increaseCount2D();
+}
+
+Point2D::Point2D(const Point2D* pt) : Point2D(false) {
+	if (pt) {
+		_lat = pt->_lat;
+		_lon = pt->_lon;
+	}
+
+	this->increaseCount2D();
+}
+
+Point2D::Point2D(const Location& pt) : Point2D(false) {
+	_lat = pt._lat;
+	_lon = pt._lon;
+
+	this->increaseCount2D();
+}
+
+Point2D::Point2D(const Location* pt) : Point2D(false) {
+	if (pt) {
+		_lat = pt->_lat;
+		_lon = pt->_lon;
+	}
+
+	this->increaseCount2D();
+}
+
+Point2D::Point2D(float lat, float lon) : Point2D(false) {
+	_lat = lat;
+	_lon = lon;
+
+	this->increaseCount2D();
+}
+
 Point2D::~Point2D() {
-	if (m_count) this->decreaseCount2D();
+	this->decreaseCount2D();
+}
+
+Point2D& Point2D::operator =(const Location& pt) {
+	_lat = pt._lat;
+	_lon = pt._lon;
+	return *this;
+}
+
+Point2D& Point2D::operator =(const Location* pt) {
+	_lat = pt->_lat;
+	_lon = pt->_lon;
+	return *this;
 }
 
 void Point2D::increaseCount2D(void) {
@@ -38,32 +110,13 @@ void Point2D::decreaseCount2D(void) {
 	objectCount2D--;
 }
 
-Point2D & Point2D::operator=(const Point2D *point) {
-	if (point != 0) {
-		_lat = point->_lat;
-		_lon = point->_lon;
-		return *this;
-	} else {
-		return *this;
-	}
-}
-
-Point2D & Point2D::operator=(const Point2D &point) {
-	_lat = point._lat;
-	_lon = point._lon;
-	return *this;
-}
-
-Point::Point() : Point2D(false) {
-	_lat = 0;
-	_lon = 0;
+Point::Point(bool count) : Location() {
 	_alt = 0;
 	_rtime = 0;
-
-	this->increaseCount();
+	if (count) this->increaseCount();
 }
 
-Point::Point(float lat, float lon, float alt, float rtime) : Point2D(false) {
+Point::Point(float lat, float lon, float alt, float rtime) : Point(false) {
 	_lat = lat;
 	_lon = lon;
 	_alt = alt;
@@ -72,11 +125,42 @@ Point::Point(float lat, float lon, float alt, float rtime) : Point2D(false) {
 	this->increaseCount();
 }
 
-Point::Point(const Point& pt) : Point2D(false) {
+Point::Point(const Location& pt) : Point(false) {
+	_lat = pt._lat;
+	_lon = pt._lon;
+	_alt = 0.;
+	_rtime = 0.;
+
+	this->increaseCount();
+}
+
+Point::Point(const Location* pt) : Point(false) {
+	if (pt) {
+		_lat = pt->_lat;
+		_lon = pt->_lon;
+		_alt = 0.;
+		_rtime = 0.;
+	}
+
+	this->increaseCount();
+}
+
+Point::Point(const Point& pt) : Point(false) {
 	_lat = pt._lat;
 	_lon = pt._lon;
 	_alt = pt._alt;
 	_rtime = pt._rtime;
+
+	this->increaseCount();
+}
+
+Point::Point(const Point* pt) : Point(false) {
+	if (pt) {
+		_lat = pt->_lat;
+		_lon = pt->_lon;
+		_alt = pt->_alt;
+		_rtime = pt->_rtime;
+	}
 
 	this->increaseCount();
 }
@@ -91,12 +175,6 @@ void Point::increaseCount(void) {
 
 void Point::decreaseCount(void) {
 	objectCount--;
-}
-
-void Point::increaseCount2D(void) {
-}
-
-void Point::decreaseCount2D(void) {
 }
 
 Point & Point::operator=(const Point *point) {
@@ -119,13 +197,13 @@ Point & Point::operator=(const Point &point) {
 	return *this;
 }
 
-Point& Point::operator =(const Point2D& point) {
+Point& Point::operator =(const Location& point) {
 	_lat = point._lat;
 	_lon = point._lon;
 	return *this;
 }
 
-Point& Point::operator =(const Point2D* point) {
+Point& Point::operator =(const Location* point) {
 	_lat = point->_lat;
 	_lon = point->_lon;
 	return *this;
@@ -133,12 +211,4 @@ Point& Point::operator =(const Point2D* point) {
 
 void Point::toString() {
 	//printf("Point -> %f %f %f %f\n", _lat, _lon, _alt, _rtime);
-}
-
-int Point2D::isValid() {
-	if (_lat == 0. || _lon == 0. || fabsf(_lat) > 89. || fabsf(_lon) > 189.) {
-		return 0;
-	} else {
-		return 1;
-	}
 }

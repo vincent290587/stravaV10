@@ -23,8 +23,12 @@ public:
 	virtual bool isTime() {return false;}
 	virtual void run() {}
 
-	void invalidate(void) {
+	virtual void invalidate(void) {
 		m_needs_init = true;
+	}
+
+	bool needsInit() const {
+		return m_needs_init;
 	}
 
 protected:

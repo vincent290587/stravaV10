@@ -181,6 +181,11 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 extern "C" void HardFault_process(HardFault_stack_t * p_stack)
 {
+	LOG_ERROR("HardFault: pc=%u", p_stack->pc);
+
+	m_app_error.special = 0xDC;
+	m_app_error._buffer[0] = p_stack->pc;
+
 #ifdef DEBUG_NRF
     NRF_BREAKPOINT_COND;
     // On hardfault, the system can only recover with a reset.
@@ -295,7 +300,6 @@ static void buttons_leds_init(void)
 static void pins_init(void)
 {
 	nrf_gpio_cfg_input(FXOS_INT1, NRF_GPIO_PIN_PULLDOWN);
-	nrf_gpio_cfg_input(FXOS_INT2, NRF_GPIO_PIN_PULLDOWN);
 
 	nrf_gpio_cfg_output(FXOS_RST);
 	nrf_gpio_pin_clear(FXOS_RST);
@@ -403,10 +407,9 @@ int main(void)
 	LOG_INFO("Init start");
 
 	// check for errors
-	if (m_app_error.special == 0xDB) {
-		LOG_ERROR("Error identified:");
-		LOG_ERROR(m_app_error._buffer);
-		NRF_LOG_ERROR(m_app_error._buffer);
+	if (m_app_error.special == 0xDC) {
+		LOG_ERROR("Hard Fault found");
+		m_app_error.special = 0;
 	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
 	}
 
@@ -474,12 +477,10 @@ int main(void)
 	NRF_LOG_INFO("App init done");
 
 	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
-	m_tasks_id.system_id = task_create	(system_task, "system_task", NULL);
 	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
 	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
 
 	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
-	W_SYSVIEW_OnTaskCreate(SYSTEM_TASK);
 	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
 	W_SYSVIEW_OnTaskCreate(LCD_TASK);
 

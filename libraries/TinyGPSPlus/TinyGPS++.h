@@ -116,7 +116,7 @@ public:
 private:
    bool valid, updated;
    uint32_t time, newTime;
-   uint32_t lastCommitTime;
+   uint32_t lastCommitTime=0;
    void commit();
    void setTime(const char *term);
 };

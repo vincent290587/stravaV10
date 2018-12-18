@@ -8,7 +8,7 @@
 #ifndef PARCOURS_H
 #define	PARCOURS_H
 
-#include <list>
+#include <vector>
 #include "ListePoints.h"
 #include "Vecteur.h"
 #include "WString.h"
@@ -75,7 +75,7 @@ private:
 		return _parcs.size();
 	}
 
-	std::list<Parcours> _parcs;
+	std::vector<Parcours> _parcs;
  private:
  };
 

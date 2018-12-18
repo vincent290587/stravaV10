@@ -102,9 +102,9 @@ void model_go_to_msc_mode(void) {
  */
 bool check_memory_exception(void) {
 
-	int tot_point_mem = 0;
-	tot_point_mem += Point::getObjectCount() * sizeof(Point);
+	int tot_point_mem = Point::getObjectCount() * sizeof(Point);
 	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
 
 	if (tot_point_mem > TOT_HEAP_MEM_AVAILABLE - 500) {
 
@@ -122,11 +122,17 @@ bool check_memory_exception(void) {
 
 void print_mem_state(void) {
 
+	static int max_mem_used = 0;
 	int tot_point_mem = 0;
 	tot_point_mem += Point::getObjectCount() * sizeof(Point);
 	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
 
-	LOG_INFO("Allocated points: %d o %u 2D %u 3D", tot_point_mem, Point2D::getObjectCount(), Point::getObjectCount());
+	if (tot_point_mem > max_mem_used) max_mem_used = tot_point_mem;
+
+	LOG_INFO(">> Allocated pts: %d 2D %d 3D / mem %d o / %d o",
+			Point2D::getObjectCount(), Point::getObjectCount(),
+			tot_point_mem, max_mem_used);
 }
 
 /**

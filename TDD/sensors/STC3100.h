@@ -125,6 +125,8 @@ public:
 	float getCharge() const {
 		return _charge;
 	}
+	void resetCharge(void) {
+	}
 
 	uint8_t _stc3100Mode;
 

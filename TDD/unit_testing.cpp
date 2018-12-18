@@ -11,16 +11,45 @@
 #include "Model_tdd.h"
 
 
+
+bool test_nb_points (void) {
+
+	int nb_p2D = Point2D::getObjectCount();
+	int nb_p3D = Point::getObjectCount();
+
+	LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+
+	{
+		Point P1(0., 0., 0., 0.);
+		Point P2(P1);
+		Point P3 = P1;
+		Point P4 = &P1;
+
+		Point2D P2d_1(0.00015, -0.0001);
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+		Point2D P2d_2(P2d_1);
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+		Point2D P2d_3 = P2d_1;
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+		Point2D P2d_4 = &P2d_1;
+		LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+
+		Point P5 = P2d_1;
+		Point P6 = &P2d_1;
+	}
+
+	LOG_INFO("Allocated points: %d 2D %d 3D", Point2D::getObjectCount(), Point::getObjectCount());
+
+	if (nb_p2D != Point2D::getObjectCount() || nb_p3D != Point::getObjectCount()) return false;
+
+	return true;
+}
+
 bool test_projection (void) {
 
-	Point P1(0., 0., 0., 0.);
-	Point P2(0., 0.00015, 0., 0.);
-	Point P(0.00015, -0.0001, 0., 0.);
+	Vecteur P1P2(3, 0, 0, 0);
+	Vecteur P1P(1, 1.2, 0, 0);
 
-	Vecteur P1P2 = Vecteur(P1, P2);
-	Vecteur P1P = Vecteur(P1, P);
-
-	Vecteur projete = Project(P1P2, P1P);
 	Vecteur orthoP1P2 ;
 	orthoP1P2._x = P1P2._y;
 	orthoP1P2._y = -P1P2._x;
@@ -28,9 +57,17 @@ bool test_projection (void) {
 	LOG_INFO("P1P2 %f %f", P1P2._x, P1P2._y);
 	LOG_INFO("P1P  %f %f", P1P._x, P1P._y);
 
-	LOG_INFO("dX %f", projete._x / P1P2.getNorm());
-	projete = Project(orthoP1P2, P1P);
-	LOG_INFO("dY %f", projete._y / orthoP1P2.getNorm());
+	Vecteur projete = Project(P1P2, P1P) / P1P2.getNorm();
+	LOG_INFO("dX %f", projete._x);
+	LOG_INFO("dY %f", projete._y);
+
+	if (fabsf(projete._x - P1P._x) > 0.001) return false;
+
+	projete = Project(orthoP1P2, P1P) / orthoP1P2.getNorm();
+	LOG_INFO("dX %f", projete._x);
+	LOG_INFO("dY %f", projete._y);
+
+	if (fabsf(projete._y + P1P._y) > 0.001) return false;
 
 	return true;
 }

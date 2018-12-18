@@ -8,51 +8,86 @@
 #ifndef TASK_MANAGER_WRAPPER_H_
 #define TASK_MANAGER_WRAPPER_H_
 
-#include "task_manager.h"
 
-/**@brief Returns ID of currently running task.
- *
- * @return ID of active task.
- */
-inline task_id_t id_get(void) {
-	return (task_id_get() + TASK_BASE_NRF);
-}
+#if defined(__cplusplus)
+extern "C" {
+#endif /* _cplusplus */
 
-/**@brief Yield CPU to other tasks.
- */
-inline void yield(void) {
-	if (task_id_get() < 0) return;
-	W_SYSVIEW_OnTaskStopExec(id_get());
-	task_yield();
-	W_SYSVIEW_OnTaskStartExec(id_get());
-}
 
-/**@brief Wait for events. Set events are cleared after this function returns.
- *
- * @param[in] evt_mask Mask of events to wait
- *
- * @return Mask with set events (can be a subset of evt_mask).
- */
-inline uint32_t events_wait(uint32_t evt_mask) {
-	if (task_id_get() < 0) return 0;
-	W_SYSVIEW_OnTaskStopReady(id_get(), evt_mask);
-	W_SYSVIEW_OnTaskStopExec(id_get());
-	uint32_t mask = task_events_wait(evt_mask);
-	W_SYSVIEW_OnTaskStartExec(id_get());
-	return mask;
-}
+void segger_init(void);
 
-/**@brief Set events for given task.
- *
- * @param[in]  task_id  Id of the task which shall receive events.
- * @param[in]  evt_mask Events for the task.
- *
- */
-inline void events_set(task_id_t task_id, uint32_t evt_mask) {
-	if (task_id < 0) return;
-	W_SYSVIEW_OnTaskStartReady(task_id);
-	task_events_set(task_id, evt_mask);
+void sysview_task_block(uint32_t);
+void sysview_task_transfer(uint32_t);
+void sysview_task_event(uint32_t, uint32_t);
+void sysview_task_void_enter(uint32_t);
+void sysview_task_u32_enter(uint32_t, uint32_t);
+void sysview_task_void_exit(uint32_t);
+void sysview_task_idle(void);
+
+
+#if defined(__cplusplus)
 }
+#endif /* _cplusplus */
+
+
+#define TASK_EVENT_1          (1 << 0)
+#define TASK_EVENT_2          (1 << 1)
+#define TASK_EVENT_3          (1 << 2)
+#define TASK_EVENT_4          (1 << 3)
+#define TASK_EVENT_5          (1 << 4)
+#define TASK_EVENT_6          (1 << 5)
+#define TASK_EVENT_7          (1 << 6)
+#define TASK_EVENT_8          (1 << 7)
+
+#define TASK_EVENT_LOCATION           TASK_EVENT_1
+#define TASK_EVENT_FEC_INFO           TASK_EVENT_2
+#define TASK_EVENT_FEC_POWER          TASK_EVENT_3
+#define TASK_EVENT_BOUCLE_RELEASE     (TASK_EVENT_LOCATION | TASK_EVENT_FEC_INFO | TASK_EVENT_FEC_POWER)
+
+#define TASK_EVENT_PERIPH_TRIGGER     TASK_EVENT_3
+#define TASK_EVENT_PERIPH_TWI_WAIT    TASK_EVENT_6
+#define TASK_EVENT_PERIPH_MS_WAIT     TASK_EVENT_7
+
+#define TASK_EVENT_LS027_TRIGGER      TASK_EVENT_4
+#define TASK_EVENT_LS027_WAIT_SPI     TASK_EVENT_5
+
+
+
+#define SYSVIEW_MAX_NOF_TASKS          30
+
+#define TASK_BASE_NRF                  (36u)
+
+#define BOUCLE_TASK                    (TASK_BASE_NRF + 0u)
+#define PERIPH_TASK                    (TASK_BASE_NRF + 1u)
+#define LCD_TASK                       (TASK_BASE_NRF + 2u)
+#define SYSTEM_TASK                    (TASK_BASE_NRF + 3u)
+
+#define TASK_BASE                      (512u)
+
+#define TASK_RECV_EVENT                (TASK_BASE + 0u)
+
+#define I2cReadSensors                 (TASK_BASE + 1u)
+#define SpiSendBuffer                  (TASK_BASE + 2u)
+#define UART_TASK                      (TASK_BASE + 3u)
+
+#define MainSegLoop                    (TASK_BASE + 4u)
+#define SdAccess                       (TASK_BASE + 5u)
+#define ComputeSegmentPerf             (TASK_BASE + 6u)
+#define ComputeZoom                    (TASK_BASE + 7u)
+#define DisplayPoints                  (TASK_BASE + 8u)
+#define DisplayMyself                  (TASK_BASE + 9u)
+#define SaveUserPosition               (TASK_BASE + 10u)
+#define USB_VCOM_TASK                  (TASK_BASE + 11u)
+#define SST_TASK                       (TASK_BASE + 12u)
+#define I2cReadReg8                    (TASK_BASE + 13u)
+#define I2cReadRegN                    (TASK_BASE + 14u)
+
+
+#ifdef TDD
+#include "task_manager_wrapper_tdd.h"
+#else
+#include "task_manager_wrapper_arm.h"
+#endif
 
 
 #endif /* TASK_MANAGER_WRAPPER_H_ */

@@ -24,6 +24,12 @@ void Boucle::init(void) {
 
 	LOG_INFO("Boucle init...");
 
+	if (m_app_error.special == 0xDB) {
+		LOG_ERROR("Error identified:");
+		LOG_ERROR(m_app_error._buffer);
+	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
+	}
+
 	if (init_liste_segments()) {
 		LOG_ERROR("Boucle init fail");
 	}
@@ -139,27 +145,7 @@ void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 	}
 
 	// prepare new operations
-	switch (new_mode) {
-	case eBoucleGlobalModesCRS:
-	{
-		boucle_crs.invalidate();
-	}
-	break;
-	case eBoucleGlobalModesFEC:
-	{
-		boucle_fec.invalidate();
-	}
-	break;
-	case eBoucleGlobalModesPRC:
-	{
-		boucle_crs.invalidate();
-	}
-	break;
-
-	case eBoucleGlobalModesInit:
-	default:
-		break;
-	}
+	stc.resetCharge();
 
 	m_global_mode = new_mode;
 }

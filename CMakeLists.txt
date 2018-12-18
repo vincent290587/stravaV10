@@ -56,6 +56,7 @@ include_directories(
 # Cree des variables avec les fichiers à compiler
 set(SRCS
     main_tdd.cpp
+    segger_wrapper.c
     GUI_connector.cpp
     scheduler/task_scheduler.c
     unit_testing.cpp
@@ -95,6 +96,7 @@ set(SRCS
 	source/model/Locator.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
+    source/vue/MenuObjects.cpp
 	source/vue/Vue.cpp
 	source/vue/VueCRS.cpp
 	source/vue/VueDebug.cpp

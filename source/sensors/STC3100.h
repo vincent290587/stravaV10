@@ -123,6 +123,11 @@ public:
 
 	float getAverageCurrent(void);
 
+	void resetCharge(void) {
+		m_charge_offset = _charge;
+		m_start_av = millis();
+	}
+
 	float getCharge() const {
 		return _charge;
 	}
@@ -130,6 +135,7 @@ public:
 	uint8_t _stc3100Mode;
 
 private:
+	int32_t m_start_av;
 	int32_t _sensorID;
 	uint8_t _deviceID;
 	int32_t _r_sens;
@@ -144,7 +150,7 @@ private:
 	/**Value of the temperature in °C*/
 	float _temperature;
 	/**Value of the charge which went through the batt in mA.h */
-	float _charge;
+	float _charge, m_charge_offset;
 	// counter
 	float _counter;
 

@@ -3062,7 +3062,7 @@
 // <15=> 32MHz/16 
 
 #ifndef NRFX_QSPI_CONFIG_FREQUENCY
-#define NRFX_QSPI_CONFIG_FREQUENCY 15
+#define NRFX_QSPI_CONFIG_FREQUENCY 7
 #endif
 
 // <s> NRFX_QSPI_PIN_SCK - SCK pin value.
@@ -6525,7 +6525,7 @@
 
 // <o> TASK_MANAGER_CONFIG_MAX_TASKS - Maximum number of tasks which can be created 
 #ifndef TASK_MANAGER_CONFIG_MAX_TASKS
-#define TASK_MANAGER_CONFIG_MAX_TASKS 5
+#define TASK_MANAGER_CONFIG_MAX_TASKS 3
 #endif
 
 // <o> TASK_MANAGER_CONFIG_STACK_SIZE - Stack size for every task (power of 2) 
