@@ -224,19 +224,7 @@ void peripherals_task(void * p_context)
 {
 	for(;;)
 	{
-#ifdef _DEBUG_TWI
-		static uint32_t _counter = 0;
-
-		if (++_counter >= SENSORS_REFRESH_PER_MS / APP_TIMEOUT_DELAY_MS) {
-			_counter = 0;
-			stc.refresh(nullptr);
-			veml.refresh(nullptr);
-			if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
-			if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
-		}
-
-		model_dispatch_sensors_update();
-#endif
+		i2c_scheduling_tasks();
 
 #ifndef BLE_STACK_SUPPORT_REQD
 		neopixel_radio_callback_handler(false);

@@ -29,6 +29,10 @@ static tSTC31000Data m_stc_buffer;
 static fxos_handle_t m_fxos_handle;
 static ms5637_handle_t m_ms5637_handle;
 
+static volatile bool m_is_ms_updated = false;
+static volatile bool m_is_fxos_updated = false;
+static volatile bool m_is_stc_veml_updated = false;
+
 static void read_ms(void);
 
 APP_TIMER_DEF(m_timer);
@@ -144,18 +148,7 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
 
-	sysview_task_void_enter(I2cMgmtRead2);
-
-	LOG_DEBUG("Refreshing sensors t=%u ms\r\n", millis());
-
-	stc.refresh(&m_stc_buffer);
-
-	veml.refresh(m_veml_buffer);
-
-	// dispatch to model
-	model_dispatch_sensors_update();
-
-	sysview_task_void_exit(I2cMgmtRead2);
+	m_is_stc_veml_updated = true;
 
 }
 
@@ -168,11 +161,7 @@ static void read_fxos_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
 
-	sysview_task_void_enter(I2cMgmtRead1);
-
-	fxos_tasks(&m_fxos_handle);
-
-	sysview_task_void_exit(I2cMgmtRead1);
+	m_is_fxos_updated = true;
 
 }
 
@@ -240,8 +229,6 @@ static void read_fxos(void)
  */
 static void read_ms_cb(ret_code_t result, void * p_user_data) {
 
-	sysview_task_void_enter(I2cMgmtReadMs);
-
 	APP_ERROR_CHECK(result);
 
 	ASSERT(p_user_data);
@@ -257,7 +244,7 @@ static void read_ms_cb(ret_code_t result, void * p_user_data) {
     	// temp has just been commanded, meaning we just got a pressure
     	//  measurement
     	// --> refresh device
-    	baro.refresh(_handle);
+    	m_is_ms_updated = true;
     }
     	break;
     case eMS5637MeasCmdPress:
@@ -269,7 +256,6 @@ static void read_ms_cb(ret_code_t result, void * p_user_data) {
     	break;
     }
 
-	sysview_task_void_exit(I2cMgmtReadMs);
 }
 
 /**
@@ -373,4 +359,41 @@ void i2c_scheduling_init(void) {
 
     if (fxos_init()) LOG_ERROR("FXOS init fail");
 #endif
+}
+
+void i2c_scheduling_tasks(void) {
+#ifndef _DEBUG_TWI
+	if (m_is_ms_updated) {
+		m_is_ms_updated = false;
+		sysview_task_void_enter(I2cMgmtReadMs);
+		baro.refresh(&m_ms5637_handle);
+		sysview_task_void_exit(I2cMgmtReadMs);
+	}
+	if (m_is_fxos_updated) {
+		sysview_task_void_enter(I2cMgmtRead1);
+		m_is_fxos_updated = false;
+		fxos_tasks(&m_fxos_handle);
+		sysview_task_void_exit(I2cMgmtRead1);
+	}
+	if (m_is_stc_veml_updated) {
+		sysview_task_void_enter(I2cMgmtRead2);
+		m_is_stc_veml_updated = false;
+		stc.refresh(&m_stc_buffer);
+		veml.refresh(m_veml_buffer);
+		sysview_task_void_exit(I2cMgmtRead2);
+	}
+#else
+	static uint32_t _counter = 0;
+
+	if (++_counter >= SENSORS_REFRESH_PER_MS / APP_TIMEOUT_DELAY_MS) {
+		_counter = 0;
+		stc.refresh(nullptr);
+		veml.refresh(nullptr);
+		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
+		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
+	}
+#endif
+
+	// dispatch to model
+	model_dispatch_sensors_update();
 }
