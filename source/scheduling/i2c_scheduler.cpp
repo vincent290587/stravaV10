@@ -144,6 +144,8 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
 
+	sysview_task_void_enter(I2cMgmtRead2);
+
 	LOG_DEBUG("Refreshing sensors t=%u ms\r\n", millis());
 
 	stc.refresh(&m_stc_buffer);
@@ -152,6 +154,8 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	// dispatch to model
 	model_dispatch_sensors_update();
+
+	sysview_task_void_exit(I2cMgmtRead2);
 
 }
 
@@ -164,7 +168,11 @@ static void read_fxos_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
 
+	sysview_task_void_enter(I2cMgmtRead1);
+
 	fxos_tasks(&m_fxos_handle);
+
+	sysview_task_void_exit(I2cMgmtRead1);
 
 }
 
@@ -232,6 +240,8 @@ static void read_fxos(void)
  */
 static void read_ms_cb(ret_code_t result, void * p_user_data) {
 
+	sysview_task_void_enter(I2cMgmtReadMs);
+
 	APP_ERROR_CHECK(result);
 
 	ASSERT(p_user_data);
@@ -259,6 +269,7 @@ static void read_ms_cb(ret_code_t result, void * p_user_data) {
     	break;
     }
 
+	sysview_task_void_exit(I2cMgmtReadMs);
 }
 
 /**
