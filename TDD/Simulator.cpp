@@ -119,6 +119,7 @@ void simulator_tasks(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
+#ifdef LOC_SOURCE_GPS
 		// build make NMEA sentence
 		GPRMC gprmc_(lat, lon, 0., (int)rtime);
 		int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));

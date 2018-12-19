@@ -27,7 +27,6 @@
 #include "peer_manager.h"
 #include "app_util.h"
 #include "app_timer.h"
-#include "bsp_btn_ble.h"
 #include "fds.h"
 #include "nrf_fstorage.h"
 #include "ble_conn_state.h"
@@ -38,6 +37,7 @@
 #include "ble_nus_c.h"
 #include "ble_advdata.h"
 #include "ble_lns_c.h"
+#include "ble_komoot_c.h"
 #include "ant.h"
 #include "glasses.h"
 #include "Model.h"
@@ -87,6 +87,7 @@ typedef enum {
 
 NRF_BLE_SCAN_DEF(m_scan);
 BLE_NUS_C_DEF(m_ble_nus_c);
+BLE_KOMOOT_C_DEF(m_ble_komoot_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
@@ -116,6 +117,13 @@ static ble_uuid_t const m_nus_uuid =
 	    .uuid = BLE_UUID_NUS_SERVICE,
 	    .type = BLE_UUID_TYPE_VENDOR_BEGIN
 };
+
+/**@brief NUS UUID. */
+static ble_uuid_t const m_komoot_uuid =
+{
+	    .uuid = BLE_UUID_KOMOOT_SERVICE,
+	    .type = BLE_UUID_TYPE_VENDOR_BEGIN
+};
 #endif
 
 static void scan_start(void);
@@ -134,6 +142,7 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
 	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
 	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
+	ble_komoot_c_on_db_disc_evt(&m_ble_komoot_c, p_evt);
 }
 
 /**@brief Function for handling the Application's BLE Stack events.
@@ -423,6 +432,51 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 }
 
 
+
+/**@brief Heart Rate Collector Handler.
+ */
+static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t * p_komoot_c_evt)
+{
+	uint32_t err_code;
+
+	LOG_INFO("KOMOOT event: 0x%X\r\n", p_komoot_c_evt->evt_type);
+
+	switch (p_komoot_c_evt->evt_type)
+	{
+	case BLE_KOMOOT_C_EVT_DISCOVERY_COMPLETE:
+		err_code = ble_komoot_c_handles_assign(p_komoot_c ,
+				p_komoot_c_evt->conn_handle,
+				&p_komoot_c_evt->params.peer_db);
+		APP_ERROR_CHECK(err_code);
+
+		// Initiate bonding.
+		err_code = pm_conn_secure(p_komoot_c_evt->conn_handle, false);
+		if (err_code != NRF_ERROR_INVALID_STATE)
+		{
+			APP_ERROR_CHECK(err_code);
+		}
+
+		// LNS service discovered. Enable notification of LNS.
+		err_code = ble_komoot_c_pos_notif_enable(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+
+		LOG_INFO("KOMOOT service discovered.");
+		break;
+
+	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
+	{
+
+		// TODO
+		LOG_INFO("KOMOOT notification");
+
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
 /**
  * @brief Heart rate collector initialization.
  */
@@ -433,6 +487,20 @@ static void lns_c_init(void)
 	lns_c_init_obj.evt_handler = lns_c_evt_handler;
 
 	uint32_t err_code = ble_lns_c_init(&m_ble_lns_c, &lns_c_init_obj);
+	APP_ERROR_CHECK(err_code);
+}
+
+
+/**
+ * @brief Heart rate collector initialization.
+ */
+static void komoot_c_init(void)
+{
+	ble_komoot_c_init_t komoot_c_init_obj;
+
+	komoot_c_init_obj.evt_handler = komoot_c_evt_handler;
+
+	uint32_t err_code = ble_komoot_c_init(&m_ble_komoot_c, &komoot_c_init_obj);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -470,6 +538,11 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 
 	switch(p_scan_evt->scan_evt_id)
 	{
+	case NRF_BLE_SCAN_EVT_FILTER_MATCH:
+	{
+		NRF_LOG_INFO("Filter match: %x", p_scan_evt->params.filter_match.filter_match.uuid_filter_match);
+	} break;
+
 	case NRF_BLE_SCAN_EVT_CONNECTING_ERROR:
 	{
 		err_code = p_scan_evt->params.connecting_err.err_code;
@@ -524,6 +597,9 @@ static void scan_init(void)
 	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_UUID_FILTER, &m_lns_uuid);
 	APP_ERROR_CHECK(err_code);
 
+	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_UUID_FILTER, &m_komoot_uuid);
+	APP_ERROR_CHECK(err_code);
+
 	err_code = nrf_ble_scan_filters_enable(&m_scan, NRF_BLE_SCAN_UUID_FILTER | NRF_BLE_SCAN_NAME_FILTER, false);
 	APP_ERROR_CHECK(err_code);
 }
@@ -535,9 +611,6 @@ static void scan_start(void)
 	ret_code_t ret;
 
 	ret = nrf_ble_scan_start(&m_scan);
-	APP_ERROR_CHECK(ret);
-
-	ret = bsp_indication_set(BSP_INDICATE_SCANNING);
 	APP_ERROR_CHECK(ret);
 }
 
@@ -609,6 +682,7 @@ void ble_init(void)
 
 	lns_c_init();
 	nus_c_init();
+	komoot_c_init();
 	scan_init();
 
 	// Start scanning for peripherals and initiate connection

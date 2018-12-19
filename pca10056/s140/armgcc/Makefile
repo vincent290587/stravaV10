@@ -25,10 +25,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/class/dummy/app_usbd_dummy.c \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
 
-include $(PROJ_DIR)/Makefile.files
-
-include $(PROJ_DIR)/ble.files
-
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
@@ -41,6 +37,10 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/libraries/usbd/class/msc \
   $(SDK_ROOT)/components/libraries/usbd/class/dummy \
+
+include $(PROJ_DIR)/Makefile.files
+
+include $(PROJ_DIR)/ble.files
   
 # Libraries common to all targets
 LIB_FILES += \

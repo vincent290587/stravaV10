@@ -35,6 +35,7 @@
 #include "helper.h"
 #include "ble_bas_c.h"
 #include "ble_nus_c.h"
+#include "ble_komoot_c.h"
 #include "ble_advdata.h"
 #include "ble_lns_c.h"
 #include "ant.h"
@@ -101,6 +102,7 @@ typedef enum {
 } eNusTransferState;
 
 BLE_NUS_C_DEF(m_ble_nus_c);
+BLE_KOMOOT_C_DEF(m_ble_komoot_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
@@ -159,6 +161,7 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
 	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
 	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
+	ble_komoot_c_on_db_disc_evt(&m_ble_komoot_c, p_evt);
 }
 
 
@@ -274,13 +277,20 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 {
 	ret_code_t err_code;
-	ble_uuid_t target_uuid = {.uuid = TARGET_UUID, .type = BLE_UUID_TYPE_BLE};
+	ble_uuid_t target_uuid1 = {.uuid = TARGET_UUID, .type = BLE_UUID_TYPE_BLE};
+	ble_uuid_t target_uuid2 = {.uuid = BLE_UUID_KOMOOT_SERVICE, .type = m_ble_komoot_c.uuid_type};
+
 	bool do_connect = false;
 
-	if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid))
+	if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid1))
 	{
 		do_connect = true;
-		LOG_INFO("UUID match send connect_request.");
+		LOG_INFO("UUID1 match send connect_request.");
+	}
+	if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid2))
+	{
+		do_connect = true;
+		LOG_INFO("UUID2 match send connect_request.");
 	}
 	if (ble_advdata_name_find(p_adv_report->data, p_adv_report->dlen, TARGET_NAME)) {
 		do_connect = true;
@@ -556,7 +566,6 @@ static void peer_manager_init(void)
 	APP_ERROR_CHECK(err_code);
 }
 
-
 /**@brief Heart Rate Collector Handler.
  */
 static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_evt)
@@ -638,6 +647,51 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 }
 
 
+/**@brief Heart Rate Collector Handler.
+ */
+static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t * p_komoot_c_evt)
+{
+	uint32_t err_code;
+
+	LOG_INFO("KOMOOT event: 0x%X\r\n", p_komoot_c_evt->evt_type);
+
+	switch (p_komoot_c_evt->evt_type)
+	{
+	case BLE_KOMOOT_C_EVT_DISCOVERY_COMPLETE:
+		err_code = ble_komoot_c_handles_assign(p_komoot_c ,
+				p_komoot_c_evt->conn_handle,
+				&p_komoot_c_evt->params.peer_db);
+		APP_ERROR_CHECK(err_code);
+
+		// Initiate bonding.
+		err_code = pm_conn_secure(p_komoot_c_evt->conn_handle, false);
+		if (err_code != NRF_ERROR_INVALID_STATE)
+		{
+			APP_ERROR_CHECK(err_code);
+		}
+
+		// service discovered. Enable notification
+		err_code = ble_komoot_c_pos_notif_enable(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+
+		LOG_INFO("KOMOOT service discovered.");
+		break;
+
+	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
+	{
+		// TODO
+		LOG_INFO("KOMOOT notification");
+
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+
+
 /**@brief Battery level Collector Handler.
  */
 static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const * p_evt)
@@ -681,6 +735,20 @@ static void lns_c_init(void)
 	lns_c_init_obj.evt_handler = lns_c_evt_handler;
 
 	uint32_t err_code = ble_lns_c_init(&m_ble_lns_c, &lns_c_init_obj);
+	APP_ERROR_CHECK(err_code);
+}
+
+
+/**
+ * @brief Heart rate collector initialization.
+ */
+static void komoot_c_init(void)
+{
+	ble_komoot_c_init_t komoot_c_init_obj;
+
+	komoot_c_init_obj.evt_handler = komoot_c_evt_handler;
+
+	uint32_t err_code = ble_komoot_c_init(&m_ble_komoot_c, &komoot_c_init_obj);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -897,6 +965,7 @@ void ble_init(void)
 
 	lns_c_init();
 	nus_c_init();
+	komoot_c_init();
 	scan_init();
 
 	// Start scanning for peripherals and initiate connection
