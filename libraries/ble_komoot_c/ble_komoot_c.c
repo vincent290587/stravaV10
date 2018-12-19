@@ -98,7 +98,7 @@ static void tx_buffer_process(void)
 
 /**@brief     Function for handling write response events.
  *
- * @param[in] p_ble_komoot_c Pointer to the Heart Rate Client structure.
+ * @param[in] p_ble_komoot_c Pointer to the Client structure.
  * @param[in] p_ble_evt   Pointer to the BLE event received.
  */
 static void on_write_rsp(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_ble_evt)
@@ -111,6 +111,37 @@ static void on_write_rsp(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_bl
 
 	// Check if there is any message to be sent across to the peer and send it.
 	tx_buffer_process();
+}
+
+static uint32_t m_identifier = 0;
+
+/**@brief Function for creating a message for writing to the CCCD.
+ */
+static uint32_t cccd_request(uint16_t conn_handle, uint16_t handle_cccd)
+{
+    tx_message_t * p_msg;
+//    uint16_t       cccd_val = enable ? BLE_GATT_HVX_NOTIFICATION : 0;
+
+    LOG_INFO("Requesting CCCD for new identifier");
+
+    p_msg              = &m_tx_buffer[m_tx_insert_index++];
+    m_tx_insert_index &= TX_BUFFER_MASK;
+
+    uint8_t msg[4] = {0};
+    uint32_encode(m_identifier, msg);
+
+    p_msg->req.write_req.gattc_params.handle   = handle_cccd;
+    p_msg->req.write_req.gattc_params.len      = sizeof(msg);
+    p_msg->req.write_req.gattc_params.p_value  = msg;
+    p_msg->req.write_req.gattc_params.offset   = 0;
+    p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
+//    p_msg->req.write_req.gattc_value[0]        = LSB_16(cccd_val);
+//    p_msg->req.write_req.gattc_value[1]        = MSB_16(cccd_val);
+    p_msg->conn_handle                         = conn_handle;
+    p_msg->type                                = READ_REQ;
+
+    tx_buffer_process();
+    return NRF_SUCCESS;
 }
 
 
@@ -142,22 +173,32 @@ static void on_hvx(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_ble_evt)
 	{
 		ble_komoot_c_evt_t ble_komoot_c_evt;
 		uint32_t        index = 0;
-		uint32_t        identifier;
 
 		ble_komoot_c_evt.evt_type                    = BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION;
 		ble_komoot_c_evt.conn_handle                 = p_ble_komoot_c->conn_handle;
 
-		identifier = uint32_decode(&(p_ble_evt->evt.gattc_evt.params.hvx.data[index]));  //lint !e415 suppress Lint Warning 415: Likely access out of bond
+		LOG_INFO("Read HVX: ");
+		for (int i=0; i < p_ble_evt->evt.gattc_evt.params.hvx.len; i++) {
+			LOG_INFO("0x%02X ", p_ble_evt->evt.gattc_evt.params.hvx.data[i]);
+		}
+
+		m_identifier = uint32_decode(&(p_ble_evt->evt.gattc_evt.params.hvx.data[index]));  //lint !e415 suppress Lint Warning 415: Likely access out of bond
 		index += sizeof(uint32_t);
 
-		ble_komoot_c_evt.params.komoot.identifier = identifier;
+		if (p_ble_evt->evt.gattc_evt.params.hvx.len < 5) {
+			cccd_request(p_ble_komoot_c->conn_handle, p_ble_komoot_c->peer_komoot_db.komoot_cccd_handle);
+		} else {
 
-		ble_komoot_c_evt.params.komoot.direction = p_ble_evt->evt.gattc_evt.params.hvx.data[index++];
+			ble_komoot_c_evt.params.komoot.identifier = m_identifier;
 
-		ble_komoot_c_evt.params.komoot.distance = uint32_decode(&(p_ble_evt->evt.gattc_evt.params.hvx.data[index]));  //lint !e415 suppress Lint Warning 415: Likely access out of bond
-		index += sizeof(uint32_t);
+			ble_komoot_c_evt.params.komoot.direction = p_ble_evt->evt.gattc_evt.params.hvx.data[index++];
 
-		p_ble_komoot_c->evt_handler(p_ble_komoot_c, &ble_komoot_c_evt);
+			ble_komoot_c_evt.params.komoot.distance = uint32_decode(&(p_ble_evt->evt.gattc_evt.params.hvx.data[index]));  //lint !e415 suppress Lint Warning 415: Likely access out of bond
+			index += sizeof(uint32_t);
+
+			p_ble_komoot_c->evt_handler(p_ble_komoot_c, &ble_komoot_c_evt);
+
+		}
 	}
 }
 
