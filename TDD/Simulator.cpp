@@ -140,6 +140,16 @@ void simulator_tasks(void) {
 
 			gps_mgmt.startHostAidingEPO(loc_data, 350);
 		}
+#else
+		sLnsInfo lns_info;
+		lns_info.lat = lat * 10000000.;
+		lns_info.lon = lon * 10000000.;
+		lns_info.ele = alt * 100.;
+		lns_info.secj = (int)rtime;
+		lns_info.date = 11218;
+		lns_info.speed = 20. * 10.;
+		locator_dispatch_lns_update(&lns_info);
+#endif
 
 	} else {
 		fclose(g_fileObject);

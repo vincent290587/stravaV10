@@ -49,23 +49,26 @@ bool AltiBaro::computeAlti(float *alti_) {
 
     @param  seaLevel      Sea-level pressure in hPa
     @param  atmospheric   Atmospheric pressure in hPa
-*/
+ */
 /**************************************************************************/
 float AltiBaro::pressureToAltitude(float atmospheric)
 {
-  // Equation taken from BMP180 datasheet (page 16):
-  //  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
+	// Equation taken from BMP180 datasheet (page 16):
+	//  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
 
-  // Note that using the equation from wikipedia can give bad results
-  // at high altitude.  See this thread for more information:
-  //  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
+	// Note that using the equation from wikipedia can give bad results
+	// at high altitude.  See this thread for more information:
+	//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
 
-  float res;
+	float res = 0.;
 
-  res = 44330.0 * (1.0 - powf(atmospheric / sea_level_pressure, 0.1903));
-  res -= correction;
+	ASSERT(sea_level_pressure != 0.);
+	ASSERT(atmospheric / sea_level_pressure > 0.);
 
-  return res;
+	res = 44330.0 * (1.0 - powf(atmospheric / sea_level_pressure, 0.1903));
+	res -= correction;
+
+	return res;
 }
 
 
@@ -76,20 +79,24 @@ float AltiBaro::pressureToAltitude(float atmospheric)
 
     @param  altitude      Altitude in meters
     @param  atmospheric   Atmospheric pressure in hPa
-*/
+ */
 /**************************************************************************/
 void AltiBaro::seaLevelForAltitude(float altitude, float atmospheric)
 {
-  // Equation taken from BMP180 datasheet (page 17):
-  //  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
+	// Equation taken from BMP180 datasheet (page 17):
+	//  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
 
-  // Note that using the equation from wikipedia can give bad results
-  // at high altitude.  See this thread for more information:
-  //  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
+	// Note that using the equation from wikipedia can give bad results
+	// at high altitude.  See this thread for more information:
+	//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
 
-  sea_level_pressure = atmospheric / powf(1.0 - (altitude/44330.0), 5.255);
+	ASSERT(atmospheric != 0.);
 
-  m_is_init = true;
+	sea_level_pressure = atmospheric / powf(1.0 - (altitude/44330.0), 5.255);
 
-  return;
+	ASSERT(sea_level_pressure != 0.);
+
+	m_is_init = true;
+
+	return;
 }

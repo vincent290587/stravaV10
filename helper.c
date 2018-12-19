@@ -59,6 +59,8 @@ void FPU_IRQHandler(void)
      * - OFC - Overflow cumulative exception bit.
      */
     if (*fpscr & 0x7) {
+    	W_SYSVIEW_RecordEnterISR();
+    	LOG_ERROR("FPU exception detected");
     	// https://stackoverflow.com/questions/38724658/find-where-the-interrupt-happened-on-cortex-m4
     	__asm(  "TST lr, #4\n"
     			"ITE EQ\n"
@@ -67,6 +69,7 @@ void FPU_IRQHandler(void)
     			"ldr r0, [r0, #0x18]\n" // stored pc now in r0
     			//"add r0, r0, #6\n" // address to stored pc now in r0
     	);
+        W_SYSVIEW_RecordExitISR();
     }
 
     // Clear flags in stacked FPSCR register.

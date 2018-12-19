@@ -46,6 +46,8 @@ MS5637::MS5637 () {
 
 	 initialised = false;
 	 m_err = ERR_NEEDS_BEGIN;
+	 m_temperature = 20.;
+	 m_pressure = 999.;
 
 }
 
