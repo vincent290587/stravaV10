@@ -108,6 +108,7 @@ static void on_write_rsp(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_bl
 	{
 		return;
 	}
+
 	// Check if there is any message to be sent across to the peer and send it.
 	tx_buffer_process();
 }
@@ -151,7 +152,10 @@ static void on_hvx(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_ble_evt)
 
 		ble_komoot_c_evt.params.komoot.identifier = identifier;
 
-		// TODO decode the rest
+		ble_komoot_c_evt.params.komoot.direction = p_ble_evt->evt.gattc_evt.params.hvx.data[index++];
+
+		ble_komoot_c_evt.params.komoot.distance = uint32_decode(&(p_ble_evt->evt.gattc_evt.params.hvx.data[index]));  //lint !e415 suppress Lint Warning 415: Likely access out of bond
+		index += sizeof(uint32_t);
 
 		p_ble_komoot_c->evt_handler(p_ble_komoot_c, &ble_komoot_c_evt);
 	}
@@ -301,22 +305,28 @@ static uint32_t cccd_configure(uint16_t conn_handle, uint16_t handle_cccd, bool 
 	LOG_INFO("Configuring CCCD. CCCD Handle = %d, Connection Handle = %d\r\n",
 			handle_cccd, conn_handle);
 
-    uint8_t buf[BLE_CCCD_VALUE_LEN];
+    tx_message_t * p_msg;
+    uint16_t       cccd_val = enable ? BLE_GATT_HVX_NOTIFICATION : 0;
 
-    buf[0] = enable ? BLE_GATT_HVX_NOTIFICATION : 0;
-    buf[1] = 0;
+    p_msg              = &m_tx_buffer[m_tx_insert_index++];
+    m_tx_insert_index &= TX_BUFFER_MASK;
 
-    ble_gattc_write_params_t const write_params =
-    {
-        .write_op = BLE_GATT_OP_WRITE_REQ,
-        .flags    = BLE_GATT_EXEC_WRITE_FLAG_PREPARED_WRITE,
-        .handle   = handle_cccd,
-        .offset   = 0,
-        .len      = sizeof(buf),
-        .p_value  = buf
-    };
+    uint8_t msg[WRITE_MESSAGE_LENGTH];
+    msg[0] = LSB_16(cccd_val);
+    msg[1] = MSB_16(cccd_val);
 
-    return sd_ble_gattc_write(conn_handle, &write_params);
+    p_msg->req.write_req.gattc_params.handle   = handle_cccd;
+    p_msg->req.write_req.gattc_params.len      = WRITE_MESSAGE_LENGTH;
+    p_msg->req.write_req.gattc_params.p_value  = msg;
+    p_msg->req.write_req.gattc_params.offset   = 0;
+    p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
+    p_msg->req.write_req.gattc_value[0]        = LSB_16(cccd_val);
+    p_msg->req.write_req.gattc_value[1]        = MSB_16(cccd_val);
+    p_msg->conn_handle                         = conn_handle;
+    p_msg->type                                = WRITE_REQ;
+
+    tx_buffer_process();
+    return NRF_SUCCESS;
 }
 
 
