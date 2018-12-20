@@ -90,7 +90,8 @@ typedef enum
 {
     BLE_KOMOOT_C_EVT_DISCOVERY_COMPLETE,  /**< Event indicating that Service has been discovered at the peer. */
 	BLE_KOMOOT_C_EVT_DISCOVERY_FAILED,
-	BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION         /**< Event indicating that a notification of the Heart Rate Measurement characteristic has been received from the peer. */
+	BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION,         /**< Event indicating that a notification of the Heart Rate Measurement characteristic has been received from the peer. */
+	BLE_KOMOOT_C_EVT_KOMOOT_NAVIGATION
 } ble_komoot_c_evt_type_t;
 
 /** @} */
@@ -253,6 +254,13 @@ void ble_komoot_c_on_db_disc_evt(ble_komoot_c_t * p_ble_komoot_c, const ble_db_d
 uint32_t ble_komoot_c_handles_assign(ble_komoot_c_t *    p_ble_komoot_c,
                                   uint16_t         conn_handle,
                                   const komoot_db_t * p_peer_komoot_handles);
+
+/**
+ *
+ * @param p_ble_komoot_c
+ * @return
+ */
+uint32_t ble_komoot_c_nav_read(ble_komoot_c_t * p_ble_komoot_c);
 
 /** @} */ // End tag for Function group.
 

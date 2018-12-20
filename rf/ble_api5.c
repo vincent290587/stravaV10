@@ -678,12 +678,12 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 		break;
 
 	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
-	{
-		// TODO
-		LOG_INFO("KOMOOT notification: dist %u", p_komoot_c_evt->params.komoot.distance);
 
 		break;
-	}
+
+    case BLE_KOMOOT_C_EVT_KOMOOT_NAVIGATION:
+    	LOG_INFO("KOMOOT nav: dist %u", p_komoot_c_evt->params.komoot.distance);
+    	break;
 
 	default:
 		break;
