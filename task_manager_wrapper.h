@@ -81,6 +81,9 @@ void sysview_task_idle(void);
 #define SST_TASK                       (TASK_BASE + 12u)
 #define I2cReadReg8                    (TASK_BASE + 13u)
 #define I2cReadRegN                    (TASK_BASE + 14u)
+#define I2cMgmtReadMs                  (TASK_BASE + 15u)
+#define I2cMgmtRead1                  (TASK_BASE + 16u)
+#define I2cMgmtRead2                  (TASK_BASE + 17u)
 
 
 #ifdef TDD

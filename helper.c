@@ -60,7 +60,7 @@ void FPU_IRQHandler(void)
      */
     if (*fpscr & 0x7) {
     	W_SYSVIEW_RecordEnterISR();
-    	LOG_ERROR("FPU exception detected");
+    	LOG_ERROR("FPU exception detected 0x%02X", *fpscr);
     	// https://stackoverflow.com/questions/38724658/find-where-the-interrupt-happened-on-cortex-m4
     	__asm(  "TST lr, #4\n"
     			"ITE EQ\n"
