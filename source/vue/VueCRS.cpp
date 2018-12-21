@@ -248,8 +248,8 @@ void VueCRS::afficheScreen2(void) {
 	sKomootNavigation navi;
 	model_get_navigation(&navi);
 
-	this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(navi.distance), "m");
-	this->cadranH(7, VUE_CRS_NB_LINES, "Dir", _imkstr(navi.direction), NULL);
+	this->cadranH(5, VUE_CRS_NB_LINES, "Next turn", _imkstr(navi.distance), "m");
+	this->cadranH(7, VUE_CRS_NB_LINES, "Direction", _imkstr(navi.direction), NULL);
 
 	this->drawBitmap(_width / 2 - 37 / 2, 300, img_finish, 37, 37, 0, 1, 1);
 

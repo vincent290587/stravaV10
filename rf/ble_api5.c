@@ -160,7 +160,7 @@ static void scan_start(void);
  */
 static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
-	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
+//	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
 	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
 	ble_komoot_c_on_db_disc_evt(&m_ble_komoot_c, p_evt);
 }
