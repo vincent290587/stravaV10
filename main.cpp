@@ -37,6 +37,7 @@
 #include "i2c_scheduler.h"
 #include "Model.h"
 #include "sd_hal.h"
+#include "ble_api_base.h"
 #include "segger_wrapper.h"
 
 #ifdef USB_ENABLED
@@ -57,8 +58,6 @@ APP_TIMER_DEF(m_job_timer);
 nrfx_wdt_channel_id m_channel_id;
 
 static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
-
-extern "C" void ble_init(void);
 
 
 /**

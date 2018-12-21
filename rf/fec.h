@@ -13,6 +13,7 @@
 #include "nrf_sdh_ant.h"
 #endif
 #include "mk64f_parser.h"
+#include "g_structs.h"
 
 /////////////  STRUCTS
 

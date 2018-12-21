@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "mk64f_parser.h"
+#include "g_structs.h"
 
 #define MAX_SATELLITES     40
 #define ACTIVE_VAL         5

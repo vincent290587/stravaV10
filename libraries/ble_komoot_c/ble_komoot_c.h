@@ -70,16 +70,6 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
                      BLE_KOMOOT_C_BLE_OBSERVER_PRIO,                                                   \
                      ble_komoot_c_on_ble_evt, &_name)
 
-
-
-#define INST_SPEED_PRESENT 1u
-#define TOT_DIST_PRESENT   2u
-#define LOC_PRESENT        4u
-#define ELE_PRESENT        8u
-#define HEADING_PRESENT    16u
-#define ROLL_TIME_PRESENT  32u
-#define UTC_TIME_PRESENT   64u
-
 /**
  * @defgroup komoot_c_enums Enumerations
  * @{
@@ -101,7 +91,7 @@ typedef enum
  * @{
  */
 
-/**@brief Structure containing the heart rate measurement received from the peer. */
+/**@brief Structure containing the data received from the peer. */
 typedef struct
 {
 	uint32_t identifier;

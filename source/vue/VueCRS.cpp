@@ -11,13 +11,14 @@
 #include "Screenutils.h"
 #include "segger_wrapper.h"
 #include <vue/VueCRS.h>
-
+#include "komoot_icons.h"
 
 #define VUE_CRS_NB_LINES         7
 
 
 VueCRS::VueCRS() : Adafruit_GFX(0, 0) {
 	m_crs_screen_mode = eVueCRSScreenInit;
+	m_screen_page = eVueCRSScreenPage1;
 }
 
 eVueCRSScreenModes VueCRS::tasksCRS() {
@@ -49,11 +50,66 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 
 	switch (m_crs_screen_mode) {
 	case eVueCRSScreenInit:
+	{
+		// boot in screen #1
+		m_screen_page = eVueCRSScreenPage1;
 
 		// display GPS page
 		this->displayGPS();
 
+	} break;
+
+	default:
+		if (m_screen_page == eVueCRSScreenPage1) {
+			this->afficheScreen1();
+		} else {
+			this->afficheScreen2();
+		}
 		break;
+
+	}
+
+	return m_crs_screen_mode;
+}
+
+
+
+/**
+ *
+ * @param event
+ * @return
+ */
+bool VueCRS::propagateEventsCRS(eButtonsEvent event) {
+
+	switch (event) {
+		case eButtonsEventLeft:
+		{
+			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
+			else m_screen_page = eVueCRSScreenPage1;
+			break;
+		}
+
+		case eButtonsEventRight:
+		{
+			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
+			else m_screen_page = eVueCRSScreenPage1;
+			break;
+		}
+
+		case eButtonsEventCenter:
+		default:
+		{
+			break;
+		}
+	}
+
+	return true;
+}
+
+
+void VueCRS::afficheScreen1(void) {
+
+	switch (m_crs_screen_mode) {
 	case eVueCRSScreenDataFull:
 	{
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
@@ -78,8 +134,8 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(7, VUE_CRS_NB_LINES, 1, "STC", _imkstr((int)stc.getCurrent()), "mA");
 		this->cadran(7, VUE_CRS_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
-	}
-	break;
+	}  break;
+
 	case eVueCRSScreenDataSS:
 	{
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000, 1U), "km");
@@ -106,8 +162,8 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			this->partner(7, segMngr.getSeg(0)->p_seg);
 		}
 
-	}
-	break;
+	}  break;
+
 	case eVueCRSScreenDataDS:
 	{
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
@@ -167,13 +223,38 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			this->partner(VUE_CRS_NB_LINES, segMngr.getSeg(1)->p_seg);
 		}
 
+	}  break;
 
-	}
-	break;
+	default:
+		break;
 	}
 
-	return m_crs_screen_mode;
 }
+
+void VueCRS::afficheScreen2(void) {
+
+	this->cadran(1, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
+	this->cadran(1, VUE_CRS_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
+
+	this->cadran(2, VUE_CRS_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
+	this->cadran(2, VUE_CRS_NB_LINES, 2, "Climb", _imkstr((int)att.climb), "m");
+
+	this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
+	this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
+
+	this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+	this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+
+	sKomootNavigation navi;
+	model_get_navigation(&navi);
+
+	this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(navi.distance), "m");
+	this->cadranH(7, VUE_CRS_NB_LINES, "Dir", _imkstr(navi.direction), NULL);
+
+	this->drawBitmap(_width / 2 - 37 / 2, 300, img_finish, 37, 37, 0, 1, 1);
+
+}
+
 
 void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 

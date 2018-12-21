@@ -50,16 +50,6 @@ static uint32_t      m_tx_insert_index = 0;        /**< Current index in the tra
 static uint32_t      m_tx_index = 0;               /**< Current index in the transmit buffer from where the next message to be transmitted resides. */
 
 
-static __INLINE uint8_t bds_int32_decode(const uint8_t * p_encoded_data,
-		int32_t       * p_decoded_val)
-{
-	uint32_t tmp = 0;
-	uint8_t retval = bds_uint32_decode(4, p_encoded_data, &tmp);
-	*p_decoded_val = (int32_t)tmp;
-	return retval;
-}
-
-
 /**@brief Function for passing any pending request from the buffer to the stack.
  */
 static void tx_buffer_process(void)
@@ -80,7 +70,7 @@ static void tx_buffer_process(void)
 		}
 		if (err_code == NRF_SUCCESS)
 		{
-			LOG_INFO("SD Read/Write (%u) API returns Success..\r\n",
+			LOG_DEBUG("SD Read/Write (%u) API returns Success..\r\n",
 					m_tx_buffer[m_tx_index].type);
 			m_tx_index++;
 			m_tx_index &= TX_BUFFER_MASK;
@@ -170,9 +160,9 @@ static void on_read_rsp(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_ble
 	{
 		LOG_INFO("on_read_rsp len: %u", p_response->len);
 
-		LOG_INFO("Read RSP: ");
+		LOG_DEBUG("Read RSP: ");
 		for (int i=0; i < p_response->len; i++) {
-			LOG_INFO("0x%02X ", p_response->data[i]);
+			LOG_DEBUG("0x%02X ", p_response->data[i]);
 		}
 
 		if (err_code == NRF_SUCCESS)
@@ -214,11 +204,11 @@ static void on_hvx(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_ble_evt)
 	// Check if the event is on the link for this instance
 	if (p_ble_komoot_c->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)
 	{
-		LOG_INFO("received HVX on link 0x%x, not associated to this instance, ignore\r\n",
+		LOG_DEBUG("received HVX on link 0x%x, not associated to this instance, ignore\r\n",
 				p_ble_evt->evt.gattc_evt.conn_handle);
 		return;
 	}
-	LOG_INFO("received HVX on handle 0x%x, komoot_handle 0x%x\r\n",
+	LOG_DEBUG("received HVX on handle 0x%x, komoot_handle 0x%x\r\n",
 			p_ble_evt->evt.gattc_evt.params.hvx.handle,
 			p_ble_komoot_c->peer_komoot_db.komoot_handle);
 
@@ -231,9 +221,9 @@ static void on_hvx(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_ble_evt)
 		ble_komoot_c_evt.evt_type                    = BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION;
 		ble_komoot_c_evt.conn_handle                 = p_ble_komoot_c->conn_handle;
 
-		LOG_INFO("Read HVX: ");
+		LOG_DEBUG("Read HVX: ");
 		for (int i=0; i < p_ble_evt->evt.gattc_evt.params.hvx.len; i++) {
-			LOG_INFO("0x%02X ", p_ble_evt->evt.gattc_evt.params.hvx.data[i]);
+			LOG_DEBUG("0x%02X ", p_ble_evt->evt.gattc_evt.params.hvx.data[i]);
 		}
 
 		m_identifier = uint32_decode(&(p_ble_evt->evt.gattc_evt.params.hvx.data[index]));  //lint !e415 suppress Lint Warning 415: Likely access out of bond
@@ -243,8 +233,6 @@ static void on_hvx(ble_komoot_c_t * p_ble_komoot_c, const ble_evt_t * p_ble_evt)
 
 		p_ble_komoot_c->evt_handler(p_ble_komoot_c, &ble_komoot_c_evt);
 
-		uint32_t err_code = ble_komoot_c_nav_read(p_ble_komoot_c);
-		APP_ERROR_CHECK(err_code);
 	}
 }
 
@@ -275,7 +263,7 @@ void ble_komoot_c_on_db_disc_evt(ble_komoot_c_t * p_ble_komoot_c, const ble_db_d
 	if (p_evt->params.discovered_db.srv_uuid.uuid == BLE_UUID_KOMOOT_SERVICE &&
 			p_evt->params.discovered_db.srv_uuid.type == p_ble_komoot_c->uuid_type)
 	{
-		// Find the CCCD Handle of the Heart Rate Measurement characteristic.
+		// Find the CCCD Handle of the characteristic.
 		uint32_t i;
 
 		ble_komoot_c_evt_t evt;
@@ -295,10 +283,10 @@ void ble_komoot_c_on_db_disc_evt(ble_komoot_c_t * p_ble_komoot_c, const ble_db_d
 			for (i = 0; i < p_evt->params.discovered_db.char_count; i++)
 			{
 
+				LOG_INFO("Discovered CHAR: 0x%04X\r\n", p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid);
+
 				if (p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid ==
 						BLE_UUID_KOMOOT_CHAR) {
-
-					LOG_INFO("Discovered CHAR: 0x%04X\r\n", p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid);
 
 					// Found KOMOOT characteristic. Store CCCD handle and break.
 					evt.params.peer_db.komoot_cccd_handle =

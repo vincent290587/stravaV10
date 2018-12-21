@@ -3,6 +3,7 @@
 #define __ANT_C__
 
 #include "mk64f_parser.h"
+#include "g_structs.h"
 
 
 #define WILDCARD_TRANSMISSION_TYPE      0x00

@@ -43,6 +43,7 @@ include_directories(
 	libraries/AltiBaro
 	libraries/GlobalTop
 	libraries/utils
+    libraries/ble_komoot_c
 	libraries/TinyGPSPlus
 	rf
     source

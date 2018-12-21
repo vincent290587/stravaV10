@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include "notifications.h"
 #include "parameters.h"
+#include "g_structs.h"
 
 typedef struct {
 	uint8_t peripherals_id;
@@ -83,10 +84,6 @@ extern TinyGPSPlus   gps;
 
 extern SufferScore   suffer_score;
 
-extern sHrmInfo hrm_info;
-extern sBscInfo bsc_info;
-extern sFecInfo fec_info;
-
 extern "C" {
 #endif // defined C++
 
@@ -97,6 +94,8 @@ void model_go_to_msc_mode(void);
 void model_dispatch_sensors_update(void);
 
 void model_dispatch_lns_update(sLnsInfo *lns_info);
+
+void model_get_navigation(sKomootNavigation *nav);
 
 void perform_system_tasks(void);
 
