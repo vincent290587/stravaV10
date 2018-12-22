@@ -108,6 +108,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 			m_last_save_dist = att.dist;
 
 			att.pr = m_app_error.saved_att.pr;
+			att.nbsec_act = m_app_error.saved_att.nbsec_act;
 
 			LOG_WARNING("Last stored date: %u", m_app_error.saved_att.date.date);
 			LOG_WARNING("Last stored dist: %f", att.dist);
