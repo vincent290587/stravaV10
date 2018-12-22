@@ -13,6 +13,7 @@
 #include "app_timer.h"
 #include "app_error.h"
 #include "nordic_common.h"
+#include "nrf_pwr_mgmt.h"
 #include "sdk_config.h"
 #include "segger_wrapper.h"
 
@@ -29,7 +30,7 @@
 
 #ifdef FPU_INTERRUPT_MODE
 
-register int *r0 __asm("r0");
+//register int *r0 __asm("r0");
 
 /**
  * @brief FPU Interrupt handler. Clearing exception flag at the stack.
@@ -62,13 +63,13 @@ void FPU_IRQHandler(void)
     	W_SYSVIEW_RecordEnterISR();
     	LOG_ERROR("FPU exception detected 0x%02X", *fpscr);
     	// https://stackoverflow.com/questions/38724658/find-where-the-interrupt-happened-on-cortex-m4
-    	__asm(  "TST lr, #4\n"
-    			"ITE EQ\n"
-    			"MRSEQ r0, MSP\n"
-    			"MRSNE r0, PSP\n" // stack pointer now in r0
-    			"ldr r0, [r0, #0x18]\n" // stored pc now in r0
-    			//"add r0, r0, #6\n" // address to stored pc now in r0
-    	);
+//    	__asm(  "TST lr, #4\n"
+//    			"ITE EQ\n"
+//    			"MRSEQ r0, MSP\n"
+//    			"MRSNE r0, PSP\n" // stack pointer now in r0
+//    			"ldr r0, [r0, #0x18]\n" // stored pc now in r0
+//    			//"add r0, r0, #6\n" // address to stored pc now in r0
+//    	);
         W_SYSVIEW_RecordExitISR();
     }
 
@@ -76,26 +77,49 @@ void FPU_IRQHandler(void)
     *fpscr = *fpscr & ~(FPU_EXCEPTION_MASK);
 }
 
-void check_fpu(void) {
-	uint32_t PC = *r0;
-
-	if (PC) {
-		LOG_ERROR("FPU fault at PC=0x%08X", PC);
-	}
-	*r0 = 0x00;
-
-    /* Clear FPSCR register and clear pending FPU interrupts. This code is base on
-     * nRF5x_release_notes.txt in documentation folder. It is necessary part of code when
-     * application using power saving mode and after handling FPU errors in polling mode.
-     */
-    __set_FPSCR(__get_FPSCR() & ~(FPU_EXCEPTION_MASK));
-    (void) __get_FPSCR();
-    NVIC_ClearPendingIRQ(FPU_IRQn);
-}
-#else
-void check_fpu(void) {
-}
 #endif
+
+void pwr_mgmt_run(void) {
+#ifndef FPU_INTERRUPT_MODE
+	uint32_t original_fpscr;
+
+	CRITICAL_REGION_ENTER();
+	original_fpscr = __get_FPSCR();
+	/*
+	 * Clear FPU exceptions.
+	 * Without this step, the FPU interrupt is marked as pending,
+	 * preventing system from sleeping. Exceptions cleared:
+	 * - IOC - Invalid Operation cumulative exception bit.
+	 * - DZC - Division by Zero cumulative exception bit.
+	 * - OFC - Overflow cumulative exception bit.
+	 * - UFC - Underflow cumulative exception bit.
+	 * - IXC - Inexact cumulative exception bit.
+	 * - IDC - Input Denormal cumulative exception bit.
+	 */
+	__set_FPSCR(original_fpscr & ~0x9Fu);
+	__DMB();
+	NVIC_ClearPendingIRQ(FPU_IRQn);
+	CRITICAL_REGION_EXIT();
+
+	/*
+	 * The last chance to indicate an error in FPU to the user
+	 * as the FPSCR is now cleared
+	 *
+	 * This assert is related to previous FPU operations
+	 * and not power management.
+	 *
+	 * Critical FPU exceptions signaled:
+	 * - IOC - Invalid Operation cumulative exception bit.
+	 * - DZC - Division by Zero cumulative exception bit.
+	 * - OFC - Overflow cumulative exception bit.
+	 */
+	ASSERT((original_fpscr & 0x7) == 0);
+#endif
+
+	sysview_task_idle();
+	nrf_pwr_mgmt_run();
+}
+
 
 void delay(uint32_t p_time) {
 

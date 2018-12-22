@@ -105,7 +105,9 @@ void Boucle::run(void) {
 	break;
 
 	default:
-		break;
+	{
+		(void)events_wait(TASK_EVENT_LOCATION);
+	} break;
 	}
 
 	return;

@@ -387,7 +387,7 @@ void GPS_MGMT::tasks(void) {
  */
 uint32_t gps_encode_char(char c) {
 
-	LOG_RAW_INFO(c);
+	//LOG_RAW_INFO(c);
 
 	if (eGPSMgmtEPOIdle == m_epo_state) {
 

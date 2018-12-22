@@ -196,7 +196,7 @@ void uart_send(uint8_t * p_data, size_t length) {
 	if (!err_code) uart_xfer_done = false;
 
 	while (!uart_xfer_done) {
-		nrf_pwr_mgmt_run();
+		pwr_mgmt_run();
 	}
 }
 
