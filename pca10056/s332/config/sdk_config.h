@@ -173,7 +173,7 @@
 #endif
 // <o> NRF_BLE_SCAN_UUID_CNT - Number of filters for UUIDs.
 #ifndef NRF_BLE_SCAN_UUID_CNT
-#define NRF_BLE_SCAN_UUID_CNT 1
+#define NRF_BLE_SCAN_UUID_CNT 2
 #endif
 
 // <o> NRF_BLE_SCAN_NAME_CNT - Number of name filters.
@@ -271,6 +271,10 @@
 
 #ifndef BLE_BAS_C_ENABLED
 #define BLE_BAS_C_ENABLED 0
+#endif
+
+#ifndef BLE_KOMOOT_C_ENABLED
+#define BLE_KOMOOT_C_ENABLED 1
 #endif
 
 // <e> BLE_BAS_ENABLED - ble_bas - Battery Service
@@ -6521,12 +6525,12 @@
 
 // <o> TASK_MANAGER_CONFIG_MAX_TASKS - Maximum number of tasks which can be created 
 #ifndef TASK_MANAGER_CONFIG_MAX_TASKS
-#define TASK_MANAGER_CONFIG_MAX_TASKS 5
+#define TASK_MANAGER_CONFIG_MAX_TASKS 3
 #endif
 
 // <o> TASK_MANAGER_CONFIG_STACK_SIZE - Stack size for every task (power of 2) 
 #ifndef TASK_MANAGER_CONFIG_STACK_SIZE
-#define TASK_MANAGER_CONFIG_STACK_SIZE 1024
+#define TASK_MANAGER_CONFIG_STACK_SIZE 2048
 #endif
 
 // <q> TASK_MANAGER_CONFIG_STACK_PROFILER_ENABLED  - Enable stack profiling.

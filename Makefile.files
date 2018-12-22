@@ -103,6 +103,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/GlobalTop \
   $(PROJ_DIR)/libraries/jscope \
   $(PROJ_DIR)/libraries/sysview \
+  $(PROJ_DIR)/libraries/komoot \
   $(PROJ_DIR)/libraries/TinyGPSPlus \
   $(PROJ_DIR)/libraries/VParser \
   $(PROJ_DIR)/libraries/utils \
@@ -167,16 +168,10 @@ INC_FOLDERS += \
   $(SDK_ROOT)/external/fatfs/port \
   $(SDK_ROOT)/external/protothreads \
   $(SDK_ROOT)/external/protothreads/pt-1.4 \
-  $(SDK_ROOT)/components/ble/ble_services/ble_lns_c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_glasses \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/utils \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/utils \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/simulator \
   $(SDK_ROOT)/components/ant/ant_state_indicator \
   $(SDK_ROOT)/components/ant/ant_key_manager \
   $(SDK_ROOT)/components/ant/ant_key_manager/config \

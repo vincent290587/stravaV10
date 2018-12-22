@@ -1,0 +1,6 @@
+[submodule "libraries/ble_services"]
+	path = libraries/ble_services
+	url = https://github.com/vincent290587/ble_services.git
+[submodule "libraries/ant_profiles"]
+	path = libraries/ant_profiles
+	url = https://github.com/vincent290587/ant_profiles.git
