@@ -36,21 +36,13 @@ SRC_FILES += \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_3.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_4.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_5.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/ant_fec.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/utils/ant_fec_utils.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_1.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_2.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_16.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_17.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_21.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_25.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_48.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_49.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_51.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_54.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_71.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_80.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_81.c \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_glasses/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_common/pages/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/pages/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/utils/*.c) \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ant.c \
 
@@ -63,6 +55,12 @@ INC_FOLDERS += \
   ../config \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers/nrf52 \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_glasses \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_common \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_common/pages \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec/pages \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec/utils
   
 # Libraries common to all targets
 LIB_FILES += \
@@ -82,7 +80,7 @@ CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 #CFLAGS += -DUSE_SVIEW=1 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 #CFLAGS += -DUSE_SVIEW=0 -DUSE_JSCOPE -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
-#CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
+CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840
 CFLAGS += -DNRF52840_XXAA
