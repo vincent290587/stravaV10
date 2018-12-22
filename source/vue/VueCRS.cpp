@@ -11,7 +11,7 @@
 #include "Screenutils.h"
 #include "segger_wrapper.h"
 #include <vue/VueCRS.h>
-#include "komoot_icons.h"
+#include "komoot_nav.h"
 
 #define VUE_CRS_NB_LINES         7
 
@@ -245,13 +245,18 @@ void VueCRS::afficheScreen2(void) {
 	this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
 	this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
 
-	sKomootNavigation navi;
+	static sKomootNavigation navi;
 	model_get_navigation(&navi);
 
-	this->cadranH(5, VUE_CRS_NB_LINES, "Next turn", _imkstr(navi.distance), "m");
-	this->cadranH(7, VUE_CRS_NB_LINES, "Direction", _imkstr(navi.direction), NULL);
+	this->cadran(5, VUE_CRS_NB_LINES, 1, "Next turn", _imkstr(navi.distance), "m");
+	this->cadran(5, VUE_CRS_NB_LINES, 2, "Direction", _imkstr(navi.direction), NULL);
 
-	this->drawBitmap(_width / 2 - 37 / 2, 300, img_finish, 37, 37, 0, 1, 1);
+	const uint8_t* bitmap = komoot_nav_get_icon(navi.direction);
+	if (bitmap) {
+		this->drawBitmap(_width / 2 - KOMOOT_ICON_SIZE_W / 2, 289,
+				bitmap,
+				KOMOOT_ICON_SIZE_W, KOMOOT_ICON_SIZE_H, 0, 1);
+	}
 
 }
 

@@ -114,15 +114,15 @@ static ble_uuid_t const m_lns_uuid =
 /**@brief NUS UUID. */
 static ble_uuid_t const m_nus_uuid =
 {
-	    .uuid = BLE_UUID_NUS_SERVICE,
-	    .type = BLE_UUID_TYPE_VENDOR_BEGIN
+		.uuid = BLE_UUID_NUS_SERVICE,
+		.type = BLE_UUID_TYPE_VENDOR_BEGIN
 };
 
 /**@brief NUS UUID. */
 static ble_uuid_t const m_komoot_uuid =
 {
-	    .uuid = BLE_UUID_KOMOOT_SERVICE,
-	    .type = BLE_UUID_TYPE_VENDOR_BEGIN
+		.uuid = BLE_UUID_KOMOOT_SERVICE,
+		.type = BLE_UUID_TYPE_VENDOR_BEGIN
 };
 #endif
 
@@ -456,7 +456,7 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 			APP_ERROR_CHECK(err_code);
 		}
 
-		// LNS service discovered. Enable notification of LNS.
+		// service discovered. Enable notification
 		err_code = ble_komoot_c_pos_notif_enable(p_komoot_c);
 		APP_ERROR_CHECK(err_code);
 
@@ -465,16 +465,23 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 
 	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
 	{
+		uint32_t err_code = ble_komoot_c_nav_read(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+	}	break;
 
-		// TODO
-		LOG_INFO("KOMOOT notification");
+	case BLE_KOMOOT_C_EVT_KOMOOT_NAVIGATION:
+	{
+		m_komoot_nav.isUpdated = true;
+		m_komoot_nav.direction = p_komoot_c_evt->params.komoot.direction;
+		m_komoot_nav.distance = p_komoot_c_evt->params.komoot.distance;
 
-		break;
-	}
+		LOG_INFO("KOMOOT nav: direction %u", p_komoot_c_evt->params.komoot.direction);
+	}   break;
 
 	default:
 		break;
 	}
+
 }
 
 /**
@@ -668,6 +675,13 @@ static void gatt_init(void)
 	APP_ERROR_CHECK(err_code);
 }
 
+void ble_get_navigation(sKomootNavigation *nav) {
+
+	ASSERT(nav);
+
+	if (m_komoot_nav.isUpdated) memcpy(nav, &m_komoot_nav, sizeof(m_komoot_nav));
+
+}
 
 #ifdef BLE_STACK_SUPPORT_REQD
 /**
@@ -704,7 +718,7 @@ void ble_nus_tasks(void) {
 	{
 		if (!log_file_start()) {
 			NRF_LOG_WARNING("Log file error start")
-					m_nus_xfer_state = eNusTransferStateIdle;
+							m_nus_xfer_state = eNusTransferStateIdle;
 		} else {
 			m_nus_packet_nb = 0;
 			m_nus_cts = true;

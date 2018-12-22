@@ -103,8 +103,8 @@ typedef struct
 /**@brief Structure containing the handles related to the Heart Rate Service found on the peer. */
 typedef struct
 {
-    uint16_t komoot_cccd_handle;  /**< Handle of the CCCD of the Heart Rate Measurement characteristic. */
-    uint16_t komoot_handle;       /**< Handle of the Heart Rate Measurement characteristic as provided by the SoftDevice. */
+    uint16_t komoot_cccd_handle;  /**< Handle of the CCCD of the characteristic. */
+    uint16_t komoot_handle;       /**< Handle of the characteristic as provided by the SoftDevice. */
 } komoot_db_t;
 
 

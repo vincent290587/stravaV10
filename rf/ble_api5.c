@@ -170,10 +170,6 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
  *
  * @param[in] p_evt  Peer Manager event.
  */
-/**@brief Function for handling Peer Manager events.
- *
- * @param[in] p_evt  Peer Manager event.
- */
 static void pm_evt_handler(pm_evt_t const * p_evt)
 {
 	ret_code_t err_code;
@@ -961,7 +957,7 @@ void ble_get_navigation(sKomootNavigation *nav) {
 
 	ASSERT(nav);
 
-	memcpy(nav, &m_komoot_nav, sizeof(m_komoot_nav));
+	if (m_komoot_nav.isUpdated) memcpy(nav, &m_komoot_nav, sizeof(m_komoot_nav));
 
 }
 
