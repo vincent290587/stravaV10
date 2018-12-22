@@ -6,9 +6,9 @@
  */
 
 #include "Model.h"
-#include "nrf_pwr_mgmt.h"
 #include "sdk_config.h"
 #include "neopixel.h"
+#include "helper.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -120,7 +120,7 @@ void perform_system_tasks_light(void) {
 
 	if (NRF_LOG_PROCESS() == false)
 	{
-		nrf_pwr_mgmt_run();
+		pwr_mgmt_run();
 	}
 }
 
@@ -132,6 +132,7 @@ void model_go_to_msc_mode(void) {
 	boucle.uninit();
 
 }
+
 
 /**
  *
@@ -171,10 +172,8 @@ void idle_task(void * p_context)
 		// BSP tasks
 		bsp_tasks();
 
-    	sysview_task_idle();
-
     	//No more logs to process, go to sleep
-    	nrf_pwr_mgmt_run();
+    	pwr_mgmt_run();
 
     	task_yield();
     }
