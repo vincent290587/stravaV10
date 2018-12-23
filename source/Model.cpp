@@ -9,6 +9,7 @@
 #include "sdk_config.h"
 #include "neopixel.h"
 #include "helper.h"
+#include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -114,10 +115,11 @@ void model_input_virtual_uart(char c) {
 	case _SENTENCE_PC:
 
 		if (vparser.getPC() == 12) {
-			int a=1, b=0,c;
-			c = a / b;
-			c*= 4;
-			LOG_INFO("%c", c);
+
+			LOG_WARNING("HardFault test start");
+
+			hardfault_genhf_invalid_fp();
+
 		}
 
 	default:

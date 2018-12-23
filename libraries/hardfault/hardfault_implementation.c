@@ -6,6 +6,9 @@
  */
 
 #include "sdk_common.h"
+#if !NRF_MODULE_ENABLED(HARDFAULT_HANDLER)
+#error "Please enable the hard fault handler"
+#endif
 #include "hardfault.h"
 #include "nrf.h"
 #include "compiler_abstraction.h"
@@ -64,6 +67,7 @@ void HardFault_c_handler(uint32_t * p_stack_address)
 
     uint32_t cfsr = SCB->CFSR;
 
+#if defined(DEBUG)
     if (p_stack != NULL)
     {
         // Print information about error.
@@ -87,7 +91,7 @@ void HardFault_c_handler(uint32_t * p_stack_address)
     {
         if (((cfsr & (1 << i)) != 0) && (cfsr_msgs[i] != NULL))
         {
-            LOG_ERROR("Cause: %s.", (uint32_t)cfsr_msgs[i]);
+            LOG_ERROR("Cause: %s.", cfsr_msgs[i]);
         }
     }
 
@@ -101,7 +105,7 @@ void HardFault_c_handler(uint32_t * p_stack_address)
         LOG_ERROR("Bus Fault Address: 0x%08X", SCB->BFAR);
     }
 
-#if defined(DEBUG)
+
 
     NRF_BREAKPOINT_COND;
 
