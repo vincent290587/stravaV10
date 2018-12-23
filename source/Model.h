@@ -90,7 +90,7 @@ extern sFecInfo fec_info;
 extern "C" {
 #endif // defined C++
 
-void __aeabi_idiv0(void);
+void model_input_virtual_uart(char c);
 
 void model_go_to_msc_mode(void);
 
