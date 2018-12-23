@@ -33,13 +33,16 @@ void Vue::tasks(eButtonsEvent event) {
 	switch (m_global_mode) {
 	case eVueGlobalScreenCRS:
 	{
-		// propagate to the inner menu
+		// propagate to the inner vue
+		if (!m_is_menu_selected) {
+			this->propagateEventsCRS(event);
+		}
 		this->propagateEvent(event);
 		break;
 	}
 	case eVueGlobalScreenFEC:
 	{
-		// propagate to the inner menu
+		// propagate to the inner vue
 		this->propagateEvent(event);
 		break;
 	}

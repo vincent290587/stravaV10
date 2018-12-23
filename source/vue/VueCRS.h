@@ -12,6 +12,7 @@
 #include <display/SegmentManager.h>
 #include <Adafruit_GFX.h>
 #include <vue/VueGPS.h>
+#include <vue/button.h>
 
 
 typedef enum {
@@ -21,6 +22,10 @@ typedef enum {
 	eVueCRSScreenDataDS,
 } eVueCRSScreenModes;
 
+typedef enum {
+	eVueCRSScreenPage1,
+	eVueCRSScreenPage2,
+} eVueCRSScreenPage;
 
 class VueCRS: virtual public Adafruit_GFX, virtual public VueGPS {
 public:
@@ -31,6 +36,8 @@ public:
 	virtual void cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite)=0;
 	virtual void cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite)=0;
 
+	bool propagateEventsCRS(eButtonsEvent event);
+
 protected:
 	void partner(uint8_t ligne, Segment *p_seg);
 
@@ -38,7 +45,10 @@ protected:
 
 private:
 	void afficheSegment(uint8_t ligne, Segment *p_seg);
+	void afficheScreen1(void);
+	void afficheScreen2(void);
 
+	eVueCRSScreenPage m_screen_page;
 };
 
 #endif /* SOURCE_VUE_VUECRS_H_ */

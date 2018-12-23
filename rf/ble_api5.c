@@ -35,6 +35,7 @@
 #include "helper.h"
 #include "ble_bas_c.h"
 #include "ble_nus_c.h"
+#include "ble_api_base.h"
 #include "ble_komoot_c.h"
 #include "ble_advdata.h"
 #include "ble_lns_c.h"
@@ -137,16 +138,6 @@ static ble_gap_conn_params_t const m_connection_param =
 		(uint16_t)SUPERVISION_TIMEOUT       /**< Supervision time-out. */
 };
 
-#if (NRF_SD_BLE_API_VERSION==6)
-static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
-
-/**@brief Pointer to the buffer where advertising reports will be stored by the SoftDevice. */
-static ble_data_t m_scan_buffer =
-{
-    m_scan_buffer_data,
-    BLE_GAP_SCAN_BUFFER_MIN
-};
-#endif
 
 static void scan_start(void);
 
@@ -169,10 +160,6 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 }
 
 
-/**@brief Function for handling Peer Manager events.
- *
- * @param[in] p_evt  Peer Manager event.
- */
 /**@brief Function for handling Peer Manager events.
  *
  * @param[in] p_evt  Peer Manager event.
@@ -657,7 +644,7 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 {
 	uint32_t err_code;
 
-	LOG_INFO("KOMOOT event: 0x%X\r\n", p_komoot_c_evt->evt_type);
+	LOG_DEBUG("KOMOOT event: 0x%X\r\n", p_komoot_c_evt->evt_type);
 
 	switch (p_komoot_c_evt->evt_type)
 	{
@@ -683,17 +670,23 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 
 	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
 	{
-		// TODO
-		LOG_INFO("KOMOOT notification");
+		uint32_t err_code = ble_komoot_c_nav_read(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+	}	break;
 
-		break;
-	}
+    case BLE_KOMOOT_C_EVT_KOMOOT_NAVIGATION:
+    {
+    	m_komoot_nav.isUpdated = true;
+    	m_komoot_nav.direction = p_komoot_c_evt->params.komoot.direction;
+    	m_komoot_nav.distance = p_komoot_c_evt->params.komoot.distance;
+
+    	LOG_INFO("KOMOOT nav: direction %u", p_komoot_c_evt->params.komoot.direction);
+    }   break;
 
 	default:
 		break;
 	}
 }
-
 
 
 /**@brief Battery level Collector Handler.
@@ -739,8 +732,7 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
             break;
 
         case BLE_NUS_C_EVT_DISCONNECTED:
-            LOG_INFO("Disconnected.");
-            scan_start();
+    		if (m_nus_xfer_state == eNusTransferStateRun) m_nus_xfer_state = eNusTransferStateFinish;
             break;
     }
 }
@@ -968,6 +960,15 @@ static void gatt_init(void)
 {
 	ret_code_t err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
 	APP_ERROR_CHECK(err_code);
+}
+
+
+void ble_get_navigation(sKomootNavigation *nav) {
+
+	ASSERT(nav);
+
+	if (m_komoot_nav.isUpdated) memcpy(nav, &m_komoot_nav, sizeof(m_komoot_nav));
+
 }
 
 

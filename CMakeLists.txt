@@ -43,6 +43,7 @@ include_directories(
 	libraries/AltiBaro
 	libraries/GlobalTop
 	libraries/utils
+    libraries/komoot
 	libraries/TinyGPSPlus
 	rf
     source
@@ -78,6 +79,7 @@ set(SRCS
 	libraries/AdafruitGFX/Print.cpp
 	libraries/AltiBaro/AltiBaro.cpp
 	libraries/utils/utils.c
+    libraries/komoot/komoot_nav.c
 	libraries/GlobalTop/EPONmeaPacket.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
 	source/display/SegmentManager.cpp

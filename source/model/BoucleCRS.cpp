@@ -94,7 +94,7 @@ void BoucleCRS::run() {
 
 	attitude.addNewLocation(loc, dat, loc_source);
 
-	// update sements
+	// update segments
 
 	sysview_task_void_enter(MainSegLoop);
 	for (auto& seg : mes_segments._segs) {

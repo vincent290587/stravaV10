@@ -65,6 +65,18 @@ void model_dispatch_sensors_update(void) {
 
 /**
  *
+ * @param nav
+ */
+void model_get_navigation(sKomootNavigation *nav) {
+
+	nav->isUpdated = true;
+	nav->distance = 750;
+	nav->direction = ++nav->direction % 33;
+
+}
+
+/**
+ *
  */
 void perform_system_tasks(void) {
 

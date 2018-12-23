@@ -16,7 +16,7 @@
 #include "uart.h"
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-extern "C" void ble_nus_tasks(void);
+#include "ble_api_base.h"
 #endif
 
 
@@ -90,6 +90,15 @@ void model_dispatch_sensors_update(void) {
 		}
 	}
 }
+
+void model_get_navigation(sKomootNavigation *nav) {
+
+#ifdef BLE_STACK_SUPPORT_REQD
+	ble_get_navigation(nav);
+#endif
+
+}
+
 
 void model_input_virtual_uart(char c) {
 
