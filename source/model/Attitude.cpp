@@ -62,12 +62,12 @@ float Attitude::filterElevation(void) {
 		return 0.;
 	}
 
-	if (ele > m_last_stored_ele + 1.) {
+	if (ele > m_last_stored_ele + 4.) {
 		// mise a jour de la montee totale
 		m_climb += ele - m_last_stored_ele;
 		m_last_stored_ele = ele;
 	}
-	else if (ele + 1. < m_last_stored_ele) {
+	else if (ele + 4. < m_last_stored_ele) {
 		// on descend, donc on garde la derniere alti
 		// la plus basse
 		m_last_stored_ele = ele;
