@@ -145,15 +145,15 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 	if (m_is_acc_init &&
 			att.dist > m_last_save_dist + 15.) {
 
-		sysview_task_void_enter(SaveUserPosition);
-
 		m_last_save_dist = att.dist;
 
 		// save position on queue
 		if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
 
 			// save on SD
-			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			sysview_task_void_enter(SaveUserPosition);
+			//sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			sysview_task_void_exit(SaveUserPosition);
 
 			m_st_buffer_nb_elem = 0;
 
@@ -170,7 +170,6 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 		memcpy(&m_app_error.saved_data.att, &att, sizeof(SAtt));
 		m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
 
-		sysview_task_void_exit(SaveUserPosition);
 
 	} else if (att.dist > m_last_save_dist + 25.) {
 		// first position

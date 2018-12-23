@@ -368,6 +368,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	APP_ERROR_CHECK(error);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -376,17 +377,23 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 	for (size_t i=0; i< nb_pos; i++) {
 		// print histo
-		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
+		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
 				att[i].loc.lat, att[i].loc.lon,
 				att[i].loc.alt, att[i].date.secj,
 				att[i].pwr);
 
-		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
+		if (to_wr > 0 && to_wr < (int)sizeof(g_bufferWrite)) {
+			f_sync (&g_fileObject);
+			f_write(&g_fileObject, g_bufferWrite, to_wr, NULL);
+		} else {
+			APP_ERROR_CHECK(0x2);
+		}
 
-//		yield();
+		yield();
 	}
 
 	error = f_close(&g_fileObject);
+	APP_ERROR_CHECK(error);
 	if (error)
 	{
 		LOG_INFO("Close file failed.");

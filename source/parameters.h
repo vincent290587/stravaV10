@@ -55,7 +55,7 @@
 
 #define SENSORS_REFRESH_PER_MS         1000
 
-#define ATT_BUFFER_NB_ELEM             8
+#define ATT_BUFFER_NB_ELEM             2
 
 #define FILTRE_NB                      10
 
