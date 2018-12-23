@@ -44,14 +44,22 @@ void simulator_init(void) {
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
 
-	m_app_error.special = 0xDB;
-	m_app_error.crc_att = 0xFB;
-	snprintf(m_app_error._buffer, sizeof(m_app_error._buffer), "Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
-	m_app_error.saved_att.climb = 562.;
-	m_app_error.saved_att.dist = 17700;
-	m_app_error.saved_att.nbsec_act = 2780;
-	m_app_error.saved_att.pr = 3;
-	m_app_error.saved_att.date.date = 211218;
+	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
+	m_app_error.hf_desc.stck.pc = 0x567896;
+
+	m_app_error.special = SYSTEM_DESCR_POS_CRC;
+
+	m_app_error.err_desc.crc = SYSTEM_DESCR_POS_CRC;
+	snprintf(m_app_error.err_desc._buffer,
+			sizeof(m_app_error.err_desc._buffer),
+			"Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
+
+	m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
+	m_app_error.saved_data.att.climb = 562.;
+	m_app_error.saved_data.att.dist = 17700;
+	m_app_error.saved_data.att.nbsec_act = 2780;
+	m_app_error.saved_data.att.pr = 3;
+	m_app_error.saved_data.att.date.date = 211218;
 }
 
 void simulator_tasks(void) {

@@ -5,7 +5,7 @@
  *      Author: Vincent
  */
 
-
+#include "Attitude.h"
 #include "segger_wrapper.h"
 #include "task_manager_wrapper.h"
 
@@ -63,6 +63,8 @@ SEGGER_SYSVIEW_MODULE m_module = {
 static uint32_t m_cur_task_id;
 static uint32_t m_cur_void_id;
 
+extern sAppErrorDescr m_app_error;
+
 /*******************************************************************************
  * Functions
  ******************************************************************************/
@@ -88,6 +90,7 @@ void sysview_task_block(uint32_t evt_mask) {
 void sysview_task_transfer(uint32_t task_id) {
 	W_SYSVIEW_OnTaskStartExec(task_id);
 	m_cur_task_id = task_id;
+	m_app_error.task_id = task_id;
 }
 
 void sysview_task_event(uint32_t task_id, uint32_t event_mask) {
@@ -96,22 +99,26 @@ void sysview_task_event(uint32_t task_id, uint32_t event_mask) {
 
 void sysview_task_void_enter(uint32_t void_id) {
 	m_cur_void_id = void_id;
+	m_app_error.void_id = void_id;
 	W_SYSVIEW_RecordVoid(m_cur_void_id);
 }
 
 void sysview_task_u32_enter(uint32_t void_id, uint32_t data) {
 	m_cur_void_id = void_id;
+	m_app_error.void_id = void_id;
 	W_SYSVIEW_RecordU32(m_cur_void_id, data);
 }
 
 void sysview_task_void_exit(uint32_t void_id) {
 	W_SYSVIEW_RecordEndCall(void_id);
 	m_cur_void_id = 0;
+	m_app_error.void_id = 0;
 }
 
 void sysview_task_idle(void) {
 	if (m_cur_task_id != 0) {
 		m_cur_task_id = 0;
+		m_app_error.task_id = 0;
 		W_SYSVIEW_OnIdle();
 	}
 }
