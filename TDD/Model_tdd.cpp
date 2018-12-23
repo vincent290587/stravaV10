@@ -71,7 +71,7 @@ void model_get_navigation(sKomootNavigation *nav) {
 
 	nav->isUpdated = true;
 	nav->distance = 750;
-	nav->direction = 2;
+	nav->direction = ++nav->direction % 33;
 
 }
 
