@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "g_structs.h"
 #include "hardfault.h"
 #include "Locator.h"
 #include "parameters.h"

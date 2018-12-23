@@ -15,7 +15,7 @@
 #include "uart.h"
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-#include "ble_api_base.h"
+extern "C" void ble_nus_tasks(void);
 #endif
 
 
