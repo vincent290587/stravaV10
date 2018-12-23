@@ -24,10 +24,22 @@ void Boucle::init(void) {
 
 	LOG_INFO("Boucle init...");
 
-	if (m_app_error.special == 0xDB) {
+	if (m_app_error.special == SYSTEM_DESCR_POS_CRC) {
+		String message = "Last void executed: ";
+		message += m_app_error.void_id;
+		message += " in task: ";
+		message += m_app_error.task_id;
+		LOG_ERROR(message.c_str());
+	    vue.addNotif("System", message.c_str(), 6, eNotificationTypeComplete);
+	}
+	if (m_app_error.err_desc.crc == SYSTEM_DESCR_POS_CRC) {
 		LOG_ERROR("Error identified:");
-		LOG_ERROR(m_app_error._buffer);
-	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
+		String message = m_app_error.err_desc._buffer;
+		message += " in void ";
+		message += m_app_error.void_id;
+		LOG_ERROR(message.c_str());
+	    vue.addNotif("Error", message.c_str(), 6, eNotificationTypeComplete);
+	    memset(&m_app_error.err_desc, 0, sizeof(m_app_error.err_desc));
 	}
 
 	if (init_liste_segments()) {
@@ -35,6 +47,9 @@ void Boucle::init(void) {
 	}
 
 	m_global_mode = BOUCLE_DEFAULT_MODE;
+
+	// prepare for next reboot
+	m_app_error.special = SYSTEM_DESCR_POS_CRC;
 }
 
 void Boucle::uninit(void) {

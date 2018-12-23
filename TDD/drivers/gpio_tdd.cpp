@@ -31,6 +31,9 @@ extern int sockfd;
 
 void gpio_set(uint16_t gpio_nb_) {
 
+	if (gpio_nb_ == KILL_PIN) {
+		exit(-5);
+	}
 }
 
 uint8_t gpio_get(uint16_t gpio_nb_) {

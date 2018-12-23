@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hardfault.h"
 #include "Locator.h"
 #include "parameters.h"
 
@@ -37,15 +38,35 @@ typedef struct {
 	uint16_t next;
 } SAtt;
 
+#define SYSTEM_DESCR_POS_CRC      0xDB
 
 typedef struct {
-	char _buffer[256];
+	HardFault_stack_t stck;
+	uint8_t crc;
+} sAppHardFaultDesc;
+
+typedef struct {
+	char _buffer[210];
+	uint32_t pc;
+	uint32_t id;
+	uint8_t crc;
+} sAppErrorDesc;
+
+typedef struct {
+ 	SAtt att;
+	uint8_t crc;
+} sAppSavedData;
+
+typedef struct {
 	uint8_t special;
- 	SAtt saved_att;
-	uint8_t crc_att;
+	uint32_t void_id;
+	uint32_t task_id;
+	sAppErrorDesc err_desc;
+	sAppSavedData saved_data;
+	sAppHardFaultDesc hf_desc;
 } sAppErrorDescr;
 
-
+#if defined(__cplusplus)
 class Attitude {
 public:
 	Attitude();
@@ -74,5 +95,6 @@ private:
 	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
 	float filterPower(float speed_);
 };
+#endif
 
 #endif /* SOURCE_MODEL_ATTITUDE_H_ */

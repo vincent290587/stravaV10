@@ -14,6 +14,7 @@
 #include "app_error.h"
 #include "nordic_common.h"
 #include "nrf_pwr_mgmt.h"
+#include "Model.h"
 #include "sdk_config.h"
 #include "segger_wrapper.h"
 
@@ -113,7 +114,11 @@ void pwr_mgmt_run(void) {
 	 * - DZC - Division by Zero cumulative exception bit.
 	 * - OFC - Overflow cumulative exception bit.
 	 */
+#ifdef DEBUG
 	ASSERT((original_fpscr & 0x7) == 0);
+#else
+	APP_ERROR_CHECK(0x1);
+#endif
 #endif
 
 	sysview_task_idle();

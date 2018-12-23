@@ -187,6 +187,18 @@ int main(void)
 
 	notifications_init(0);
 
+	// check for errors
+	if (m_app_error.hf_desc.crc == SYSTEM_DESCR_POS_CRC) {
+		LOG_ERROR("Hard Fault found");
+		String message = "Hardfault happened: pc = 0x";
+		message += String(m_app_error.hf_desc.stck.pc, HEX);
+		message += " in void ";
+		message += m_app_error.void_id;
+		LOG_ERROR(message.c_str());
+	    vue.addNotif("Error", message.c_str(), 8, eNotificationTypeComplete);
+		memset(&m_app_error.hf_desc, 0, sizeof(m_app_error.hf_desc));
+	}
+
 	sNeopixelOrders neo_order;
 	SET_NEO_EVENT_RED(neo_order, eNeoEventNotify, 0);
 	notifications_setNotify(&neo_order);

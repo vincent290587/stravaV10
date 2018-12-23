@@ -176,7 +176,7 @@ void Menuable::propagateEvent(eButtonsEvent event) {
 	if (!m_is_menu_selected &&
 			eButtonsEventCenter == event) {
 		m_is_menu_selected = true;
-	} else {
+	} else if (m_is_menu_selected) {
 		p_cur_page->propagateEvent(event);
 	}
 

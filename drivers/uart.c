@@ -23,7 +23,7 @@
 
 #define UARTE_BUF_LENGTH    16
 
-#define UART0_RB_SIZE         512
+#define UART0_RB_SIZE         2048
 
 typedef struct {
 	uint8_t rx_buffer[UARTE_BUF_LENGTH];

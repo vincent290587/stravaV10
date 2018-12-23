@@ -62,12 +62,12 @@ float Attitude::filterElevation(void) {
 		return 0.;
 	}
 
-	if (ele > m_last_stored_ele + 1.) {
+	if (ele > m_last_stored_ele + 4.) {
 		// mise a jour de la montee totale
 		m_climb += ele - m_last_stored_ele;
 		m_last_stored_ele = ele;
 	}
-	else if (ele + 1. < m_last_stored_ele) {
+	else if (ele + 4. < m_last_stored_ele) {
 		// on descend, donc on garde la derniere alti
 		// la plus basse
 		m_last_stored_ele = ele;
@@ -97,25 +97,24 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 		m_climb = 0.;
 		m_last_stored_ele = m_cur_ele;
 
-		if (m_app_error.special == 0xDB &&
-				m_app_error.crc_att == 0xFB) {
+		if (m_app_error.saved_data.crc == SYSTEM_DESCR_POS_CRC) {
 
 			// restoring position and accumulated climb
-			att.climb = m_app_error.saved_att.climb;
+			att.climb = m_app_error.saved_data.att.climb;
 			m_climb = att.climb;
 
-			att.dist = m_app_error.saved_att.dist;
+			att.dist = m_app_error.saved_data.att.dist;
 			m_last_save_dist = att.dist;
 
-			att.pr = m_app_error.saved_att.pr;
-			att.nbsec_act = m_app_error.saved_att.nbsec_act;
+			att.pr = m_app_error.saved_data.att.pr;
+			att.nbsec_act = m_app_error.saved_data.att.nbsec_act;
 
-			LOG_WARNING("Last stored date: %u", m_app_error.saved_att.date.date);
+			LOG_WARNING("Last stored date: %u", m_app_error.saved_data.att.date.date);
 			LOG_WARNING("Last stored dist: %f", att.dist);
 
 		}
 
-		m_app_error.special = 0x00;
+		m_app_error.saved_data.crc = 0x00;
 
 	} else if ((eLocationSourceGPS == source_ ||
 			eLocationSourceNRF == source_) &&
@@ -146,15 +145,15 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 	if (m_is_acc_init &&
 			att.dist > m_last_save_dist + 15.) {
 
-		sysview_task_void_enter(SaveUserPosition);
-
 		m_last_save_dist = att.dist;
 
 		// save position on queue
 		if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
 
 			// save on SD
-			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			sysview_task_void_enter(SaveUserPosition);
+			//sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			sysview_task_void_exit(SaveUserPosition);
 
 			m_st_buffer_nb_elem = 0;
 
@@ -168,10 +167,9 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 		m_st_buffer_nb_elem++;
 
 		// save position and stuff in case of crash
-		memcpy(&m_app_error.saved_att, &att, sizeof(SAtt));
-		m_app_error.crc_att = 0xFB;
+		memcpy(&m_app_error.saved_data.att, &att, sizeof(SAtt));
+		m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
 
-		sysview_task_void_exit(SaveUserPosition);
 
 	} else if (att.dist > m_last_save_dist + 25.) {
 		// first position

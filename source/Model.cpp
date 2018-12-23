@@ -9,6 +9,7 @@
 #include "sdk_config.h"
 #include "neopixel.h"
 #include "helper.h"
+#include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -95,6 +96,46 @@ void model_get_navigation(sKomootNavigation *nav) {
 #ifdef BLE_STACK_SUPPORT_REQD
 	ble_get_navigation(nav);
 #endif
+
+}
+
+
+void model_input_virtual_uart(char c) {
+
+	switch (vparser.encode(c)) {
+	case _SENTENCE_LOC:
+
+		locator.sim_loc.data.lat = (float)vparser.getLat() / 10000000.;
+		locator.sim_loc.data.lon = (float)vparser.getLon() / 10000000.;
+		locator.sim_loc.data.alt = (float)vparser.getEle();
+		locator.sim_loc.data.utc_time = vparser.getSecJ();
+
+		locator.sim_loc.setIsUpdated();
+
+		LOG_INFO("New sim loc received");
+
+		// notify task
+		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
+			events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+		}
+
+		break;
+
+	case _SENTENCE_PC:
+
+		if (vparser.getPC() == 12) {
+
+			LOG_WARNING("HardFault test start");
+
+			hardfault_genhf_invalid_fp();
+
+		}
+
+	default:
+		break;
+
+	}
+
 
 }
 
