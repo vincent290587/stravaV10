@@ -134,16 +134,6 @@ static ble_gap_conn_params_t const m_connection_param =
 		(uint16_t)SUPERVISION_TIMEOUT       /**< Supervision time-out. */
 };
 
-#if (NRF_SD_BLE_API_VERSION==6)
-static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
-
-/**@brief Pointer to the buffer where advertising reports will be stored by the SoftDevice. */
-static ble_data_t m_scan_buffer =
-{
-    m_scan_buffer_data,
-    BLE_GAP_SCAN_BUFFER_MIN
-};
-#endif
 
 static void scan_start(void);
 
@@ -721,8 +711,7 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
             break;
 
         case BLE_NUS_C_EVT_DISCONNECTED:
-            LOG_INFO("Disconnected.");
-            scan_start();
+    		if (m_nus_xfer_state == eNusTransferStateRun) m_nus_xfer_state = eNusTransferStateFinish;
             break;
     }
 }
