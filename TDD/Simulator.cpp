@@ -111,6 +111,11 @@ void simulator_tasks(void) {
 		alt   = data[2];
 
 		baro.setAlti(alt);
+		baro.runFilter();
+		baro.setAlti(alt);
+		baro.runFilter();
+		baro.setAlti(alt);
+		baro.runFilter();
 
 		if (pos == 4) {
 			// file contains the rtime

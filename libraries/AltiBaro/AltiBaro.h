@@ -14,12 +14,14 @@
 class AltiBaro : public MS5637 {
 public:
 	AltiBaro();
-	bool computeAlti(float *alti_);
+	bool computeAlti(float& alti_);
 
     void seaLevelForAltitude(float altitude, float atmospheric);
 	void setCorrection(float cor_) {correction = cor_;}
 
 	bool hasSeaLevelRef(void) {return m_is_init;}
+
+	void runFilter(void);
 
 #ifdef TDD
 	float getAlti() const {
@@ -35,6 +37,8 @@ private:
 	bool m_is_init;
 	float sea_level_pressure;
 	float correction;
+
+	uint32_t nb_filtering;
 
 #ifdef TDD
 	float m_alti;

@@ -13,10 +13,20 @@
 #include "sd_functions.h"
 #include "segger_wrapper.h"
 
+#include "order1_filter.h"
+
 #ifdef USE_JSCOPE
 #include "JScope.h"
 JScope jscope;
 #endif
+
+static float lp1_filter_coefficients[5] =
+{
+// Scaled for floating point: 0.008.fs
+    0.024521609249465722, 0.024521609249465722, 0, 0.9509567815010685, 0// b0, b1, b2, a1, a2
+};
+
+static order1_filterType m_lp_filt;
 
 
 Attitude::Attitude() {
@@ -33,7 +43,7 @@ Attitude::Attitude() {
 	m_st_buffer_nb_elem = 0;
 
 #ifdef USE_JSCOPE
-		jscope.init();
+	jscope.init();
 #endif
 }
 
@@ -48,20 +58,33 @@ void Attitude::addNewDate(SDate *date_) {
 }
 
 
-float Attitude::filterElevation(void) {
+float Attitude::filterElevation(SLoc& loc_) {
 
 	float ele = 0.;
 
-	if (!baro.computeAlti(&ele)) return 0.;
+	if (!baro.computeAlti(ele)) return 0.;
 
 	m_cur_ele = ele;
 
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;
 		m_last_stored_ele = ele;
+
+		order1_filter_init(&m_lp_filt, lp1_filter_coefficients);
+
 		return 0.;
 	}
 
+	// filter with a high time-constant the difference between
+	// GPS altitude and barometer altitude to remove drifts
+	float input = ele - loc_.alt;
+	order1_filter_writeInput(&m_lp_filt, &input);
+
+	float alt_div = order1_filter_readOutput(&m_lp_filt);
+	// set barometer correction
+	baro.setCorrection(alt_div);
+
+	// compute accumulated climb on the corrected filtered barometer altitude
 	if (ele > m_last_stored_ele + 4.) {
 		// mise a jour de la montee totale
 		m_climb += ele - m_last_stored_ele;
@@ -91,7 +114,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 		baro.seaLevelForAltitude(loc_.alt, baro.m_pressure);
 
 		// treat elevation
-		this->filterElevation();
+		this->filterElevation(loc_);
 
 		// reset accumulated data
 		m_climb = 0.;
@@ -120,7 +143,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 			eLocationSourceNRF == source_) &&
 			baro.hasSeaLevelRef()) {
 
-		res = att.climb = this->filterElevation();
+		res = att.climb = this->filterElevation(loc_);
 
 		// overwrite GPS/NRF's elevation
 		loc_.alt = m_cur_ele;

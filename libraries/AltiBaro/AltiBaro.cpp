@@ -10,12 +10,23 @@
 #include "segger_wrapper.h"
 #include "AltiBaro.h"
 
+#include "order1_filter.h"
+
+float lp2_filter_coefficients[5] =
+{
+		// Scaled for floating point: 0.25.fs
+		0.5010471990823734, 0.5010471990823734, 0, -0.0020943981647468628, 0// b0, b1, b2, a1, a2
+};
+
+static order1_filterType m_lp_filt;
+
 AltiBaro::AltiBaro() {
 #ifdef TDD
 	m_alti = 0.;
 #endif
 	sea_level_pressure = 1015.;
 	correction = 0.;
+	nb_filtering = 0;
 	m_is_init = false;
 }
 
@@ -24,22 +35,31 @@ AltiBaro::AltiBaro() {
  * @param alti_ Pointer to store altitude
  * @return True on success
  */
-bool AltiBaro::computeAlti(float *alti_) {
+bool AltiBaro::computeAlti(float& alti_) {
 
-	ASSERT(alti_);
-
-#ifdef TDD
-	*alti_ = this->getAlti();
-
-	LOG_INFO("Alti: %f", *alti_);
-#else
 	if (!m_is_init) return false;
 
 	// m_temperature, m_pressure;
-	*alti_ = this->pressureToAltitude(this->m_pressure);
-#endif
+	if (nb_filtering < 10) {
+		alti_ = this->pressureToAltitude(this->m_pressure);
+	} else {
+		alti_ = order1_filter_readOutput(&m_lp_filt);
+	}
 
 	return true;
+}
+
+void AltiBaro::runFilter(void) {
+
+	if (!m_is_init) return;
+
+#ifdef TDD
+	float input = this->getAlti();
+#else
+	float input = this->pressureToAltitude(this->m_pressure);
+#endif
+	order1_filter_writeInput(&m_lp_filt, &input);
+	nb_filtering++;
 }
 
 /**************************************************************************/
@@ -95,6 +115,8 @@ void AltiBaro::seaLevelForAltitude(float altitude, float atmospheric)
 	sea_level_pressure = atmospheric / powf(1.0 - (altitude/44330.0), 5.255);
 
 	ASSERT(sea_level_pressure != 0.);
+
+	order1_filter_init(&m_lp_filt, lp2_filter_coefficients);
 
 	m_is_init = true;
 

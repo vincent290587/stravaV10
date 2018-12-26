@@ -367,6 +367,7 @@ void i2c_scheduling_tasks(void) {
 		m_is_ms_updated = false;
 		sysview_task_void_enter(I2cMgmtReadMs);
 		baro.refresh(&m_ms5637_handle);
+		baro.runFilter();
 		sysview_task_void_exit(I2cMgmtReadMs);
 	}
 	if (m_is_fxos_updated) {

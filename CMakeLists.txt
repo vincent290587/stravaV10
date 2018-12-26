@@ -43,6 +43,7 @@ include_directories(
 	libraries/AltiBaro
 	libraries/GlobalTop
 	libraries/utils
+    libraries/filters
     libraries/komoot
 	libraries/TinyGPSPlus
 	rf
@@ -64,6 +65,7 @@ set(SRCS
 	Model_tdd.cpp
     Simulator.cpp
 	millis_tdd.c
+	order1_filter_tdd.c
 	sd/sd_functions.cpp
 	sd/sd_hal.c
 	timer/timer.c
