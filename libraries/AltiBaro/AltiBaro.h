@@ -37,7 +37,7 @@ private:
 	bool m_is_init;
 	float sea_level_pressure;
 	float correction;
-
+	float m_alti_f;
 	uint32_t nb_filtering;
 
 #ifdef TDD
