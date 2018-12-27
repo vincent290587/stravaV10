@@ -9,9 +9,32 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "Model_tdd.h"
+#include "Screenutils.h"
 
 #include "order1_filter.h"
 
+bool test_functions(void) {
+
+	LOG_INFO("Testing functions...");
+
+	float pi = 3.040516;
+
+	String pi_str = _fmkstr(pi, 2);
+
+	if (pi_str.length() != 4) return false;
+
+	pi_str = _fmkstr(pi, 4);
+
+	if (pi_str.length() != 6) return false;
+
+	pi_str = _fmkstr(pi, 0);
+
+	if (pi_str.length() != 1) return false;
+
+	LOG_INFO("Functions OK");
+
+	return true;
+}
 
 bool test_filtering(void) {
 

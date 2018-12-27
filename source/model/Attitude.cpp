@@ -34,7 +34,6 @@ Attitude::Attitude() {
 	m_last_stored_ele = 0.;
 	m_cur_ele = 0.;
 	m_climb = 0.;
-	m_vit_asc = 0.;
 
 	m_is_init = false;
 	m_is_acc_init = false;
@@ -270,7 +269,7 @@ float Attitude::filterPower(float speed_) {
 
 			Pc = mes_points.getPointAt(i);
 			_x[i] = Pc._rtime - P2._rtime;
-			_y[i] = Pc._alt;
+			_y[i] = Pc._alt + ATT_VIT_ASC_COEFF0_MULT*_x[i];
 
 			LOG_DEBUG("%d ms %d mm", (int)(_x[i]*1000), (int)(_y[i]*1000));
 		}
@@ -293,15 +292,15 @@ float Attitude::filterPower(float speed_) {
 
 		// STEP 1 : on filtre altitude et vitesse
 		if (corrsq > 0.8) {
-			m_vit_asc = _lrCoef[0];
+			att.vit_asc = _lrCoef[0] - ATT_VIT_ASC_COEFF0_MULT;
 
-			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
-					(int)(m_vit_asc*1000), corrsq);
+			LOG_INFO("#Vit. vert.= %d mm/s (corr= %f)",
+					(int)(att.vit_asc*1000), corrsq);
 		} else {
-			m_vit_asc = 0;
+			att.vit_asc = 0.;
 
-			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
-					(int)(m_vit_asc*1000), corrsq);
+			LOG_INFO("#Vit. vert.= %d mm/s (corr= %f)",
+					(int)(att.vit_asc*1000), corrsq);
 		}
 
 
@@ -309,7 +308,7 @@ float Attitude::filterPower(float speed_) {
 		fSpeed = speed_ / 3.6;
 
 		// STEP 2 : Calcul
-		power = 9.81 * MASSE * m_vit_asc; // grav
+		power = 9.81 * MASSE * att.vit_asc; // grav
 		power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
 		power += 0.204 * fSpeed * fSpeed * fSpeed; // air
 		power *= 1.025; // transmission (rendement velo)
