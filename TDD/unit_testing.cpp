@@ -10,8 +10,34 @@
 #include <stdbool.h>
 #include "Model_tdd.h"
 #include "Screenutils.h"
+#include "utils.h"
 
 #include "order1_filter.h"
+#include "bp_dis_filter.h"
+
+#define TEST_FILTRE_NB    15
+
+bool test_lsq(void) {
+
+	LOG_INFO("Testing LSQ...");
+
+	float _x[TEST_FILTRE_NB] = {1.47,	1.50,	1.52,	1.55,	1.57,	1.60,	1.63,	1.65,	1.68,	1.70,	1.73,	1.75,	1.78,	1.80,	1.83};
+	float _y[TEST_FILTRE_NB] = {52.21,	53.12,	54.48,	55.84,	57.20,	58.57,	59.93,	61.29,	63.11,	64.47,	66.28,	68.10,	69.92,	72.19,	74.46};
+	float _lrCoef[2];
+
+	_lrCoef[1] = _lrCoef[0] = 0.;
+
+	// regression lineaire
+	float corrsq = simpLinReg(_x, _y, _lrCoef, TEST_FILTRE_NB);
+
+	LOG_INFO("LSQ: %f %f (r=%f)", _lrCoef[0], _lrCoef[1], corrsq);
+
+	if (fabsf(_lrCoef[0] - 61.27) > 0.1) return false;
+
+	LOG_INFO("LSQ OK");
+
+	return true;
+}
 
 bool test_functions(void) {
 

@@ -18,8 +18,6 @@
 #include "fec.h"
 #endif
 
-#define ATT_VIT_ASC_COEFF0_MULT     4.
-
 typedef struct {
 	SLoc  loc;
 	SDate date;
@@ -94,7 +92,7 @@ private:
 	float filterElevation(SLoc& loc_);
 	float computeElevation(SLoc& loc_, eLocationSource source_);
 	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
-	float filterPower(float speed_);
+	float computePower(float speed_);
 };
 #endif
 

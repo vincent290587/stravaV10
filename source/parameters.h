@@ -51,13 +51,13 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define MS5637_REFRESH_PER_MS          350
+#define MS5637_REFRESH_PER_MS          333
 
 #define SENSORS_REFRESH_PER_MS         1000
 
 #define ATT_BUFFER_NB_ELEM             2
 
-#define FILTRE_NB                      10
+#define FILTRE_NB                      15
 
 #define MASSE                          79.
 

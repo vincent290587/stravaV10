@@ -15,10 +15,6 @@
 
 #include "order1_filter.h"
 
-#ifdef USE_JSCOPE
-#include "JScope.h"
-JScope jscope;
-#endif
 
 static float lp1_filter_coefficients[5] =
 {
@@ -41,9 +37,6 @@ Attitude::Attitude() {
 
 	m_st_buffer_nb_elem = 0;
 
-#ifdef USE_JSCOPE
-	jscope.init();
-#endif
 }
 
 /**
@@ -223,7 +216,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		this->computeElevation(loc_, source_);
 
 		// update the computed power
-		att.pwr = this->filterPower(loc_.speed);
+		att.pwr = this->computePower(loc_.speed);
 
 		this->computeDistance(loc_, date_, source_);
 
@@ -242,67 +235,13 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
  *
  * @param speed_
  */
-float Attitude::filterPower(float speed_) {
+float Attitude::computePower(float speed_) {
 
-	float res = 0.;
+	float res;
 	float power = 0.;
 	float fSpeed = -1.;
-	Point P1, P2, Pc;
-	float dTime;
-	uint8_t i;
 
-	float _y[FILTRE_NB+1];
-	float _x[FILTRE_NB+1];
-	float _lrCoef[2];
-
-	if (mes_points.size() <= FILTRE_NB + 1) return res;
-
-	P1 = mes_points.getFirstPoint();
-	P2 = mes_points.getPointAt(FILTRE_NB);
-
-	dTime = P1._rtime - P2._rtime;
-
-	if (fabsf(dTime) > 1.5 && fabsf(dTime) < 25) {
-
-		// calcul de la vitesse ascentionnelle par regression lineaire
-		for (i = 0; i <= FILTRE_NB; i++) {
-
-			Pc = mes_points.getPointAt(i);
-			_x[i] = Pc._rtime - P2._rtime;
-			_y[i] = Pc._alt + ATT_VIT_ASC_COEFF0_MULT*_x[i];
-
-			LOG_DEBUG("%d ms %d mm", (int)(_x[i]*1000), (int)(_y[i]*1000));
-		}
-
-		_lrCoef[1] = _lrCoef[0] = 0;
-
-		// regression lineaire
-		float corrsq = simpLinReg(_x, _y, _lrCoef, FILTRE_NB + 1);
-
-#ifdef USE_JSCOPE
-		{
-			// output some results to Segger JSCOPE
-			jscope.inputData(P1._alt, 0);
-			jscope.inputData(_lrCoef[0], 4);
-			jscope.inputData(corrsq, 8);
-		}
-
-		jscope.flush();
-#endif
-
-		// STEP 1 : on filtre altitude et vitesse
-		if (corrsq > 0.8) {
-			att.vit_asc = _lrCoef[0] - ATT_VIT_ASC_COEFF0_MULT;
-
-			LOG_INFO("#Vit. vert.= %d mm/s (corr= %f)",
-					(int)(att.vit_asc*1000), corrsq);
-		} else {
-			att.vit_asc = 0.;
-
-			LOG_INFO("#Vit. vert.= %d mm/s (corr= %f)",
-					(int)(att.vit_asc*1000), corrsq);
-		}
-
+	if (baro.computeVA(att.vit_asc)) {
 
 		// horizontal speed (m/s)
 		fSpeed = speed_ / 3.6;
@@ -312,10 +251,7 @@ float Attitude::filterPower(float speed_) {
 		power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
 		power += 0.204 * fSpeed * fSpeed * fSpeed; // air
 		power *= 1.025; // transmission (rendement velo)
-		res = power;
 
-	} else {
-		LOG_INFO("dTime= %d ms", (int)(dTime*1000));
 	}
 
 	res = power;
