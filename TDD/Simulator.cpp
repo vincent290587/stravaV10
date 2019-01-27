@@ -44,13 +44,22 @@ void simulator_init(void) {
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
 
-	m_app_error.special = 0xDB;
-	m_app_error.crc_att = 0xFB;
-	snprintf(m_app_error._buffer, sizeof(m_app_error._buffer), "Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
-	m_app_error.saved_att.climb = 562.;
-	m_app_error.saved_att.dist = 17700;
-	m_app_error.saved_att.pr = 3;
-	m_app_error.saved_att.date.date = 211218;
+	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
+	m_app_error.hf_desc.stck.pc = 0x567896;
+
+	m_app_error.special = SYSTEM_DESCR_POS_CRC;
+
+	m_app_error.err_desc.crc = SYSTEM_DESCR_POS_CRC;
+	snprintf(m_app_error.err_desc._buffer,
+			sizeof(m_app_error.err_desc._buffer),
+			"Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
+
+	m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
+	m_app_error.saved_data.att.climb = 562.;
+	m_app_error.saved_data.att.dist = 17700;
+	m_app_error.saved_data.att.nbsec_act = 2780;
+	m_app_error.saved_data.att.pr = 3;
+	m_app_error.saved_data.att.date.date = 211218;
 }
 
 void simulator_tasks(void) {
@@ -101,14 +110,22 @@ void simulator_tasks(void) {
 		lon   = data[1];
 		alt   = data[2];
 
-		baro.setAlti(alt);
+		static float alti_fake = 0.;
+
+		//alti_fake += 1. / 3.;
+
+		int rnd_add;
+		rnd_add = (rand() % 20) - 10;
+
+		baro.setAlti(alti_fake + (float)rnd_add / 10.);
+		baro.runFilter();
 
 		if (pos == 4) {
 			// file contains the rtime
 			rtime = data[3];
 		} else {
 			// rtime is missing: generate it
-			rtime += 1;
+			rtime += 1.;
 		}
 
 #ifdef TDD_RANDOMIZE

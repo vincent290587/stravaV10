@@ -23,7 +23,7 @@
 
 #define UARTE_BUF_LENGTH    16
 
-#define UART0_RB_SIZE         512
+#define UART0_RB_SIZE         2048
 
 typedef struct {
 	uint8_t rx_buffer[UARTE_BUF_LENGTH];
@@ -196,7 +196,7 @@ void uart_send(uint8_t * p_data, size_t length) {
 	if (!err_code) uart_xfer_done = false;
 
 	while (!uart_xfer_done) {
-		nrf_pwr_mgmt_run();
+		pwr_mgmt_run();
 	}
 }
 

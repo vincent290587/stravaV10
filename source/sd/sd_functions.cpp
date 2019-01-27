@@ -388,8 +388,8 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 			APP_ERROR_CHECK(0x2);
 		}
 
-//		yield();
 		perform_system_tasks();
+		yield();
 	}
 
 	error = f_close(&g_fileObject);

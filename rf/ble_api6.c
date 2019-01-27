@@ -44,6 +44,8 @@
 #include "Locator.h"
 #include "neopixel.h"
 #include "segger_wrapper.h"
+#include "ring_buffer.h"
+#include "Model.h"
 
 #define BLE_DEVICE_NAME             "stravaV10"
 
@@ -92,6 +94,8 @@ BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Str
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
 
+#define NUS_RB_SIZE      1024
+RING_BUFFER_DEF(nus_rb1, NUS_RB_SIZE);
 
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
@@ -102,29 +106,6 @@ static uint16_t m_nus_packet_nb = 0;
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
-#if (NRF_SD_BLE_API_VERSION==6)
-
-/**@brief NUS UUID. */
-static ble_uuid_t const m_lns_uuid =
-{
-		.uuid = TARGET_UUID,
-		.type = BLE_UUID_TYPE_BLE
-};
-
-/**@brief NUS UUID. */
-static ble_uuid_t const m_nus_uuid =
-{
-	    .uuid = BLE_UUID_NUS_SERVICE,
-	    .type = BLE_UUID_TYPE_VENDOR_BEGIN
-};
-
-/**@brief NUS UUID. */
-static ble_uuid_t const m_komoot_uuid =
-{
-	    .uuid = BLE_UUID_KOMOOT_SERVICE,
-	    .type = BLE_UUID_TYPE_VENDOR_BEGIN
-};
-#endif
 
 static void scan_start(void);
 
@@ -420,13 +401,28 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 	case BLE_NUS_C_EVT_NUS_TX_EVT:
 		// TODO handle received chars
 		LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
-		m_nus_xfer_state = eNusTransferStateInit;
+//		m_nus_xfer_state = eNusTransferStateInit;
 		// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+		{
+			for (uint16_t i=0; i < p_evt->data_len; i++) {
+
+				char c = p_evt->p_data[i];
+
+				if (RING_BUFF_IS_NOT_FULL(nus_rb1)) {
+					RING_BUFFER_ADD_ATOMIC(nus_rb1, c);
+				} else {
+					LOG_ERROR("NUS ring buffer full");
+
+					// empty ring buffer
+					RING_BUFF_EMPTY(nus_rb1);
+				}
+
+			}
+		}
 		break;
 
 	case BLE_NUS_C_EVT_DISCONNECTED:
-		LOG_INFO("Disconnected.");
-		scan_start();
+		if (m_nus_xfer_state == eNusTransferStateRun) m_nus_xfer_state = eNusTransferStateFinish;
 		break;
 	}
 }
@@ -456,7 +452,7 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 			APP_ERROR_CHECK(err_code);
 		}
 
-		// LNS service discovered. Enable notification of LNS.
+		// service discovered. Enable notification
 		err_code = ble_komoot_c_pos_notif_enable(p_komoot_c);
 		APP_ERROR_CHECK(err_code);
 
@@ -465,16 +461,23 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 
 	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
 	{
+		uint32_t err_code = ble_komoot_c_nav_read(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+	}	break;
 
-		// TODO
-		LOG_INFO("KOMOOT notification");
+	case BLE_KOMOOT_C_EVT_KOMOOT_NAVIGATION:
+	{
+		m_komoot_nav.isUpdated = true;
+		m_komoot_nav.direction = p_komoot_c_evt->params.komoot.direction;
+		m_komoot_nav.distance = p_komoot_c_evt->params.komoot.distance;
 
-		break;
-	}
+		LOG_INFO("KOMOOT nav: direction %u", p_komoot_c_evt->params.komoot.direction);
+	}   break;
 
 	default:
 		break;
 	}
+
 }
 
 /**
@@ -588,6 +591,20 @@ static void scan_init(void)
 	init_scan.connect_if_match = true;
 	init_scan.conn_cfg_tag     = APP_BLE_CONN_CFG_TAG;
 
+	/**@brief NUS UUID. */
+	ble_uuid_t const m_lns_uuid =
+	{
+			.uuid = TARGET_UUID,
+			.type = m_ble_lns_c.uuid_type
+	};
+
+	/**@brief NUS UUID. */
+	ble_uuid_t const m_komoot_uuid =
+	{
+			.uuid = BLE_UUID_KOMOOT_SERVICE,
+			.type = m_ble_komoot_c.uuid_type
+	};
+
 	err_code = nrf_ble_scan_init(&m_scan, &init_scan, scan_evt_handler);
 	APP_ERROR_CHECK(err_code);
 
@@ -668,6 +685,13 @@ static void gatt_init(void)
 	APP_ERROR_CHECK(err_code);
 }
 
+void ble_get_navigation(sKomootNavigation *nav) {
+
+	ASSERT(nav);
+
+	if (m_komoot_nav.isUpdated) memcpy(nav, &m_komoot_nav, sizeof(m_komoot_nav));
+
+}
 
 #ifdef BLE_STACK_SUPPORT_REQD
 /**
@@ -696,7 +720,15 @@ void ble_init(void)
 #include "sd_functions.h"
 void ble_nus_tasks(void) {
 
-	if (m_nus_xfer_state == eNusTransferStateIdle) return;
+	if (m_nus_xfer_state == eNusTransferStateIdle) {
+
+		char c = RING_BUFF_GET_ELEM(nus_rb1);
+		RING_BUFFER_POP(nus_rb1);
+
+		model_input_virtual_uart(c);
+
+		return;
+	}
 
 	switch (m_nus_xfer_state) {
 
@@ -704,7 +736,7 @@ void ble_nus_tasks(void) {
 	{
 		if (!log_file_start()) {
 			NRF_LOG_WARNING("Log file error start")
-					m_nus_xfer_state = eNusTransferStateIdle;
+							m_nus_xfer_state = eNusTransferStateIdle;
 		} else {
 			m_nus_packet_nb = 0;
 			m_nus_cts = true;

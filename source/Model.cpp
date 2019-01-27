@@ -6,16 +6,17 @@
  */
 
 #include "Model.h"
-#include "nrf_pwr_mgmt.h"
 #include "sdk_config.h"
 #include "neopixel.h"
+#include "helper.h"
+#include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
 #include "uart.h"
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-extern "C" void ble_nus_tasks(void);
+#include "ble_api_base.h"
 #endif
 
 
@@ -90,6 +91,54 @@ void model_dispatch_sensors_update(void) {
 	}
 }
 
+void model_get_navigation(sKomootNavigation *nav) {
+
+#ifdef BLE_STACK_SUPPORT_REQD
+	ble_get_navigation(nav);
+#endif
+
+}
+
+
+void model_input_virtual_uart(char c) {
+
+	switch (vparser.encode(c)) {
+	case _SENTENCE_LOC:
+
+		locator.sim_loc.data.lat = (float)vparser.getLat() / 10000000.;
+		locator.sim_loc.data.lon = (float)vparser.getLon() / 10000000.;
+		locator.sim_loc.data.alt = (float)vparser.getEle();
+		locator.sim_loc.data.utc_time = vparser.getSecJ();
+
+		locator.sim_loc.setIsUpdated();
+
+		LOG_INFO("New sim loc received");
+
+		// notify task
+		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
+			events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+		}
+
+		break;
+
+	case _SENTENCE_PC:
+
+		if (vparser.getPC() == 12) {
+
+			LOG_WARNING("HardFault test start");
+
+			hardfault_genhf_invalid_fp();
+
+		}
+
+	default:
+		break;
+
+	}
+
+
+}
+
 /**
  *
  */
@@ -120,7 +169,7 @@ void perform_system_tasks_light(void) {
 
 	if (NRF_LOG_PROCESS() == false)
 	{
-		nrf_pwr_mgmt_run();
+		pwr_mgmt_run();
 	}
 }
 
@@ -132,6 +181,7 @@ void model_go_to_msc_mode(void) {
 	boucle.uninit();
 
 }
+
 
 /**
  *
@@ -171,10 +221,9 @@ void idle_task(void * p_context)
 		// BSP tasks
 		bsp_tasks();
 
-    	sysview_task_idle();
-
     	//No more logs to process, go to sleep
-    	nrf_pwr_mgmt_run();
+		sysview_task_idle();
+    	pwr_mgmt_run();
 
     	task_yield();
     }

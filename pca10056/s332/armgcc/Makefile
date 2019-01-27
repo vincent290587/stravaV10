@@ -36,33 +36,31 @@ SRC_FILES += \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_3.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_4.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_5.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/ant_fec.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/utils/ant_fec_utils.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_1.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_2.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_16.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_17.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_21.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_25.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_48.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_49.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_51.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages/ant_fec_page_54.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_71.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_80.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_81.c \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_glasses/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_common/pages/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/pages/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/utils/*.c) \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ant.c \
-
-include $(PROJ_DIR)/Makefile.files
-
-include $(PROJ_DIR)/ble.files
 
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers \
   $(SDK_ROOT)/components/softdevice/s332_v5.0.0/headers/nrf52 \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_glasses \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_common \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_common/pages \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec/pages \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec/utils \
+  
+include $(PROJ_DIR)/Makefile.files
+
+include $(PROJ_DIR)/ble.files
   
 # Libraries common to all targets
 LIB_FILES += \
@@ -79,8 +77,8 @@ OPT = -O3 -g3
 CFLAGS += $(OPT)
 CFLAGS += -DUSE_VCOM_LOGS=0
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
-#CFLAGS += -DUSE_SVIEW=1 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
-CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
+CFLAGS += -DUSE_SVIEW=1 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
+#CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
 #CFLAGS += -DUSE_SVIEW=0 -DUSE_JSCOPE -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DUSE_APP_CONFIG
@@ -94,7 +92,7 @@ CFLAGS += -DANT_STACK_SUPPORT_REQD
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DNRF_SD_BLE_API_VERSION=5
 CFLAGS += -DSWI_DISABLE0
-CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
+CFLAGS += -DFPU_INTERRUPT_MODE
 CFLAGS += -DS332
 CFLAGS += -DFLOAT_ABI_HARD
 CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
@@ -116,6 +114,7 @@ ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DARM_MATH_CM4
 ASMFLAGS += -DSOFTDEVICE_PRESENT
+ASMFLAGS += -DCONFIG_NFCT_PINS_AS_GPIOS
 ASMFLAGS += -DANT_STACK_SUPPORT_REQD
 ASMFLAGS += -DBLE_STACK_SUPPORT_REQD
 ASMFLAGS += -DBOARD_CUSTOM

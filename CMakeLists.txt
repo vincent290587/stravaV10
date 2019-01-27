@@ -43,6 +43,8 @@ include_directories(
 	libraries/AltiBaro
 	libraries/GlobalTop
 	libraries/utils
+    libraries/filters
+    libraries/komoot
 	libraries/TinyGPSPlus
 	rf
     source
@@ -63,6 +65,7 @@ set(SRCS
 	Model_tdd.cpp
     Simulator.cpp
 	millis_tdd.c
+	order1_filter_tdd.c
 	sd/sd_functions.cpp
 	sd/sd_hal.c
 	timer/timer.c
@@ -78,6 +81,7 @@ set(SRCS
 	libraries/AdafruitGFX/Print.cpp
 	libraries/AltiBaro/AltiBaro.cpp
 	libraries/utils/utils.c
+    libraries/komoot/komoot_nav.c
 	libraries/GlobalTop/EPONmeaPacket.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
 	source/display/SegmentManager.cpp

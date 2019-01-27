@@ -37,7 +37,7 @@
 
 
 #if USE_SVIEW
-#ifdef USDB_ENABLED
+#ifdef USB_ENABLED
 #include "usb_cdc.h"
 #define LOG_INFO(...)                  usb_printf(__VA_ARGS__)
 #else // USDB_ENABLED
@@ -67,13 +67,14 @@
 //#undef NRF_LOG_BACKEND_RTT_ENABLED
 //#define NRF_LOG_BACKEND_RTT_ENABLED 0
 #elif NRF_LOG_ENABLED
-#define LOG_INFO(...)                  NRF_LOG_INFO(__VA_ARGS__)
-#define LOG_RAW_INFO(X)                NRF_LOG_RAW_INFO("%c", X)
-#define LOG_WARNING(...)               NRF_LOG_WARNING(__VA_ARGS__)
+#include "SEGGER_RTT.h"
+#define LOG_INFO(...)                  SEGGER_RTT_printf(0, __VA_ARGS__);SEGGER_RTT_PutChar(0, '\r');SEGGER_RTT_PutChar(0, '\n')
+#define LOG_RAW_INFO(X)                EMPTY_MACRO
+#define LOG_WARNING(...)               SEGGER_RTT_printf(0, __VA_ARGS__);SEGGER_RTT_PutChar(0, '\r');SEGGER_RTT_PutChar(0, '\n')
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 NRF_LOG_ERROR(__VA_ARGS__)
+#define LOG_ERROR(...)                 SEGGER_RTT_printf(0, __VA_ARGS__);SEGGER_RTT_PutChar(0, '\r');SEGGER_RTT_PutChar(0, '\n')
 #define LOG_GRAPH(...)                 EMPTY_MACRO
-#define LOG_FLUSH(...)                 NRF_LOG_FLUSH();
+#define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                EMPTY_MACRO
 #define USB_PRINTF(...)                EMPTY_MACRO

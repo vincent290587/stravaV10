@@ -33,11 +33,11 @@ make flash (or) make dfu
 
 - [x] Strava segments compete
 - [x] GPX file following on a map
-- [x] Connection to a BLE AP to unload recorded data
 - [x] Better menu-system
-- [ ] Sensors fusion (for slope compute)
+- [x] Turn-by-turn navigation (using the Komoot app)
+- [x] Better slope computation
+- [ ] Connection to a BLE AP to unload recorded data
 - [ ] More LED interaction
-- [ ] Smarter interaction with the AP
 
 
 ## Screenshots

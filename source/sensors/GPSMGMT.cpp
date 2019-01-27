@@ -28,7 +28,7 @@ TinyGPSCustom gps_ack(gps, "PMTK001", 2);  // ACK, second element
 
 #define GPS_DEFAULT_SPEED_BAUD     NRF_UARTE_BAUDRATE_9600
 
-#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_115200
+#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_9600
 #define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_115200
 //#define GPS_FAST_SPEED_BAUD        NRF_UARTE_BAUDRATE_921600
 //#define GPS_FAST_SPEED_CMD         PMTK_SET_NMEA_BAUD_921600
@@ -387,7 +387,7 @@ void GPS_MGMT::tasks(void) {
  */
 uint32_t gps_encode_char(char c) {
 
-	LOG_RAW_INFO(c);
+	//LOG_RAW_INFO(c);
 
 	if (eGPSMgmtEPOIdle == m_epo_state) {
 

@@ -13,10 +13,16 @@
 #include "sd_functions.h"
 #include "segger_wrapper.h"
 
-#ifdef USE_JSCOPE
-#include "JScope.h"
-JScope jscope;
-#endif
+#include "order1_filter.h"
+
+
+static float lp1_filter_coefficients[5] =
+{
+// Scaled for floating point: 0.008.fs
+    0.024521609249465722, 0.024521609249465722, 0, 0.9509567815010685, 0// b0, b1, b2, a1, a2
+};
+
+static order1_filterType m_lp_filt;
 
 
 Attitude::Attitude() {
@@ -24,7 +30,6 @@ Attitude::Attitude() {
 	m_last_stored_ele = 0.;
 	m_cur_ele = 0.;
 	m_climb = 0.;
-	m_vit_asc = 0.;
 
 	m_is_init = false;
 	m_is_acc_init = false;
@@ -32,9 +37,6 @@ Attitude::Attitude() {
 
 	m_st_buffer_nb_elem = 0;
 
-#ifdef USE_JSCOPE
-		jscope.init();
-#endif
 }
 
 /**
@@ -48,26 +50,39 @@ void Attitude::addNewDate(SDate *date_) {
 }
 
 
-float Attitude::filterElevation(void) {
+float Attitude::filterElevation(SLoc& loc_) {
 
 	float ele = 0.;
 
-	if (!baro.computeAlti(&ele)) return 0.;
+	if (!baro.computeAlti(ele)) return 0.;
 
 	m_cur_ele = ele;
 
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;
 		m_last_stored_ele = ele;
+
+		order1_filter_init(&m_lp_filt, lp1_filter_coefficients);
+
 		return 0.;
 	}
 
-	if (ele > m_last_stored_ele + 1.) {
+	// filter with a high time-constant the difference between
+	// GPS altitude and barometer altitude to remove drifts
+	float input = ele - loc_.alt;
+	order1_filter_writeInput(&m_lp_filt, &input);
+
+	float alt_div = order1_filter_readOutput(&m_lp_filt);
+	// set barometer correction
+	baro.setCorrection(alt_div);
+
+	// compute accumulated climb on the corrected filtered barometer altitude
+	if (ele > m_last_stored_ele + 4.) {
 		// mise a jour de la montee totale
 		m_climb += ele - m_last_stored_ele;
 		m_last_stored_ele = ele;
 	}
-	else if (ele + 1. < m_last_stored_ele) {
+	else if (ele + 4. < m_last_stored_ele) {
 		// on descend, donc on garde la derniere alti
 		// la plus basse
 		m_last_stored_ele = ele;
@@ -91,36 +106,36 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 		baro.seaLevelForAltitude(loc_.alt, baro.m_pressure);
 
 		// treat elevation
-		this->filterElevation();
+		this->filterElevation(loc_);
 
 		// reset accumulated data
 		m_climb = 0.;
 		m_last_stored_ele = m_cur_ele;
 
-		if (m_app_error.special == 0xDB &&
-				m_app_error.crc_att == 0xFB) {
+		if (m_app_error.saved_data.crc == SYSTEM_DESCR_POS_CRC) {
 
 			// restoring position and accumulated climb
-			att.climb = m_app_error.saved_att.climb;
+			att.climb = m_app_error.saved_data.att.climb;
 			m_climb = att.climb;
 
-			att.dist = m_app_error.saved_att.dist;
+			att.dist = m_app_error.saved_data.att.dist;
 			m_last_save_dist = att.dist;
 
-			att.pr = m_app_error.saved_att.pr;
+			att.pr = m_app_error.saved_data.att.pr;
+			att.nbsec_act = m_app_error.saved_data.att.nbsec_act;
 
-			LOG_WARNING("Last stored date: %u", m_app_error.saved_att.date.date);
+			LOG_WARNING("Last stored date: %u", m_app_error.saved_data.att.date.date);
 			LOG_WARNING("Last stored dist: %f", att.dist);
 
 		}
 
-		m_app_error.special = 0x00;
+		m_app_error.saved_data.crc = 0x00;
 
 	} else if ((eLocationSourceGPS == source_ ||
 			eLocationSourceNRF == source_) &&
 			baro.hasSeaLevelRef()) {
 
-		res = att.climb = this->filterElevation();
+		res = att.climb = this->filterElevation(loc_);
 
 		// overwrite GPS/NRF's elevation
 		loc_.alt = m_cur_ele;
@@ -145,8 +160,6 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 	if (m_is_acc_init &&
 			att.dist > m_last_save_dist + 15.) {
 
-		sysview_task_void_enter(SaveUserPosition);
-
 		m_last_save_dist = att.dist;
 
 		// save position on queue
@@ -154,7 +167,7 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 
 			// save on SD
 			sysview_task_void_enter(SaveUserPosition);
-			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			//sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
 			sysview_task_void_exit(SaveUserPosition);
 
 			m_st_buffer_nb_elem = 0;
@@ -169,10 +182,9 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 		m_st_buffer_nb_elem++;
 
 		// save position and stuff in case of crash
-		memcpy(&m_app_error.saved_att, &att, sizeof(SAtt));
-		m_app_error.crc_att = 0xFB;
+		memcpy(&m_app_error.saved_data.att, &att, sizeof(SAtt));
+		m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
 
-		sysview_task_void_exit(SaveUserPosition);
 
 	} else if (att.dist > m_last_save_dist + 25.) {
 		// first position
@@ -204,7 +216,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		this->computeElevation(loc_, source_);
 
 		// update the computed power
-		att.pwr = this->filterPower(loc_.speed);
+		att.pwr = this->computePower(loc_.speed);
 
 		this->computeDistance(loc_, date_, source_);
 
@@ -223,80 +235,23 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
  *
  * @param speed_
  */
-float Attitude::filterPower(float speed_) {
+float Attitude::computePower(float speed_) {
 
-	float res = 0.;
+	float res;
 	float power = 0.;
 	float fSpeed = -1.;
-	Point P1, P2, Pc;
-	float dTime;
-	uint8_t i;
 
-	float _y[FILTRE_NB+1];
-	float _x[FILTRE_NB+1];
-	float _lrCoef[2];
-
-	if (mes_points.size() <= FILTRE_NB + 1) return res;
-
-	P1 = mes_points.getFirstPoint();
-	P2 = mes_points.getPointAt(FILTRE_NB);
-
-	dTime = P1._rtime - P2._rtime;
-
-	if (fabsf(dTime) > 1.5 && fabsf(dTime) < 25) {
-
-		// calcul de la vitesse ascentionnelle par regression lineaire
-		for (i = 0; i <= FILTRE_NB; i++) {
-
-			Pc = mes_points.getPointAt(i);
-			_x[i] = Pc._rtime - P2._rtime;
-			_y[i] = Pc._alt;
-
-			LOG_DEBUG("%d ms %d mm", (int)(_x[i]*1000), (int)(_y[i]*1000));
-		}
-
-		_lrCoef[1] = _lrCoef[0] = 0;
-
-		// regression lineaire
-		float corrsq = simpLinReg(_x, _y, _lrCoef, FILTRE_NB + 1);
-
-#ifdef USE_JSCOPE
-		{
-			// output some results to Segger JSCOPE
-			jscope.inputData(P1._alt, 0);
-			jscope.inputData(_lrCoef[0], 4);
-			jscope.inputData(corrsq, 8);
-		}
-
-		jscope.flush();
-#endif
-
-		// STEP 1 : on filtre altitude et vitesse
-		if (corrsq > 0.8) {
-			m_vit_asc = _lrCoef[0];
-
-			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
-					(int)(m_vit_asc*1000), corrsq);
-		} else {
-			m_vit_asc = 0;
-
-			LOG_INFO("Vit. vert.= %d mm/s (corr= %f)",
-					(int)(m_vit_asc*1000), corrsq);
-		}
-
+	if (baro.computeVA(att.vit_asc)) {
 
 		// horizontal speed (m/s)
 		fSpeed = speed_ / 3.6;
 
 		// STEP 2 : Calcul
-		power = 9.81 * MASSE * m_vit_asc; // grav
+		power = 9.81 * MASSE * att.vit_asc; // grav
 		power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
 		power += 0.204 * fSpeed * fSpeed * fSpeed; // air
 		power *= 1.025; // transmission (rendement velo)
-		res = power;
 
-	} else {
-		LOG_INFO("dTime= %d ms", (int)(dTime*1000));
 	}
 
 	res = power;
@@ -315,4 +270,3 @@ void Attitude::addNewFECPoint(sFecInfo& fec_) {
 	// TODO
 
 }
-

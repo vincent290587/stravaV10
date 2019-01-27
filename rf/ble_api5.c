@@ -35,6 +35,7 @@
 #include "helper.h"
 #include "ble_bas_c.h"
 #include "ble_nus_c.h"
+#include "ble_api_base.h"
 #include "ble_komoot_c.h"
 #include "ble_advdata.h"
 #include "ble_lns_c.h"
@@ -44,6 +45,8 @@
 #include "Locator.h"
 #include "neopixel.h"
 #include "segger_wrapper.h"
+#include "ring_buffer.h"
+#include "Model.h"
 
 #define BLE_DEVICE_NAME             "myStrava"
 
@@ -107,6 +110,8 @@ BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Str
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
 
+#define NUS_RB_SIZE      1024
+RING_BUFFER_DEF(nus_rb1, NUS_RB_SIZE);
 
 /** @brief Parameters used when scanning. */
 static ble_gap_scan_params_t m_scan_param;
@@ -133,16 +138,6 @@ static ble_gap_conn_params_t const m_connection_param =
 		(uint16_t)SUPERVISION_TIMEOUT       /**< Supervision time-out. */
 };
 
-#if (NRF_SD_BLE_API_VERSION==6)
-static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
-
-/**@brief Pointer to the buffer where advertising reports will be stored by the SoftDevice. */
-static ble_data_t m_scan_buffer =
-{
-    m_scan_buffer_data,
-    BLE_GAP_SCAN_BUFFER_MIN
-};
-#endif
 
 static void scan_start(void);
 
@@ -165,10 +160,6 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 }
 
 
-/**@brief Function for handling Peer Manager events.
- *
- * @param[in] p_evt  Peer Manager event.
- */
 /**@brief Function for handling Peer Manager events.
  *
  * @param[in] p_evt  Peer Manager event.
@@ -653,7 +644,7 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 {
 	uint32_t err_code;
 
-	LOG_INFO("KOMOOT event: 0x%X\r\n", p_komoot_c_evt->evt_type);
+	LOG_DEBUG("KOMOOT event: 0x%X\r\n", p_komoot_c_evt->evt_type);
 
 	switch (p_komoot_c_evt->evt_type)
 	{
@@ -679,17 +670,23 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 
 	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
 	{
-		// TODO
-		LOG_INFO("KOMOOT notification");
+		uint32_t err_code = ble_komoot_c_nav_read(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+	}	break;
 
-		break;
-	}
+    case BLE_KOMOOT_C_EVT_KOMOOT_NAVIGATION:
+    {
+    	m_komoot_nav.isUpdated = true;
+    	m_komoot_nav.direction = p_komoot_c_evt->params.komoot.direction;
+    	m_komoot_nav.distance = p_komoot_c_evt->params.komoot.distance;
+
+    	LOG_INFO("KOMOOT nav: direction %u", p_komoot_c_evt->params.komoot.direction);
+    }   break;
 
 	default:
 		break;
 	}
 }
-
 
 
 /**@brief Battery level Collector Handler.
@@ -713,13 +710,29 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
         case BLE_NUS_C_EVT_NUS_TX_EVT:
             // TODO handle received chars
         	LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
-        	m_nus_xfer_state = eNusTransferStateInit;
+//        	m_nus_xfer_state = eNusTransferStateInit;
         	// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+
+    		{
+    			for (uint16_t i=0; i < p_evt->data_len; i++) {
+
+    				char c = p_evt->p_data[i];
+
+    				if (RING_BUFF_IS_NOT_FULL(nus_rb1)) {
+    					RING_BUFFER_ADD_ATOMIC(nus_rb1, c);
+    				} else {
+    					LOG_ERROR("NUS ring buffer full");
+
+    					// empty ring buffer
+    					RING_BUFF_EMPTY(nus_rb1);
+    				}
+
+    			}
+    		}
             break;
 
         case BLE_NUS_C_EVT_DISCONNECTED:
-            LOG_INFO("Disconnected.");
-            scan_start();
+    		if (m_nus_xfer_state == eNusTransferStateRun) m_nus_xfer_state = eNusTransferStateFinish;
             break;
     }
 }
@@ -950,6 +963,15 @@ static void gatt_init(void)
 }
 
 
+void ble_get_navigation(sKomootNavigation *nav) {
+
+	ASSERT(nav);
+
+	if (m_komoot_nav.isUpdated) memcpy(nav, &m_komoot_nav, sizeof(m_komoot_nav));
+
+}
+
+
 #ifdef BLE_STACK_SUPPORT_REQD
 /**
  * Init BLE stack
@@ -979,7 +1001,15 @@ void ble_init(void)
 #include "sd_functions.h"
 void ble_nus_tasks(void) {
 
-	if (m_nus_xfer_state == eNusTransferStateIdle) return;
+	if (m_nus_xfer_state == eNusTransferStateIdle) {
+
+		char c = RING_BUFF_GET_ELEM(nus_rb1);
+		RING_BUFFER_POP(nus_rb1);
+
+		model_input_virtual_uart(c);
+
+		return;
+	}
 
 	switch (m_nus_xfer_state) {
 

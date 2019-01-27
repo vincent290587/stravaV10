@@ -277,6 +277,10 @@
 #define BLE_BAS_C_ENABLED 0
 #endif
 
+#ifndef BLE_KOMOOT_C_ENABLED
+#define BLE_KOMOOT_C_ENABLED 1
+#endif
+
 // <e> BLE_BAS_ENABLED - ble_bas - Battery Service
 //==========================================================
 #ifndef BLE_BAS_ENABLED

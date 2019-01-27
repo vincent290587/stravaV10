@@ -43,9 +43,9 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/util/app_error_weak.c \
   $(SDK_ROOT)/components/libraries/scheduler/app_scheduler.c \
   $(SDK_ROOT)/components/libraries/timer/app_timer.c \
+  $(SDK_ROOT)/components/libraries/hardfault/nrf52/handler/hardfault_handler_gcc.c \
   $(SDK_ROOT)/components/libraries/util/app_util_platform.c \
   $(SDK_ROOT)/components/libraries/util/nrf_assert.c \
-  $(SDK_ROOT)/components/libraries/hardfault/hardfault_implementation.c \
   $(SDK_ROOT)/components/libraries/atomic/nrf_atomic.c \
   $(SDK_ROOT)/components/libraries/atomic_fifo/nrf_atfifo.c \
   $(SDK_ROOT)/components/libraries/atomic_flags/nrf_atflags.c \
@@ -102,7 +102,9 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/AltiBaro \
   $(PROJ_DIR)/libraries/GlobalTop \
   $(PROJ_DIR)/libraries/jscope \
+  $(PROJ_DIR)/libraries/filters \
   $(PROJ_DIR)/libraries/sysview \
+  $(PROJ_DIR)/libraries/komoot \
   $(PROJ_DIR)/libraries/TinyGPSPlus \
   $(PROJ_DIR)/libraries/VParser \
   $(PROJ_DIR)/libraries/utils \
@@ -167,16 +169,10 @@ INC_FOLDERS += \
   $(SDK_ROOT)/external/fatfs/port \
   $(SDK_ROOT)/external/protothreads \
   $(SDK_ROOT)/external/protothreads/pt-1.4 \
-  $(SDK_ROOT)/components/ble/ble_services/ble_lns_c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_glasses \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/pages \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_fec/utils \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/utils \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/simulator \
   $(SDK_ROOT)/components/ant/ant_state_indicator \
   $(SDK_ROOT)/components/ant/ant_key_manager \
   $(SDK_ROOT)/components/ant/ant_key_manager/config \

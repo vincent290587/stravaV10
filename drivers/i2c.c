@@ -88,7 +88,6 @@ static void wait_xfer(uint32_t err_code) {
 		while (!m_twim_xfer_complete) {
 
 			perform_system_tasks_light();
-			nrf_pwr_mgmt_run();
 
 			if (millis() - millis_ > 200) {
 				LOG_ERROR("I2c timeout");

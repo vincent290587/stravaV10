@@ -8,8 +8,8 @@
 #include "JScope.h"
 #include "SEGGER_RTT.h"
 
-#define JSCOPE_LEN          12
-#define JSCOPE_HEADER       "JScope_f4f4f4"
+#define JSCOPE_LEN          16
+#define JSCOPE_HEADER       "JScope_f4f4f4f4"
 
 /**
  * Constructor
