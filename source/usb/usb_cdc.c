@@ -434,8 +434,6 @@ void usb_cdc_start_msc(void) {
 	ret = app_usbd_class_append(class_cdc_acm);
 	APP_ERROR_CHECK(ret);
 
-	m_is_port_open = true;
-
     if (USBD_POWER_DETECTION)
     {
     	ret = app_usbd_power_events_enable();
@@ -447,6 +445,8 @@ void usb_cdc_start_msc(void) {
 
     	app_usbd_enable();
     	app_usbd_start();
+
+    	m_is_port_open = true;
     }
 }
 

@@ -37,7 +37,7 @@
 
 
 #if USE_SVIEW
-#ifdef USDB_ENABLED
+#ifdef USB_ENABLED
 #include "usb_cdc.h"
 #define LOG_INFO(...)                  usb_printf(__VA_ARGS__)
 #else // USDB_ENABLED
