@@ -35,8 +35,8 @@ make flash (or) make dfu
 - [x] GPX file following on a map
 - [x] Better menu-system
 - [x] Turn-by-turn navigation (using the Komoot app)
+- [x] Better slope computation
 - [ ] Connection to a BLE AP to unload recorded data
-- [ ] Sensors fusion (for slope compute)
 - [ ] More LED interaction
 
 

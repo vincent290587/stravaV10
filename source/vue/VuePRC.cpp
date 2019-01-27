@@ -77,7 +77,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			this->cadran(3, VUE_PRC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 			this->cadran(4, VUE_PRC_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
-			this->cadran(4, VUE_PRC_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+			this->cadran(4, VUE_PRC_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 			// display parcours
 			this->afficheParcours(5, p_parcours->getListePoints());

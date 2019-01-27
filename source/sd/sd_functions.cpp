@@ -383,12 +383,12 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 				att[i].pwr);
 
 		if (to_wr > 0 && to_wr < (int)sizeof(g_bufferWrite)) {
-			f_sync (&g_fileObject);
 			f_write(&g_fileObject, g_bufferWrite, to_wr, NULL);
 		} else {
 			APP_ERROR_CHECK(0x2);
 		}
 
+		perform_system_tasks();
 		yield();
 	}
 

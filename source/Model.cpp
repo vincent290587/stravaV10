@@ -222,6 +222,7 @@ void idle_task(void * p_context)
 		bsp_tasks();
 
     	//No more logs to process, go to sleep
+		sysview_task_idle();
     	pwr_mgmt_run();
 
     	task_yield();

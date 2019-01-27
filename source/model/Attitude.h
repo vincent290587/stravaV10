@@ -81,7 +81,6 @@ private:
 	float m_last_save_dist;
 	float m_last_stored_ele;
 	float m_cur_ele;
-	float m_vit_asc;
 
 	bool m_is_init;
 	bool m_is_acc_init;
@@ -90,10 +89,10 @@ private:
 	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
 	uint16_t m_st_buffer_nb_elem;
 
-	float filterElevation(void);
+	float filterElevation(SLoc& loc_);
 	float computeElevation(SLoc& loc_, eLocationSource source_);
 	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
-	float filterPower(float speed_);
+	float computePower(float speed_);
 };
 #endif
 

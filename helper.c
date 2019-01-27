@@ -16,6 +16,7 @@
 #include "nrf_pwr_mgmt.h"
 #include "Model.h"
 #include "sdk_config.h"
+#include "task_manager.h"
 #include "segger_wrapper.h"
 
 #include "helper.h"
@@ -121,8 +122,8 @@ void pwr_mgmt_run(void) {
 #endif
 #endif
 
-	sysview_task_idle();
 	nrf_pwr_mgmt_run();
+
 }
 
 

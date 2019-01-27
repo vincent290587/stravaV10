@@ -110,14 +110,22 @@ void simulator_tasks(void) {
 		lon   = data[1];
 		alt   = data[2];
 
-		baro.setAlti(alt);
+		static float alti_fake = 0.;
+
+		//alti_fake += 1. / 3.;
+
+		int rnd_add;
+		rnd_add = (rand() % 20) - 10;
+
+		baro.setAlti(alti_fake + (float)rnd_add / 10.);
+		baro.runFilter();
 
 		if (pos == 4) {
 			// file contains the rtime
 			rtime = data[3];
 		} else {
 			// rtime is missing: generate it
-			rtime += 1;
+			rtime += 1.;
 		}
 
 #ifdef TDD_RANDOMIZE

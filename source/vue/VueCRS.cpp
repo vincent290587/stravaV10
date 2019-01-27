@@ -122,7 +122,7 @@ void VueCRS::afficheScreen1(void) {
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
-		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 		this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
 
@@ -148,7 +148,7 @@ void VueCRS::afficheScreen1(void) {
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
-		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 		ASSERT(segMngr.getSeg(0));
 
@@ -166,7 +166,7 @@ void VueCRS::afficheScreen1(void) {
 
 	case eVueCRSScreenDataDS:
 	{
-		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 		this->cadran(1, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		ASSERT(segMngr.getSeg(0));
@@ -243,7 +243,7 @@ void VueCRS::afficheScreen2(void) {
 	this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 	this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
-	this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+	this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 	static sKomootNavigation navi;
 	model_get_navigation(&navi);

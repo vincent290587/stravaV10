@@ -11,7 +11,7 @@
 
 #include "helper.h"
 
-#define JSCOPE_INT_BUFFER   20
+#define JSCOPE_INT_BUFFER   32
 
 #ifdef __cplusplus
 

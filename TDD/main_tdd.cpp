@@ -144,6 +144,16 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
+	if (!test_lsq()) {
+		LOG_ERROR("Unit testing failed !");
+		exit(-1);
+	}
+
+	if (!test_functions()) {
+		LOG_ERROR("Unit testing failed !");
+		exit(-1);
+	}
+
 	if (!test_liste ()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);
