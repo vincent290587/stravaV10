@@ -5,14 +5,12 @@
  *      Author: Vincent
  */
 
-#include <stdint.h>
 #include <stdbool.h>
 #include "nrf_twi_mngr.h"
 #include "bme280.h"
 #include "nrf_delay.h"
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
+#include "segger_wrapper.h"
+#include "task_manager_wrapper.h"
 
 #define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \

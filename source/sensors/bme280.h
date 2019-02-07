@@ -8,6 +8,8 @@
 #ifndef BME280_H_
 #define BME280_H_
 
+#include <stdint.h>
+
 #define BME280_TWI_ADDRESS              0x77
 
 #define BME280_CALIB_T_SIZE             6
