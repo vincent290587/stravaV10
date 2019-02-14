@@ -22,20 +22,29 @@ float regFen(float val_, float b1_i, float b1_f, float b2_i, float b2_f);
 
 float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f);
 
-
+static volatile float toRadians(float angle) {
+  return M_PI * angle / 180.0;
+}
+	
 /**
  * distance_between5: 24ms
  * distance_between2: 24ms
  * distance_between3: 21ms
  * distance_between4: 40ms
- *
+ * 
  */
-float distance_between5(float, float, float, float);
-inline float distance_between(float lat1, float long1, float lat2, float long2) {
-	return distance_between5(lat1, long1, lat2, long2);
-}
+static inline float distance_between(float lat1, float lon1, float lat2, float lon2) {
+    const float two_r = 2. * 6371008.; // meters
+//    const float sdlat = my_sin(toRadians(lat2 - lat1) / 2);
+//    const float sdlon = my_sin(toRadians(lon2 - lon1) / 2);
+    const float sdlat = (toRadians(lat2 - lat1) / 2);
+    const float sdlon = (toRadians(lon2 - lon1) / 2);
+//    const float q = sdlat * sdlat + my_cos(toRadians(lat1)) * my_cos(toRadians(lat2)) * sdlon * sdlon;
+    const float q = sdlat * sdlat + 0.5 * (1 + my_cos(toRadians(lat1 + lat2))) * sdlon * sdlon;
+    const float d = two_r * my_sqrtf(q);
 
-float distance_between(float lat1, float long1, float lat2, float long2);
+    return d;
+}
 
 void calculePos (const char *nom, float *lat, float *lon);
 
