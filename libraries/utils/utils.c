@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "math_wrapper.h"
 #include "utils.h"
 #include "segger_wrapper.h"
 

@@ -18,8 +18,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #ifndef LP_FILTER_H_ // Include guards
 #define LP_FILTER_H_
 
+#include "math_wrapper.h"
+
 #ifndef TDD
-#include <arm_math.h>	// Include CMSIS header
 
 typedef struct
 {
@@ -29,7 +30,6 @@ typedef struct
 	float lp_filter_coefficients[5];
 } order1_filterType;
 #else
-#include "arm_math_tdd.h"
 
 typedef struct
 {
