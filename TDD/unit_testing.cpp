@@ -13,7 +13,6 @@
 #include "utils.h"
 
 #include "order1_filter.h"
-#include "bp_dis_filter.h"
 
 #define TEST_FILTRE_NB    15
 
@@ -85,12 +84,8 @@ bool test_filtering(void) {
 	order1_filterType m_bp_filt;
 	order1_filterType m_lp_filt;
 
-	bp_dis_filter_executionState m_bp_dis_filt;
-
 	order1_filter_init(&m_lp_filt, lp1_filter_coefficients);
 	order1_filter_init(&m_bp_filt, lp2_filter_coefficients);
-
-	bp_dis_filter_init(&m_bp_dis_filt);
 
 	float sim_ele = 350.;
 

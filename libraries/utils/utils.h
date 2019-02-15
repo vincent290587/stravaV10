@@ -9,6 +9,7 @@
 #define	UTILS_H
 
 #include <stdint.h>
+#include "math_wrapper.h"
 
 
 #define M_TWOPI         (M_PI * 2.0)

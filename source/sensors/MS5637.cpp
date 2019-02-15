@@ -28,7 +28,6 @@ APP_TIMER_DEF(m_ms5637_update);
 /* delay to wait for sampling to complete, on each OSR level */
 static const uint8_t SamplingDelayMs[6] PROGMEM = { 2, 4, 6, 10, 18, 34 };
 
-#define NAN (-1.)
 
 #ifdef _DEBUG_TWI
 static void ms5637_timer_callback(void * p_context) {
