@@ -217,7 +217,7 @@ typedef struct  {
 
 	/* Carryover between temperature and pressure/humidity compensation. */
 	int32_t t_fine;
-
+	bool is_updated;
 } bme280_data;
 
 
@@ -230,6 +230,8 @@ void bme280_init_sensor(void);
 void bme280_read_sensor(void);
 
 bme280_data *bme280_get_data_handle(void);
+
+bool bme280_is_updated(void);
 
 #ifdef __cplusplus
 }

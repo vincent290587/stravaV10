@@ -164,6 +164,8 @@ static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 	bme280_compensate_temp(&m_data, adc_temp);
 	bme280_compensate_press(&m_data, adc_press);
 
+	m_data.is_updated = true;
+
 	LOG_INFO("BME temp: %d", m_data.comp_temp);
 	LOG_INFO("BME press: %d", m_data.comp_press / 256);
 
@@ -263,4 +265,8 @@ void bme280_read_sensor(void) {
 
 bme280_data *bme280_get_data_handle(void) {
 	return &m_data;
+}
+
+bool bme280_is_updated(void) {
+	return m_data.is_updated;
 }

@@ -23,6 +23,8 @@ public:
 
 	void runFilter(void);
 
+	bool isUpdated(void);
+
 #ifdef TDD
 	float getAlti() const {
 		return m_alti;

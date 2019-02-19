@@ -38,6 +38,14 @@ AltiBaro::AltiBaro() {
 
 /**
  *
+ * @return True if updated
+ */
+bool AltiBaro::isUpdated() {
+	return bme280_is_updated();
+}
+
+/**
+ *
  * @param alti_ Pointer to store altitude
  * @return True on success
  */
