@@ -2,28 +2,28 @@
 
 # Project
 
-This application is an open source advanced bicycle GPS.  
+This application is an open source bicycle GPS.  
 
-Why is is advanced ?  
-* When riding, it computes your advance with the stored strava segments in real time
-* You can follow a GPX file stored in memory
-* You can connect to a heart rate monitor using ANT+ or a FE-C device (smart home trainer)
-* it uses sensors fusion (accelerometer magnetometer barometer) to estimate power etc...
+Included features: 
+* Real-time compete with the internally stored Strava Segments (500+)
+* Store a GPX file and follow it on-screen
+* ANT+ connection to a heart rate monitors, any FE-C devices (smart home trainer), cadence & speed sensors...
+* BLE connection to use the LNS, UART and Komoot (see https://www.komoot.com/)
+* Estimates power using a precise barometer and special algorithms
 
-Autonomy depends on the use: it consums 15 mA in smart trainer mode, and around 45mA in outdoor modes.
+Autonomy depends on the use: it uses <8mA in indoor mode (70+ hours), and around 35mA in outdoor modes (20+ hours).
 
 
 ## Hardware
 
 This project uses Nordic nRF52840, a Cortex M4F MCU which can do BLE/ANT+ RF communications.  
-The board can be found under: https://github.com/vincent290587/EAGLE  
+The board can be found under: https://github.com/vincent290587/EAGLE/tree/master/Projects/myStravaB_V3  
 The BOM costs around 100€
 
 
 ## Compilation & Programming
 
-Must be compiled with GCC 6 2017-q2-update  
-You will need nRF SDK V15.2 and the softdevice s332 V5.0.0
+Must be compiled with GCC 6 2017-q2-update and nRF SDK V15.2 with softdevice s332 V5.0.0
 
 cd pca10056/s332/armgcc  
 make  
