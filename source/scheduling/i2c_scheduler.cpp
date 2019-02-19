@@ -33,7 +33,7 @@ static volatile bool m_is_bme280_updated = false;
 static volatile bool m_is_fxos_updated = false;
 static volatile bool m_is_stc_veml_updated = false;
 
-static void read_ms(void);
+static void read_bme(void);
 
 APP_TIMER_DEF(m_timer);
 
@@ -216,7 +216,7 @@ static void read_fxos(void)
 /**
  *
  */
-static void read_ms(void) {
+static void read_bme(void) {
 
 	// [these structures have to be "static" - they cannot be placed on stack
 	//  since the transaction is scheduled and these structures most likely
@@ -232,7 +232,7 @@ static void timer_handler(void * p_context)
 {
 	W_SYSVIEW_RecordEnterISR();
 
-    if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) read_ms();
+    if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) read_bme();
 
     if (++m_last_polled_index >= SENSORS_REFRESH_PER_MS / I2C_SCHEDULING_PERIOD_MS) {
     	m_last_polled_index = 0;
