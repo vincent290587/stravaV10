@@ -6,6 +6,7 @@
  */
 
 #include <stdbool.h>
+#include "i2c.h"
 #include "nrf_twi_mngr.h"
 #include "bme280.h"
 #include "nrf_delay.h"
@@ -26,10 +27,9 @@
 #define I2C_WRITE_CONT(addr, p_data, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr, p_data, byte_cnt, NRF_TWI_MNGR_NO_STOP)
 
-extern void i2c_perform(nrf_drv_twi_config_t const *    p_config,
-		nrf_twi_mngr_transfer_t const * p_transfers,
-		uint8_t                         number_of_transfers,
-		void                            (* user_function)(void));
+#define BME280_READ_ALL(p_cmd, p_mag_buffer, p_buffer) \
+		I2C_READ_REG(BME280_TWI_ADDRESS, p_cmd, p_buffer, 6)
+
 
 static bme280_calib_data m_calib;
 
@@ -68,7 +68,7 @@ static void bme280_hum_config(void) {
 
 	i2c_perform(NULL, bme280_hum_transfer, sizeof(bme280_hum_transfer) / sizeof(bme280_hum_transfer[0]), NULL);
 
-	NRF_LOG_INFO("BME humidity configured");
+	LOG_INFO("BME humidity configured");
 
 }
 
@@ -85,7 +85,7 @@ static void bme280_cfg_config(void) {
 
 	i2c_perform(NULL, bme280_cfg_transfer, sizeof(bme280_cfg_transfer) / sizeof(bme280_cfg_transfer[0]), NULL);
 
-	NRF_LOG_INFO("BME CFG configured");
+	LOG_INFO("BME CFG configured");
 
 }
 
@@ -102,7 +102,7 @@ static void bme280_meas_config(void) {
 
 	i2c_perform(NULL, bme280_meas_transfer, sizeof(bme280_meas_transfer) / sizeof(bme280_meas_transfer[0]), NULL);
 
-	NRF_LOG_INFO("BME measurement configured");
+	LOG_INFO("BME measurement configured");
 
 }
 
@@ -156,7 +156,7 @@ static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 	int32_t adc_press, adc_temp;
 	uint8_t *buf = p_user_data;
 
-	NRF_LOG_INFO("BME read");
+	LOG_INFO("BME read");
 
 	adc_press = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4);
 	adc_temp = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4);
@@ -164,8 +164,8 @@ static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 	bme280_compensate_temp(&m_data, adc_temp);
 	bme280_compensate_press(&m_data, adc_press);
 
-	NRF_LOG_INFO("BME temp: %d", m_data.comp_temp);
-	NRF_LOG_INFO("BME press: %d", m_data.comp_press / 256);
+	LOG_INFO("BME temp: %d", m_data.comp_temp);
+	LOG_INFO("BME press: %d", m_data.comp_press / 256);
 
 }
 
@@ -192,7 +192,7 @@ void bme280_init_sensor() {
 		i2c_perform(NULL, bme280_init_transfers2, sizeof(bme280_init_transfers2) / sizeof(bme280_init_transfers2[0]), NULL);
 	}
 
-	NRF_LOG_INFO("BME iD: %u", p_ans_buffer[0]);
+	LOG_INFO("BME iD: %u", p_ans_buffer[0]);
 
 	nrf_delay_ms(500);
 
@@ -234,11 +234,11 @@ void bme280_init_sensor() {
 	bme280_cfg_config();
 	bme280_meas_config();
 
-	NRF_LOG_WARNING("BME init done");
+	LOG_WARNING("BME init done");
 
 }
 
-void bme280_read_sensor(const nrf_twi_mngr_t *_nrf_twi_mngr_name) {
+void bme280_read_sensor(void) {
 
 	static uint8_t p_ans_buffer[6] = {0};
 
@@ -257,6 +257,10 @@ void bme280_read_sensor(const nrf_twi_mngr_t *_nrf_twi_mngr_name) {
 			.number_of_transfers = sizeof(bme280_readout_transfer) / sizeof(bme280_readout_transfer[0])
 	};
 
-	APP_ERROR_CHECK(nrf_twi_mngr_schedule(_nrf_twi_mngr_name, &transaction));
+	i2c_schedule(&transaction);
 
+}
+
+bme280_data *bme280_get_data_handle(void) {
+	return &m_data;
 }

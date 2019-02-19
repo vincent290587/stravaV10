@@ -220,11 +220,19 @@ typedef struct  {
 
 } bme280_data;
 
-#define BME280_READ_ALL(p_cmd, p_mag_buffer, p_buffer) \
-		I2C_READ_REG(BME280_TWI_ADDRESS, p_cmd, p_buffer, 6)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void bme280_init_sensor(void);
-void bme280_read_sensor(const nrf_twi_mngr_t *_nrf_twi_mngr_name);
+
+void bme280_read_sensor(void);
+
+bme280_data *bme280_get_data_handle(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BME280_H_ */

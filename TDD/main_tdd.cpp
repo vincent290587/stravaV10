@@ -191,8 +191,6 @@ int main(void)
 
 	boucle.init();
 
-	baro.init();
-
 	vue.init();
 
 	notifications_init(0);
