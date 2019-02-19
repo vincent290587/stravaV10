@@ -65,7 +65,7 @@ void simulator_init(void) {
 void simulator_tasks(void) {
 
 	if (!g_fileObject) {
-		printf("No simulation file found");
+		LOG_ERROR("No simulation file found");
 		exit(-3);
 	}
 
