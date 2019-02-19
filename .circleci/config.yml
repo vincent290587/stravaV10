@@ -1,18 +1,17 @@
-
 version: 2
+
 jobs:
   build:
     docker:
-      - image: debian:stretch
-
+      - image: "debian:stretch"
     steps:
       - checkout
-
       - run:
-          name: Greeting
-          command: echo Hello, world.
-
+          name: Creating Build Files
+          command: 'cd TDD && cmake ..'
       - run:
-          name: Print the Current Time
-          command: date
-
+          name: Creating Binary Files
+          command: 'cd TDD && make'
+      - run:
+          name: TDD APP test
+          command: 'cd TDD && ./StravaV10'
