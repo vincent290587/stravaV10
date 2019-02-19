@@ -65,12 +65,9 @@ static void _i2c_scheduling_sensors_init() {
 	veml_config[1] = (uint8_t) (veml.config & 0xFF);
 	veml_config[2] = (uint8_t)((0xFF00 & veml.config) >> 8);
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND ms_config[1] = {CMD_RESET};
-
 	static nrf_twi_mngr_transfer_t const sensors_init_transfers[] =
 	{
 		I2C_WRITE     (VEML6075_ADDR  , veml_config, sizeof(veml_config)),
-		I2C_WRITE     (MS5637_ADDR    , ms_config, sizeof(ms_config)),
 		I2C_WRITE     (STC3100_ADDRESS, stc_config, sizeof(stc_config))
 	};
 	i2c_perform(NULL, sensors_init_transfers, sizeof(sensors_init_transfers) / sizeof(sensors_init_transfers[0]), NULL);
