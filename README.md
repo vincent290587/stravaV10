@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/vincent290587/stravaV10/tree/develop.svg?style=svg)](https://circleci.com/gh/vincent290587/stravaV10/tree/develop)
+
 # Project
 
 This application is an open source advanced bicycle GPS.  
