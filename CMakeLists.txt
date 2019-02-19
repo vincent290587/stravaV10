@@ -14,7 +14,7 @@ add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
 #add_definitions(-DTDD_RANDOMIZE)
-add_definitions(-DLS027_GUI)
+#add_definitions(-DLS027_GUI)
 
 set(CMAKE_C_FLAGS  "-fno-builtin --short-enums -nostdlib -MMD -nostdlib -ffunction-sections -fdata-sections -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS  "-g -std=gnu++0x -rdynamic -felide-constructors -fno-exceptions -fno-rtti -fpermissive")
