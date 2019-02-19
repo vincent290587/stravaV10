@@ -3,18 +3,9 @@ version: 2
 jobs:
   build:
     docker:
-      - image: "debian:stretch"
+      - image: vincent290587/armubuntu:latest
     steps:
       - checkout
-      - run:
-          name: Installing SUDO
-          command: 'apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*'
-      - run:
-          name: Installing GCC
-          command: 'apt-get update && apt-get install -y gcc g++ make'
-      - run:
-          name: Install CMAKE
-          command: 'apt-get update && sudo apt-get install -y cmake && cd TDD'
       - run:
           name: Creating Build Files
           command: 'cd TDD && cmake ..'
