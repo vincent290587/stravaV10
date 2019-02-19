@@ -16,6 +16,7 @@
 #include "sd_functions.h"
 #include "Simulator.h"
 #include "Model_tdd.h"
+#include "bme280.h"
 #include "segger_wrapper.h"
 #include "GUI_connector.h"
 #include "unit_testing.hpp"
@@ -182,6 +183,8 @@ int main(void)
 	m_tasks_id.system_id = TASK_ID_INVALID;
 	m_tasks_id.peripherals_id = TASK_ID_INVALID;
 	m_tasks_id.ls027_id = TASK_ID_INVALID;
+
+	bme280_init_sensor();
 
 	simulator_init();
 

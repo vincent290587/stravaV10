@@ -17,6 +17,8 @@ static bme280_data m_data;
 
 void bme280_init_sensor() {
 
+	m_data.comp_press = 1011.0f;
+	m_data.comp_temp = 20.7f;
 	LOG_WARNING("BME init done");
 
 }
