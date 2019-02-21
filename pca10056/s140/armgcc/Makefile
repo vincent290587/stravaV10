@@ -25,10 +25,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/class/dummy/app_usbd_dummy.c \
   $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
 
-include $(PROJ_DIR)/Makefile.files
-
-include $(PROJ_DIR)/ble.files
-
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
@@ -41,6 +37,10 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/libraries/usbd/class/msc \
   $(SDK_ROOT)/components/libraries/usbd/class/dummy \
+
+include $(PROJ_DIR)/Makefile.files
+
+include $(PROJ_DIR)/ble.files
   
 # Libraries common to all targets
 LIB_FILES += \
@@ -71,7 +71,7 @@ CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DNRF_SD_BLE_API_VERSION=6
 CFLAGS += -DSWI_DISABLE0
-#CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1 -DFPU_INTERRUPT_MODE
+CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
 CFLAGS += -DS140
 CFLAGS += -DFLOAT_ABI_HARD
 CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4

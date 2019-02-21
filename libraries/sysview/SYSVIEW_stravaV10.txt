@@ -1,0 +1,39 @@
+#
+# OS Options
+#
+
+#
+# Types for parameter formatters
+#
+NamedType ResetMode 0=OS_EVENT_RESET_MODE_SEMIAUTO 1=OS_EVENT_RESET_MODE_MANUAL 2=OS_EVENT_RESET_MODE_AUTO
+NamedType Bool      0=false 1=true
+#
+# Task States
+#
+TaskState 0xFC 0=TASK_EVENT_LOCATION, 1=TASK_EVENT_FEC_INFO, 2=TASK_EVENT_FEC_POWER, 4=TASK_EVENT_PERIPH_TRIGGER, 8=TASK_EVENT_LS027_TRIGGER, 16=TASK_EVENT_LS027_WAIT_SPI, 32=TASK_EVENT_PERIPH_TWI_WAIT, 64=TASK_EVENT_PERIPH_MS_WAIT, 68=Wait for Mailbox (Get) with timeout, 72=Wait for Event Object, 76=Wait for Event Object with timeout, 80=Wait for Queue (Put), 84=Wait for Queue (Put) with timeout, 160=Wait for Memory pool, 164=Wait for Memory pool with timeout
+
+
+#
+# API Functions
+#
+
+0 OS_Task_Recv_evt              Task=%t EventMask=%b
+1 I2cReadSensors
+2 SpiSendBuffer
+3 UART_TASK
+
+4 MainSegLoop
+5 SdAccess
+6 ComputeSegmentPerf
+7 ComputeZoom
+8 DisplayPoints
+9 DisplayMyself
+10 SaveUserPosition
+11 USB_VCOM_TASK
+12 SST_TASK
+13 I2cReadReg8                  Address=%u
+14 I2cReadRegN                  Address=%u
+15 I2cMgmtReadMs                Measurement=%u
+15 I2cMgmtRead1
+16 I2cMgmtRead2
+17 I2cMgmtRead3

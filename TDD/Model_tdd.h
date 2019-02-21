@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "notifications.h"
 #include "parameters.h"
+#include "g_structs.h"
 #include "task_manager_wrapper_tdd.h"
 
 typedef struct {
@@ -34,6 +35,7 @@ extern sTasksIDs m_tasks_id;
 #include "AltiBaro.h"
 #include "GPSMGMT.h"
 #include "Attitude.h"
+#include "SufferScore.h"
 #include "mk64f_parser.h"
 #include "Vue.h"
 
@@ -65,11 +67,11 @@ extern sNeopixelOrders      neopixel;
 
 extern STC3100              stc;
 
+extern sAppErrorDescr m_app_error;
+
 extern AltiBaro      baro;
 
-extern sHrmInfo hrm_info;
-extern sBscInfo bsc_info;
-extern sFecInfo fec_info;
+extern SufferScore   suffer_score;
 
 extern "C" {
 #endif // defined C++
@@ -79,6 +81,8 @@ void model_go_to_msc_mode(void);
 void model_dispatch_sensors_update(void);
 
 void model_dispatch_lns_update(sLnsInfo *lns_info);
+
+void model_get_navigation(sKomootNavigation *nav);
 
 void perform_system_tasks(void);
 

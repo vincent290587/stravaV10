@@ -46,7 +46,7 @@ extern "C" {
 /**
  *
  */
-void check_fpu(void);
+void pwr_mgmt_run(void);
 
 /**
  *

@@ -9,6 +9,7 @@
 #include "Model.h"
 #include "uart_tdd.h"
 #include "Simulator.h"
+#include "neopixel.h"
 #include "gpio.h"
 #include "segger_wrapper.h"
 
@@ -42,6 +43,10 @@ STC3100       stc;
 
 AltiBaro      baro;
 
+sAppErrorDescr m_app_error;
+
+SufferScore   suffer_score;
+
 sHrmInfo hrm_info;
 sBscInfo bsc_info;
 sFecInfo fec_info;
@@ -55,6 +60,18 @@ int Point::objectCount = 0;
  */
 void model_dispatch_sensors_update(void) {
 
+
+}
+
+/**
+ *
+ * @param nav
+ */
+void model_get_navigation(sKomootNavigation *nav) {
+
+	nav->isUpdated = true;
+	nav->distance = 750;
+	nav->direction = ++nav->direction % 33;
 
 }
 
@@ -99,9 +116,9 @@ void model_go_to_msc_mode(void) {
  */
 bool check_memory_exception(void) {
 
-	int tot_point_mem = 0;
-	tot_point_mem += Point::getObjectCount() * sizeof(Point);
+	int tot_point_mem = Point::getObjectCount() * sizeof(Point);
 	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
 
 	if (tot_point_mem > TOT_HEAP_MEM_AVAILABLE - 500) {
 
@@ -119,11 +136,17 @@ bool check_memory_exception(void) {
 
 void print_mem_state(void) {
 
+	static int max_mem_used = 0;
 	int tot_point_mem = 0;
 	tot_point_mem += Point::getObjectCount() * sizeof(Point);
 	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
 
-	LOG_INFO("Allocated points: %d o %u 2D %u 3D", tot_point_mem, Point2D::getObjectCount(), Point::getObjectCount());
+	if (tot_point_mem > max_mem_used) max_mem_used = tot_point_mem;
+
+	LOG_INFO(">> Allocated pts: %d 2D %d 3D / mem %d o / %d o",
+			Point2D::getObjectCount(), Point::getObjectCount(),
+			tot_point_mem, max_mem_used);
 }
 
 /**
@@ -205,10 +228,14 @@ void peripherals_task(void * p_context)
 	{
 		model_dispatch_sensors_update();
 
+		suffer_score.addHrmData(hrm_info.bpm, millis());
+
 		// check screen update & unlock task
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
 			vue.refresh();
 		}
+
+		neopixel_radio_callback_handler(false);
 
 		// update date
 		SDate dat;

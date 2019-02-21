@@ -11,96 +11,106 @@
 #include "sd_hal.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
-#include <vue/Menuable.h>
+#include "sd_functions.h"
+#include "MenuObjects.h"
+#include "Menuable.h"
 
-static void _retour_menu(int var) {
 
-	if (!vue.m_is_menu_selected) return;
+static MenuPage m_main_page(vue, nullptr);
+static MenuPage prc_sel(vue, &m_main_page);
+static MenuPage page_set(vue, &m_main_page);
 
-	if (vue.m_menus.cur_page == 0) {
-		vue.m_is_menu_selected = false;
-	} else {
-		vue.m_menus.cur_page = 0;
-	}
 
-}
-
-static void _page0_mode_crs(int var) {
+static eFuncMenuAction _page0_mode_crs(int var) {
 
 	vue.setCurrentMode(eVueGlobalScreenCRS);
 	boucle.changeMode(eBoucleGlobalModesCRS);
-	_retour_menu(0);
+	return eFuncMenuActionEndMenu;
 }
 
-static void _page0_mode_prc(int var) {
+static eFuncMenuAction _page0_mode_prc_go(int var) {
+
+	LOG_INFO("parcoursSelect %d", var);
+
+	vue.setCurrentMode(eVueGlobalScreenPRC);
+	boucle.changeMode(eBoucleGlobalModesPRC);
+
+	boucle_crs.parcoursSelect(var);
+
+	return eFuncMenuActionEndMenu;
+}
+
+static eFuncMenuAction _page0_mode_prc_list(int var) {
 
 	if (!mes_parcours.size()) {
 		vue.addNotif("Error", "No PRC in memory", 5, eNotificationTypeComplete);
 		LOG_ERROR("No PRC in memory");
-		return;
+		return eFuncMenuActionEndMenu;
 	}
 
-	vue.setCurrentMode(eVueGlobalScreenPRC);
-	boucle.changeMode(eBoucleGlobalModesPRC);
-	_retour_menu(0);
+	if (prc_sel.nbItems() == 1) {
+		// Populate PRC list
+		for (auto& object : mes_parcours._parcs) {
+
+			LOG_INFO("Added PRC to list");
+			MenuItem item_prc_list(prc_sel, object.getName(), _page0_mode_prc_go);
+			prc_sel.addItem(item_prc_list);
+
+		}
+	}
+
+	return eFuncMenuActionNone;
 }
 
-static void _page0_mode_fec(int var) {
+static eFuncMenuAction _page0_mode_fec(int var) {
 
 	vue.setCurrentMode(eVueGlobalScreenFEC);
 	boucle.changeMode(eBoucleGlobalModesFEC);
-	_retour_menu(0);
+	return eFuncMenuActionEndMenu;
 }
 
-static void _page0_mode_debug(int var) {
+static eFuncMenuAction _page0_mode_debug(int var) {
 
 	vue.setCurrentMode(eVueGlobalScreenDEBUG);
 	boucle.changeMode(eBoucleGlobalModesCRS);
-	_retour_menu(0);
+	return eFuncMenuActionEndMenu;
 }
 
-static void _page0_shutdown(int var) {
+static eFuncMenuAction _page0_shutdown(int var) {
 
 	// shutdown
 	gpio_set(KILL_PIN);
 
-	_retour_menu(0);
+	return eFuncMenuActionEndMenu;
 }
 
-static void _page0_format(int var) {
+static eFuncMenuAction _page0_erase(int var) {
+
+	if (sd_erase_pos()) {
+		vue.addNotif("Erasing... ", "", 4, eNotificationTypePartial);
+	} else {
+		vue.addNotif("Erase failed", "", 4, eNotificationTypePartial);
+	}
+
+	return eFuncMenuActionEndMenu;
+}
+
+static eFuncMenuAction _page0_format(int var) {
 
 	format_memory();
 
 	vue.addNotif("Formatting... ", "", 4, eNotificationTypePartial);
 
-	_retour_menu(0);
+	return eFuncMenuActionEndMenu;
 }
 
-void menu_init_page(sMenuPage *page) {
-	ASSERT(page);
+static eFuncMenuAction _page0_settings(int var) {
 
-	page->nb_elem = 1;
-	page->item[0].name   = "Retour";
-	page->item[0].p_func = _retour_menu;
+	return eFuncMenuActionEndMenu;
 }
 
-void menu_add_item(sMenuPage *page, const char *name, f_menu_callback callback) {
-	ASSERT(page);
-
-	page->item[page->nb_elem].name   = name;
-	if (callback) {
-		page->item[page->nb_elem].p_func = callback;
-	} else {
-		page->item[page->nb_elem].p_func = 0;
-	}
-
-	page->nb_elem += 1;
-}
-
-Menuable::Menuable() : Adafruit_GFX(0, 0) {
+Menuable::Menuable() {
 	m_is_menu_selected = false;
-	m_ind_selec        = 0;
-	m_menus.cur_page   = 0;
 }
 
 Menuable::~Menuable() {
@@ -109,19 +119,46 @@ Menuable::~Menuable() {
 
 void Menuable::initMenu(void) {
 
-	for (uint16_t i=0; i < MENU_MAX_ITEMS_NB; i++) {
-		menu_init_page(&m_menus.menu_page[i]);
+	// Main page
+	MenuItem item_fec(m_main_page, "Mode FEC", _page0_mode_fec);
+	MenuItem item_crs(m_main_page, "Mode CRS", _page0_mode_crs);
+	MenuItem item_prc(m_main_page, "Mode PRC", _page0_mode_prc_list, &prc_sel);
+	MenuItem item_deb(m_main_page, "Mode DBG", _page0_mode_debug);
+	MenuItem item_era(m_main_page, "Erase GPX", _page0_erase);
+	MenuItem item_for(m_main_page, "! Format !", _page0_format);
+	MenuItem item_set(m_main_page, "Settings", _page0_settings, &page_set);
+	MenuItem item_shu(m_main_page, "Shutdown", _page0_shutdown);
+
+	m_main_page.addItem(item_fec);
+	m_main_page.addItem(item_crs);
+	m_main_page.addItem(item_prc);
+	m_main_page.addItem(item_deb);
+	m_main_page.addItem(item_era);
+	m_main_page.addItem(item_for);
+	m_main_page.addItem(item_set);
+	m_main_page.addItem(item_shu);
+
+	// init variables
+	this->closeMenu();
+}
+
+void Menuable::closeMenu() {
+	m_is_menu_selected = false;
+	p_cur_page = &m_main_page;
+}
+
+void Menuable::goToParentPage(void) {
+	if (p_cur_page->getParent()) {
+		p_cur_page = p_cur_page->getParent();
+	} else {
+		// page has no parent
+		this->closeMenu();
 	}
+}
 
-	// page 0
-	menu_add_item(&m_menus.menu_page[0], "Mode FEC", _page0_mode_fec);
-	menu_add_item(&m_menus.menu_page[0], "Mode CRS", _page0_mode_crs);
-	menu_add_item(&m_menus.menu_page[0], "Mode PRC", _page0_mode_prc);
-	menu_add_item(&m_menus.menu_page[0], "Format", _page0_format);
-	menu_add_item(&m_menus.menu_page[0], "Mode DBG", _page0_mode_debug);
-
-	menu_add_item(&m_menus.menu_page[0], "Shutdown", _page0_shutdown);
-
+void Menuable::goToChildPage(MenuPage *page) {
+	ASSERT(page);
+	p_cur_page = page;
 }
 
 void Menuable::refreshMenu(void) {
@@ -136,65 +173,22 @@ void Menuable::propagateEvent(eButtonsEvent event) {
 
 	LOG_INFO("Menu event %u", event);
 
-	switch (event) {
-	case eButtonsEventLeft:
-	{
-		if (m_is_menu_selected) {
-			m_ind_selec += m_menus.menu_page[m_menus.cur_page].nb_elem;
-			m_ind_selec = (m_ind_selec - 1) % m_menus.menu_page[m_menus.cur_page].nb_elem;
-			this->refreshMenu();
-		}
-	}
-	break;
-	case eButtonsEventRight:
-	{
-		if (m_is_menu_selected) {
-			m_ind_selec = (m_ind_selec + 1) % m_menus.menu_page[m_menus.cur_page].nb_elem;
-			this->refreshMenu();
-		}
-	}
-	break;
-	case eButtonsEventCenter:
-	{
-		if (!m_is_menu_selected) {
-			m_is_menu_selected = true;
-			m_ind_selec = 0;
-			m_menus.cur_page   = 0;
-		} else {
-			//perform the item's action
-			ASSERT(m_ind_selec < m_menus.menu_page[m_menus.cur_page].nb_elem);
-
-			if (m_menus.menu_page[m_menus.cur_page].item[m_ind_selec].p_func)
-				(m_menus.menu_page[m_menus.cur_page].item[m_ind_selec].p_func)(0);
-		}
-		this->refreshMenu();
-	}
-	break;
-
-	default:
-		break;
+	if (!m_is_menu_selected &&
+			eButtonsEventCenter == event) {
+		m_is_menu_selected = true;
+	} else if (m_is_menu_selected) {
+		p_cur_page->propagateEvent(event);
 	}
 
+	if (!m_is_menu_selected) return;
+
+	this->tasksMenu();
+
+	this->refreshMenu();
 }
 
 void Menuable::tasksMenu(void) {
 
-	this->setCursor(0, 20);
+	p_cur_page->render();
 
-	if (m_is_menu_selected) {
-		for (uint16_t i=0; i < MENU_MAX_ITEMS_NB; i++) {
-
-			this->setTextSize(3);
-			this->println();
-			this->print(" ");
-			this->print(m_menus.menu_page[m_menus.cur_page].item[i].name);
-
-			this->setTextSize(2);
-			if (i==m_ind_selec) {
-				this->print(" <<--");
-			}
-		}
-	}
-
-	LOG_INFO("Menu displayed");
 }

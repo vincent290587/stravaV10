@@ -24,11 +24,32 @@ void Boucle::init(void) {
 
 	LOG_INFO("Boucle init...");
 
+	if (m_app_error.special == SYSTEM_DESCR_POS_CRC) {
+		String message = "Last void executed: ";
+		message += m_app_error.void_id;
+		message += " in task: ";
+		message += m_app_error.task_id;
+		LOG_ERROR(message.c_str());
+	    vue.addNotif("System", message.c_str(), 6, eNotificationTypeComplete);
+	}
+	if (m_app_error.err_desc.crc == SYSTEM_DESCR_POS_CRC) {
+		LOG_ERROR("Error identified:");
+		String message = m_app_error.err_desc._buffer;
+		message += " in void ";
+		message += m_app_error.void_id;
+		LOG_ERROR(message.c_str());
+	    vue.addNotif("Error", message.c_str(), 6, eNotificationTypeComplete);
+	    memset(&m_app_error.err_desc, 0, sizeof(m_app_error.err_desc));
+	}
+
 	if (init_liste_segments()) {
 		LOG_ERROR("Boucle init fail");
 	}
 
 	m_global_mode = BOUCLE_DEFAULT_MODE;
+
+	// prepare for next reboot
+	m_app_error.special = SYSTEM_DESCR_POS_CRC;
 }
 
 void Boucle::uninit(void) {
@@ -99,7 +120,9 @@ void Boucle::run(void) {
 	break;
 
 	default:
-		break;
+	{
+		(void)events_wait(TASK_EVENT_LOCATION);
+	} break;
 	}
 
 	return;
@@ -139,27 +162,7 @@ void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 	}
 
 	// prepare new operations
-	switch (new_mode) {
-	case eBoucleGlobalModesCRS:
-	{
-		boucle_crs.invalidate();
-	}
-	break;
-	case eBoucleGlobalModesFEC:
-	{
-		boucle_fec.invalidate();
-	}
-	break;
-	case eBoucleGlobalModesPRC:
-	{
-		boucle_crs.invalidate();
-	}
-	break;
-
-	case eBoucleGlobalModesInit:
-	default:
-		break;
-	}
+	stc.resetCharge();
 
 	m_global_mode = new_mode;
 }

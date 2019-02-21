@@ -31,12 +31,20 @@ extern int sockfd;
 
 void gpio_set(uint16_t gpio_nb_) {
 
+	if (gpio_nb_ == KILL_PIN) {
+		exit(-5);
+	}
 }
 
 uint8_t gpio_get(uint16_t gpio_nb_) {
 
+#ifdef LOC_SOURCE_GPS
 	if (gpio_nb_ == FIX_PIN)
 		return 1;
+#else
+	if (gpio_nb_ == FIX_PIN)
+		return 0;
+#endif
 
 	return 0;
 }

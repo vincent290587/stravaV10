@@ -6,16 +6,17 @@
  */
 
 #include "Model.h"
-#include "nrf_pwr_mgmt.h"
 #include "sdk_config.h"
 #include "neopixel.h"
+#include "helper.h"
+#include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
 #include "uart.h"
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-extern "C" void ble_nus_tasks(void);
+#include "ble_api_base.h"
 #endif
 
 
@@ -24,6 +25,8 @@ extern "C" void ble_nus_tasks(void);
 #endif
 
 SAtt att;
+
+SufferScore   suffer_score;
 
 Attitude      attitude;
 
@@ -57,6 +60,9 @@ sNeopixelOrders      neopixel;
 
 sTasksIDs     m_tasks_id;
 
+sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
+
+
 // init counters
 int Point2D::objectCount2D = 0;
 int Point::objectCount = 0;
@@ -68,7 +74,7 @@ void model_dispatch_sensors_update(void) {
 
 	uint16_t light_level = veml.getRawUVA();
 
-	LOG_INFO("Light level: %u", light_level);
+	LOG_DEBUG("Light level: %u", light_level);
 	NRF_LOG_DEBUG("Temperature: %ld", (int)baro.m_temperature);
 	NRF_LOG_DEBUG("Pressure: %ld", (int)baro.m_pressure);
 
@@ -85,14 +91,58 @@ void model_dispatch_sensors_update(void) {
 	}
 }
 
+void model_get_navigation(sKomootNavigation *nav) {
+
+#ifdef BLE_STACK_SUPPORT_REQD
+	ble_get_navigation(nav);
+#endif
+
+}
+
+
+void model_input_virtual_uart(char c) {
+
+	switch (vparser.encode(c)) {
+	case _SENTENCE_LOC:
+
+		locator.sim_loc.data.lat = (float)vparser.getLat() / 10000000.;
+		locator.sim_loc.data.lon = (float)vparser.getLon() / 10000000.;
+		locator.sim_loc.data.alt = (float)vparser.getEle();
+		locator.sim_loc.data.utc_time = vparser.getSecJ();
+
+		locator.sim_loc.setIsUpdated();
+
+		LOG_INFO("New sim loc received");
+
+		// notify task
+		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
+			events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+		}
+
+		break;
+
+	case _SENTENCE_PC:
+
+		if (vparser.getPC() == 12) {
+
+			LOG_WARNING("HardFault test start");
+
+			hardfault_genhf_invalid_fp();
+
+		}
+
+	default:
+		break;
+
+	}
+
+
+}
+
 /**
  *
  */
 void perform_system_tasks(void) {
-
-	gps_mgmt.tasks();
-
-	locator.tasks();
 
 	uart_tasks();
 
@@ -119,7 +169,7 @@ void perform_system_tasks_light(void) {
 
 	if (NRF_LOG_PROCESS() == false)
 	{
-		nrf_pwr_mgmt_run();
+		pwr_mgmt_run();
 	}
 }
 
@@ -132,17 +182,18 @@ void model_go_to_msc_mode(void) {
 
 }
 
+
 /**
  *
  * @return true if memory is full, false otherwise
  */
 bool check_memory_exception(void) {
 
-	int tot_point_mem = 0;
-	tot_point_mem += Point::getObjectCount() * sizeof(Point);
-	tot_point_mem += (Point2D::getObjectCount()-Point::getObjectCount()) * sizeof(Point2D);
+	int tot_point_mem = Point::getObjectCount() * sizeof(Point);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
 
-	if (tot_point_mem > TOT_HEAP_MEM_AVAILABLE) {
+	if (tot_point_mem + 1000 > TOT_HEAP_MEM_AVAILABLE) {
 
 		LOG_ERROR("Memory exhausted");
 
@@ -161,25 +212,6 @@ void idle_task(void * p_context)
 {
     for(;;)
     {
-    	while (NRF_LOG_PROCESS()) { }
-
-    	//No more logs to process, go to sleep
-    	nrf_pwr_mgmt_run();
-
-    	task_yield();
-    	W_SYSVIEW_OnIdle();
-    }
-}
-
-/**
- * System continuous tasks
- *
- * @param p_context
- */
-void system_task(void * p_context)
-{
-    for(;;)
-    {
 		perform_system_tasks();
 
 #if defined (BLE_STACK_SUPPORT_REQD)
@@ -189,9 +221,11 @@ void system_task(void * p_context)
 		// BSP tasks
 		bsp_tasks();
 
-    	if (!NRF_LOG_PROCESS()) {
-        	task_yield();
-    	}
+    	//No more logs to process, go to sleep
+		sysview_task_idle();
+    	pwr_mgmt_run();
+
+    	task_yield();
     }
 }
 
@@ -205,10 +239,6 @@ void boucle_task(void * p_context)
 	for (;;)
 	{
 		LOG_INFO("\r\nTask %u", millis());
-
-#ifdef ANT_STACK_SUPPORT_REQD
-		roller_manager_tasks();
-#endif
 
 		boucle.run();
 
@@ -243,31 +273,27 @@ void peripherals_task(void * p_context)
 {
 	for(;;)
 	{
-#ifdef _DEBUG_TWI
-		static uint32_t _counter = 0;
-
-		if (++_counter >= 1000 / (SENSORS_REFRESH_FREQ * APP_TIMEOUT_DELAY_MS)) {
-			W_SYSVIEW_OnTaskStartExec(I2C_TASK);
-			_counter = 0;
-			stc.refresh(nullptr);
-			veml.refresh(nullptr);
-			fxos_tasks(nullptr);
-			baro.refresh(nullptr);
-			W_SYSVIEW_OnTaskStopExec(I2C_TASK);
-		}
-
-		model_dispatch_sensors_update();
-#endif
+		i2c_scheduling_tasks();
 
 #ifndef BLE_STACK_SUPPORT_REQD
-		CRITICAL_REGION_ENTER();
 		neopixel_radio_callback_handler(false);
-		CRITICAL_REGION_EXIT();
 #endif
+
+#ifdef ANT_STACK_SUPPORT_REQD
+		roller_manager_tasks();
+		suffer_score.addHrmData(hrm_info.bpm, millis());
+#endif
+
 		// check screen update & unlock task
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
 			vue.refresh();
 		}
+
+		gps_mgmt.runWDT();
+
+		gps_mgmt.tasks();
+
+		locator.tasks();
 
 		// update date
 		SDate dat;

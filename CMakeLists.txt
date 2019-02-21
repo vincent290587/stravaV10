@@ -13,7 +13,7 @@ set (Tutorial_VERSION_MINOR 0)
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
-add_definitions(-DTDD_RANDOMIZE)
+#add_definitions(-DTDD_RANDOMIZE)
 #add_definitions(-DLS027_GUI)
 
 set(CMAKE_C_FLAGS  "-fno-builtin --short-enums -nostdlib -MMD -nostdlib -ffunction-sections -fdata-sections -fno-strict-aliasing")
@@ -43,6 +43,8 @@ include_directories(
 	libraries/AltiBaro
 	libraries/GlobalTop
 	libraries/utils
+    libraries/filters
+    libraries/komoot
 	libraries/TinyGPSPlus
 	rf
     source
@@ -56,11 +58,14 @@ include_directories(
 # Cree des variables avec les fichiers à compiler
 set(SRCS
     main_tdd.cpp
+    segger_wrapper.c
+    GUI_connector.cpp
     scheduler/task_scheduler.c
     unit_testing.cpp
 	Model_tdd.cpp
     Simulator.cpp
 	millis_tdd.c
+	order1_filter_tdd.c
 	sd/sd_functions.cpp
 	sd/sd_hal.c
 	timer/timer.c
@@ -76,6 +81,7 @@ set(SRCS
 	libraries/AdafruitGFX/Print.cpp
 	libraries/AltiBaro/AltiBaro.cpp
 	libraries/utils/utils.c
+    libraries/komoot/komoot_nav.c
 	libraries/GlobalTop/EPONmeaPacket.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
 	source/display/SegmentManager.cpp
@@ -92,8 +98,10 @@ set(SRCS
 	source/model/BoucleCRS.cpp
 	source/model/BoucleFEC.cpp
 	source/model/Locator.cpp
+	source/model/SufferScore.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
+    source/vue/MenuObjects.cpp
 	source/vue/Vue.cpp
 	source/vue/VueCRS.cpp
 	source/vue/VueDebug.cpp

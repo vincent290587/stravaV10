@@ -37,6 +37,7 @@
 #include "i2c_scheduler.h"
 #include "Model.h"
 #include "sd_hal.h"
+#include "ble_api_base.h"
 #include "segger_wrapper.h"
 
 #ifdef USB_ENABLED
@@ -57,15 +58,6 @@ APP_TIMER_DEF(m_job_timer);
 nrfx_wdt_channel_id m_channel_id;
 
 static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
-
-typedef struct {
-	char _buffer[256];
-	uint8_t special;
-} sAppErrorDescr;
-
-static sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
-
-extern "C" void ble_init(void);
 
 
 /**
@@ -127,7 +119,9 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 {
     NRF_LOG_FLUSH();
 
-    //nor_save_error(id, pc, info);
+    m_app_error.err_desc.id = id;
+    m_app_error.err_desc.pc = pc;
+	m_app_error.err_desc.crc = SYSTEM_DESCR_POS_CRC;
 
     switch (id)
     {
@@ -142,38 +136,38 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         case NRF_FAULT_ID_SDK_ASSERT:
         {
             assert_info_t * p_info = (assert_info_t *)info;
-        	m_app_error.special = 0xDB;
-            snprintf(m_app_error._buffer, sizeof(m_app_error._buffer),
+            snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
         			"ASSERTION FAILED at %s:%u",
                     p_info->p_file_name,
                     p_info->line_num);
 #if USE_SVIEW
-            SEGGER_SYSVIEW_Error(m_app_error._buffer);
+            SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
 #else
-            NRF_LOG_ERROR(m_app_error._buffer);
-            LOG_ERROR(m_app_error._buffer);
+            NRF_LOG_ERROR(m_app_error.err_desc._buffer);
+            LOG_ERROR(m_app_error.err_desc._buffer);
 #endif
             break;
         }
         case NRF_FAULT_ID_SDK_ERROR:
         {
         	error_info_t * p_info = (error_info_t *)info;
-        	m_app_error.special = 0xDB;
-        	snprintf(m_app_error._buffer, sizeof(m_app_error._buffer),
+        	snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
         			"ERROR %u [%s] at %s:%u",
                     p_info->err_code,
 					  nrf_strerror_get(p_info->err_code),
                     p_info->p_file_name,
-                    p_info->line_num);
+                    (uint16_t)p_info->line_num);
 #if USE_SVIEW
-            SEGGER_SYSVIEW_Error(m_app_error._buffer);
+            SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
 #else
-            LOG_ERROR(m_app_error._buffer);
+            LOG_ERROR(m_app_error.err_desc._buffer);
 #endif
             break;
         }
         default:
             NRF_LOG_ERROR("UNKNOWN FAULT at 0x%08X", pc);
+        	snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
+        			"UNKNOWN FAULT at 0x%08X", pc);
             break;
     }
 
@@ -188,6 +182,11 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 extern "C" void HardFault_process(HardFault_stack_t * p_stack)
 {
+	LOG_ERROR("HardFault: pc=%u", p_stack->pc);
+
+	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
+	memcpy(&m_app_error.hf_desc.stck, p_stack, sizeof(HardFault_stack_t));
+
 #ifdef DEBUG_NRF
     NRF_BREAKPOINT_COND;
     // On hardfault, the system can only recover with a reset.
@@ -302,7 +301,6 @@ static void buttons_leds_init(void)
 static void pins_init(void)
 {
 	nrf_gpio_cfg_input(FXOS_INT1, NRF_GPIO_PIN_PULLDOWN);
-	nrf_gpio_cfg_input(FXOS_INT2, NRF_GPIO_PIN_PULLDOWN);
 
 	nrf_gpio_cfg_output(FXOS_RST);
 	nrf_gpio_pin_clear(FXOS_RST);
@@ -397,11 +395,11 @@ int main(void)
 		NVIC_SystemReset();
 	}
 
-    char buff[100];
-    memset(buff, 0, sizeof(buff));
-    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
-    		reset_reason);
-    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
+//    char buff[100];
+//    memset(buff, 0, sizeof(buff));
+//    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
+//    		reset_reason);
+//    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
 
 
     err_code = app_timer_init();
@@ -410,12 +408,15 @@ int main(void)
 	LOG_INFO("Init start");
 
 	// check for errors
-	if (m_app_error.special == 0xDB) {
-		// TODO check the no init for bootloader
-		m_app_error.special = 0x00;
-		LOG_ERROR(m_app_error._buffer);
-
-	    vue.addNotif("Error", m_app_error._buffer, 6, eNotificationTypeComplete);
+	if (m_app_error.hf_desc.crc == SYSTEM_DESCR_POS_CRC) {
+		LOG_ERROR("Hard Fault found");
+		String message = "Hardfault happened: pc = 0x";
+		message += String(m_app_error.hf_desc.stck.pc, HEX);
+		message += " in void ";
+		message += m_app_error.void_id;
+		LOG_ERROR(message.c_str());
+	    vue.addNotif("Error", message.c_str(), 8, eNotificationTypeComplete);
+		memset(&m_app_error.hf_desc, 0, sizeof(m_app_error.hf_desc));
 	}
 
 	// drivers
@@ -441,10 +442,6 @@ int main(void)
 
 #if APP_SCHEDULER_ENABLED
 	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-#endif
-
-	// timers
-#ifdef ANT_STACK_SUPPORT_REQD
 #endif
 
 	backlighting_init();
@@ -483,15 +480,13 @@ int main(void)
 
 	boucle.init();
 
-	NRF_LOG_INFO("App init done");
+	LOG_INFO("App init done");
 
 	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
-	m_tasks_id.system_id = task_create	(system_task, "system_task", NULL);
 	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
 	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
 
 	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
-	W_SYSVIEW_OnTaskCreate(SYSTEM_TASK);
 	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
 	W_SYSVIEW_OnTaskCreate(LCD_TASK);
 

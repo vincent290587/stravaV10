@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <list>
+#include <vector>
 #include "WString.h"
 
 using namespace std;
@@ -76,6 +77,8 @@ class Segment {
     float getCur();
     float getTempsTot();
 
+    int getScore(void);
+
     void ajouterPointFin(float lat, float lon, float alt, float msec);
     void ajouterPointDebutIso(float lat, float lon, float alt, float msec);
 
@@ -111,7 +114,7 @@ class ListeSegments {
 
     int size() {return _segs.size();}
 
-    std::list<Segment> _segs;
+    std::vector<Segment> _segs;
   private:
 };
 

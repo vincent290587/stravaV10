@@ -7,12 +7,14 @@
 
 #include "i2c.h"
 #include "utils.h"
+#include "Model.h"
 #include "MS5637.h"
 #include "millis.h"
 #include "parameters.h"
-#include "segger_wrapper.h"
 #include "pgmspace.h"
-
+#include "app_timer.h"
+#include "segger_wrapper.h"
+#include "task_manager_wrapper.h"
 
 /* error codes */
 #define NO_ERR          0
@@ -20,16 +22,31 @@
 #define ERR_BAD_READLEN -2
 #define ERR_NEEDS_BEGIN -3
 
+APP_TIMER_DEF(m_ms5637_update);
+
 
 /* delay to wait for sampling to complete, on each OSR level */
 static const uint8_t SamplingDelayMs[6] PROGMEM = { 2, 4, 6, 10, 18, 34 };
 
-#define NAN (-1.)
+
+#ifdef _DEBUG_TWI
+static void ms5637_timer_callback(void * p_context) {
+
+	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
+
+	if (_tasks_ids->peripherals_id != TASK_ID_INVALID) {
+		events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_MS_WAIT);
+	}
+
+}
+#endif
 
 MS5637::MS5637 () {
 
 	 initialised = false;
 	 m_err = ERR_NEEDS_BEGIN;
+	 m_temperature = 20.;
+	 m_pressure = 999.;
 
 }
 
@@ -39,6 +56,10 @@ void MS5637::init(void) {
 
 #ifdef _DEBUG_TWI
 	this->setCx(nullptr);
+
+	// Create timer.
+	uint32_t err_code = app_timer_create(&m_ms5637_update, APP_TIMER_MODE_SINGLE_SHOT, ms5637_timer_callback);
+	APP_ERROR_CHECK(err_code);
 #endif
 
 	return;
@@ -204,7 +225,16 @@ uint32_t MS5637::takeReading(uint8_t trigger_cmd, BaroOversampleLevel oversample
 
 	uint8_t sampling_delay = pgm_read_byte(SamplingDelayMs + (int )oversample_level);
 
-	delay_ms(sampling_delay);
+	// arm the timer to later unblock the task
+	uint32_t timeout_ticks = APP_TIMER_TICKS(sampling_delay);
+	uint32_t err_code = app_timer_start(m_ms5637_update, timeout_ticks, &m_tasks_id);
+	APP_ERROR_CHECK(err_code);
+	// we block the task while performing the measurement
+	if (!err_code) {
+		events_wait(TASK_EVENT_PERIPH_MS_WAIT);
+	} else {
+		delay_ms(sampling_delay);
+	}
 
 	uint8_t adc[3] = {0};
 	if (!this->wireReadDataBlock(CMD_READ_ADC, adc, sizeof(adc))) {
@@ -242,7 +272,7 @@ bool MS5637::computeTempAndPressure(int32_t d1, int32_t d2) {
 		t2 = 3 * (dt * dt) / (1LL << 33);
 	}
 
-	m_temperature = (float) (temp - t2) / 100;
+	m_temperature =  ((float)temp - (float)t2) / 100.;
 
 	int64_t off = c2 * (1LL << 17) + (c4 * dt) / (1LL << 6);
 	int64_t sens = c1 * (1LL << 16) + (c3 * dt) / (1LL << 7);
@@ -266,7 +296,7 @@ bool MS5637::computeTempAndPressure(int32_t d1, int32_t d2) {
 	}
 
 	int32_t p = ((int64_t) d1 * sens / (1LL << 21) - off) / (1LL << 15);
-	m_pressure = (float) p / 100;
+	m_pressure =  (float)p / 100.;
 
 	LOG_INFO("Pressure: %d mbar", (int) (m_pressure));
 	LOG_INFO("Temperature: %d°", (int) (m_temperature));

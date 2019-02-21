@@ -12,7 +12,7 @@
 Zoom::Zoom() {
 	m_h_size = 80;
 	m_v_size = 30;
-
+	m_last_zoom = 0.;
 	m_zoom_level = BASE_ZOOM_LEVEL;
 }
 
@@ -23,6 +23,7 @@ void Zoom::decreaseZoom() {
 
 void Zoom::increaseZoom() {
 	if (m_zoom_level > 0) m_zoom_level -= 1;
+	else m_zoom_level = BASE_ZOOM_LEVEL * 2;
 	LOG_INFO("Zoom++: %u\r\n", m_zoom_level);
 }
 

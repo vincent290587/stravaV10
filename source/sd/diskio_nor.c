@@ -41,8 +41,8 @@
        .csn_pin     = QSPI_SS_PIN,                                      \
        .io0_pin     = QSPI_MOSI_PIN,                                \
        .io1_pin     = QSPI_MISO_PIN,                                \
-       .io2_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
-       .io3_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
+       .io2_pin     = QSPI_IO2_PIN,                                 \
+       .io3_pin     = QSPI_IO3_PIN,                                 \
     },                                                                  \
     .irq_priority   = (uint8_t)NRFX_QSPI_CONFIG_IRQ_PRIORITY,           \
     .prot_if = {                                                        \

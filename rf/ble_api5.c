@@ -35,6 +35,8 @@
 #include "helper.h"
 #include "ble_bas_c.h"
 #include "ble_nus_c.h"
+#include "ble_api_base.h"
+#include "ble_komoot_c.h"
 #include "ble_advdata.h"
 #include "ble_lns_c.h"
 #include "ant.h"
@@ -43,6 +45,8 @@
 #include "Locator.h"
 #include "neopixel.h"
 #include "segger_wrapper.h"
+#include "ring_buffer.h"
+#include "Model.h"
 
 #define BLE_DEVICE_NAME             "myStrava"
 
@@ -101,10 +105,13 @@ typedef enum {
 } eNusTransferState;
 
 BLE_NUS_C_DEF(m_ble_nus_c);
+BLE_KOMOOT_C_DEF(m_ble_komoot_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
 
+#define NUS_RB_SIZE      1024
+RING_BUFFER_DEF(nus_rb1, NUS_RB_SIZE);
 
 /** @brief Parameters used when scanning. */
 static ble_gap_scan_params_t m_scan_param;
@@ -119,7 +126,6 @@ static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  
 static volatile bool m_nus_cts = false;
 static volatile bool m_connected = false;
 static uint16_t m_nus_packet_nb = 0;
-static uint8_t m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
@@ -132,32 +138,6 @@ static ble_gap_conn_params_t const m_connection_param =
 		(uint16_t)SUPERVISION_TIMEOUT       /**< Supervision time-out. */
 };
 
-/**@brief Names which the central applications will scan for, and which will be advertised by the peripherals.
- *  if these are set to empty strings, the UUIDs defined below will be used
- */
-static const char m_target_periph_name[] = "";          /**< If you want to connect to a peripheral using a given advertising name, type its name here. */
-static bool  is_connect_per_addr = false;               /**< If you want to connect to a peripheral with a given address, set this to true and put the correct address in the variable below. */
-static const ble_gap_addr_t m_target_periph_addr =
-{
-		/* Possible values for addr_type:
-       BLE_GAP_ADDR_TYPE_PUBLIC,
-       BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
-       BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE,
-       BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE. */
-		.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
-		.addr      = {0x8D, 0xFE, 0x23, 0x86, 0x77, 0xD9}
-};
-
-#if (NRF_SD_BLE_API_VERSION==6)
-static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
-
-/**@brief Pointer to the buffer where advertising reports will be stored by the SoftDevice. */
-static ble_data_t m_scan_buffer =
-{
-    m_scan_buffer_data,
-    BLE_GAP_SCAN_BUFFER_MIN
-};
-#endif
 
 static void scan_start(void);
 
@@ -176,13 +156,10 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
 	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
 	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
+	ble_komoot_c_on_db_disc_evt(&m_ble_komoot_c, p_evt);
 }
 
 
-/**@brief Function for handling Peer Manager events.
- *
- * @param[in] p_evt  Peer Manager event.
- */
 /**@brief Function for handling Peer Manager events.
  *
  * @param[in] p_evt  Peer Manager event.
@@ -284,64 +261,6 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 	}
 }
 
-
-/**
- * @brief Parses advertisement data, providing length and location of the field in case
- *        matching data is found.
- *
- * @param[in]  Type of data to be looked for in advertisement data.
- * @param[in]  Advertisement report length and pointer to report.
- * @param[out] If data type requested is found in the data report, type data length and
- *             pointer to data will be populated here.
- *
- * @retval NRF_SUCCESS if the data type is found in the report.
- * @retval NRF_ERROR_NOT_FOUND if the data type could not be found.
- */
-static uint32_t adv_report_parse(uint8_t type, data_t * p_advdata, data_t * p_typedata)
-{
-	uint32_t  index = 0;
-	uint8_t * p_data;
-
-	p_data = p_advdata->p_data;
-
-	while (index < p_advdata->data_len)
-	{
-		uint8_t field_length = p_data[index];
-		uint8_t field_type   = p_data[index + 1];
-
-		if (field_type == type)
-		{
-			p_typedata->p_data   = &p_data[index + 2];
-			p_typedata->data_len = field_length - 1;
-			return NRF_SUCCESS;
-		}
-		index += field_length + 1;
-	}
-	return NRF_ERROR_NOT_FOUND;
-}
-
-/**@brief Function for searching a given addr in the advertisement packets.
- *
- * @details Use this function to parse received advertising data and to find a given
- * addr in them.
- *
- * @param[in]   p_adv_report   advertising data to parse.
- * @param[in]   p_addr   name to search.
- * @return   true if the given name was found, false otherwise.
- */
-static bool find_peer_addr(const ble_gap_evt_adv_report_t *p_adv_report, const ble_gap_addr_t * p_addr)
-{
-	if (p_addr->addr_type == p_adv_report->peer_addr.addr_type)
-	{
-		if (memcmp(p_addr->addr, p_adv_report->peer_addr.addr, sizeof(p_adv_report->peer_addr.addr)) == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
 /**@brief Function for handling the advertising report BLE event.
  *
  * @param[in] p_adv_report  Advertising report from the SoftDevice.
@@ -349,29 +268,25 @@ static bool find_peer_addr(const ble_gap_evt_adv_report_t *p_adv_report, const b
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 {
 	ret_code_t err_code;
-	ble_uuid_t target_uuid = {.uuid = TARGET_UUID, .type = BLE_UUID_TYPE_BLE};
+	ble_uuid_t target_uuid1 = {.uuid = TARGET_UUID, .type = BLE_UUID_TYPE_BLE};
+	ble_uuid_t target_uuid2 = {.uuid = BLE_UUID_KOMOOT_SERVICE, .type = m_ble_komoot_c.uuid_type};
+
 	bool do_connect = false;
 
-    if (is_connect_per_addr)
-    {
-        if (find_peer_addr(p_adv_report, &m_target_periph_addr))
-        {
-            LOG_INFO("Address match send connect_request.");
-            do_connect = true;
-        }
-    }
-    else
-    {
-        if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid))
-        {
-            do_connect = true;
-            LOG_INFO("UUID match send connect_request.");
-        }
-        if (ble_advdata_name_find(p_adv_report->data, p_adv_report->dlen, TARGET_NAME)) {
-            do_connect = true;
-            LOG_INFO("Name match send connect_request.");
-        }
-    }
+	if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid1))
+	{
+		do_connect = true;
+		LOG_INFO("UUID1 match send connect_request.");
+	}
+	if (ble_advdata_uuid_find(p_adv_report->data, p_adv_report->dlen, &target_uuid2))
+	{
+		do_connect = true;
+		LOG_INFO("UUID2 match send connect_request.");
+	}
+	if (ble_advdata_name_find(p_adv_report->data, p_adv_report->dlen, TARGET_NAME)) {
+		do_connect = true;
+		LOG_INFO("Name match send connect_request.");
+	}
 
     if (do_connect)
     {
@@ -408,7 +323,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	ret_code_t            err_code;
 	ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;
 
-	W_SYSVIEW_OnTaskStartExec(BLE_TASK);
+	W_SYSVIEW_RecordEnterISR();
 
 	switch (p_ble_evt->header.evt_id)
 	{
@@ -521,8 +436,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		break;
 	}
 
-
-	W_SYSVIEW_OnTaskStopExec(BLE_TASK);
+	W_SYSVIEW_RecordExitISR();
 
 }
 
@@ -643,7 +557,6 @@ static void peer_manager_init(void)
 	APP_ERROR_CHECK(err_code);
 }
 
-
 /**@brief Heart Rate Collector Handler.
  */
 static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_evt)
@@ -725,6 +638,57 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 }
 
 
+/**@brief Heart Rate Collector Handler.
+ */
+static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t * p_komoot_c_evt)
+{
+	uint32_t err_code;
+
+	LOG_DEBUG("KOMOOT event: 0x%X\r\n", p_komoot_c_evt->evt_type);
+
+	switch (p_komoot_c_evt->evt_type)
+	{
+	case BLE_KOMOOT_C_EVT_DISCOVERY_COMPLETE:
+		err_code = ble_komoot_c_handles_assign(p_komoot_c ,
+				p_komoot_c_evt->conn_handle,
+				&p_komoot_c_evt->params.peer_db);
+		APP_ERROR_CHECK(err_code);
+
+		// Initiate bonding.
+		err_code = pm_conn_secure(p_komoot_c_evt->conn_handle, false);
+		if (err_code != NRF_ERROR_INVALID_STATE)
+		{
+			APP_ERROR_CHECK(err_code);
+		}
+
+		// service discovered. Enable notification
+		err_code = ble_komoot_c_pos_notif_enable(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+
+		LOG_INFO("KOMOOT service discovered.");
+		break;
+
+	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
+	{
+		uint32_t err_code = ble_komoot_c_nav_read(p_komoot_c);
+		APP_ERROR_CHECK(err_code);
+	}	break;
+
+    case BLE_KOMOOT_C_EVT_KOMOOT_NAVIGATION:
+    {
+    	m_komoot_nav.isUpdated = true;
+    	m_komoot_nav.direction = p_komoot_c_evt->params.komoot.direction;
+    	m_komoot_nav.distance = p_komoot_c_evt->params.komoot.distance;
+
+    	LOG_INFO("KOMOOT nav: direction %u", p_komoot_c_evt->params.komoot.direction);
+    }   break;
+
+	default:
+		break;
+	}
+}
+
+
 /**@brief Battery level Collector Handler.
  */
 static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const * p_evt)
@@ -746,13 +710,29 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
         case BLE_NUS_C_EVT_NUS_TX_EVT:
             // TODO handle received chars
         	LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
-        	m_nus_xfer_state = eNusTransferStateInit;
+//        	m_nus_xfer_state = eNusTransferStateInit;
         	// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+
+    		{
+    			for (uint16_t i=0; i < p_evt->data_len; i++) {
+
+    				char c = p_evt->p_data[i];
+
+    				if (RING_BUFF_IS_NOT_FULL(nus_rb1)) {
+    					RING_BUFFER_ADD_ATOMIC(nus_rb1, c);
+    				} else {
+    					LOG_ERROR("NUS ring buffer full");
+
+    					// empty ring buffer
+    					RING_BUFF_EMPTY(nus_rb1);
+    				}
+
+    			}
+    		}
             break;
 
         case BLE_NUS_C_EVT_DISCONNECTED:
-            LOG_INFO("Disconnected.");
-            scan_start();
+    		if (m_nus_xfer_state == eNusTransferStateRun) m_nus_xfer_state = eNusTransferStateFinish;
             break;
     }
 }
@@ -768,6 +748,20 @@ static void lns_c_init(void)
 	lns_c_init_obj.evt_handler = lns_c_evt_handler;
 
 	uint32_t err_code = ble_lns_c_init(&m_ble_lns_c, &lns_c_init_obj);
+	APP_ERROR_CHECK(err_code);
+}
+
+
+/**
+ * @brief Heart rate collector initialization.
+ */
+static void komoot_c_init(void)
+{
+	ble_komoot_c_init_t komoot_c_init_obj;
+
+	komoot_c_init_obj.evt_handler = komoot_c_evt_handler;
+
+	uint32_t err_code = ble_komoot_c_init(&m_ble_komoot_c, &komoot_c_init_obj);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -869,11 +863,10 @@ static void scan_init(void)
 	// Reload the whitelist and whitelist all peers.
 	whitelist_load();
 
-	ret_code_t ret;
-
 	// Get the whitelist previously set using pm_whitelist_set().
-	ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
+	ret_code_t ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
 			whitelist_irks,  &irk_cnt);
+	APP_ERROR_CHECK(ret);
 
 	m_scan_param.active   = 0;
 	m_scan_param.interval = SCAN_INTERVAL;
@@ -970,6 +963,15 @@ static void gatt_init(void)
 }
 
 
+void ble_get_navigation(sKomootNavigation *nav) {
+
+	ASSERT(nav);
+
+	if (m_komoot_nav.isUpdated) memcpy(nav, &m_komoot_nav, sizeof(m_komoot_nav));
+
+}
+
+
 #ifdef BLE_STACK_SUPPORT_REQD
 /**
  * Init BLE stack
@@ -985,10 +987,11 @@ void ble_init(void)
 
 	lns_c_init();
 	nus_c_init();
+	komoot_c_init();
 	scan_init();
 
 	// Start scanning for peripherals and initiate connection
-	// with devices that advertise LNS UUID.
+	// with devices
 	scan_start();
 }
 
@@ -998,7 +1001,15 @@ void ble_init(void)
 #include "sd_functions.h"
 void ble_nus_tasks(void) {
 
-	if (m_nus_xfer_state == eNusTransferStateIdle) return;
+	if (m_nus_xfer_state == eNusTransferStateIdle) {
+
+		char c = RING_BUFF_GET_ELEM(nus_rb1);
+		RING_BUFFER_POP(nus_rb1);
+
+		model_input_virtual_uart(c);
+
+		return;
+	}
 
 	switch (m_nus_xfer_state) {
 

@@ -38,17 +38,34 @@ static FIL* g_fileObject;   /* File object */
 #endif
 
 static uint32_t last_point_ms = 0;
+static uint32_t nb_gps_loc = 0;
 
 void simulator_init(void) {
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
 
+	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
+	m_app_error.hf_desc.stck.pc = 0x567896;
+
+	m_app_error.special = SYSTEM_DESCR_POS_CRC;
+
+	m_app_error.err_desc.crc = SYSTEM_DESCR_POS_CRC;
+	snprintf(m_app_error.err_desc._buffer,
+			sizeof(m_app_error.err_desc._buffer),
+			"Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
+
+	m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
+	m_app_error.saved_data.att.climb = 562.;
+	m_app_error.saved_data.att.dist = 17700;
+	m_app_error.saved_data.att.nbsec_act = 2780;
+	m_app_error.saved_data.att.pr = 3;
+	m_app_error.saved_data.att.date.date = 211218;
 }
 
 void simulator_tasks(void) {
 
 	if (!g_fileObject) {
-		printf("No simulation file found");
+		LOG_ERROR("No simulation file found");
 		exit(-3);
 	}
 
@@ -57,6 +74,9 @@ void simulator_tasks(void) {
 	}
 
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+
+	// HRM simulation
+	hrm_info.bpm = 120 + (rand() % 65);
 
 	// FEC simulation
 	fec_info.power = rand() % 500;
@@ -90,14 +110,22 @@ void simulator_tasks(void) {
 		lon   = data[1];
 		alt   = data[2];
 
-		baro.setAlti(alt);
+		static float alti_fake = 0.;
+
+		//alti_fake += 1. / 3.;
+
+		int rnd_add;
+		rnd_add = (rand() % 20) - 10;
+
+		baro.setAlti(alti_fake + (float)rnd_add / 10.);
+		baro.runFilter();
 
 		if (pos == 4) {
 			// file contains the rtime
 			rtime = data[3];
 		} else {
 			// rtime is missing: generate it
-			rtime += 1;
+			rtime += 1.;
 		}
 
 #ifdef TDD_RANDOMIZE
@@ -108,6 +136,7 @@ void simulator_tasks(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
+#ifdef LOC_SOURCE_GPS
 		// build make NMEA sentence
 		GPRMC gprmc_(lat, lon, 0., (int)rtime);
 		int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
@@ -117,6 +146,27 @@ void simulator_tasks(void) {
 		// send to uart_tdd
 		for (int i=0; i < nmea_length; i++)
 			uart_rx_handler(g_bufferWrite[i]);
+
+		if (++nb_gps_loc == 1) {
+			sLocationData loc_data;
+			loc_data.alt = 9.5;
+			loc_data.lat = lat;
+			loc_data.lon = lon;
+			loc_data.utc_time = 15 * 3600 + 5 * 60 + 39;
+			loc_data.date = 11218;
+
+			gps_mgmt.startHostAidingEPO(loc_data, 350);
+		}
+#else
+		sLnsInfo lns_info;
+		lns_info.lat = lat * 10000000.;
+		lns_info.lon = lon * 10000000.;
+		lns_info.ele = alt * 100.;
+		lns_info.secj = (int)rtime;
+		lns_info.date = 11218;
+		lns_info.speed = 20. * 10.;
+		locator_dispatch_lns_update(&lns_info);
+#endif
 
 	} else {
 		fclose(g_fileObject);

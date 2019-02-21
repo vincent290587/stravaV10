@@ -1,5 +1,6 @@
 
 #include "Parcours.h"
+#include "segger_wrapper.h"
 
 
 ListeParcours::ListeParcours(void) {
@@ -14,12 +15,9 @@ Parcours *ListeParcours::getParcoursAt(int i) {
 		return nullptr;
 	}
 
-	_iter = _parcs.begin();
-	for (int j=1; j <= i; j++) {
-		_iter++;
-	}
+	LOG_INFO("PRC %s selected", _parcs[i].getName());
 
-	return _iter.operator->();
+	return &_parcs[i];
 }
 
 

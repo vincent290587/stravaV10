@@ -5,7 +5,7 @@
  *      Author: Vincent
  */
 
-
+#include "g_structs.h"
 #include "mk64f_parser.h"
 
 
@@ -18,3 +18,4 @@ sFecInfo             fec_info;
 
 sFecControl          fec_control;
 
+sKomootNavigation m_komoot_nav;

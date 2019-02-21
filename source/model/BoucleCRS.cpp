@@ -19,6 +19,8 @@
 BoucleCRS::BoucleCRS() : BoucleInterface() {
 	m_dist_next_seg = 5000;
 
+	m_s_parcours = nullptr;
+
 	memset(&att, 0, sizeof(SAtt));
 }
 
@@ -51,11 +53,13 @@ void BoucleCRS::init() {
 	gps_mgmt.awake();
  	gps_mgmt.startEpoUpdate();
 
-	m_needs_init = false;
-
 	m_last_refresh = 0;
 
 	m_dist_next_seg = 9999;
+
+	if (m_s_parcours) this->loadPRC();
+
+	m_needs_init = false;
 }
 
 /**
@@ -86,9 +90,13 @@ void BoucleCRS::run() {
 
 	eLocationSource loc_source = locator.getPosition(loc, dat);
 
+	if (eLocationSourceNone == loc_source) return;
+
 	attitude.addNewLocation(loc, dat, loc_source);
 
-	// update sements
+	// update segments
+
+	sysview_task_void_enter(MainSegLoop);
 	for (auto& seg : mes_segments._segs) {
 
 		if (seg.isValid()) {
@@ -96,23 +104,18 @@ void BoucleCRS::run() {
 			tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
 
 			// calculate distance to closest segment
-			if (tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
+			if (tmp_dist > 0. &&
+					tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
 
 			// we don't possess enough points to continue calculating...
 			if (mes_points.size() < 2) continue;
 
 			if (seg.getStatus() != SEG_OFF) {
 
-				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				sysview_task_void_enter(ComputeSegmentPerf);
 				seg.majPerformance(mes_points);
-				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
+				sysview_task_void_exit(ComputeSegmentPerf);
 				att.nbact += 1;
-
-				if (seg.getStatus() < SEG_OFF) {
-					segMngr.addSegmentPrio(&seg);
-				} else if (seg.getStatus() > SEG_OFF) {
-					segMngr.addSegment(&seg);
-				}
 
 				if (seg.getStatus() == SEG_FIN) {
 
@@ -129,17 +132,20 @@ void BoucleCRS::run() {
 
 			} else if (tmp_dist < 250) {
 
-				W_SYSVIEW_OnTaskStartExec(SEG_PERF_TASK);
+				sysview_task_void_enter(ComputeSegmentPerf);
 				seg.majPerformance(mes_points);
-				W_SYSVIEW_OnTaskStopExec(SEG_PERF_TASK);
-
-				segMngr.addSegment(&seg);
+				sysview_task_void_exit(ComputeSegmentPerf);
 
 			}
+
+			segMngr.addSegment(seg);
 
 		} // fin isValid
 
 	} // fin for
+	sysview_task_void_exit(MainSegLoop);
+
+	segMngr.computeOrder();
 
 	att.next = m_dist_next_seg;
 
@@ -151,4 +157,37 @@ void BoucleCRS::run() {
 
 	m_last_refresh.setUpdateTime();
 
+}
+
+/**
+ *
+ */
+void BoucleCRS::loadPRC() {
+
+	if (!m_s_parcours) return;
+
+	if (load_parcours(m_s_parcours[0]) > 0) {
+		vue.addNotif("PRC: ", "Success !", 4, eNotificationTypeComplete);
+	} else {
+		vue.addNotif("PRC: ", "Loading failed", 4, eNotificationTypeComplete);
+	}
+
+}
+
+/**
+ *
+ */
+void BoucleCRS::parcoursSelect(int prc_ind) {
+
+	LOG_INFO("Selection PRC %d", prc_ind);
+	m_s_parcours = mes_parcours.getParcoursAt(prc_ind-1);
+}
+
+/**
+ *
+ */
+void BoucleCRS::invalidate(void) {
+	BoucleInterface::invalidate();
+	if (m_s_parcours) m_s_parcours->desallouerPoints();
+	m_s_parcours = nullptr;
 }

@@ -1,7 +1,7 @@
 /*
  * Attitude.h
  *
- *  Created on: 29 déc. 2017
+ *  Created on: 29 dÃ©c. 2017
  *      Author: Vincent
  */
 
@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hardfault.h"
 #include "Locator.h"
 #include "parameters.h"
 
@@ -37,7 +38,35 @@ typedef struct {
 	uint16_t next;
 } SAtt;
 
+#define SYSTEM_DESCR_POS_CRC      0xDB
 
+typedef struct {
+	HardFault_stack_t stck;
+	uint8_t crc;
+} sAppHardFaultDesc;
+
+typedef struct {
+	char _buffer[210];
+	uint32_t pc;
+	uint32_t id;
+	uint8_t crc;
+} sAppErrorDesc;
+
+typedef struct {
+ 	SAtt att;
+	uint8_t crc;
+} sAppSavedData;
+
+typedef struct {
+	uint8_t special;
+	uint32_t void_id;
+	uint32_t task_id;
+	sAppErrorDesc err_desc;
+	sAppSavedData saved_data;
+	sAppHardFaultDesc hf_desc;
+} sAppErrorDescr;
+
+#if defined(__cplusplus)
 class Attitude {
 public:
 	Attitude();
@@ -47,23 +76,24 @@ public:
 
 	void addNewFECPoint(sFecInfo& fec_);
 
-
 private:
+	float m_climb;
 	float m_last_save_dist;
 	float m_last_stored_ele;
 	float m_cur_ele;
-	float m_climb;
-	float m_vit_asc;
-	float m_power;
 
 	bool m_is_init;
+	bool m_is_acc_init;
 	bool m_is_alt_init;
 
 	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
 	uint16_t m_st_buffer_nb_elem;
 
-	void computeElevation(void);
-	void majPower(float speed_);
+	float filterElevation(SLoc& loc_);
+	float computeElevation(SLoc& loc_, eLocationSource source_);
+	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
+	float computePower(float speed_);
 };
+#endif
 
 #endif /* SOURCE_MODEL_ATTITUDE_H_ */

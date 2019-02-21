@@ -35,6 +35,9 @@
 static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
+static TCHAR g_bufferReadPRC[BUFFER_SIZE];  /* Read buffer */
+static FIL g_fileObjectPRC;   /* File object */
+
 static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
 static FIL g_LogFileObject;   /* File object */
@@ -51,7 +54,7 @@ int init_liste_segments(void)
 
 	if (!is_fat_init()) return -2;
 
-	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
+	sysview_task_void_enter(SdAccess);
 
 	mes_segments._segs.clear();
 
@@ -60,7 +63,7 @@ int init_liste_segments(void)
 	if (error)
 	{
 		LOG_INFO("Change drive failed.");
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit();
 		return -1;
 	}
 #endif
@@ -69,7 +72,7 @@ int init_liste_segments(void)
 	if (f_opendir(&directory, "/"))
 	{
 		LOG_INFO("Open directory failed.");
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
@@ -122,7 +125,7 @@ int init_liste_segments(void)
 
 	NRF_LOG_FLUSH();
 
-	W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+	sysview_task_void_exit(SdAccess);
 
 	return 0;
 }
@@ -156,7 +159,7 @@ int load_segment(Segment& seg) {
 
 	time_start = 0.;
 
-	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
+	sysview_task_void_enter(SdAccess);
 
 	String fat_name = seg.getName();
 
@@ -165,7 +168,7 @@ int load_segment(Segment& seg) {
 	if (error)
 	{
 		NRF_LOG_ERROR("Open file failed. (error %u)", error);
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
@@ -191,11 +194,11 @@ int load_segment(Segment& seg) {
 	if (error)
 	{
 		NRF_LOG_ERROR("Close file failed. (error %u)", error);
-		W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
-	W_SYSVIEW_OnTaskStopExec(SD_ACCESS_TASK);
+	sysview_task_void_exit(SdAccess);
 
 	LOG_INFO("%d points loaded", res);
 
@@ -219,44 +222,49 @@ int load_parcours(Parcours& mon_parcours) {
 
 	String fat_name = mon_parcours.getName();
 
-	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
+	sysview_task_void_enter(SdAccess);
 
-	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
+	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
+
+	if (error) error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
 
-	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+	memset(g_bufferReadPRC, 0U, sizeof(g_bufferReadPRC));
 
-	while (f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_fileObject)) {
+	while (f_gets(g_bufferReadPRC, sizeof(g_bufferReadPRC)-1, &g_fileObjectPRC)) {
 
 		// on se met au bon endroit
-		if (strstr(g_bufferRead, "<")) {
+		if (strstr(g_bufferReadPRC, "<")) {
 			// meta data
-		} else if (strstr(g_bufferRead, " ")) {
+		} else if (strstr(g_bufferReadPRC, " ")) {
 			// on est pret a charger le point
-			if (!chargerPointPar(g_bufferRead, mon_parcours))
+			if (!chargerPointPar(g_bufferReadPRC, mon_parcours))
 				res++;
 		}
 
 		if (check_memory_exception()) return -1;
 
 		// continue to perform the critical system tasks
-		perform_system_tasks();
+		yield();
 
 	} // fin du fichier
 
-	error = f_close(&g_fileObject);
+	error = f_close(&g_fileObjectPRC);
 	if (error)
 	{
 		LOG_INFO("Close file failed.");
+		sysview_task_void_exit(SdAccess);
 		return -1;
 	} else {
 		LOG_INFO("%u points added to PRC", res);
 	}
+
+	sysview_task_void_exit(SdAccess);
 
 	return res;
 }
@@ -268,7 +276,7 @@ int load_parcours(Parcours& mon_parcours) {
  * @param mon_seg
  * @param lat1
  * @param long1
- * @return
+ * @return distance to segment if success, negative number if error
  */
 float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
@@ -319,6 +327,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 				int res = load_segment(mon_seg);
 				LOG_INFO("-->> Loading segment %s", mon_seg.getName(), res);
 
+				if (res <= 0) return res;
+
 				mon_seg.init();
 			}
 		}
@@ -357,10 +367,8 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  */
 void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
-	uint32_t millis_ = millis();
-
 	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	APP_ERROR_CHECK(error);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -369,25 +377,44 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 	for (size_t i=0; i< nb_pos; i++) {
 		// print histo
-		uint16_t to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
+		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
 				att[i].loc.lat, att[i].loc.lon,
 				att[i].loc.alt, att[i].date.secj,
 				att[i].pwr);
 
-		f_write (&g_fileObject, g_bufferWrite, to_wr, NULL);
+		if (to_wr > 0 && to_wr < (int)sizeof(g_bufferWrite)) {
+			f_write(&g_fileObject, g_bufferWrite, to_wr, NULL);
+		} else {
+			APP_ERROR_CHECK(0x2);
+		}
 
+		perform_system_tasks();
 		yield();
 	}
 
 	error = f_close(&g_fileObject);
+	APP_ERROR_CHECK(error);
 	if (error)
 	{
 		LOG_INFO("Close file failed.");
 		return;
 	} else {
-		LOG_INFO("Points added to histo: %u %u", nb_pos, millis() - millis_);
+		LOG_INFO("Points added to histo: %u", nb_pos);
 	}
 
+}
+
+
+bool sd_erase_pos(void) {
+
+	FRESULT error = f_unlink("histo.txt");
+	if (error)
+	{
+		LOG_INFO("Unlink file failed.");
+		return false;
+	}
+
+	return true;
 }
 
 /**
@@ -562,7 +589,6 @@ char* log_file_read(size_t *r_length) {
 		LOG_INFO("Read LOG file failed.");
 		return NULL;
 	}
-
 	*r_length = strlen(g_bufferRead);
 
 	return g_bufferRead;

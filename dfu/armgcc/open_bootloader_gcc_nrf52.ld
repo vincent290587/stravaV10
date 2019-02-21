@@ -6,7 +6,8 @@ GROUP(-lgcc -lc -lnosys)
 MEMORY
 {
   FLASH (rx) : ORIGIN = 0xe0000, LENGTH = 0x1e000
-  RAM (rwx) :  ORIGIN = 0x20000008, LENGTH = 0x3fff8
+  RAM (rwx) :  ORIGIN = 0x20004150, LENGTH = 0x30000
+  NOINIT (rwx) :  ORIGIN = 0x20004000, LENGTH = 0x150
   uicr_bootloader_start_address (r) : ORIGIN = 0x10001014, LENGTH = 0x4
   mbr_params_page (r) : ORIGIN = 0x000FE000, LENGTH = 0x1000
   bootloader_settings_page (r) : ORIGIN = 0x000FF000, LENGTH = 0x1000
@@ -15,6 +16,10 @@ MEMORY
 
 SECTIONS
 {
+  .noinit(NOLOAD) :
+  {
+    *(.noinit*)
+  } > NOINIT
   .uicr_bootloader_start_address :
   {
     PROVIDE(__start_uicr_bootloader_start_address = .);

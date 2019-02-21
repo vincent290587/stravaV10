@@ -30,7 +30,7 @@ void rotate_point(float angle, int16_t cx, int16_t cy,
 
 	float tmp1, tmp2, tmp3, tmp4;
 
-	float angle_rad = angle * PI / 180.;
+	float angle_rad = angle * M_PI / 180.;
 
 	// coordonnees dans (cx, cy)
 	tmp1 = x1 - cx;
@@ -64,9 +64,9 @@ float course_to (float lat1, float long1, float lat2, float long2)
   // Because Earth is no exact sphere, calculated course may be off by a tiny fraction.
   // Courtesy of Maarten Lamers
   float dlon = long2-long1;
-  dlon *= PI / 180.;
-  lat1 *= PI / 180.;
-  lat2 *= PI / 180.;
+  dlon *= M_PI / 180.;
+  lat1 *= M_PI / 180.;
+  lat2 *= M_PI / 180.;
   float a1 = sinf(dlon) * cosf(lat2);
   float a2 = sinf(lat1) * cosf(lat2) * cosf(dlon);
   a2 = cosf(lat1) * sinf(lat2) - a2;
@@ -75,7 +75,7 @@ float course_to (float lat1, float long1, float lat2, float long2)
   {
     a2 += TWO_PI;
   }
-  a2 *= 180 / PI;
+  a2 *= 180 / M_PI;
   return a2;
 }
 
@@ -94,8 +94,16 @@ String _fmkstr(float value, unsigned int nb_digits) {
 
 	if (nb_digits > 0) {
 		res += ".";
-		uint32_t dec_val = fabsf(value - (float)ent_val) * powf(10, nb_digits);
-		res += dec_val;
+
+		for (uint16_t i=0; i < nb_digits; i++) {
+			value = fabsf(value - (float)ent_val);
+			value *= 10;
+			ent_val = (int) value;
+
+			uint32_t dec_val = uint32_t(value);
+			res += dec_val;
+		}
+
 	}
 
 	return res;

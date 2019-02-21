@@ -12,27 +12,34 @@
 #include "boards.h"
 #include "segger_wrapper.h"
 #include "nrf_soc.h"
+#include "nrf_pwr_mgmt.h"
 #include "GPSMGMT.h"
 #include "nrf_delay.h"
 #include "app_timer.h"
 #include "ring_buffer.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
 
 #define NRFX_UARTE_INDEX     0
 
-#define UART_RELOAD_DELAY           APP_TIMER_TICKS(2000)
+#define UARTE_BUF_LENGTH    16
+
+#define UART0_RB_SIZE         2048
+
+typedef struct {
+	uint8_t rx_buffer[UARTE_BUF_LENGTH];
+	bool is_rx;
+} sUarteBuffer;
+
+typedef struct {
+	sUarteBuffer rx_buf1;
+	sUarteBuffer rx_buf2;
+	sUarteBuffer *p_readBuffer;
+} sUarteDBuffer;
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-#define UART0_RB_SIZE         2048
 RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
-
-volatile uint32_t m_last_rx; /* Index of the memory to save new arrived data. */
 
 static const nrfx_uarte_t uart = NRFX_UARTE_INSTANCE(NRFX_UARTE_INDEX);
 
@@ -42,179 +49,194 @@ static volatile bool uart_xfer_done = true;  /**< Flag used to indicate that SPI
 
 nrf_uarte_baudrate_t m_baud;
 
-static uint8_t m_uart_rx_buffer[16];
+static sUarteDBuffer m_uart_dbuffer;
 
-
-/**
- * @brief Handler for timer events.
- */
-void timer_event_handler(void* p_context)
-{
-}
 
 /**
  *
  * @param p_event
  * @param p_context
  */
-void uart_event_handler(nrfx_uarte_event_t const * p_event,
-        				void * p_context)
+static void uart_event_handler(nrfx_uarte_event_t const * p_event,
+		void * p_context)
 {
-    W_SYSVIEW_RecordEnterISR();
+	W_SYSVIEW_RecordEnterISR();
 
-    switch (p_event->type) {
-    case NRFX_UARTE_EVT_ERROR:
-    {
-    	if ((NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) ||
-    			(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask)) {
-   		 uart_uninit();
-     	         m_error_mask = p_event->data.error.error_mask;
-   		 // empty ring buffer
-   		 RING_BUFF_EMPTY(uart0_rb1);
-    	}
-    }
-    break;
-    case NRFX_UARTE_EVT_RX_DONE:
-    {
-    	for (uint16_t i=0; i < p_event->data.rxtx.bytes; i++) {
+	switch (p_event->type) {
+	case NRFX_UARTE_EVT_ERROR:
+	{
+		m_error_mask = p_event->data.error.error_mask;
+	}
+	break;
+	case NRFX_UARTE_EVT_RX_DONE:
+	{
+		ret_code_t err_code;
+		sUarteDBuffer *_buffer = (sUarteDBuffer *) p_context;
 
-    		char c = p_event->data.rxtx.p_data[i];
+		for (uint16_t i=0; i < p_event->data.rxtx.bytes; i++) {
 
-    		if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
-    			RING_BUFFER_ADD_ATOMIC(uart0_rb1, c);
-    		} else {
-    			NRF_LOG_ERROR("Ring buffer full");
+			char c = p_event->data.rxtx.p_data[i];
 
-    			// empty ring buffer
-    			RING_BUFF_EMPTY(uart0_rb1);
-    		}
+			if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
+				RING_BUFFER_ADD_ATOMIC(uart0_rb1, c);
+			} else {
+				LOG_ERROR("Ring buffer full");
 
-    	}
+				// empty ring buffer
+				RING_BUFF_EMPTY(uart0_rb1);
+			}
 
-    	nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
-    }
-    break;
-    case NRFX_UARTE_EVT_TX_DONE:
-    {
-    	NRF_LOG_DEBUG("UART TX done");
-    	uart_xfer_done = true;
-    }
-    break;
-    }
+		}
 
-    W_SYSVIEW_RecordExitISR();
+		if ((uint8_t*)p_event->data.rxtx.p_data == (uint8_t*)&_buffer->rx_buf1.rx_buffer) {
+			// buff1 was just filled
+			err_code = nrfx_uarte_rx(&uart, _buffer->rx_buf1.rx_buffer, UARTE_BUF_LENGTH);
+			_buffer->p_readBuffer = &_buffer->rx_buf1;
+		} else {
+			// buff2 was just filled
+			err_code = nrfx_uarte_rx(&uart, _buffer->rx_buf2.rx_buffer, UARTE_BUF_LENGTH);
+			_buffer->p_readBuffer = &_buffer->rx_buf2;
+		}
+
+		_buffer->p_readBuffer->is_rx = true;
+		APP_ERROR_CHECK(err_code);
+
+	}
+	break;
+	case NRFX_UARTE_EVT_TX_DONE:
+	{
+		NRF_LOG_DEBUG("UART TX done");
+		uart_xfer_done = true;
+	}
+	break;
+	}
+
+	W_SYSVIEW_RecordExitISR();
 }
 
 /**
  *
  */
-void uart_timer_init(void) {
+static void uart_trigger_rx(void) {
+	ret_code_t err_code;
+
+	nrfx_uarte_rx_abort(&uart);
+
+	err_code = nrfx_uarte_rx(&uart, m_uart_dbuffer.rx_buf1.rx_buffer, UARTE_BUF_LENGTH);
+	APP_ERROR_CHECK(err_code);
+
+	err_code = nrfx_uarte_rx(&uart, m_uart_dbuffer.rx_buf2.rx_buffer, UARTE_BUF_LENGTH);
+	APP_ERROR_CHECK(err_code);
+
+	LOG_WARNING("UART RX restarted");
+}
+
+/**
+ * @brief Function for initializing the UART.
+ */
+void uart_init_tx_only(nrf_uarte_baudrate_t baud)
+{
+	ret_code_t err_code;
+
+	m_baud = baud;
+
+	m_error_mask = 0;
+
+	nrfx_uarte_config_t nrf_uart_config = NRFX_UARTE_DEFAULT_CONFIG;
+
+	nrf_uart_config.pseltxd    = TX_PIN_NUMBER;
+	nrf_uart_config.pselrxd    = RX_PIN_NUMBER;
+	nrf_uart_config.baudrate   = baud;
+	nrf_uart_config.parity     = NRF_UARTE_PARITY_EXCLUDED;
+	nrf_uart_config.hwfc       = NRF_UARTE_HWFC_DISABLED;
+	nrf_uart_config.p_context  = (void*) &m_uart_dbuffer;
+
+	err_code = nrfx_uarte_init(&uart, &nrf_uart_config, uart_event_handler);
+	APP_ERROR_CHECK(err_code);
+
+	LOG_DEBUG("UART configured baud=%u", (uint32_t)baud);
+
+	uart_xfer_done = true;
 
 }
 
 /**
  * @brief Function for initializing the UART.
  */
- void uart_init_tx_only(nrf_uarte_baudrate_t baud)
+void uart_init(nrf_uarte_baudrate_t baud)
 {
-	 ret_code_t err_code;
+	uart_init_tx_only(baud);
 
-	 m_baud = baud;
-
-	 m_error_mask = 0;
-
-	 nrfx_uarte_config_t nrf_uarte_config = NRFX_UARTE_DEFAULT_CONFIG;
-
-	 nrf_uarte_config.pseltxd    = TX_PIN_NUMBER;
-	 nrf_uarte_config.pselrxd    = RX_PIN_NUMBER;
-	 nrf_uarte_config.baudrate   = baud;
-	 nrf_uarte_config.parity     = NRF_UARTE_PARITY_EXCLUDED;
-	 nrf_uarte_config.hwfc       = NRF_UARTE_HWFC_DISABLED;
-
-	 err_code = nrfx_uarte_init(&uart, &nrf_uarte_config, uart_event_handler);
-	 APP_ERROR_CHECK(err_code);
-
-	 LOG_DEBUG("UART configured baud=%u", (uint32_t)baud);
-
-	 uart_xfer_done = true;
+	uart_trigger_rx();
 
 }
-
- /**
-  * @brief Function for initializing the UART.
-  */
- void uart_init(nrf_uarte_baudrate_t baud)
- {
-	 uart_init_tx_only(baud);
-
-	 nrfx_uarte_rx(&uart, m_uart_rx_buffer, sizeof(m_uart_rx_buffer));
-
-}
-
- /**
-  *
-  */
- void uart_uninit(void) {
-
-	 nrfx_uarte_uninit(&uart);
-
-	 nrf_delay_us(500);
- }
 
 /**
  *
  */
- void uart_send(uint8_t * p_data, size_t length) {
+void uart_uninit(void) {
 
-	 LOG_DEBUG("UART TX of %u bytes", length);
+	nrfx_uarte_rx_abort(&uart);
 
-	 ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
-	 APP_ERROR_CHECK(err_code);
+	nrfx_uarte_uninit(&uart);
 
-	 if (!err_code) uart_xfer_done = false;
-
-	 while (!uart_xfer_done) {
-		 nrf_delay_ms(1);
-	 }
- }
+	nrf_delay_us(500);
+}
 
 /**
  *
  */
- void uart_tasks(void) {
+void uart_send(uint8_t * p_data, size_t length) {
 
-	 if (NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) {
+	LOG_DEBUG("UART TX of %u bytes", length);
 
-		 NRF_LOG_ERROR("UART restarted 1");
+	ret_code_t err_code = nrfx_uarte_tx(&uart, p_data, length);
+	APP_ERROR_CHECK(err_code);
 
-		 // restart UART at default baud
-		 nrf_delay_us(100);
-		 uart_init(NRFX_UARTE_DEFAULT_CONFIG_BAUDRATE);
+	if (!err_code) uart_xfer_done = false;
 
-	 } else if(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask) {
+	while (!uart_xfer_done) {
+		pwr_mgmt_run();
+	}
+}
 
-		 NRF_LOG_ERROR("UART restarted 2");
+/**
+ *
+ */
+void uart_tasks(void) {
 
-		 // restart UART at last baud
-		 nrf_delay_us(100);
-		 uart_init(m_baud);
+	if (NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) {
 
-	 }
+		LOG_ERROR("UART framing error");
+		RING_BUFF_EMPTY(uart0_rb1);
 
-	 /* If ring buffer is not empty, parse data. */
-	 while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
-	 {
-		 CRITICAL_REGION_ENTER();
+	} else if(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask) {
 
-		 char c = RING_BUFF_GET_ELEM(uart0_rb1);
+		LOG_ERROR("UART parity error");
+		RING_BUFF_EMPTY(uart0_rb1);
 
-		 gps_encode_char(c);
+	} else if (NRF_UARTE_ERROR_OVERRUN_MASK & m_error_mask) {
 
-		 //LOG_RAW_INFO(c);
+		LOG_ERROR("UART overrun: restarting RX");
+		uart_trigger_rx();
 
-		 RING_BUFFER_POP(uart0_rb1);
+	} else if (m_error_mask) {
 
-		 CRITICAL_REGION_EXIT();
-	 }
+		LOG_ERROR("UART error %u", m_error_mask);
 
- }
+	}
+	m_error_mask = 0;
+
+	/* If ring buffer is not empty, parse data. */
+	while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
+	{
+		char c = RING_BUFF_GET_ELEM(uart0_rb1);
+		RING_BUFFER_POP(uart0_rb1);
+
+		gps_encode_char(c);
+
+		//LOG_RAW_INFO(c);
+
+	}
+
+}

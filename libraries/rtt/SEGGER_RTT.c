@@ -84,7 +84,6 @@ Additional information:
 */
 
 #include "SEGGER_RTT.h"
-#include "segger_wrapper.h"
 #include <string.h>                 // for memcpy
 
 /*********************************************************************

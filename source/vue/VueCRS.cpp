@@ -11,13 +11,14 @@
 #include "Screenutils.h"
 #include "segger_wrapper.h"
 #include <vue/VueCRS.h>
-
+#include "komoot_nav.h"
 
 #define VUE_CRS_NB_LINES         7
 
 
 VueCRS::VueCRS() : Adafruit_GFX(0, 0) {
 	m_crs_screen_mode = eVueCRSScreenInit;
+	m_screen_page = eVueCRSScreenPage1;
 }
 
 eVueCRSScreenModes VueCRS::tasksCRS() {
@@ -41,20 +42,74 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			m_crs_screen_mode = eVueCRSScreenDataSS;
 			break;
 		case 2:
-			m_crs_screen_mode = eVueCRSScreenDataDS;
-			break;
 		default:
+			m_crs_screen_mode = eVueCRSScreenDataDS;
 			break;
 		}
 	}
 
 	switch (m_crs_screen_mode) {
 	case eVueCRSScreenInit:
+	{
+		// boot in screen #1
+		m_screen_page = eVueCRSScreenPage1;
 
 		// display GPS page
 		this->displayGPS();
 
+	} break;
+
+	default:
+		if (m_screen_page == eVueCRSScreenPage1) {
+			this->afficheScreen1();
+		} else {
+			this->afficheScreen2();
+		}
 		break;
+
+	}
+
+	return m_crs_screen_mode;
+}
+
+
+
+/**
+ *
+ * @param event
+ * @return
+ */
+bool VueCRS::propagateEventsCRS(eButtonsEvent event) {
+
+	switch (event) {
+		case eButtonsEventLeft:
+		{
+			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
+			else m_screen_page = eVueCRSScreenPage1;
+			break;
+		}
+
+		case eButtonsEventRight:
+		{
+			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
+			else m_screen_page = eVueCRSScreenPage1;
+			break;
+		}
+
+		case eButtonsEventCenter:
+		default:
+		{
+			break;
+		}
+	}
+
+	return true;
+}
+
+
+void VueCRS::afficheScreen1(void) {
+
+	switch (m_crs_screen_mode) {
 	case eVueCRSScreenDataFull:
 	{
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
@@ -67,18 +122,20 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
-		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 		this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
 
-		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
-		this->cadran(6, VUE_CRS_NB_LINES, 2, "Temp", _fmkstr(stc.getTemperature(), 1U), "C");
+		float avg_speed = 0.;
+		if (att.nbsec_act) avg_speed = att.dist * 3.6 / att.nbsec_act;
+		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg", _fmkstr(avg_speed, 2U), "km/h");
+		this->cadran(6, VUE_CRS_NB_LINES, 2, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
 
 		this->cadran(7, VUE_CRS_NB_LINES, 1, "STC", _imkstr((int)stc.getCurrent()), "mA");
 		this->cadran(7, VUE_CRS_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
-	}
-	break;
+	}  break;
+
 	case eVueCRSScreenDataSS:
 	{
 		this->cadran(1, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000, 1U), "km");
@@ -91,9 +148,9 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
-		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
-		ASSERT(segMngr.getSeg(0)->p_seg);
+		ASSERT(segMngr.getSeg(0));
 
 		this->afficheSegment(5, segMngr.getSeg(0)->p_seg);
 
@@ -105,15 +162,15 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			this->partner(7, segMngr.getSeg(0)->p_seg);
 		}
 
-	}
-	break;
+	}  break;
+
 	case eVueCRSScreenDataDS:
 	{
-		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc * 3.600, 1U), "km/h");
+		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 		this->cadran(1, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		ASSERT(segMngr.getSeg(0)->p_seg);
-		ASSERT(segMngr.getSeg(1)->p_seg);
+		ASSERT(segMngr.getSeg(0));
+		ASSERT(segMngr.getSeg(1));
 
 		if (SEG_OFF == segMngr.getSeg(0)->p_seg->getStatus() &&
 				SEG_OFF == segMngr.getSeg(1)->p_seg->getStatus()) {
@@ -166,13 +223,43 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			this->partner(VUE_CRS_NB_LINES, segMngr.getSeg(1)->p_seg);
 		}
 
+	}  break;
 
-	}
-	break;
+	default:
+		break;
 	}
 
-	return m_crs_screen_mode;
 }
+
+void VueCRS::afficheScreen2(void) {
+
+	this->cadran(1, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
+	this->cadran(1, VUE_CRS_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
+
+	this->cadran(2, VUE_CRS_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
+	this->cadran(2, VUE_CRS_NB_LINES, 2, "Climb", _imkstr((int)att.climb), "m");
+
+	this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
+	this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
+
+	this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+	this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
+
+	static sKomootNavigation navi;
+	model_get_navigation(&navi);
+
+	this->cadran(5, VUE_CRS_NB_LINES, 1, "Next turn", _imkstr(navi.distance), "m");
+	this->cadran(5, VUE_CRS_NB_LINES, 2, "Direction", _imkstr(navi.direction), NULL);
+
+	const uint8_t* bitmap = komoot_nav_get_icon(navi.direction);
+	if (bitmap) {
+		this->drawBitmap(_width / 2 - KOMOOT_ICON_SIZE_W / 2, 289,
+				bitmap,
+				KOMOOT_ICON_SIZE_W, KOMOOT_ICON_SIZE_H, 0, 1);
+	}
+
+}
+
 
 void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
@@ -196,7 +283,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		return;
 	}
 
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK3);
+	sysview_task_void_enter(ComputeZoom);
 
 	uint16_t debut_cadran = _height / VUE_CRS_NB_LINES * (ligne - 1);
 	uint16_t fin_cadran   = _height / VUE_CRS_NB_LINES * (ligne + 1);
@@ -274,18 +361,14 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 	}
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK3);
-	W_SYSVIEW_OnTaskStartExec(DISPLAY_TASK4);
+	sysview_task_void_exit(ComputeZoom);
+	sysview_task_void_enter(DisplayPoints);
 
 	// on affiche
 	points_nb = 0;
 	uint16_t pourc = 0;
 	bool pourc_found = 0;
 	for (auto& pPt : *liste->getLPTS()) {
-
-		if (p_seg->getStatus() == SEG_OFF && points_nb > SEG_OFF_NB_POINTS) {
-			break;
-		}
 
 		pSuivant = pPt;
 
@@ -296,7 +379,11 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 			}
 		}
 
-		if (points_nb) {
+		if (points_nb &&
+				(((pCourant._lon > minLon && pCourant._lon < maxLon) &&
+						(pCourant._lat > minLat && pCourant._lat < maxLat)) ||
+						((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+								(pSuivant._lat > minLat && pSuivant._lat < maxLat)))) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
@@ -331,6 +418,9 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		_lon = att.loc.lon;
 		_lat = att.loc.lat;
 	}
+
+	sysview_task_void_exit(DisplayPoints);
+	sysview_task_void_enter(DisplayMyself);
 
 	// ma position
 	maDpex = regFenLim(_lon, minLon, maxLon, 0, _width);
@@ -380,7 +470,7 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		print("%");
 	}
 
-	W_SYSVIEW_OnTaskStopExec(DISPLAY_TASK4);
+	sysview_task_void_exit(DisplayMyself);
 }
 
 

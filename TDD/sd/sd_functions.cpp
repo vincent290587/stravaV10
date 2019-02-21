@@ -221,6 +221,8 @@ int load_segment(Segment& seg) {
 int load_parcours(Parcours& mon_parcours) {
 
 	int res = 0;
+	TCHAR g_bufferReadPRC[BUFFER_SIZE];  /* Read buffer */
+	FIL* g_fileObjectPRC;   /* File object */
 
 	if (!is_fat_init()) return -2;
 
@@ -232,37 +234,35 @@ int load_parcours(Parcours& mon_parcours) {
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
-//	error = f_open(g_fileObject, _T(fat_name.c_str()), FA_READ);
-//	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	g_fileObject = fopen(_T(fat_name.c_str()), "r");
+	g_fileObjectPRC = fopen(_T(fat_name.c_str()), "r");
 
-	if (!g_fileObject)
+	if (!g_fileObjectPRC)
 	{
 		LOG_INFO("Open PRC %s failed", _T(fat_name.c_str()));
 		return -1;
 	}
 
-	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+	memset(g_bufferReadPRC, 0U, sizeof(g_bufferReadPRC));
 
-	while (fgets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
+	while (fgets(g_bufferReadPRC, sizeof(g_bufferReadPRC)-1, g_fileObjectPRC)) {
 
 		// on se met au bon endroit
-		if (strstr(g_bufferRead, "<")) {
+		if (strstr(g_bufferReadPRC, "<")) {
 			// meta data
-		} else if (strstr(g_bufferRead, " ")) {
+		} else if (strstr(g_bufferReadPRC, " ")) {
 			// on est pret a charger le point
-			if (!chargerPointPar(g_bufferRead, mon_parcours))
+			if (!chargerPointPar(g_bufferReadPRC, mon_parcours))
 				res++;
 		}
 
 		if (check_memory_exception()) return -1;
 
 		// continue to perform the critical system tasks
-		perform_system_tasks();
+		yield();
 
 	} // fin du fichier
 
-	int error = fclose(g_fileObject);
+	int error = fclose(g_fileObjectPRC);
 	if (error)
 	{
 		LOG_INFO("Close file failed.");
@@ -405,6 +405,19 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 	} else {
 		LOG_INFO("Points added to histo: %u %u", nb_pos, millis() - millis_);
 	}
+}
+
+
+bool sd_erase_pos(void) {
+
+//	FRESULT error = f_unlink("histo.txt");
+//	if (error)
+//	{
+//		LOG_INFO("Unlink file failed.");
+//		return false;
+//	}
+
+	return true;
 }
 
 /**

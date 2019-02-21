@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include "notifications.h"
 #include "parameters.h"
+#include "g_structs.h"
 
 typedef struct {
 	uint8_t peripherals_id;
@@ -40,6 +41,7 @@ extern sTasksIDs m_tasks_id;
 #include "AltiBaro.h"
 #include "Attitude.h"
 #include "VParser.h"
+#include "SufferScore.h"
 #include "mk64f_parser.h"
 
 extern SAtt          att;
@@ -76,16 +78,24 @@ extern sBacklightOrders     backlight;
 
 extern sNeopixelOrders      neopixel;
 
+extern sAppErrorDescr m_app_error;
+
+extern TinyGPSPlus   gps;
+
+extern SufferScore   suffer_score;
+
 extern "C" {
 #endif // defined C++
 
-void __aeabi_idiv0(void);
+void model_input_virtual_uart(char c);
 
 void model_go_to_msc_mode(void);
 
 void model_dispatch_sensors_update(void);
 
 void model_dispatch_lns_update(sLnsInfo *lns_info);
+
+void model_get_navigation(sKomootNavigation *nav);
 
 void perform_system_tasks(void);
 

@@ -13,9 +13,10 @@
 #include <vue/Screenutils.h>
 #include "segger_wrapper.h"
 
-#define VUE_FEC_NB_LINES            5
+#define VUE_FEC_NB_LINES            6
 
 VueFEC::VueFEC() : Adafruit_GFX(0, 0) {
+	m_el_time = 0;
 	m_fec_screen_mode = eVueFECScreenInit;
 }
 
@@ -32,6 +33,8 @@ static tHistoValue _vue_fec_pw_rb_read(uint16_t ind_) {
 
 eVueFECScreenModes VueFEC::tasksFEC() {
 
+	static uint8_t el_time_prev = 0;
+
 	eVueFECScreenModes res = m_fec_screen_mode;
 
 	if (m_fec_screen_mode == eVueFECScreenInit) {
@@ -45,35 +48,37 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 
 		if (!m_el_time) vue.addNotif("FEC", "Connecting...", 5, eNotificationTypeComplete);
 
-		m_el_time++;
+		m_el_time = 1;
 
 		if (fec_info.el_time) {
 			// FEC just became active
 			m_fec_screen_mode = eVueFECScreenDataFull;
-
-			m_el_time = 0;
-
-			// blink neopixel
-			if (fec_info.power > 200) {
-				neopixel.event_type = 1;
-				neopixel.on_time = 5;
-				neopixel.rgb[0] = 0x00;
-				neopixel.rgb[1] = 0xFF;
-				neopixel.rgb[2] = 0x00;
-			}
+			el_time_prev = fec_info.el_time;
 		}
 
 	} else if (m_fec_screen_mode == eVueFECScreenDataFull) {
 
 		LOG_INFO("VueFEC update full data");
 
-		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(++m_el_time, ':'), NULL);
+		// treat rollover at 256
+		uint8_t rollof = fec_info.el_time;
+		rollof -= el_time_prev;
+		rollof &= 0x3F;
+		if (rollof) {
+			m_el_time += rollof;
+			el_time_prev = fec_info.el_time;
+		}
+
+		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(m_el_time, ':'), NULL);
 
 		this->cadran(2, VUE_FEC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadran(3, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
-		this->cadran(3, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
+		this->cadran(3, VUE_FEC_NB_LINES, 1, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
+//		this->cadran(3, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
+
+		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
+		this->cadran(4, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
 
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();
@@ -82,11 +87,11 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		h_config.nb_elem_tot = FEC_PW_BUFFER_NB_ELEM;
 		h_config.p_f_read    = _vue_fec_pw_rb_read;
 
-		this->HistoH(4, VUE_FEC_NB_LINES, h_config);
+		this->HistoH(5, VUE_FEC_NB_LINES, h_config);
 	}
 
-	this->cadran(5, VUE_FEC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
-	this->cadran(5, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
+	this->cadran(6, VUE_FEC_NB_LINES, 1, "Cur", _imkstr((int)stc.getCurrent()), "mA");
+	this->cadran(6, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
 	return res;
 }
