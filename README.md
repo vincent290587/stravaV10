@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/vincent290587/stravaV10/tree/develop.svg?style=svg)](https://circleci.com/gh/vincent290587/stravaV10/tree/develop)
+[![CircleCI](https://circleci.com/gh/vincent290587/stravaV10/tree/master.svg?style=svg)](https://circleci.com/gh/vincent290587/stravaV10/tree/master)
 
 # Project
 
