@@ -151,7 +151,7 @@ void task_yield()
 
 void task_wait_event(uint32_t event)
 {
-	LOG_INFO("Task %s[%u] wait event %u",
+	LOG_DEBUG("Task %s[%u] wait event %u",
 			s_running->name, s_running->task_id, event);
 
 	s_running->events_mask |= event;
@@ -170,7 +170,7 @@ void task_feed_event(task_id_t task_id, uint32_t event)
 
 	for (int i=0; i < MAX_TASKS_NB; i++) {
 		if (task_id == p_task->task_id) {
-			LOG_INFO("Task %s[%u] recv event %u",
+			LOG_DEBUG("Task %s[%u] recv event %u",
 					p_task->name,
 					p_task->task_id,
 					event);

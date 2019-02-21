@@ -54,6 +54,7 @@ float Attitude::filterElevation(SLoc& loc_) {
 
 	float ele = 0.;
 
+	// get current elevation
 	if (!baro.computeAlti(ele)) return 0.;
 
 	m_cur_ele = ele;

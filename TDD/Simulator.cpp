@@ -14,6 +14,7 @@
 #include "Model_tdd.h"
 #include "Simulator.h"
 #include "segger_wrapper.h"
+#include "assert_wrapper.h"
 
 /*******************************************************************************
  * Definitions
@@ -110,15 +111,16 @@ void simulator_tasks(void) {
 		lon   = data[1];
 		alt   = data[2];
 
-		static float alti_fake = 0.;
-
+//		static float alti_fake = 0.;
 		//alti_fake += 1. / 3.;
+//		int rnd_add;
+//		rnd_add = (rand() % 20) - 10;
+//		baro.setAlti(alti_fake + (float)rnd_add / 10.);
+//		baro.runFilter();
 
-		int rnd_add;
-		rnd_add = (rand() % 20) - 10;
-
-		baro.setAlti(alti_fake + (float)rnd_add / 10.);
+		baro.setAlti(alt);
 		baro.runFilter();
+		LOG_INFO("Input alt.:  %f", alt);
 
 		if (pos == 4) {
 			// file contains the rtime
@@ -182,7 +184,15 @@ void simulator_tasks(void) {
 #endif
 		LOG_WARNING("Reached end of simulation file");
 
-		mes_segments._segs.empty();
+		mes_segments.clear();
+		mes_parcours._parcs.clear();
+		mes_points.removeAll();
+
+		// print memory state
+		print_mem_state();
+
+		assert(Point2D::getObjectCount() == 1);
+		assert(Point::getObjectCount() == 2);
 
 		exit(0);
 
