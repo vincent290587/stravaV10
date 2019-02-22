@@ -34,7 +34,7 @@ void fram_init_sensor() {
 
 }
 
-bool fram_read_block(uint16_t block_addr, uint8_t *readout, size_t length) {
+bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 
 	uint8_t twi_address = FRAM_TWI_ADDRESS;
 	twi_address |= (block_addr & 0x100) >> 7;
@@ -53,7 +53,7 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, size_t length) {
 	return true;
 }
 
-bool fram_write_block(uint16_t block_addr, uint8_t *writeout, size_t length) {
+bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 	uint8_t twi_address = FRAM_TWI_ADDRESS;
 	twi_address |= (block_addr & 0x100) >> 7;

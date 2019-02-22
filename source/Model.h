@@ -42,6 +42,7 @@ extern sTasksIDs m_tasks_id;
 #include "Attitude.h"
 #include "VParser.h"
 #include "SufferScore.h"
+#include "UserSettings.h"
 #include "mk64f_parser.h"
 
 extern SAtt          att;
@@ -83,6 +84,8 @@ extern sAppErrorDescr m_app_error;
 extern TinyGPSPlus   gps;
 
 extern SufferScore   suffer_score;
+
+extern UserSettings   u_settings;
 
 extern "C" {
 #endif // defined C++

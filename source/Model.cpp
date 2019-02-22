@@ -28,6 +28,8 @@ SAtt att;
 
 SufferScore   suffer_score;
 
+UserSettings   u_settings;
+
 Attitude      attitude;
 
 ListeSegments mes_segments;

@@ -70,6 +70,7 @@ set(SRCS
 	sd/sd_functions.cpp
 	sd/sd_hal.c
 	timer/timer.c
+    sensors/fram.c
     sensors/GPSMGMT.cpp
     sensors/STC3100.cpp
     sensors/MS5637.cpp
@@ -100,6 +101,7 @@ set(SRCS
 	source/model/BoucleFEC.cpp
 	source/model/Locator.cpp
 	source/model/SufferScore.cpp
+	source/model/UserSettings.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
     source/vue/MenuObjects.cpp

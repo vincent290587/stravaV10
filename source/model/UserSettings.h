@@ -15,7 +15,7 @@ typedef union {
 	struct {
 		uint8_t crc;
 	};
-	uint8_t flat_user_params[];
+	uint8_t* flat_user_params;
 } sUserParameters;
 
 
