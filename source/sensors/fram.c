@@ -9,8 +9,6 @@
 #include "fram.h"
 #include "i2c.h"
 #include "nrf_twi_mngr.h"
-#include "fram.h"
-#include "nrf_delay.h"
 #include "segger_wrapper.h"
 #include "task_manager_wrapper.h"
 
