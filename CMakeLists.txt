@@ -13,6 +13,7 @@ set (Tutorial_VERSION_MINOR 0)
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
+#add_definitions(-DLOC_SOURCE_GPS)
 #add_definitions(-DTDD_RANDOMIZE)
 #add_definitions(-DLS027_GUI)
 

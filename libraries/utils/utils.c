@@ -388,13 +388,16 @@ float simpLinReg(float* x, float* y, float* lrCoef, int n) {
 	float corr = xybar - xbar*ybar;
 	corr *= corr;
 	float corr_denomsq = (xsqbar - xbar*xbar)*(ysqbar - ybar*ybar);
-	if (corr_denomsq == 0.) return 0.;
-
-	corr /= corr_denomsq;
 
 	// simple linear regression algorithm
 	lrCoef[0] = (xybar - xbar * ybar) / (xsqbar - xbar * xbar);
 	lrCoef[1] = ybar - lrCoef[0] * xbar;
+
+	if (corr_denomsq == 0.0f) {
+		corr = 1.0f;
+	} else {
+		corr /= corr_denomsq;
+	}
 
 	return corr;
 }

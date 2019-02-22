@@ -128,6 +128,7 @@ void model_input_virtual_uart(char c) {
 			hardfault_genhf_invalid_fp();
 
 		}
+		break;
 
 	default:
 		break;

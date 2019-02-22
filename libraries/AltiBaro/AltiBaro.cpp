@@ -52,8 +52,14 @@ bool AltiBaro::isUpdated() {
 bool AltiBaro::computeAlti(float& alti_) {
 
 	if (!m_is_init) return false;
+  
+#ifdef TDD
+	alti_ = m_alti;
+	return true;
+#endif
 
 	bme280_data *_data = bme280_get_data_handle();
+
 
 	// m_temperature, m_pressure;
 	if (nb_filtering <= FILTRE_NB) {
@@ -86,6 +92,11 @@ bool AltiBaro::computeVA(float& va_) {
 
 void AltiBaro::runFilter(void) {
 
+	static float xk[FILTRE_NB] = {0};
+	static float xk1[MOV_AV_NB_VAL] = {0};
+	static uint16_t ind = 0;
+	static uint16_t ind2 = 0;
+
 	if (!m_is_init) return;
 
 #ifdef TDD
@@ -94,22 +105,26 @@ void AltiBaro::runFilter(void) {
 	bme280_data *_data = bme280_get_data_handle();
 	float input = this->pressureToAltitude(_data->comp_press);
 #endif
-
-	static float xk1[MOV_AV_NB_VAL] = {0};
-	static uint16_t ind = 0;
 	xk1[ind++] = input;
 	ind = ind % MOV_AV_NB_VAL;
 	float input2 = 0.;
-	for (int i=0; i< MOV_AV_NB_VAL; i++) {
-		input2 += xk1[i] / MOV_AV_NB_VAL;
+	if (nb_filtering == 0) {
+		for (int i=0; i< MOV_AV_NB_VAL; i++) {
+			xk1[i] = input;
+		}
+		for (int i=0; i< FILTRE_NB; i++) {
+			xk[i] = input;
+		}
+		input2 = input;
+	} else {
+		for (int i=0; i< MOV_AV_NB_VAL; i++) {
+			input2 += xk1[i] / MOV_AV_NB_VAL;
+		}
 	}
 
 	float _y[FILTRE_NB];
 	float _x[FILTRE_NB];
 	float _lrCoef[2];
-
-	static float xk[FILTRE_NB] = {0};
-	static uint16_t ind2 = 0;
 	xk[ind2++] = input2;
 	ind2 = ind2 % FILTRE_NB;
 
@@ -151,7 +166,7 @@ void AltiBaro::runFilter(void) {
 	if (corrsq > 0.8) {
 	}
 
-	LOG_INFO("#Vit. vert.= %d cm/s %d cm (corr= %f)",
+	LOG_INFO("Vit. vert.= %d cm/s %d cm (corr= %f)",
 			(int)(m_va_f*100), (int)(m_alti_f*100), corrsq);
 
 

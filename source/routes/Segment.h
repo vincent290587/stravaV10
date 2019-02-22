@@ -114,6 +114,8 @@ class ListeSegments {
 
     int size() {return _segs.size();}
 
+    void clear(void) {_segs.clear();}
+
     std::vector<Segment> _segs;
   private:
 };
