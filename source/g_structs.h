@@ -53,7 +53,7 @@ typedef union {
 		uint8_t version;
 		uint8_t crc;
 	};
-	uint8_t* flat_user_params;
+	uint8_t flat_user_params;
 } sUserParameters;
 
 extern sHrmInfo hrm_info;

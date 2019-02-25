@@ -97,7 +97,7 @@ void fram_init_sensor() {
 	m_params.fec_devid = 2766U;
 	m_params.version = 1U;
 
-	m_params.crc = calculate_crc(m_params.flat_user_params, sizeof(sUserParameters) - 1);
+	m_params.crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - 1);
 
 	LOG_WARNING("FRAM init done");
 
@@ -105,20 +105,24 @@ void fram_init_sensor() {
 
 bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 
-	size_t res_len = MIN(sizeof(m_params), length);
+	uint16_t res_len = MIN(sizeof(m_params), length);
+
+	LOG_INFO("FRAM reading %u bytes", res_len);
 
 	// copy as much as we can
-	memcpy(readout, m_params.flat_user_params, res_len);
+	memcpy(readout, &m_params.flat_user_params, res_len);
 
 	return true;
 }
 
 bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
-	size_t res_len = MIN(sizeof(m_params), length);
+	uint16_t res_len = MIN(sizeof(m_params), length);
+
+	LOG_INFO("FRAM writing %u bytes", res_len);
 
 	// copy as much as we can
-	memcpy(m_params.flat_user_params, writeout, res_len);
+	memcpy(&m_params.flat_user_params, writeout, res_len);
 
 	return true;
 }

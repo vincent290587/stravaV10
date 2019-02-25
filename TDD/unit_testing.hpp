@@ -22,4 +22,6 @@ bool test_liste (void);
 
 bool test_nb_points(void);
 
+bool test_fram(void);
+
 #endif /* TDD_UNIT_TESTING_HPP_ */
