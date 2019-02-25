@@ -401,3 +401,15 @@ float simpLinReg(float* x, float* y, float* lrCoef, int n) {
 
 	return corr;
 }
+
+/**
+ * Calculates the CRC of an array
+ */
+uint8_t calculate_crc(uint8_t input_a[], uint16_t length) {
+	int sum = 0;
+	for (int i = 1; i < length; i++) {
+		sum ^= (uint8_t) input_a[i];
+	}
+	return sum;
+}
+

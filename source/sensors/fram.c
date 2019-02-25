@@ -5,12 +5,17 @@
  *      Author: v.golle
  */
 
-
+#include <string.h>
 #include "fram.h"
-#include "i2c.h"
-#include "nrf_twi_mngr.h"
+#include "utils.h"
+#include "nordic_common.h"
 #include "segger_wrapper.h"
 #include "task_manager_wrapper.h"
+
+#if defined(FRAM_PRESENT)
+
+#include "i2c.h"
+#include "nrf_twi_mngr.h"
 
 #define FRAM_TWI_ADDRESS       0b10100000
 
@@ -77,3 +82,44 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 	return true;
 }
+
+#else
+
+#include "g_structs.h"
+
+static sUserParameters m_params;
+
+
+void fram_init_sensor() {
+
+	m_params.hrm_devid = 0x0D22;
+	m_params.bsc_devid = 0xB02B;
+	m_params.fec_devid = 2766U;
+
+	m_params.crc = calculate_crc(m_params.flat_user_params, 3*sizeof(uint16_t));
+
+	LOG_WARNING("FRAM init done");
+
+}
+
+bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
+
+	size_t res_len = MIN(sizeof(m_params), length);
+
+	// copy as much as we can
+	memcpy(readout, m_params.flat_user_params, res_len);
+
+	return true;
+}
+
+bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
+
+	size_t res_len = MIN(sizeof(m_params), length);
+
+	// copy as much as we can
+	memcpy(m_params.flat_user_params, writeout, res_len);
+
+	return true;
+}
+
+#endif

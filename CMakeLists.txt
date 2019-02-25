@@ -94,6 +94,7 @@ set(SRCS
 	source/routes/Points.cpp
 	source/routes/Segment.cpp
 	source/routes/Vecteur.cpp
+    source/sensors/fram.c
 	source/parsers/file_parser.cpp
 	source/model/Attitude.cpp
 	source/model/Boucle.cpp
