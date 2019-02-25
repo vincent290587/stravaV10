@@ -42,7 +42,7 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 	uint8_t address = block_addr & 0x0FF;
 
 	{
-		static nrf_twi_mngr_transfer_t const fram_xfer[] =
+		nrf_twi_mngr_transfer_t const fram_xfer[] =
 		{
 				I2C_READ_REG_REP_STOP(twi_address, &address, readout, length)
 		};
@@ -58,15 +58,18 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 	uint8_t twi_address = FRAM_TWI_ADDRESS;
 	twi_address |= (block_addr & 0x100) >> 7;
 
-	uint8_t p_data[length+1] = {0};
+	if (length > 254) return false;
+
+	uint8_t p_data[256] = {0};
 	p_data[0] = block_addr & 0x0FF;
 
 	memcpy(&p_data[1], writeout, length);
+	length++;
 
 	{
-		static nrf_twi_mngr_transfer_t const fram_xfer[] =
+		nrf_twi_mngr_transfer_t const fram_xfer[] =
 		{
-				I2C_WRITE(twi_address, p_data, length+1)
+				I2C_WRITE(twi_address, p_data, length)
 		};
 
 		i2c_perform(NULL, fram_xfer, sizeof(fram_xfer) / sizeof(fram_xfer[0]), NULL);

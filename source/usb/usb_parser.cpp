@@ -10,7 +10,14 @@
 #include "usb_cdc.h"
 #include "sd_hal.h"
 #include "Model.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "nrf_pwr_mgmt.h"
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * Decodes chars from the VCOM line
