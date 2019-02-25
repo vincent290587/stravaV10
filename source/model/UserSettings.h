@@ -9,14 +9,7 @@
 #define SOURCE_MODEL_USERSETTINGS_H_
 
 #include <stdint.h>
-
-
-typedef union {
-	struct {
-		uint8_t crc;
-	};
-	uint8_t* flat_user_params;
-} sUserParameters;
+#include "g_structs.h"
 
 
 class UserSettings {

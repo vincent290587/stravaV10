@@ -70,7 +70,6 @@ set(SRCS
 	sd/sd_functions.cpp
 	sd/sd_hal.c
 	timer/timer.c
-    sensors/fram.c
     sensors/GPSMGMT.cpp
     sensors/STC3100.cpp
     sensors/MS5637.cpp

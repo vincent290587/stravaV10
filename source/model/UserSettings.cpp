@@ -5,13 +5,10 @@
  *      Author: v.golle
  */
 
-
+#include "utils.h"
 #include "UserSettings.h"
 
 
-static uint8_t _calculate_crc(uint8_t data[]) {
-	return 0;
-}
 
 UserSettings::UserSettings() {
 }
