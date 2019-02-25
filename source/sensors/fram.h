@@ -18,9 +18,9 @@ extern "C" {
 
 void fram_init_sensor(void);
 
-bool fram_read_block(uint16_t block_addr, uint8_t *readout, size_t length);
+bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length);
 
-bool fram_write_block(uint16_t block_addr, uint8_t *writeout, size_t length);
+bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length);
 
 #ifdef	__cplusplus
 }
