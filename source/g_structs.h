@@ -50,6 +50,7 @@ typedef union {
 		uint16_t bsc_devid;
 		uint16_t gla_devid;
 		uint16_t fec_devid;
+		uint8_t version;
 		uint8_t crc;
 	};
 	uint8_t* flat_user_params;

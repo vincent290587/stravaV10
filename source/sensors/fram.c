@@ -95,8 +95,9 @@ void fram_init_sensor() {
 	m_params.hrm_devid = 0x0D22;
 	m_params.bsc_devid = 0xB02B;
 	m_params.fec_devid = 2766U;
+	m_params.version = 1U;
 
-	m_params.crc = calculate_crc(m_params.flat_user_params, 3*sizeof(uint16_t));
+	m_params.crc = calculate_crc(m_params.flat_user_params, sizeof(sUserParameters) - 1);
 
 	LOG_WARNING("FRAM init done");
 
