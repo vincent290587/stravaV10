@@ -12,6 +12,7 @@
 #include "nrf_assert.h"
 #include "nrf_delay.h"
 #include "fxos.h"
+#include "fram.h"
 #include "app_timer.h"
 #include "Model.h"
 
@@ -134,6 +135,8 @@ static void _i2c_scheduling_sensors_init() {
 	uint16_t res = raw_data[1] << 8;
 	res |= raw_data[0];
 	veml.init(res);
+
+	fram_init_sensor();
 
 	// post-init steps
 	_i2c_scheduling_sensors_post_init();

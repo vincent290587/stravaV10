@@ -79,6 +79,8 @@ void const_char_to_buffer(const char *str_, uint8_t *buff_, uint16_t max_size);
 
 float simpLinReg(float* x, float* y, float* lrCoef, int n);
 
+uint8_t calculate_crc(uint8_t input_a[], uint16_t length);
+
 #ifdef	__cplusplus
 }
 #endif

@@ -24,7 +24,6 @@
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
-#include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
 #include "nrf_drv_clock.h"
@@ -39,6 +38,14 @@
 #include "sd_hal.h"
 #include "ble_api_base.h"
 #include "segger_wrapper.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "nrf_pwr_mgmt.h"
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef USB_ENABLED
 #include "usb_cdc.h"

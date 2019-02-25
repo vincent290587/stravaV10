@@ -44,6 +44,17 @@ typedef struct {
 	uint8_t el_time;
 } sFecInfo;
 
+typedef union {
+	struct {
+		uint16_t hrm_devid;
+		uint16_t bsc_devid;
+		uint16_t gla_devid;
+		uint16_t fec_devid;
+		uint8_t crc;
+	};
+	uint8_t* flat_user_params;
+} sUserParameters;
+
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;
 extern sFecInfo fec_info;
