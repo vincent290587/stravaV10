@@ -150,6 +150,7 @@ static void _i2c_scheduling_sensors_init() {
 static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
+	if (result) return;
 
 	m_is_stc_veml_updated = true;
 
@@ -163,6 +164,7 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 static void read_fxos_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
+	if (result) return;
 
 	m_is_fxos_updated = true;
 
@@ -233,6 +235,7 @@ static void read_fxos(void)
 static void read_ms_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
+	if (result) return;
 
 	ASSERT(p_user_data);
 

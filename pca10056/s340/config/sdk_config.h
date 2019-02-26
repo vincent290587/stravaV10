@@ -1414,7 +1414,7 @@
 // <7=> 7 
 
 #ifndef COMP_CONFIG_IRQ_PRIORITY
-#define COMP_CONFIG_IRQ_PRIORITY 7
+#define COMP_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -1450,7 +1450,7 @@
 // <7=> 7 
 
 #ifndef GPIOTE_CONFIG_IRQ_PRIORITY
-#define GPIOTE_CONFIG_IRQ_PRIORITY 7
+#define GPIOTE_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -1596,7 +1596,7 @@
 // <7=> 7 
 
 #ifndef I2S_CONFIG_IRQ_PRIORITY
-#define I2S_CONFIG_IRQ_PRIORITY 7
+#define I2S_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> I2S_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -1727,7 +1727,7 @@
 // <7=> 7 
 
 #ifndef LPCOMP_CONFIG_IRQ_PRIORITY
-#define LPCOMP_CONFIG_IRQ_PRIORITY 7
+#define LPCOMP_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -1763,7 +1763,7 @@
 // <7=> 7
 
 #ifndef CLOCK_CONFIG_IRQ_PRIORITY
-#define CLOCK_CONFIG_IRQ_PRIORITY 7
+#define CLOCK_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -1798,7 +1798,7 @@
 // <7=> 7 
 
 #ifndef NRFX_CLOCK_CONFIG_IRQ_PRIORITY
-#define NRFX_CLOCK_CONFIG_IRQ_PRIORITY 7
+#define NRFX_CLOCK_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_CLOCK_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -1937,7 +1937,7 @@
 // <7=> 7 
 
 #ifndef NRFX_COMP_CONFIG_IRQ_PRIORITY
-#define NRFX_COMP_CONFIG_IRQ_PRIORITY 7
+#define NRFX_COMP_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_COMP_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -1996,7 +1996,7 @@
 // <e> NRFX_GPIOTE_ENABLED - nrfx_gpiote - GPIOTE peripheral driver
 //==========================================================
 #ifndef NRFX_GPIOTE_ENABLED
-#define NRFX_GPIOTE_ENABLED 0
+#define NRFX_GPIOTE_ENABLED 1
 #endif
 // <o> NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS - Number of lower power input pins 
 #ifndef NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS
@@ -2015,7 +2015,7 @@
 // <7=> 7 
 
 #ifndef NRFX_GPIOTE_CONFIG_IRQ_PRIORITY
-#define NRFX_GPIOTE_CONFIG_IRQ_PRIORITY 7
+#define NRFX_GPIOTE_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_GPIOTE_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -2210,7 +2210,7 @@
 // <7=> 7 
 
 #ifndef NRFX_I2S_CONFIG_IRQ_PRIORITY
-#define NRFX_I2S_CONFIG_IRQ_PRIORITY 7
+#define NRFX_I2S_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_I2S_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -2339,7 +2339,7 @@
 // <7=> 7 
 
 #ifndef NRFX_LPCOMP_CONFIG_IRQ_PRIORITY
-#define NRFX_LPCOMP_CONFIG_IRQ_PRIORITY 7
+#define NRFX_LPCOMP_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_LPCOMP_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -2440,7 +2440,7 @@
 // <7=> 7 
 
 #ifndef NRFX_PDM_CONFIG_IRQ_PRIORITY
-#define NRFX_PDM_CONFIG_IRQ_PRIORITY 7
+#define NRFX_PDM_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_PDM_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -2513,7 +2513,7 @@
 // <7=> 7 
 
 #ifndef NRFX_POWER_CONFIG_IRQ_PRIORITY
-#define NRFX_POWER_CONFIG_IRQ_PRIORITY 7
+#define NRFX_POWER_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <q> NRFX_POWER_CONFIG_DEFAULT_DCDCEN  - The default configuration of main DCDC regulator
@@ -2716,7 +2716,7 @@
 // <7=> 7 
 
 #ifndef NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_PWM_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -2868,7 +2868,7 @@
 // <7=> 7 
 
 #ifndef NRFX_QDEC_CONFIG_IRQ_PRIORITY
-#define NRFX_QDEC_CONFIG_IRQ_PRIORITY 7
+#define NRFX_QDEC_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_QDEC_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -3111,7 +3111,7 @@
 // <7=> 7 
 
 #ifndef NRFX_QSPI_CONFIG_IRQ_PRIORITY
-#define NRFX_QSPI_CONFIG_IRQ_PRIORITY 7
+#define NRFX_QSPI_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -3140,7 +3140,7 @@
 // <7=> 7 
 
 #ifndef NRFX_RNG_CONFIG_IRQ_PRIORITY
-#define NRFX_RNG_CONFIG_IRQ_PRIORITY 7
+#define NRFX_RNG_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_RNG_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -3253,7 +3253,7 @@
 // <7=> 7 
 
 #ifndef NRFX_RTC_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_RTC_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_RTC_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_RTC_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -3360,7 +3360,7 @@
 // <7=> 7 
 
 #ifndef NRFX_SAADC_CONFIG_IRQ_PRIORITY
-#define NRFX_SAADC_CONFIG_IRQ_PRIORITY 7
+#define NRFX_SAADC_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_SAADC_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -3478,7 +3478,7 @@
 // <7=> 7 
 
 #ifndef NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_SPIM_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -3582,7 +3582,7 @@
 // <7=> 7 
 
 #ifndef NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_SPI_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_SPI_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -3834,7 +3834,7 @@
 // <7=> 7 
 
 #ifndef NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_TIMER_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -3938,7 +3938,7 @@
 // <7=> 7 
 
 #ifndef NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_TWIM_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -4073,7 +4073,7 @@
 // <7=> 7 
 
 #ifndef NRFX_TWIS_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_TWIS_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_TWIS_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_TWIS_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -4177,7 +4177,7 @@
 // <7=> 7 
 
 #ifndef NRFX_TWI_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_TWI_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_TWI_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_TWI_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -4310,7 +4310,7 @@
 // <7=> 7 
 
 #ifndef NRFX_UARTE_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_UARTE_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_UARTE_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_UARTE_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -4431,7 +4431,7 @@
 // <7=> 7 
 
 #ifndef NRFX_UART_DEFAULT_CONFIG_IRQ_PRIORITY
-#define NRFX_UART_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_UART_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_UART_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -4522,7 +4522,7 @@
 // <7=> 7 
 
 #ifndef NRFX_WDT_CONFIG_IRQ_PRIORITY
-#define NRFX_WDT_CONFIG_IRQ_PRIORITY 7
+#define NRFX_WDT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> NRFX_WDT_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -4625,7 +4625,7 @@
 // <7=> 7 
 
 #ifndef PDM_CONFIG_IRQ_PRIORITY
-#define PDM_CONFIG_IRQ_PRIORITY 7
+#define PDM_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -4649,7 +4649,7 @@
 // <7=> 7 
 
 #ifndef POWER_CONFIG_IRQ_PRIORITY
-#define POWER_CONFIG_IRQ_PRIORITY 7
+#define POWER_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <q> POWER_CONFIG_DEFAULT_DCDCEN  - The default configuration of main DCDC regulator
@@ -4769,7 +4769,7 @@
 // <7=> 7 
 
 #ifndef PWM_DEFAULT_CONFIG_IRQ_PRIORITY
-#define PWM_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define PWM_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <q> PWM0_ENABLED  - Enable PWM0 instance
@@ -4900,7 +4900,7 @@
 // <7=> 7 
 
 #ifndef QDEC_CONFIG_IRQ_PRIORITY
-#define QDEC_CONFIG_IRQ_PRIORITY 7
+#define QDEC_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -5030,7 +5030,7 @@
 //// <7=> 7
 //
 //#ifndef QSPI_CONFIG_IRQ_PRIORITY
-//#define QSPI_CONFIG_IRQ_PRIORITY 7
+//#define QSPI_CONFIG_IRQ_PRIORITY 6
 //#endif
 //
 //// </e>
@@ -5066,7 +5066,7 @@
 // <7=> 7 
 
 #ifndef RNG_CONFIG_IRQ_PRIORITY
-#define RNG_CONFIG_IRQ_PRIORITY 7
+#define RNG_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -5131,7 +5131,7 @@
 // <7=> 7 
 
 #ifndef SAADC_CONFIG_IRQ_PRIORITY
-#define SAADC_CONFIG_IRQ_PRIORITY 7
+#define SAADC_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // </e>
@@ -5180,7 +5180,7 @@
 // <7=> 7 
 
 #ifndef TWI_DEFAULT_CONFIG_IRQ_PRIORITY
-#define TWI_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#define TWI_DEFAULT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> TWI0_ENABLED - Enable TWI0 instance
@@ -5456,7 +5456,7 @@
 // <7=> 7 
 
 #ifndef APP_TIMER_CONFIG_IRQ_PRIORITY
-#define APP_TIMER_CONFIG_IRQ_PRIORITY 7
+#define APP_TIMER_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <o> APP_TIMER_CONFIG_OP_QUEUE_SIZE - Capacity of timer requests queue. 
@@ -5586,7 +5586,7 @@
 #define APP_USBD_DEVICE_VER_MINOR 0
 #endif
 
-// <q> APP_USBD_CONFIG_SELF_POWERED  - Self powered 
+// <q> APP_USBD_CONFIG_SELF_POWERED  - Self-powered device, as opposed to bus-powered.
  
 
 #ifndef APP_USBD_CONFIG_SELF_POWERED
@@ -5609,17 +5609,17 @@
 #define APP_USBD_CONFIG_POWER_EVENTS_PROCESS 1
 #endif
 
-// <e> APP_USBD_CONFIG_EVENT_QUEUE_ENABLE - Enable event queue
+// <e> APP_USBD_CONFIG_EVENT_QUEUE_ENABLE - Enable event queue.
 
 // <i> This is the default configuration when all the events are placed into internal queue.
-// <i> Disable it when external queue is used like app_scheduler or if you wish to process all events inside interrupts.
+// <i> Disable it when an external queue is used like app_scheduler or if you wish to process all events inside interrupts.
 // <i> Processing all events from the interrupt level adds requirement not to call any functions that modifies the USBD library state from the context higher than USB interrupt context.
-// <i> Functions that modify USBD state are functions for sleep, wakeup, start, stop, enable and disable.
+// <i> Functions that modify USBD state are functions for sleep, wakeup, start, stop, enable, and disable.
 //==========================================================
 #ifndef APP_USBD_CONFIG_EVENT_QUEUE_ENABLE
 #define APP_USBD_CONFIG_EVENT_QUEUE_ENABLE 1
 #endif
-// <o> APP_USBD_CONFIG_EVENT_QUEUE_SIZE - The size of event queue  <16-64> 
+// <o> APP_USBD_CONFIG_EVENT_QUEUE_SIZE - The size of the event queue.  <16-64> 
 
 
 // <i> The size of the queue for the events that would be processed in the main loop.
@@ -5631,9 +5631,9 @@
 // <o> APP_USBD_CONFIG_SOF_HANDLING_MODE  - Change SOF events handling mode.
  
 
-// <i> Normal queue   - SOF events are pushed normally into event queue.
-// <i> Compress queue - SOF events are counted and binded with other events or executed when queue is empty.
-// <i>                  This prevents queue from filling with SOF events.
+// <i> Normal queue   - SOF events are pushed normally into the event queue.
+// <i> Compress queue - SOF events are counted and binded with other events or executed when the queue is empty.
+// <i>                  This prevents the queue from filling up with SOF events.
 // <i> Interrupt      - SOF events are processed in interrupt.
 // <0=> Normal queue 
 // <1=> Compress queue 
@@ -6745,6 +6745,26 @@
 
 #ifndef NRF_CLI_USES_TASK_MANAGER_ENABLED
 #define NRF_CLI_USES_TASK_MANAGER_ENABLED 0
+#endif
+
+// </h> 
+//==========================================================
+
+// <h> nrf_fprintf - fprintf function.
+
+//==========================================================
+// <q> NRF_FPRINTF_ENABLED  - Enable/disable fprintf module.
+ 
+
+#ifndef NRF_FPRINTF_ENABLED
+#define NRF_FPRINTF_ENABLED 1
+#endif
+
+// <q> NRF_FPRINTF_FLAG_AUTOMATIC_CR_ON_LF_ENABLED  - For each printed LF, function will add CR.
+ 
+
+#ifndef NRF_FPRINTF_FLAG_AUTOMATIC_CR_ON_LF_ENABLED
+#define NRF_FPRINTF_FLAG_AUTOMATIC_CR_ON_LF_ENABLED 1
 #endif
 
 // </h> 
@@ -9420,7 +9440,7 @@
 // <7=> 7 
 
 #ifndef NFCT_CONFIG_IRQ_PRIORITY
-#define NFCT_CONFIG_IRQ_PRIORITY 7
+#define NFCT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> HAL_NFC_CONFIG_LOG_ENABLED - Enables logging in the module.
@@ -10232,7 +10252,7 @@
 // <7=> 7 
 
 #ifndef NFCT_CONFIG_IRQ_PRIORITY
-#define NFCT_CONFIG_IRQ_PRIORITY 7
+#define NFCT_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <e> HAL_NFC_CONFIG_LOG_ENABLED - Enables logging in the module.
