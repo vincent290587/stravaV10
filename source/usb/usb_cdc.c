@@ -14,7 +14,7 @@
 
 #include "nrf.h"
 #include "boards.h"
-#include "nrfx_usbd.h"
+#include "nrf_drv_usbd.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
@@ -262,7 +262,7 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         case APP_USBD_EVT_POWER_DETECTED:
             NRF_LOG_INFO("USB power detected");
 
-            if (!nrfx_usbd_is_enabled())
+            if (!nrf_drv_usbd_is_enabled())
             {
             	app_usbd_enable();
                 NRF_LOG_INFO("app_usbd_enable");
@@ -372,7 +372,9 @@ void usb_cdc_init(void)
 
     ret = app_usbd_init(&usbd_config);
     APP_ERROR_CHECK(ret);
-    LOG_INFO("USBD CDC / MSC started.");
+
+	// prevent CDC from sending bytes
+	m_is_port_open = false;
 
     app_usbd_class_inst_t const * class_inst_msc = app_usbd_dummy_class_inst_get(&m_app_msc_dummy);
     ret = app_usbd_class_append(class_inst_msc);
@@ -394,6 +396,8 @@ void usb_cdc_init(void)
         app_usbd_enable();
         app_usbd_start();
     }
+
+    LOG_INFO("USBD CDC / MSC started.");
 
 	while (app_usbd_event_queue_process())
 	{
@@ -445,9 +449,12 @@ void usb_cdc_start_msc(void) {
 
     	app_usbd_enable();
     	app_usbd_start();
-
-    	m_is_port_open = true;
     }
+
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
 }
 
 /**
