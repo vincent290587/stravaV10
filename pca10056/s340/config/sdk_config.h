@@ -4233,6 +4233,13 @@
 
 // </e>
 
+// <q> NRFX_SYSTICK_ENABLED  - nrfx_systick - ARM(R) SysTick driver
+
+
+#ifndef NRFX_SYSTICK_ENABLED
+#define NRFX_SYSTICK_ENABLED 1
+#endif
+
 // <e> NRFX_UARTE_ENABLED - nrfx_uarte - UARTE peripheral driver
 //==========================================================
 #ifndef NRFX_UARTE_ENABLED
@@ -5207,32 +5214,32 @@
 // </e>
 
 
-// <e> USBD_ENABLED - nrf_drv_usbd - USB driver
+// <e> USBD_ENABLED - nrf_drv_usbd - Software Component
 //==========================================================
 #ifndef USBD_ENABLED
 #define USBD_ENABLED 1
 #endif
 // <o> USBD_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
+
 
 // <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
+// <0=> 0 (highest)
+// <1=> 1
+// <2=> 2
+// <3=> 3
+// <4=> 4
+// <5=> 5
+// <6=> 6
+// <7=> 7
 
 #ifndef USBD_CONFIG_IRQ_PRIORITY
-#define USBD_CONFIG_IRQ_PRIORITY 7
+#define USBD_CONFIG_IRQ_PRIORITY 6
 #endif
 
 // <o> USBD_CONFIG_DMASCHEDULER_MODE  - USBD SMA scheduler working scheme
- 
-// <0=> Prioritized access 
-// <1=> Round Robin 
+
+// <0=> Prioritized access
+// <1=> Round Robin
 
 #ifndef USBD_CONFIG_DMASCHEDULER_MODE
 #define USBD_CONFIG_DMASCHEDULER_MODE 0
@@ -5262,6 +5269,61 @@
 #endif
 
 // </e>
+
+// <e> NRFX_USBD_ENABLED - nrfx_usbd - USBD peripheral driver
+//==========================================================
+#ifndef NRFX_USBD_ENABLED
+#define NRFX_USBD_ENABLED 1
+#endif
+// <o> NRFX_USBD_CONFIG_IRQ_PRIORITY  - Interrupt priority
+ 
+// <0=> 0 (highest) 
+// <1=> 1 
+// <2=> 2 
+// <3=> 3 
+// <4=> 4 
+// <5=> 5 
+// <6=> 6 
+// <7=> 7 
+
+#ifndef NRFX_USBD_CONFIG_IRQ_PRIORITY
+#define NRFX_USBD_CONFIG_IRQ_PRIORITY 6
+#endif
+
+// <o> NRFX_USBD_CONFIG_DMASCHEDULER_MODE  - USBD DMA scheduler working scheme
+ 
+// <0=> Prioritized access 
+// <1=> Round Robin 
+
+#ifndef NRFX_USBD_CONFIG_DMASCHEDULER_MODE
+#define NRFX_USBD_CONFIG_DMASCHEDULER_MODE 0
+#endif
+
+// <q> NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST  - Give priority to isochronous transfers
+
+
+// <i> This option gives priority to isochronous transfers.
+// <i> Enabling it assures that isochronous transfers are always processed,
+// <i> even if multiple other transfers are pending.
+// <i> Isochronous endpoints are prioritized before the usbd_dma_scheduler_algorithm
+// <i> function is called, so the option is independent of the algorithm chosen.
+
+#ifndef NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST
+#define NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST 1
+#endif
+
+// <q> NRFX_USBD_CONFIG_ISO_IN_ZLP  - Respond to an IN token on ISO IN endpoint with ZLP when no data is ready
+
+
+// <i> If set, ISO IN endpoint will respond to an IN token with ZLP when no data is ready to be sent.
+// <i> Else, there will be no response.
+
+#ifndef NRFX_USBD_CONFIG_ISO_IN_ZLP
+#define NRFX_USBD_CONFIG_ISO_IN_ZLP 0
+#endif
+
+// </e>
+
 
 // </h> 
 //==========================================================
@@ -5757,6 +5819,15 @@
 
 #ifndef FDS_VIRTUAL_PAGE_SIZE
 #define FDS_VIRTUAL_PAGE_SIZE 1024
+#endif
+
+// <o> FDS_VIRTUAL_PAGES_RESERVED - The number of virtual flash pages that are used by other modules.
+// <i> FDS module stores its data in the last pages of the flash memory.
+// <i> By setting this value, you can move flash end address used by the FDS.
+// <i> As a result the reserved space can be used by other modules.
+
+#ifndef FDS_VIRTUAL_PAGES_RESERVED
+#define FDS_VIRTUAL_PAGES_RESERVED 0
 #endif
 
 // </h> 

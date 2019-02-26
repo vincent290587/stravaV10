@@ -59,7 +59,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/block_dev/qspi/nrf_block_dev_qspi.c \
   $(SDK_ROOT)/components/libraries/block_dev/ram/nrf_block_dev_ram.c \
   $(SDK_ROOT)/components/libraries/memobj/nrf_memobj.c \
-  $(SDK_ROOT)/components/libraries/mpu/nrf_mpu.c \
+  $(SDK_ROOT)/components/libraries/mpu/nrf_mpu_lib.c \
   $(SDK_ROOT)/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c \
   $(SDK_ROOT)/components/libraries/queue/nrf_queue.c \
   $(SDK_ROOT)/components/libraries/ringbuf/nrf_ringbuf.c \
@@ -69,7 +69,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/spi_mngr/nrf_spi_mngr.c \
   $(SDK_ROOT)/components/libraries/twi_mngr/nrf_twi_mngr.c \
   $(SDK_ROOT)/components/libraries/strerror/nrf_strerror.c \
-  $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
+  $(SDK_ROOT)/modules/nrfx/soc/nrfx_atomic.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_twi.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_power.c \
   $(SDK_ROOT)/integration/nrfx/legacy/nrf_drv_ppi.c \
@@ -77,13 +77,14 @@ SRC_FILES += \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_clock.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_gpiote.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power.c \
-  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_power_clock.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_clock.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/prs/nrfx_prs.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_spim.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_qspi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twi.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_twim.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_ppi.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_systick.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_timer.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_wdt.c \
   $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_uart.c \

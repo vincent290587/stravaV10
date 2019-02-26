@@ -14,7 +14,7 @@
 
 #include "nrf.h"
 #include "boards.h"
-#include "nrf_drv_usbd.h"
+#include "nrfx_usbd.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
@@ -262,7 +262,7 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
         case APP_USBD_EVT_POWER_DETECTED:
             NRF_LOG_INFO("USB power detected");
 
-            if (!nrf_drv_usbd_is_enabled())
+            if (!nrfx_usbd_is_enabled())
             {
             	app_usbd_enable();
                 NRF_LOG_INFO("app_usbd_enable");

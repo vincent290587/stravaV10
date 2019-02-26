@@ -26,7 +26,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
   $(SDK_ROOT)/components/libraries/usbd/class/msc/app_usbd_msc.c \
   $(SDK_ROOT)/components/libraries/usbd/class/dummy/app_usbd_dummy.c \
-  $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_usbd.c \
   $(SDK_ROOT)/components/ant/ant_channel_config/ant_channel_config.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/ant_hrm.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_hrm/pages/ant_hrm_page_0.c \
@@ -37,7 +37,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/ant/ant_key_manager/ant_key_manager.c \
   $(SDK_ROOT)/components/ant/ant_state_indicator/ant_state_indicator.c \
   $(SDK_ROOT)/components/ant/ant_search_config/ant_search_config.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_glasses/ant_glasses.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/ant_bsc.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_combined_page_0.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_0.c \
@@ -62,7 +61,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/softdevice/s340/headers \
   $(SDK_ROOT)/components/softdevice/s340/headers/nrf52 \
   $(PROJ_DIR)/source/usb \
-  $(SDK_ROOT)/components/drivers_nrf/usbd \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/ \
   $(SDK_ROOT)/components/libraries/usbd \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
