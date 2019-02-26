@@ -13,6 +13,8 @@
 #include "segger_wrapper.h"
 #include "task_manager_wrapper.h"
 
+#define BME280_TWI_ADDRESS              0x76
+
 #define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
 		NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
@@ -156,6 +158,11 @@ static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 	int32_t adc_press, adc_temp;
 	uint8_t *buf = p_user_data;
 
+	if (result) {
+		LOG_INFO("BME read error");
+		return;
+	}
+
 	LOG_INFO("BME read");
 
 	adc_press = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4);
@@ -180,8 +187,7 @@ void bme280_init_sensor() {
 #ifndef _DEBUG_TWI
 
 	{
-		static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND cal_reg1[] = {BME280_CHIP_ID_REG,
-				BME280_RST_REG};
+		static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND cal_reg1[] = {BME280_CHIP_ID_REG};
 
 		static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND bme_config[2] = { BME280_RST_REG, 0xB6 };
 
@@ -195,6 +201,12 @@ void bme280_init_sensor() {
 	}
 
 	LOG_INFO("BME iD: %u", p_ans_buffer[0]);
+	if (p_ans_buffer[0] != 0x60) {
+		LOG_ERROR("BME wrong iD: 0x%02X != 0x60", p_ans_buffer[0]);
+		return;
+	}
+
+	LOG_WARNING("BME iD: %u", p_ans_buffer[0]);
 
 	nrf_delay_ms(500);
 
@@ -268,5 +280,5 @@ bme280_data *bme280_get_data_handle(void) {
 }
 
 bool bme280_is_updated(void) {
-	return m_data.is_updated;
+	return m_data.is_updated == 1;
 }
