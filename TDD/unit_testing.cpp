@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "Model_tdd.h"
 #include "Screenutils.h"
+#include "fram.h"
 #include "utils.h"
 
 #include "order1_filter.h"
@@ -38,6 +39,32 @@ bool test_lsq(void) {
 	return true;
 }
 
+bool test_fram(void) {
+
+	LOG_INFO("Testing FRAM...");
+
+	fram_init_sensor();
+
+	if (!u_settings.isConfigValid())
+		return false;
+
+	if (u_settings.getFECdevID() != 2766U)
+		return false;
+
+	if (!u_settings.resetConfig())
+		return false;
+
+	if (!u_settings.isConfigValid())
+		return false;
+
+	if (u_settings.getFECdevID() != 0U)
+		return false;
+
+	LOG_INFO("FRAM OK");
+
+	return true;
+}
+
 bool test_functions(void) {
 
 	LOG_INFO("Testing functions...");
@@ -47,6 +74,10 @@ bool test_functions(void) {
 	String pi_str = _fmkstr(pi, 2);
 
 	if (pi_str.length() != 4) return false;
+
+	pi_str = _fmkstr(-pi, 2);
+
+	if (pi_str.length() != 5) return false;
 
 	pi_str = _fmkstr(pi, 4);
 

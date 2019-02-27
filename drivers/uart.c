@@ -9,6 +9,7 @@
 #include "nordic_common.h"
 #include "nrf.h"
 #include "uart.h"
+#include "helper.h"
 #include "boards.h"
 #include "segger_wrapper.h"
 #include "nrf_soc.h"

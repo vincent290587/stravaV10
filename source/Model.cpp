@@ -9,6 +9,7 @@
 #include "sdk_config.h"
 #include "neopixel.h"
 #include "helper.h"
+#include "sd_hal.h"
 #include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
@@ -27,6 +28,8 @@
 SAtt att;
 
 SufferScore   suffer_score;
+
+UserSettings   u_settings;
 
 Attitude      attitude;
 
@@ -126,9 +129,20 @@ void model_input_virtual_uart(char c) {
 		if (vparser.getPC() == 12) {
 
 			LOG_WARNING("HardFault test start");
-
 			hardfault_genhf_invalid_fp();
 
+		}
+		else if (vparser.getPC() == 16) {
+			LOG_WARNING("usb_cdc_start_msc start");
+			usb_cdc_start_msc();
+		}
+		else if (vparser.getPC() == 15) {
+			LOG_WARNING("format_memory start");
+			format_memory();
+		}
+		else if (vparser.getPC() == 14) {
+			LOG_WARNING("fmkfs_memory start");
+			fmkfs_memory();
 		}
 		break;
 

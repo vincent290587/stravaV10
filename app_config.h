@@ -11,7 +11,7 @@
 // <0=> RC
 // <1=> XTAL
 // <2=> Synth
-#define USER_CLOCK_SOURCE      0
+#define USER_CLOCK_SOURCE      1
 
 
 #if (USER_CLOCK_SOURCE==0)
