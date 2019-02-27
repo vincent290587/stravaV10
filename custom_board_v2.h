@@ -53,8 +53,8 @@ extern "C" {
 #define SDA_PIN_NUMBER    NRF_GPIO_PIN_MAP(0, 26)
 #define SCL_PIN_NUMBER    NRF_GPIO_PIN_MAP(0, 25)
 
-#define TX_PIN_NUMBER     NRF_GPIO_PIN_MAP(0, 3)
-#define RX_PIN_NUMBER     NRF_GPIO_PIN_MAP(1, 14)
+#define TX_PIN_NUMBER     NRF_GPIO_PIN_MAP(0, 5)
+#define RX_PIN_NUMBER     NRF_GPIO_PIN_MAP(0, 7)
 #define CTS_PIN_NUMBER    0xFF
 #define RTS_PIN_NUMBER    0xFF
 #define HWFC              false
@@ -63,11 +63,11 @@ extern "C" {
 #define LS027_SCK_PIN     NRF_GPIO_PIN_MAP(0, 15)
 #define LS027_CS_PIN      NRF_GPIO_PIN_MAP(0, 17)
 
-#define QSPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 23)
+#define QSPI_MISO_PIN     NRF_GPIO_PIN_MAP(0, 24)
 #define QSPI_MOSI_PIN     NRF_GPIO_PIN_MAP(0, 19)
-#define QSPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 20)
-#define QSPI_SS_PIN       NRF_GPIO_PIN_MAP(0, 18)
-#define QSPI_IO2_PIN      NRF_GPIO_PIN_MAP(0, 22)
+#define QSPI_SCK_PIN      NRF_GPIO_PIN_MAP(0, 18)
+#define QSPI_SS_PIN       NRF_GPIO_PIN_MAP(0, 22)
+#define QSPI_IO2_PIN      NRF_GPIO_PIN_MAP(0, 23)
 #define QSPI_IO3_PIN      NRF_GPIO_PIN_MAP(0, 21)
 
 #define FXOS_INT1         NRF_GPIO_PIN_MAP(0, 28)
@@ -75,9 +75,9 @@ extern "C" {
 
 #define BCK_PIN           NRF_GPIO_PIN_MAP(1, 8)
 
-#define GPS_R             NRF_GPIO_PIN_MAP(0, 5)
+#define GPS_R             NRF_GPIO_PIN_MAP(0, 3)
 #define GPS_S             NRF_GPIO_PIN_MAP(1, 15)
-#define FIX_PIN           NRF_GPIO_PIN_MAP(0, 7)
+#define FIX_PIN           NRF_GPIO_PIN_MAP(1, 14)
 
 #define KILL_PIN          NRF_GPIO_PIN_MAP(0, 12)
 

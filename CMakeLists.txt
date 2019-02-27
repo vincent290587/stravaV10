@@ -94,6 +94,7 @@ set(SRCS
 	source/routes/Points.cpp
 	source/routes/Segment.cpp
 	source/routes/Vecteur.cpp
+    source/sensors/fram.c
 	source/parsers/file_parser.cpp
 	source/model/Attitude.cpp
 	source/model/Boucle.cpp
@@ -101,6 +102,7 @@ set(SRCS
 	source/model/BoucleFEC.cpp
 	source/model/Locator.cpp
 	source/model/SufferScore.cpp
+	source/model/UserSettings.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
     source/vue/MenuObjects.cpp

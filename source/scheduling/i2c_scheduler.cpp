@@ -1,7 +1,7 @@
 /*
  * i2c_scheduler.c
  *
- *  Created on: 10 déc. 2017
+ *  Created on: 10 dÃ©c. 2017
  *      Author: Vincent
  */
 
@@ -12,6 +12,7 @@
 #include "nrf_assert.h"
 #include "nrf_delay.h"
 #include "fxos.h"
+#include "fram.h"
 #include "bme280.h"
 #include "app_timer.h"
 #include "Model.h"
@@ -124,6 +125,8 @@ static void _i2c_scheduling_sensors_init() {
 	res |= raw_data[0];
 	veml.init(res);
 
+	fram_init_sensor();
+  
 	bme280_init_sensor();
 
 	// post-init steps
@@ -138,6 +141,7 @@ static void _i2c_scheduling_sensors_init() {
 static void read_all_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
+	if (result) return;
 
 	m_is_stc_veml_updated = true;
 
@@ -151,6 +155,7 @@ static void read_all_cb(ret_code_t result, void * p_user_data) {
 static void read_fxos_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
+	if (result) return;
 
 	m_is_fxos_updated = true;
 

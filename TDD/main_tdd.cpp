@@ -150,6 +150,11 @@ int main(void)
 		exit(-1);
 	}
 
+	if (!test_fram()) {
+		LOG_ERROR("Unit testing failed !");
+		exit(-1);
+	}
+
 	if (!test_functions()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);

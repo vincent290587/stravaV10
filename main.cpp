@@ -24,7 +24,6 @@
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
-#include "nrf_pwr_mgmt.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
 #include "nrf_drv_clock.h"
@@ -39,6 +38,14 @@
 #include "sd_hal.h"
 #include "ble_api_base.h"
 #include "segger_wrapper.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "nrf_pwr_mgmt.h"
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef USB_ENABLED
 #include "usb_cdc.h"
@@ -433,7 +440,6 @@ int main(void)
 
 	// Initialize timer module
 #ifdef USB_ENABLED
-	// apply correction 0x20 line 97 nrf_drv_usbd_errata.h
 	usb_cdc_init();
 	usb_cdc_tasks();
 #endif
@@ -461,6 +467,11 @@ int main(void)
 	ant_stack_init();
 	ant_setup_start();
 	ant_timers_init();
+#endif
+
+	// turn USB events ON
+#ifdef USB_ENABLED
+	usb_cdc_event_enable();
 #endif
 
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);

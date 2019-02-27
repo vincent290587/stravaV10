@@ -34,7 +34,7 @@ extern bool configure_memory();
 
 void format_memory() {
 
-	LOG_INFO("Formatting...");
+	LOG_WARNING("Formatting...");
 	uint32_t err_code;
 	nrf_qspi_cinstr_conf_t cinstr_cfg = {
 			.opcode    = 0xc7,
@@ -49,17 +49,16 @@ void format_memory() {
 	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
 	APP_ERROR_CHECK(err_code);
 
-	LOG_INFO("Memory formatted");
+	LOG_WARNING("Memory formatted");
 }
 
 void fmkfs_memory(void) {
 
-	if (nrfx_qspi_mem_busy_check()) {
-		LOG_INFO("SST busy");
-		return;
-	}
+	LOG_WARNING("Make FS start");
 
 	fatfs_mkfs();
+
+	LOG_WARNING("FS created !");
 }
 
 void test_memory(void)

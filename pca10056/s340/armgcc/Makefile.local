@@ -1,0 +1,13 @@
+# local and personal definitions
+
+ifeq ($(OS),Windows_NT)
+    #Windows stuff
+SDK_ROOT := e:/Nordic/nRF5_SDK_15.3.0_59ac345
+OUTPUT_DIRECTORY := _build_W
+COM_PORT := COM8
+else
+    #Linux stuff
+SDK_ROOT := /mnt/e/Nordic/nRF5_SDK_15.3.0_59ac345
+OUTPUT_DIRECTORY := _build_L
+COM_PORT := /dev/ttyS8
+endif
