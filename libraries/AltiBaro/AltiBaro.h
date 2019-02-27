@@ -9,20 +9,21 @@
 #define LIBRARIES_ALTIBARO_ALTIBARO_H_
 
 #include <stdint.h>
-#include "MS5637.h"
 
-class AltiBaro : public MS5637 {
+class AltiBaro {
 public:
 	AltiBaro();
 	bool computeAlti(float& alti_);
 	bool computeVA(float& va_);
 
-    void seaLevelForAltitude(float altitude, float atmospheric);
+    void seaLevelForAltitude(float altitude);
 	void setCorrection(float cor_) {correction = cor_;}
 
 	bool hasSeaLevelRef(void) {return m_is_init;}
 
 	void runFilter(void);
+
+	bool isUpdated(void);
 
 #ifdef TDD
 	float getAlti() const {

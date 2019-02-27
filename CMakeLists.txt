@@ -54,6 +54,7 @@ include_directories(
 	source/vue
 	source/parsers
 	source/display
+	source/sensors
     )
 
 # Cree des variables avec les fichiers à compiler
@@ -72,7 +73,7 @@ set(SRCS
 	timer/timer.c
     sensors/GPSMGMT.cpp
     sensors/STC3100.cpp
-    sensors/MS5637.cpp
+    sensors/bme280.c
 	drivers/uart_tdd.c
 	drivers/gpio_tdd.cpp
 	drivers/ls027_tdd.cpp

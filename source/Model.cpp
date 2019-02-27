@@ -9,6 +9,7 @@
 #include "sdk_config.h"
 #include "neopixel.h"
 #include "helper.h"
+#include "sd_hal.h"
 #include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
@@ -77,8 +78,6 @@ void model_dispatch_sensors_update(void) {
 	uint16_t light_level = veml.getRawUVA();
 
 	LOG_DEBUG("Light level: %u", light_level);
-	NRF_LOG_DEBUG("Temperature: %ld", (int)baro.m_temperature);
-	NRF_LOG_DEBUG("Pressure: %ld", (int)baro.m_pressure);
 
 	// check if backlighting is used for notifying
 	if (backlight.freq == 0) {
@@ -128,9 +127,20 @@ void model_input_virtual_uart(char c) {
 		if (vparser.getPC() == 12) {
 
 			LOG_WARNING("HardFault test start");
-
 			hardfault_genhf_invalid_fp();
 
+		}
+		else if (vparser.getPC() == 16) {
+			LOG_WARNING("usb_cdc_start_msc start");
+			usb_cdc_start_msc();
+		}
+		else if (vparser.getPC() == 15) {
+			LOG_WARNING("format_memory start");
+			format_memory();
+		}
+		else if (vparser.getPC() == 14) {
+			LOG_WARNING("fmkfs_memory start");
+			fmkfs_memory();
 		}
 		break;
 
