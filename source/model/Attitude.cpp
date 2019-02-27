@@ -100,11 +100,12 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 	// init the altitude model
 	if ((eLocationSourceGPS == source_ ||
 			eLocationSourceNRF == source_) &&
+			baro.isUpdated() &&
 			!baro.hasSeaLevelRef()) {
 
 		// init sea level pressure
 		LOG_INFO("Init sea level pressure...");
-		baro.seaLevelForAltitude(loc_.alt, baro.m_pressure);
+		baro.seaLevelForAltitude(loc_.alt);
 
 		// treat elevation
 		this->filterElevation(loc_);

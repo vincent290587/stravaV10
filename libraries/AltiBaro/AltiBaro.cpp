@@ -5,13 +5,14 @@
  *      Author: Vincent
  */
 
-#include "math_wrapper.h"
-#include "assert_wrapper.h"
-#include "segger_wrapper.h"
+#include "bme280.h"
 #include "AltiBaro.h"
 #include "parameters.h"
 #include "utils.h"
 #include "Model.h"
+#include "math_wrapper.h"
+#include "assert_wrapper.h"
+#include "segger_wrapper.h"
 
 #ifdef USE_JSCOPE
 #include "JScope.h"
@@ -37,21 +38,32 @@ AltiBaro::AltiBaro() {
 
 /**
  *
+ * @return True if updated
+ */
+bool AltiBaro::isUpdated() {
+	return bme280_is_updated();
+}
+
+/**
+ *
  * @param alti_ Pointer to store altitude
  * @return True on success
  */
 bool AltiBaro::computeAlti(float& alti_) {
 
 	if (!m_is_init) return false;
-
+  
 #ifdef TDD
 	alti_ = m_alti;
 	return true;
 #endif
 
+	bme280_data *_data = bme280_get_data_handle();
+
+
 	// m_temperature, m_pressure;
 	if (nb_filtering <= FILTRE_NB) {
-		alti_ = this->pressureToAltitude(this->m_pressure);
+		alti_ = this->pressureToAltitude(_data->comp_press);
 	} else {
 		alti_ = m_alti_f;
 	}
@@ -90,7 +102,8 @@ void AltiBaro::runFilter(void) {
 #ifdef TDD
 	float input = this->getAlti();
 #else
-	float input = this->pressureToAltitude(this->m_pressure);
+	bme280_data *_data = bme280_get_data_handle();
+	float input = this->pressureToAltitude(_data->comp_press);
 #endif
 	xk1[ind++] = input;
 	ind = ind % MOV_AV_NB_VAL;
@@ -178,12 +191,12 @@ float AltiBaro::pressureToAltitude(float atmospheric)
 	// at high altitude.  See this thread for more information:
 	//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
 
-	float res = 0.;
+	float res = 0.0f;
 
-	ASSERT(sea_level_pressure != 0.);
-	ASSERT(atmospheric / sea_level_pressure > 0.);
+	ASSERT(sea_level_pressure != 0.0f);
+	ASSERT(atmospheric / sea_level_pressure > 0.0f);
 
-	res = 44330.0 * (1.0 - powf(atmospheric / sea_level_pressure, 0.1903));
+	res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
 	res -= correction;
 
 	return res;
@@ -199,7 +212,7 @@ float AltiBaro::pressureToAltitude(float atmospheric)
     @param  atmospheric   Atmospheric pressure in hPa
  */
 /**************************************************************************/
-void AltiBaro::seaLevelForAltitude(float altitude, float atmospheric)
+void AltiBaro::seaLevelForAltitude(float altitude)
 {
 	// Equation taken from BMP180 datasheet (page 17):
 	//  http://www.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
@@ -207,12 +220,14 @@ void AltiBaro::seaLevelForAltitude(float altitude, float atmospheric)
 	// Note that using the equation from wikipedia can give bad results
 	// at high altitude.  See this thread for more information:
 	//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
+	bme280_data *_data = bme280_get_data_handle();
+	float atmospheric = _data->comp_press;
 
-	ASSERT(atmospheric != 0.);
+	ASSERT(atmospheric != 0.0f);
 
-	sea_level_pressure = atmospheric / powf(1.0 - (altitude/44330.0), 5.255);
+	sea_level_pressure = atmospheric / powf(1.0f - (altitude/44330.0f), 5.255f);
 
-	ASSERT(sea_level_pressure != 0.);
+	ASSERT(sea_level_pressure != 0.0f);
 
 	m_is_init = true;
 

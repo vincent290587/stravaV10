@@ -78,8 +78,6 @@ void model_dispatch_sensors_update(void) {
 	uint16_t light_level = veml.getRawUVA();
 
 	LOG_DEBUG("Light level: %u", light_level);
-	NRF_LOG_DEBUG("Temperature: %ld", (int)baro.m_temperature);
-	NRF_LOG_DEBUG("Pressure: %ld", (int)baro.m_pressure);
 
 	// check if backlighting is used for notifying
 	if (backlight.freq == 0) {
