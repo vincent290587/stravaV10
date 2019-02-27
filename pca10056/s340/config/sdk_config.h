@@ -3066,7 +3066,7 @@
 // <15=> 32MHz/16 
 
 #ifndef NRFX_QSPI_CONFIG_FREQUENCY
-#define NRFX_QSPI_CONFIG_FREQUENCY 7
+#define NRFX_QSPI_CONFIG_FREQUENCY 3
 #endif
 
 // <s> NRFX_QSPI_PIN_SCK - SCK pin value.
@@ -5382,7 +5382,7 @@
 // <e> APP_SDCARD_ENABLED - app_sdcard - SD/MMC card support using SPI
 //==========================================================
 #ifndef APP_SDCARD_ENABLED
-#define APP_SDCARD_ENABLED 1
+#define APP_SDCARD_ENABLED 0
 #endif
 // <o> APP_SDCARD_SPI_INSTANCE  - SPI instance used
  

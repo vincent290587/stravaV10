@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "nrf.h"
+#include "nrfx.h"
 #include "boards.h"
 #include "nrf_drv_usbd.h"
 #include "nrf_gpio.h"
@@ -260,23 +260,25 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
             app_usbd_disable();
             break;
         case APP_USBD_EVT_POWER_DETECTED:
-            NRF_LOG_INFO("USB power detected");
+            LOG_WARNING("USB power detected");
 
             if (!nrf_drv_usbd_is_enabled())
             {
             	app_usbd_enable();
                 NRF_LOG_INFO("app_usbd_enable");
             }
+
             break;
         case APP_USBD_EVT_POWER_REMOVED:
             NRF_LOG_INFO("USB power removed");
             app_usbd_stop();
             break;
         case APP_USBD_EVT_POWER_READY:
-            NRF_LOG_INFO("USB ready");
+        	LOG_WARNING("USB ready");
             app_usbd_start();
             break;
         default:
+        	LOG_WARNING("USB event %u", event);
             break;
     }
 }
@@ -383,6 +385,17 @@ void usb_cdc_init(void)
     app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
     ret = app_usbd_class_append(class_cdc_acm);
     APP_ERROR_CHECK(ret);
+
+    LOG_INFO("USBD CDC / MSC configured.");
+
+}
+
+/**
+ *
+ */
+void usb_cdc_event_enable(void)
+{
+    ret_code_t ret;
 
     if (USBD_POWER_DETECTION)
     {
