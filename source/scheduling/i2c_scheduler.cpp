@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include "i2c.h"
 #include <i2c_scheduler.h>
 #include "segger_wrapper.h"
 #include "parameters.h"
@@ -27,7 +28,6 @@ static uint32_t m_last_polled_index = 0;
 
 // Buffer for data read from sensors.
 static uint8_t m_veml_buffer[10];
-static tSTC31000Data m_stc_buffer;
 static fxos_handle_t m_fxos_handle;
 
 static volatile bool m_is_bme280_updated = false;
@@ -56,9 +56,6 @@ static void _i2c_scheduling_sensors_init() {
 	// Init sensors configuration
 	fxos_init();
 
-	// Reset sensors
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config[2] = STC_RESET_REGS;
-
 	veml.off();
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config[3];
@@ -68,8 +65,7 @@ static void _i2c_scheduling_sensors_init() {
 
 	static nrf_twi_mngr_transfer_t const sensors_init_transfers[] =
 	{
-		I2C_WRITE     (VEML6075_ADDR  , veml_config, sizeof(veml_config)),
-		I2C_WRITE     (STC3100_ADDRESS, stc_config, sizeof(stc_config))
+		I2C_WRITE     (VEML6075_ADDR  , veml_config, sizeof(veml_config))
 	};
 	i2c_perform(NULL, sensors_init_transfers, sizeof(sensors_init_transfers) / sizeof(sensors_init_transfers[0]), NULL);
 
@@ -82,14 +78,6 @@ static void _i2c_scheduling_sensors_init() {
 
 	// Init sensors
 	static uint8_t raw_data[2];
-
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config2[2];
-	stc_config2[0] = REG_MODE;
-	stc_config2[1] = stc._stc3100Mode;
-
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_config3[1];
-	stc_config3[0] = REG_DEVICE_ID;
-
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config2[4];
 	veml_config2[0] = VEML6075_REG_CONF;
@@ -112,13 +100,10 @@ static void _i2c_scheduling_sensors_init() {
 
 	static nrf_twi_mngr_transfer_t const sensors_init_transfers3[] =
 	{
-			I2C_READ_REG        (STC3100_ADDRESS, stc_config3, raw_data_stc, 1),
-			I2C_WRITE           (STC3100_ADDRESS, stc_config2, sizeof(stc_config2)),
 			I2C_READ_REG        (FXOS_7BIT_ADDRESS, fxos_ctrl1, raw_data_fxos, 1),
 	};
 	i2c_perform(NULL, sensors_init_transfers3, sizeof(sensors_init_transfers3) / sizeof(sensors_init_transfers3[0]), NULL);
 
-	LOG_INFO("STC dev ID: 0x%02X", raw_data_stc[0]);
 	LOG_INFO("FXOS CTRL1: 0x%02X", raw_data_fxos[0]);
 
 	uint16_t res = raw_data[1] << 8;
@@ -170,13 +155,12 @@ static void read_all(void)
     //  since the transaction is scheduled and these structures most likely
     //  will be referred after this function returns]
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_regs[5] = VEML_READ_ALL_REGS;
+	stc.readChip();
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND stc_regs[1]  = STC_READ_ALL_REGS;
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_regs[5] = VEML_READ_ALL_REGS;
 
     static nrf_twi_mngr_transfer_t const transfers[] =
     {
-    	STC3100_READ_ALL (&stc_regs[0] , &m_stc_buffer.array[0]),
 		VEML6075_READ_ALL(&veml_regs[0], &m_veml_buffer[0])
     };
     static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
@@ -295,10 +279,14 @@ void i2c_scheduling_tasks(void) {
 	if (m_is_stc_veml_updated) {
 		sysview_task_void_enter(I2cMgmtRead2);
 		m_is_stc_veml_updated = false;
-		stc.refresh(&m_stc_buffer);
 		veml.refresh(m_veml_buffer);
 		sysview_task_void_exit(I2cMgmtRead2);
 	}
+	if (is_stc_updated()) {
+			sysview_task_void_enter(I2cMgmtRead2);
+			stc.refresh();
+			sysview_task_void_exit(I2cMgmtRead2);
+		}
 #else
 	static uint32_t _counter = 0;
 
