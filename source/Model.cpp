@@ -302,6 +302,10 @@ void peripherals_task(void * p_context)
 			vue.refresh();
 		}
 
+		if (baro.isUpdated()) {
+			baro.runFilter();
+		}
+
 		gps_mgmt.runWDT();
 
 		gps_mgmt.tasks();

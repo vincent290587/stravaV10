@@ -114,9 +114,9 @@ void i2c_scheduling_init(void) {
 
 void i2c_scheduling_tasks(void) {
 #ifndef _DEBUG_TWI
-	if (bme280_is_updated()) {
+	if (is_bme280_updated()) {
 		sysview_task_void_enter(I2cMgmtReadMs);
-		baro.runFilter();
+		bme280_refresh();
 		sysview_task_void_exit(I2cMgmtReadMs);
 	}
 	if (is_fxos_updated()) {
