@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#define BME280_DATA_T_SIZE              6
+
 #define BME280_CALIB_T_SIZE             6
 #define BME280_CALIB_P_SIZE             18
 #define BME280_CALIB_H1_SIZE            1
@@ -227,9 +229,17 @@ void bme280_init_sensor(void);
 
 void bme280_read_sensor(void);
 
-bme280_data *bme280_get_data_handle(void);
+void bme280_refresh(void);
 
-bool bme280_is_updated(void);
+float bme280_get_pressure(void);
+
+float bme280_get_temp(void);
+
+void bme280_clear_flags(void);
+
+bool bme280_is_data_ready(void);
+
+bool is_bme280_updated(void);
 
 #ifdef __cplusplus
 }
