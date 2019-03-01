@@ -6,13 +6,13 @@
  */
 
 #include "i2c.h"
+#include "nrf_twi_mngr.h"
 #include "fsl_fxos.h"
-#include "nrf_gpio.h"
-#include "nrf_delay.h"
+#include "gpio.h"
 #include "boards.h"
 #include "parameters.h"
 #include "segger_wrapper.h"
-#include <sensors/fxos.h>
+#include "fxos.h"
 #include "Model.h"
 #include <math.h>
 #include <millis.h>
@@ -20,6 +20,10 @@
 #define kStatus_Fail    1
 #define kStatus_Success 0
 
+
+// Buffer for data read from sensors.
+static fxos_handle_t m_fxos_handle;
+static volatile bool m_is_updated = false;
 
 
 ret_code_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber)
@@ -106,6 +110,48 @@ double g_Roll = 0;
 bool g_FirstRun = true;
 
 bool g_Calibration_Done = false;
+
+
+/***************************************************************************
+ C FUNCTIONS
+ ***************************************************************************/
+
+static void _fxos_read_cb(ret_code_t result, void * p_user_data) {
+
+	APP_ERROR_CHECK(result);
+	if (result) return;
+
+	m_is_updated = true;
+
+}
+
+bool is_fxos_updated(void) {
+	return m_is_updated;
+}
+
+void fxos_readChip(void) {
+
+    // [these structures have to be "static" - they cannot be placed on stack
+    //  since the transaction is scheduled and these structures most likely
+    //  will be referred after this function returns]
+
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[2] = FXOS_READ_ALL_REGS;
+
+    static nrf_twi_mngr_transfer_t const transfers[] =
+    {
+		FXOS_READ_ALL    (&fxos_regs[0], &m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
+    };
+    static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
+    {
+        .callback            = _fxos_read_cb,
+        .p_user_data         = NULL,
+        .p_transfers         = transfers,
+        .number_of_transfers = sizeof(transfers) / sizeof(transfers[0])
+    };
+
+    i2c_schedule(&transaction);
+
+}
 
 /*******************************************************************************
  * Code
@@ -254,10 +300,10 @@ bool fxos_init(void) {
 
 	static uint8_t p_ans_buffer[2] = {0};
 
-	nrf_gpio_pin_set(FXOS_RST);
-	nrf_delay_ms(1);
-	nrf_gpio_pin_clear(FXOS_RST);
-	nrf_delay_ms(10);
+	gpio_set(FXOS_RST);
+	delay_ms(1);
+	gpio_clear(FXOS_RST);
+	delay_ms(10);
 
 #ifndef _DEBUG_TWI
 
@@ -545,8 +591,11 @@ bool fxos_init(void) {
  * @param g_fxosHandle
  * @return
  */
-void fxos_tasks(fxos_handle_t *g_fxosHandle)
+void fxos_tasks()
 {
+	if (!m_is_updated) return;
+	m_is_updated = false;
+
 	uint16_t i = 0;
 	double sinAngle = 0;
 	double cosAngle = 0;
@@ -568,7 +617,7 @@ void fxos_tasks(fxos_handle_t *g_fxosHandle)
 	g_Mz = 0;
 
 	/* Read sensor data */
-	Sensor_ReadData(g_fxosHandle, &g_Ax_Raw, &g_Ay_Raw, &g_Az_Raw, &g_Mx_Raw, &g_My_Raw, &g_Mz_Raw);
+	Sensor_ReadData(&m_fxos_handle, &g_Ax_Raw, &g_Ay_Raw, &g_Az_Raw, &g_Mx_Raw, &g_My_Raw, &g_Mz_Raw);
 
 	/* Average accel value */
 	for (i = 1; i < MAX_ACCEL_AVG_COUNT; i++)

@@ -5,7 +5,9 @@
  *      Author: Vincent
  */
 
+#include "i2c.h"
 #include "millis.h"
+#include "nrf_twi_mngr.h"
 #include "nrf_delay.h"
 #include "parameters.h"
 #include "segger_wrapper.h"
@@ -13,13 +15,35 @@
 #include "utils.h"
 #include "VEML6075.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
-
 #define VEML_NOMINAL_CONF     (VEML6075_CONF_PW_ON | VEML6075_CONF_HD_NORM | VEML6075_CONF_IT_200MS)
 
+static uint8_t m_veml_buffer[10];
+static volatile bool m_is_updated = false;
+
+/***************************************************************************
+ C FUNCTIONS
+ ***************************************************************************/
+
+static void _veml_read_cb(ret_code_t result, void * p_user_data) {
+
+	APP_ERROR_CHECK(result);
+	if (result) return;
+
+	m_is_updated = true;
+
+}
+
+bool is_veml_updated(void) {
+	return m_is_updated;
+}
+
 VEML6075::VEML6075() {
+
+	raw_uva = 0;
+	raw_uvb = 0;
+	raw_dark = 0;
+	raw_vis = 0;
+	raw_ir = 0;
 
 	// Despite the datasheet saying this isn't the default on startup, it appears
 	// like it is. So tell the thing to actually start gathering data.
@@ -29,7 +53,7 @@ VEML6075::VEML6075() {
 
 void VEML6075::reset(void) {
 
-	NRF_LOG_WARNING("VEML reset");
+	LOG_INFO("VEML reset");
 
 	// Despite the datasheet saying this isn't the default on startup, it appears
 	// like it is. So tell the thing to actually start gathering data.
@@ -38,17 +62,32 @@ void VEML6075::reset(void) {
 	this->init();
 }
 
-bool VEML6075::init(uint16_t dev_id) {
+bool VEML6075::init(void) {
 
-#ifdef _DEBUG_TWI
+	uint16_t dev_id;
+
 	this->off();
 
-	nrf_delay_ms(5);
+	delay_ms(5);
 
 	this->on();
 
-	nrf_delay_ms(1);
+	delay_ms(1);
+
+#ifdef _DEBUG_TWI
 	dev_id = this->getDevID();
+#else
+	static uint8_t raw_data[2];
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config2[1] = {VEML6075_REG_DEVID};
+
+	static nrf_twi_mngr_transfer_t const sensors_init_transfers2[] =
+	{
+			VEML_READ_REG_REP_START(&veml_config2[0], &raw_data[0], 2)
+	};
+
+	i2c_perform(NULL, sensors_init_transfers2, sizeof(sensors_init_transfers2) / sizeof(sensors_init_transfers2[0]), NULL);
+
+	dev_id = decode_uint16 (raw_data);
 #endif
 
 	if (dev_id != VEML6075_DEVID) {
@@ -62,32 +101,51 @@ bool VEML6075::init(uint16_t dev_id) {
 }
 
 void VEML6075::on() {
-#ifdef _DEBUG_TWI
 	// Write config to make sure device is enabled
-	this->write16(VEML6075_REG_CONF, this->config & 0b11111110);
-	nrf_delay_ms(1);
-#else
-	this->config &= ~VEML6075_CONF_PW_OFF;
-#endif
+	this->config &= 0b11111110;
+	this->write16(VEML6075_REG_CONF, this->config);
 }
 
 void VEML6075::off() {
-#ifdef _DEBUG_TWI
 	// Write config to make sure device is disabled
-	this->write16(VEML6075_REG_CONF, this->config | VEML6075_CONF_PW_OFF);
-#else
 	this->config |= VEML6075_CONF_PW_OFF;
+	this->write16(VEML6075_REG_CONF, this->config);
+}
+
+void VEML6075::readChip(void) {
+
+#ifndef _DEBUG_TWI
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_regs[5] = VEML_READ_ALL_REGS;
+
+    static nrf_twi_mngr_transfer_t const transfers[] =
+    {
+		VEML6075_READ_ALL(&veml_regs[0], &m_veml_buffer[0])
+    };
+    static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
+    {
+        .callback            = _veml_read_cb,
+        .p_user_data         = NULL,
+        .p_transfers         = transfers,
+        .number_of_transfers = sizeof(transfers) / sizeof(transfers[0])
+    };
+
+    i2c_schedule(&transaction);
 #endif
+
 }
 
 // Poll sensor for latest values and cache them
-void VEML6075::refresh(uint8_t *_data) {
+void VEML6075::refresh(void) {
 #ifndef _DEBUG_TWI
-	this->raw_uva  = decode_uint16(_data);
-	this->raw_uvb  = decode_uint16(_data+2);
-	this->raw_dark = decode_uint16(_data+4);
-	this->raw_vis  = decode_uint16(_data+6);
-	this->raw_ir   = decode_uint16(_data+8);
+
+	if (!m_is_updated) return;
+	m_is_updated = false;
+
+	this->raw_uva  = decode_uint16(m_veml_buffer);
+	this->raw_uvb  = decode_uint16(m_veml_buffer+2);
+	this->raw_dark = decode_uint16(m_veml_buffer+4);
+	this->raw_vis  = decode_uint16(m_veml_buffer+6);
+	this->raw_ir   = decode_uint16(m_veml_buffer+8);
 #else
 
 	this->config = this->read16(VEML6075_REG_CONF);
@@ -226,5 +284,18 @@ void VEML6075::write16(uint8_t reg, uint16_t raw_data) {
 	}
 
 	if (!retries) LOG_ERROR("VEML no retry left");
+#else
+	uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND veml_config[3];
+	veml_config[0] = reg;
+	veml_config[1] = (uint8_t) (raw_data & 0xFF);
+	veml_config[2] = (uint8_t)((0xFF00 & raw_data) >> 8);
+
+	nrf_twi_mngr_transfer_t const sensors_init_transfers[] =
+	{
+		I2C_WRITE     (VEML6075_ADDR  , veml_config, sizeof(veml_config))
+	};
+
+	i2c_perform(NULL, sensors_init_transfers, sizeof(sensors_init_transfers) / sizeof(sensors_init_transfers[0]), NULL);
+
 #endif
 }
