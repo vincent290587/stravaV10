@@ -104,7 +104,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 			!baro.hasSeaLevelRef()) {
 
 		// init sea level pressure
-		LOG_INFO("Init sea level pressure...");
+		LOG_WARNING("Init sea level pressure...");
 		baro.seaLevelForAltitude(loc_.alt);
 
 		// treat elevation
