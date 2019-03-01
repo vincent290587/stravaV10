@@ -31,8 +31,8 @@ bool bme280_is_updated(void) {
 
 	if (millis() >= BME280_TDD_UPDATE_TIME_MS &&
 			!m_data.is_updated) {
-		m_data.comp_press = 1011.0f;
-		m_data.comp_temp = 20.7f;
+		m_data.comp_press = 1011.0f * (256.0F * 100.0F);
+		m_data.comp_temp = 20.7f * 100.0F;
 		m_data.is_updated = true;
 	}
 
@@ -41,4 +41,12 @@ bool bme280_is_updated(void) {
 
 bme280_data *bme280_get_data_handle(void) {
 	return &m_data;
+}
+
+float bme280_get_pressure(void) {
+	return m_data.comp_press / (256.0F * 100.0F);
+}
+
+bool bme280_is_data_ready(void) {
+	return m_data.is_updated == 1;
 }
