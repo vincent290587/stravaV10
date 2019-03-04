@@ -8,10 +8,20 @@
 #include <string.h>
 #include "utils.h"
 #include "fram.h"
+#include "Model.h"
+#include "parameters.h"
 #include "UserSettings.h"
 #include "segger_wrapper.h"
 
-UserSettings::UserSettings() {
+static sUserParameters s_m_params;
+
+
+sUserParameters *user_settings_get(void) {
+	return &s_m_params;
+}
+
+
+UserSettings::UserSettings() : m_params(s_m_params) {
 	m_is_init = false;
 }
 
@@ -24,7 +34,7 @@ bool UserSettings::isConfigValid(void) {
 			return false;
 	}
 
-	uint8_t crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - 1);
+	uint8_t crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
 
 	if (crc != m_params.crc) {
 		LOG_ERROR("User parameters: wrong CRC, found 0x%02X", crc);
@@ -50,8 +60,10 @@ bool UserSettings::resetConfig(void) {
 	memset(&m_params, 0, sizeof(sUserParameters));
 
 	m_params.version = FRAM_SETTINGS_VERSION;
+	m_params.FTP = USER_FTP;
+	m_params.weight = USER_WEIGHT;
 
-	m_params.crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - 1);
+	m_params.crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
 
 	return fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
 }

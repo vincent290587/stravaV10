@@ -86,6 +86,8 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 #else
 
 #include "g_structs.h"
+#include "parameters.h"
+#include "UserSettings.h"
 
 static sUserParameters m_params;
 
@@ -96,6 +98,8 @@ void fram_init_sensor() {
 	m_params.bsc_devid = 0xB02B;
 	m_params.fec_devid = 2766U;
 	m_params.version = 1U;
+	m_params.FTP = USER_FTP;
+	m_params.weight = USER_WEIGHT;
 
 	m_params.crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - 1);
 
@@ -105,7 +109,7 @@ void fram_init_sensor() {
 
 bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 
-	uint16_t res_len = MIN(sizeof(m_params), length);
+	uint16_t res_len = MIN(sizeof(sUserParameters), length);
 
 	LOG_INFO("FRAM reading %u bytes", res_len);
 
@@ -117,7 +121,7 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 
 bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
-	uint16_t res_len = MIN(sizeof(m_params), length);
+	uint16_t res_len = MIN(sizeof(sUserParameters), length);
 
 	LOG_INFO("FRAM writing %u bytes", res_len);
 

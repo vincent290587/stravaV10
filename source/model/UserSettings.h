@@ -16,6 +16,18 @@
 #define FRAM_SETTINGS_ADDRESS        0x0000
 #define FRAM_SETTINGS_VERSION        0x0001
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+sUserParameters *user_settings_get(void);
+
+#if defined(__cplusplus)
+}
+#endif
+
+
+#if defined(__cplusplus)
 
 class UserSettings {
 public:
@@ -36,10 +48,20 @@ public:
 		return m_params.fec_devid;
 	}
 
+	uint16_t getFTP(void) const {
+		return m_params.FTP;
+	}
+
+	uint16_t getWeight(void) const {
+		return m_params.weight;
+	}
+
+
 private:
 	bool m_is_init = false;
-	sUserParameters m_params;
+	sUserParameters &m_params;
 };
 
+#endif // defined C++
 
 #endif /* SOURCE_MODEL_USERSETTINGS_H_ */

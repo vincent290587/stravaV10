@@ -59,7 +59,9 @@
 
 #define FILTRE_NB                      15
 
-#define MASSE                          79.
+#define USER_WEIGHT                    79U
+
+#define USER_FTP                       256U
 
 ///// CODE FLAGS
 

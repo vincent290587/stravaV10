@@ -240,19 +240,21 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 float Attitude::computePower(float speed_) {
 
 	float res;
-	float power = 0.;
-	float fSpeed = -1.;
+	float power = 0.0f;
+	float fSpeed = -1.0f;
 
 	if (baro.computeVA(att.vit_asc)) {
 
 		// horizontal speed (m/s)
-		fSpeed = speed_ / 3.6;
+		fSpeed = speed_ / 3.6f;
+
+		float weight = (float)u_settings.getWeight();
 
 		// STEP 2 : Calcul
-		power = 9.81 * MASSE * att.vit_asc; // grav
-		power += 0.004 * 9.81 * MASSE * fSpeed; // sol + meca
-		power += 0.204 * fSpeed * fSpeed * fSpeed; // air
-		power *= 1.025; // transmission (rendement velo)
+		power = 9.81f * weight * att.vit_asc; // grav
+		power += 0.004f * 9.81f * weight * fSpeed; // sol + meca
+		power += 0.204f * fSpeed * fSpeed * fSpeed; // air
+		power *= 1.025f; // transmission (rendement velo)
 
 	}
 
