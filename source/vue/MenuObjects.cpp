@@ -25,23 +25,48 @@ eFuncMenuAction MenuItem::clickAction(uint8_t ind_sel) {
 	}
 
 	// ind _sel > 0
-	if (!p_func) {
-		// should never be there
+	if (p_func && eFuncMenuActionEndMenu == p_func(ind_sel)) {
 		p_parent.closeMenuPopagate();
+		return eFuncMenuActionEndMenu;
 	} else {
-		if (eFuncMenuActionEndMenu == p_func(ind_sel)) {
-			p_parent.closeMenuPopagate();
+		if (p_page) {
+			// go to submenu
+			p_parent.goToPage(p_page);
 			return eFuncMenuActionEndMenu;
-		} else {
-			if (p_page) {
-				// go to submenu
-				p_parent.goToPage(p_page);
-				return eFuncMenuActionEndMenu;
-			}
 		}
 	}
 
 	return eFuncMenuActionEndMenu;
+}
+
+eFuncMenuAction MenuItem::validateAction(int var) {
+
+	if (p_func) {
+		p_func(var);
+		p_parent.goToParent();
+
+		LOG_INFO("Validation");
+
+		return eFuncMenuActionEndMenu;
+	}
+
+	return eFuncMenuActionEndMenu;
+}
+
+void MenuItem::render(void) {
+
+	vue.print("  ");
+	vue.println(this->getName());
+
+}
+
+void MenuItem::render(bool isSelec) {
+
+	vue.print("  ");
+	vue.print(this->getName());
+	if (isSelec) vue.println(" <=");
+	else vue.println();
+
 }
 
 void MenuItem::addSubPage(MenuPage &page) {
@@ -84,7 +109,6 @@ void MenuPage::propagateEvent(eButtonsEvent event) {
 	{
 		if (eFuncMenuActionEndMenu == m_items[ind_sel].clickAction(ind_sel)) {
 			ind_sel = 0;
-
 		}
 	}
 	break;
@@ -105,10 +129,7 @@ void MenuPage::render(void) {
 
 	uint8_t i = 0;
 	for (auto& item : m_items) {
-		vue.print("  ");
-		vue.print(item.getName());
-		if (i++ == ind_sel) vue.println(" <=");
-		else vue.println();
+		item.render(i++ == ind_sel);
 	}
 
 	LOG_INFO("Menu displayed: %u items", i);
@@ -124,4 +145,54 @@ void MenuPage::addItem(MenuItem& item) {
 
 uint16_t MenuPage::nbItems(void) {
 	return m_items.size();
+}
+
+
+MenuPageSetting::MenuPageSetting(int value, Menuable &menu, MenuPage *parent) : MenuPage(menu, parent), m_value(value) {
+
+}
+
+void MenuPageSetting::propagateEvent(eButtonsEvent event) {
+
+	ind_sel = 0;
+
+	switch (event) {
+	case eButtonsEventLeft:
+	{
+		m_value--;
+	}
+	break;
+
+	case eButtonsEventRight:
+	{
+		m_value++;
+	}
+	break;
+
+	case eButtonsEventCenter:
+	{
+		ASSERT(m_items.size() > 1);
+		m_items[1].validateAction(m_value);
+	}
+	break;
+
+	default:
+		break;
+	}
+
+}
+
+void MenuPageSetting::render(void) {
+	// render page
+	vue.setCursor(0, 20);
+	vue.setTextSize(3);
+
+	ASSERT(m_items.size() > 1);
+	m_items[1].render();
+
+	vue.println();
+	vue.setTextSize(4);
+
+	vue.print("  ");
+	vue.println(String(m_value));
 }

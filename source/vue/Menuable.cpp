@@ -19,6 +19,7 @@
 static MenuPage m_main_page(vue, nullptr);
 static MenuPage prc_sel(vue, &m_main_page);
 static MenuPage page_set(vue, &m_main_page);
+static MenuPage page_pair(vue, &page_set);
 
 
 static eFuncMenuAction _page0_mode_crs(int var) {
@@ -84,7 +85,7 @@ static eFuncMenuAction _page0_shutdown(int var) {
 	return eFuncMenuActionEndMenu;
 }
 
-static eFuncMenuAction _page0_erase(int var) {
+static eFuncMenuAction _page1_erase(int var) {
 
 	if (sd_erase_pos()) {
 		vue.addNotif("Erasing... ", "", 4, eNotificationTypePartial);
@@ -95,7 +96,7 @@ static eFuncMenuAction _page0_erase(int var) {
 	return eFuncMenuActionEndMenu;
 }
 
-static eFuncMenuAction _page0_format(int var) {
+static eFuncMenuAction _page1_format(int var) {
 
 	format_memory();
 
@@ -106,11 +107,39 @@ static eFuncMenuAction _page0_format(int var) {
 
 static eFuncMenuAction _page0_settings(int var) {
 
-	return eFuncMenuActionEndMenu;
+	return eFuncMenuActionNone;
+}
+
+static eFuncMenuAction _page1_pair_hrm(int var) {
+
+	return eFuncMenuActionNone;
+}
+
+static eFuncMenuAction _page1_pair_bsc(int var) {
+
+	return eFuncMenuActionNone;
+}
+
+static eFuncMenuAction _page1_pair_fec(int var) {
+
+	return eFuncMenuActionNone;
+}
+
+static eFuncMenuAction _page1_set_ftp(int var) {
+
+	LOG_INFO("FTP entered: %d", var);
+
+	return eFuncMenuActionNone;
+}
+
+static eFuncMenuAction _page1_set_weight(int var) {
+
+	return eFuncMenuActionNone;
 }
 
 Menuable::Menuable() {
 	m_is_menu_selected = false;
+	p_cur_page = nullptr;
 }
 
 Menuable::~Menuable() {
@@ -124,8 +153,6 @@ void Menuable::initMenu(void) {
 	MenuItem item_crs(m_main_page, "Mode CRS", _page0_mode_crs);
 	MenuItem item_prc(m_main_page, "Mode PRC", _page0_mode_prc_list, &prc_sel);
 	MenuItem item_deb(m_main_page, "Mode DBG", _page0_mode_debug);
-	MenuItem item_era(m_main_page, "Erase GPX", _page0_erase);
-	MenuItem item_for(m_main_page, "! Format !", _page0_format);
 	MenuItem item_set(m_main_page, "Settings", _page0_settings, &page_set);
 	MenuItem item_shu(m_main_page, "Shutdown", _page0_shutdown);
 
@@ -133,10 +160,36 @@ void Menuable::initMenu(void) {
 	m_main_page.addItem(item_crs);
 	m_main_page.addItem(item_prc);
 	m_main_page.addItem(item_deb);
-	m_main_page.addItem(item_era);
-	m_main_page.addItem(item_for);
 	m_main_page.addItem(item_set);
 	m_main_page.addItem(item_shu);
+
+	int val = u_settings.getFTP();
+	static MenuPageSetting page_ftp(val, vue, &page_set);
+
+	val = u_settings.getWeight();
+	static MenuPageSetting page_weight(val, vue, &page_set);
+
+	MenuItem item_prm(page_set, "Pair HRM", _page1_pair_hrm, &page_pair);
+	MenuItem item_psc(page_set, "Pair BSC", _page1_pair_bsc, &page_pair);
+	MenuItem item_pec(page_set, "Pair FEC", _page1_pair_fec, &page_pair);
+	MenuItem item_ftpf(page_set, "Set FTP", nullptr, &page_ftp);
+	MenuItem item_weif(page_set, "Set Weight", nullptr, &page_weight);
+	MenuItem item_era(page_set, "Erase GPX", _page1_erase);
+	MenuItem item_for(page_set, "! Format !", _page1_format);
+
+	page_set.addItem(item_prm);
+	page_set.addItem(item_psc);
+	page_set.addItem(item_pec);
+	page_set.addItem(item_ftpf);
+	page_set.addItem(item_weif);
+	page_set.addItem(item_era);
+	page_set.addItem(item_for);
+
+	MenuItem item_ftp(page_set, "Set FTP", _page1_set_ftp);
+	MenuItem item_wei(page_set, "Set Weight", _page1_set_weight);
+
+	page_ftp.addItem(item_ftp);
+	page_weight.addItem(item_wei);
 
 	// init variables
 	this->closeMenu();

@@ -32,7 +32,11 @@ class MenuItem {
 public:
 	MenuItem(MenuPage &parent, const char *name, f_menu_callback _p_func = nullptr, MenuPage *p_page = nullptr);
 
-	eFuncMenuAction clickAction(uint8_t ind_sel);
+	virtual eFuncMenuAction clickAction(uint8_t ind_sel);
+	virtual eFuncMenuAction validateAction(int var);
+
+	virtual void render(void);
+	virtual void render(bool isSelec);
 
 	const char* getName(void) {
 		return m_name.c_str();
@@ -53,9 +57,10 @@ public:
 
 	void goToParent(void);
 	void closeMenuPopagate(void);
-	void render(void);
 
-	void propagateEvent(eButtonsEvent event);
+	virtual void render(void);
+
+	virtual void propagateEvent(eButtonsEvent event);
 
 	void goToPage(MenuPage *page);
 
@@ -66,13 +71,26 @@ public:
 		return p_parent;
 	}
 
-private:
+protected:
 	MenuPage *p_parent;
 	Menuable &p_menu;
 	std::vector<MenuItem> m_items;
 	uint8_t ind_sel;
 };
 
+
+class MenuPageSetting : public MenuPage {
+public:
+	MenuPageSetting(int value, Menuable &menu, MenuPage *parent = nullptr);
+
+	virtual void render(void);
+
+	virtual void propagateEvent(eButtonsEvent event);
+
+
+private:
+	int m_value;
+};
 
 
 
