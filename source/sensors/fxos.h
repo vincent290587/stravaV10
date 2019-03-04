@@ -50,6 +50,10 @@
 
 bool fxos_init(void);
 
-void fxos_tasks(fxos_handle_t *g_fxosHandle);
+void fxos_readChip(void);
+
+bool is_fxos_updated(void);
+
+void fxos_tasks(void);
 
 #endif /* SOURCE_SENSORS_FXOS_H_ */

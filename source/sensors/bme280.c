@@ -40,6 +40,7 @@ static sConfig   m_cfg_config;
 static sCtrlMeas m_meas_config;
 
 static bme280_data m_data;
+static volatile bool m_is_updated = false;
 
 static bool bme280_is_busy(void) {
 
@@ -126,7 +127,7 @@ static void bme280_compensate_temp(bme280_data *data, int32_t adc_temp)
 	data->comp_temp = (data->t_fine * 5 + 128) >> 8;
 }
 
-static void bme280_compensate_press(bme280_data *data, int32_t adc_press)
+static bool bme280_compensate_press(bme280_data *data, int32_t adc_press)
 {
 	int64_t var1, var2, p;
 
@@ -141,7 +142,7 @@ static void bme280_compensate_press(bme280_data *data, int32_t adc_press)
 	/* Avoid exception caused by division by zero. */
 	if (var1 == 0) {
 		data->comp_press = 0U;
-		return;
+		return false;
 	}
 
 	p = 1048576 - adc_press;
@@ -151,31 +152,49 @@ static void bme280_compensate_press(bme280_data *data, int32_t adc_press)
 	p = ((p + var1 + var2) >> 8) + (((int64_t)m_calib.dig_P7) << 4);
 
 	data->comp_press = (uint32_t)p;
+	return true;
 }
 
 static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 
-	int32_t adc_press, adc_temp;
-	uint8_t *buf = p_user_data;
+	bme280_data *buf = p_user_data;
 
 	if (result) {
 		LOG_INFO("BME read error");
 		return;
 	}
 
+	m_is_updated = true;
+
+	memcpy(&m_data, buf, BME280_DATA_T_SIZE);
+
 	LOG_INFO("BME read");
+
+}
+
+void bme280_refresh(void) {
+
+	if (!m_is_updated) return;
+	m_is_updated = false;
+
+	uint8_t *buf = (uint8_t*) &m_data;
+
+	int32_t adc_press, adc_temp;
 
 	adc_press = (buf[0] << 12) | (buf[1] << 4) | (buf[2] >> 4);
 	adc_temp = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4);
 
 	bme280_compensate_temp(&m_data, adc_temp);
-	bme280_compensate_press(&m_data, adc_press);
+	LOG_INFO("BME temp: %d", m_data.comp_temp);
+
+	if (!bme280_compensate_press(&m_data, adc_press)) {
+		LOG_INFO("BME press error");
+		return;
+	}
 
 	m_data.is_updated = true;
 
-	LOG_INFO("BME temp: %d", m_data.comp_temp);
 	LOG_INFO("BME press: %d", m_data.comp_press / 256);
-
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -254,7 +273,7 @@ void bme280_init_sensor() {
 
 void bme280_read_sensor(void) {
 
-	static uint8_t p_ans_buffer[6] = {0};
+	static uint8_t p_ans_buffer[BME280_DATA_T_SIZE] = {0};
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND readout_reg[] = {BME280_PRESSURE_MSB_REG};
 
@@ -275,10 +294,24 @@ void bme280_read_sensor(void) {
 
 }
 
-bme280_data *bme280_get_data_handle(void) {
-	return &m_data;
+float bme280_get_pressure(void) {
+	return m_data.comp_press / (256.0F * 100.0F);
 }
 
-bool bme280_is_updated(void) {
+float bme280_get_temp(void) {
+	return m_data.comp_temp / (100.0F);
+}
+
+bool bme280_is_data_ready(void) {
 	return m_data.is_updated == 1;
 }
+
+bool is_bme280_updated(void) {
+	return m_is_updated == 1;
+}
+
+void bme280_clear_flags(void) {
+	m_data.is_updated = 0;
+}
+
+

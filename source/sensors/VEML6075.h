@@ -97,18 +97,20 @@ typedef enum veml6075_int_time veml6075_int_time_t;
 		VEML_READ_REG_REP_START(r_buffer+3, p_buffer+6, 2), \
 		VEML_READ_REG_REP_START(r_buffer+4, p_buffer+8, 2)
 
+bool is_veml_updated(void);
 
 class VEML6075 {
 public:
 
 	VEML6075();
-	bool init(uint16_t dev_id=0x26);
+	bool init(void);
 	void reset(void);
 	void on();
 	void off();
 	uint16_t getConf();
 
-	void refresh(uint8_t *_data);
+	void readChip();
+	void refresh();
 	float getUVA();
 	float getUVB();
 	float getUVIndex();

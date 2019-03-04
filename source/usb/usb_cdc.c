@@ -52,10 +52,10 @@
 #endif
 
 static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
-                                app_usbd_msc_user_event_t     event);
+		app_usbd_msc_user_event_t     event);
 
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
-                                    app_usbd_cdc_acm_user_event_t event);
+		app_usbd_cdc_acm_user_event_t event);
 
 #define CDC_ACM_COMM_INTERFACE  0
 #define CDC_ACM_COMM_EPIN       NRF_DRV_USBD_EPIN2
@@ -92,42 +92,42 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
 #define MSC_WORKBUFFER_SIZE (1024)
 
 #define NRF_QSPI_CONFIG                                        \
-{                                                                       \
-    .xip_offset  = NRFX_QSPI_CONFIG_XIP_OFFSET,                         \
-    .pins = {                                                           \
-       .sck_pin     = QSPI_SCK_PIN,                                 \
-       .csn_pin     = QSPI_SS_PIN,                                      \
-       .io0_pin     = QSPI_MOSI_PIN,                                \
-       .io1_pin     = QSPI_MISO_PIN,                                \
-       .io2_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
-       .io3_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
-    },                                                                  \
-    .irq_priority   = (uint8_t)NRFX_QSPI_CONFIG_IRQ_PRIORITY,           \
-    .prot_if = {                                                        \
-        .readoc     = (nrf_qspi_readoc_t)NRFX_QSPI_CONFIG_READOC,       \
-        .writeoc    = (nrf_qspi_writeoc_t)NRFX_QSPI_CONFIG_WRITEOC,     \
-        .addrmode   = (nrf_qspi_addrmode_t)NRFX_QSPI_CONFIG_ADDRMODE,   \
-        .dpmconfig  = false,                                            \
-    },                                                                  \
-    .phy_if = {                                                         \
-        .sck_freq   = (nrf_qspi_frequency_t)NRFX_QSPI_CONFIG_FREQUENCY, \
-        .sck_delay  = (uint8_t)NRFX_QSPI_CONFIG_SCK_DELAY,              \
-        .spi_mode   = (nrf_qspi_spi_mode_t)NRFX_QSPI_CONFIG_MODE,       \
-        .dpmen      = false                                             \
-    },                                                                  \
-}
+		{                                                                       \
+	.xip_offset  = NRFX_QSPI_CONFIG_XIP_OFFSET,                         \
+	.pins = {                                                           \
+			.sck_pin     = QSPI_SCK_PIN,                                 \
+			.csn_pin     = QSPI_SS_PIN,                                      \
+			.io0_pin     = QSPI_MOSI_PIN,                                \
+			.io1_pin     = QSPI_MISO_PIN,                                \
+			.io2_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
+			.io3_pin     = NRF_QSPI_PIN_NOT_CONNECTED,                  \
+		},                                                                  \
+		.irq_priority   = (uint8_t)NRFX_QSPI_CONFIG_IRQ_PRIORITY,           \
+		.prot_if = {                                                        \
+				.readoc     = (nrf_qspi_readoc_t)NRFX_QSPI_CONFIG_READOC,       \
+				.writeoc    = (nrf_qspi_writeoc_t)NRFX_QSPI_CONFIG_WRITEOC,     \
+				.addrmode   = (nrf_qspi_addrmode_t)NRFX_QSPI_CONFIG_ADDRMODE,   \
+				.dpmconfig  = false,                                            \
+		},                                                                  \
+		.phy_if = {                                                         \
+				.sck_freq   = (nrf_qspi_frequency_t)NRFX_QSPI_CONFIG_FREQUENCY, \
+				.sck_delay  = (uint8_t)NRFX_QSPI_CONFIG_SCK_DELAY,              \
+				.spi_mode   = (nrf_qspi_spi_mode_t)NRFX_QSPI_CONFIG_MODE,       \
+				.dpmen      = false                                             \
+		},                                                                  \
+		}
 
 /**
  * @brief  QSPI block device definition
  */
 NRF_BLOCK_DEV_QSPI_DEFINE(
-    m_block_dev_qspi,
-    NRF_BLOCK_DEV_QSPI_CONFIG(
-        512,
-        NRF_BLOCK_DEV_QSPI_FLAG_CACHE_WRITEBACK,
-        NRF_QSPI_CONFIG
-     ),
-     NFR_BLOCK_DEV_INFO_CONFIG("stravaV10", "QSPI", "0.01")
+		m_block_dev_qspi,
+		NRF_BLOCK_DEV_QSPI_CONFIG(
+				512,
+				NRF_BLOCK_DEV_QSPI_FLAG_CACHE_WRITEBACK,
+				NRF_QSPI_CONFIG
+		),
+		NFR_BLOCK_DEV_INFO_CONFIG("stravaV10", "QSPI", "0.01")
 );
 
 
@@ -136,7 +136,7 @@ NRF_BLOCK_DEV_QSPI_DEFINE(
 
  */
 #define BLOCKDEV_LIST() (                                   \
-    NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev),    \
+		NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev),    \
 )
 
 /**
@@ -181,106 +181,112 @@ static uint32_t m_last_buffered = 0;
  * @param event     Class specific event.
  */
 static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
-                                app_usbd_msc_user_event_t     event)
+		app_usbd_msc_user_event_t     event)
 {
-    UNUSED_PARAMETER(p_inst);
-    UNUSED_PARAMETER(event);
+	UNUSED_PARAMETER(p_inst);
+	UNUSED_PARAMETER(event);
 }
 
 /**
  * @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t (headphones)
  * */
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
-                                    app_usbd_cdc_acm_user_event_t event)
+		app_usbd_cdc_acm_user_event_t event)
 {
-    app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
+	app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
 
-    switch (event)
-    {
-        case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
-        {
-        	m_is_port_open = true;
-            /*Setup first transfer*/
-            ret_code_t ret = app_usbd_cdc_acm_read_any(p_cdc_acm,
-                    m_rx_buffer,
-                    READ_SIZE);
+	switch (event)
+	{
+	case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
+	{
+		m_is_port_open = true;
+		/*Setup first transfer*/
+		ret_code_t ret = app_usbd_cdc_acm_read_any(p_cdc_acm,
+				m_rx_buffer,
+				READ_SIZE);
 
-            UNUSED_VARIABLE(ret);
-            break;
-        }
-        case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
-        	m_is_port_open = false;
-        	m_is_xfer_done = true;
-            break;
-        case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
-        {
-        	m_is_xfer_done = true;
-
-
-        	sysview_task_void_exit(USB_VCOM_TASK);
-        } break;
-        case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
-        {
-
-        	// parse chars
-        	size_t bytes_read = app_usbd_cdc_acm_rx_size(p_cdc_acm);
-
-        	LOG_INFO("Bytes RCV: %u", bytes_read);
-
-        	size_t ind = 0;
-        	while (bytes_read--) {
-        		usb_cdc_decoder(m_rx_buffer[ind++]);
-        	}
-
-        	/* Fetch data until internal buffer is empty */
-        	(void)app_usbd_cdc_acm_read_any(p_cdc_acm,
-        			m_rx_buffer,
-					READ_SIZE);
+		UNUSED_VARIABLE(ret);
+		break;
+	}
+	case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
+		m_is_port_open = false;
+		m_is_xfer_done = true;
+		break;
+	case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
+	{
+		m_is_xfer_done = true;
 
 
-        } break;
-        default:
-            break;
-    }
+		sysview_task_void_exit(USB_VCOM_TASK);
+	} break;
+	case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
+	{
+
+		// parse chars
+		size_t bytes_read = app_usbd_cdc_acm_rx_size(p_cdc_acm);
+
+		LOG_INFO("Bytes RCV: %u", bytes_read);
+
+		size_t ind = 0;
+		while (bytes_read--) {
+			usb_cdc_decoder(m_rx_buffer[ind++]);
+		}
+
+		/* Fetch data until internal buffer is empty */
+		(void)app_usbd_cdc_acm_read_any(p_cdc_acm,
+				m_rx_buffer,
+				READ_SIZE);
+
+
+	} break;
+	default:
+		break;
+	}
 }
 
 static void usbd_user_ev_handler(app_usbd_event_type_t event)
 {
-    switch (event)
-    {
-        case APP_USBD_EVT_DRV_SUSPEND:
+	switch (event)
+	{
+	case APP_USBD_EVT_DRV_SUSPEND:
 
-            break;
-        case APP_USBD_EVT_DRV_RESUME:
+		break;
+	case APP_USBD_EVT_DRV_RESUME:
 
-            break;
-        case APP_USBD_EVT_STARTED:
-            break;
-        case APP_USBD_EVT_STOPPED:
-            app_usbd_disable();
-            break;
-        case APP_USBD_EVT_POWER_DETECTED:
-            LOG_WARNING("USB power detected");
+		break;
+	case APP_USBD_EVT_DRV_RESET:
 
-            if (!nrf_drv_usbd_is_enabled())
-            {
-            	app_usbd_enable();
-                NRF_LOG_INFO("app_usbd_enable");
-            }
+		break;
+	case APP_USBD_EVT_STATE_CHANGED:
 
-            break;
-        case APP_USBD_EVT_POWER_REMOVED:
-            NRF_LOG_INFO("USB power removed");
-            app_usbd_stop();
-            break;
-        case APP_USBD_EVT_POWER_READY:
-        	LOG_WARNING("USB ready");
-            app_usbd_start();
-            break;
-        default:
-        	LOG_WARNING("USB event %u", event);
-            break;
-    }
+		break;
+	case APP_USBD_EVT_STARTED:
+		break;
+	case APP_USBD_EVT_STOPPED:
+		app_usbd_disable();
+		break;
+	case APP_USBD_EVT_POWER_DETECTED:
+		LOG_WARNING("USB power detected");
+
+		if (!nrf_drv_usbd_is_enabled())
+		{
+			app_usbd_enable();
+			NRF_LOG_INFO("app_usbd_enable");
+		}
+
+		break;
+	case APP_USBD_EVT_POWER_REMOVED:
+		NRF_LOG_INFO("USB power removed");
+		app_usbd_stop();
+		break;
+	case APP_USBD_EVT_POWER_READY:
+		LOG_WARNING("USB ready");
+		app_usbd_start();
+		break;
+	default:
+		LOG_WARNING("USB event %u", event);
+		break;
+	}
 }
 
 
@@ -334,15 +340,15 @@ void usb_cdc_diskio_init(void) {
 	// clocks init
 	ret_code_t err_code;
 	err_code = nrf_drv_clock_init();
-    APP_ERROR_CHECK(err_code);
+	APP_ERROR_CHECK(err_code);
 
-    LOG_INFO("Starting LF clock");
-    nrf_drv_clock_lfclk_request(NULL);
-    while(!nrf_drv_clock_lfclk_is_running())
-    {
-        /* Just waiting */
-    	nrf_delay_ms(1);
-    }
+	LOG_INFO("Starting LF clock");
+	nrf_drv_clock_lfclk_request(NULL);
+	while(!nrf_drv_clock_lfclk_is_running())
+	{
+		/* Just waiting */
+		nrf_delay_ms(1);
+	}
 
 	// Initialize FATFS disk I/O interface by providing the block device.
 	static diskio_blkdev_t drives[] =
@@ -365,28 +371,28 @@ void usb_cdc_diskio_init(void) {
  */
 void usb_cdc_init(void)
 {
-    ret_code_t ret;
-    static const app_usbd_config_t usbd_config = {
-        .ev_state_proc = usbd_user_ev_handler
-    };
+	ret_code_t ret;
+	static const app_usbd_config_t usbd_config = {
+			.ev_state_proc = usbd_user_ev_handler
+	};
 
-    app_usbd_serial_num_generate();
+	app_usbd_serial_num_generate();
 
-    ret = app_usbd_init(&usbd_config);
-    APP_ERROR_CHECK(ret);
+	ret = app_usbd_init(&usbd_config);
+	APP_ERROR_CHECK(ret);
 
 	// prevent CDC from sending bytes
 	m_is_port_open = false;
 
-    app_usbd_class_inst_t const * class_inst_msc = app_usbd_dummy_class_inst_get(&m_app_msc_dummy);
-    ret = app_usbd_class_append(class_inst_msc);
-    APP_ERROR_CHECK(ret);
+	app_usbd_class_inst_t const * class_inst_msc = app_usbd_dummy_class_inst_get(&m_app_msc_dummy);
+	ret = app_usbd_class_append(class_inst_msc);
+	APP_ERROR_CHECK(ret);
 
-    app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
-    ret = app_usbd_class_append(class_cdc_acm);
-    APP_ERROR_CHECK(ret);
+	app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
+	ret = app_usbd_class_append(class_cdc_acm);
+	APP_ERROR_CHECK(ret);
 
-    LOG_INFO("USBD CDC / MSC configured.");
+	LOG_INFO("USBD CDC / MSC configured.");
 
 }
 
@@ -395,22 +401,22 @@ void usb_cdc_init(void)
  */
 void usb_cdc_event_enable(void)
 {
-    ret_code_t ret;
+	ret_code_t ret;
 
-    if (USBD_POWER_DETECTION)
-    {
-        ret = app_usbd_power_events_enable();
-        APP_ERROR_CHECK(ret);
-    }
-    else
-    {
-        NRF_LOG_INFO("No USB power detection enabled\r\nStarting USB now");
+	if (USBD_POWER_DETECTION)
+	{
+		ret = app_usbd_power_events_enable();
+		APP_ERROR_CHECK(ret);
+	}
+	else
+	{
+		NRF_LOG_INFO("No USB power detection enabled\r\nStarting USB now");
 
-        app_usbd_enable();
-        app_usbd_start();
-    }
+		app_usbd_enable();
+		app_usbd_start();
+	}
 
-    LOG_INFO("USBD CDC / MSC started.");
+	LOG_INFO("USBD CDC / MSC started.");
 
 	while (app_usbd_event_queue_process())
 	{
@@ -451,18 +457,18 @@ void usb_cdc_start_msc(void) {
 	ret = app_usbd_class_append(class_cdc_acm);
 	APP_ERROR_CHECK(ret);
 
-    if (USBD_POWER_DETECTION)
-    {
-    	ret = app_usbd_power_events_enable();
-    	APP_ERROR_CHECK(ret);
-    }
-    else
-    {
-    	NRF_LOG_INFO("No USB power detection enabled\r\nStarting USB now");
+	if (USBD_POWER_DETECTION)
+	{
+		ret = app_usbd_power_events_enable();
+		APP_ERROR_CHECK(ret);
+	}
+	else
+	{
+		NRF_LOG_INFO("No USB power detection enabled\r\nStarting USB now");
 
-    	app_usbd_enable();
-    	app_usbd_start();
-    }
+		app_usbd_enable();
+		app_usbd_start();
+	}
 
 	while (app_usbd_event_queue_process())
 	{

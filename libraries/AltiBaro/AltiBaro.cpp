@@ -41,7 +41,7 @@ AltiBaro::AltiBaro() {
  * @return True if updated
  */
 bool AltiBaro::isUpdated() {
-	return bme280_is_updated();
+	return bme280_is_data_ready();
 }
 
 /**
@@ -58,12 +58,9 @@ bool AltiBaro::computeAlti(float& alti_) {
 	return true;
 #endif
 
-	bme280_data *_data = bme280_get_data_handle();
-
-
 	// m_temperature, m_pressure;
 	if (nb_filtering <= FILTRE_NB) {
-		alti_ = this->pressureToAltitude(_data->comp_press);
+		alti_ = this->pressureToAltitude(bme280_get_pressure());
 	} else {
 		alti_ = m_alti_f;
 	}
@@ -102,8 +99,8 @@ void AltiBaro::runFilter(void) {
 #ifdef TDD
 	float input = this->getAlti();
 #else
-	bme280_data *_data = bme280_get_data_handle();
-	float input = this->pressureToAltitude(_data->comp_press);
+	bme280_clear_flags();
+	float input = this->pressureToAltitude(bme280_get_pressure());
 #endif
 	xk1[ind++] = input;
 	ind = ind % MOV_AV_NB_VAL;
@@ -220,8 +217,7 @@ void AltiBaro::seaLevelForAltitude(float altitude)
 	// Note that using the equation from wikipedia can give bad results
 	// at high altitude.  See this thread for more information:
 	//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
-	bme280_data *_data = bme280_get_data_handle();
-	float atmospheric = _data->comp_press;
+	float atmospheric = bme280_get_pressure();
 
 	ASSERT(atmospheric != 0.0f);
 

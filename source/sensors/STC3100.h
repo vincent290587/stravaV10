@@ -99,6 +99,9 @@ typedef struct {
 #define STC3100_READ_ALL(p_reg, p_buffer) \
 		I2C_READ_REG(STC3100_ADDRESS, p_reg, p_buffer, 10)
 
+/*=========================================================================*/
+
+bool is_stc_updated(void);
 
 /*=========================================================================*/
 
@@ -114,7 +117,9 @@ public:
 	void shutdown(void);
 	void reset(void);
 
-	bool refresh(tSTC31000Data *_data);
+	bool refresh(void);
+
+	void readChip();
 
 	float getCurrent() const { return _current;}
 	float getVoltage() const {return _voltage;}
@@ -155,7 +160,6 @@ private:
 	float _counter;
 
 	void writeCommand(uint8_t reg, uint8_t value);
-	void readChip();
 	void computeVoltage();
 	void computeCharge();
 	void computeCurrent();
