@@ -12,16 +12,19 @@
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include "sd_functions.h"
+#include "ant_device_manager.h"
 #include "MenuObjects.h"
 #include "Menuable.h"
 
+static void _page1_mode_ant_list(int var);
 
 static MenuPageItems m_main_page(vue, nullptr);
 static MenuPageItems prc_sel(vue, &m_main_page);
 static MenuPageItems page_set(vue, &m_main_page);
-static MenuPageItems page_pair(vue, &page_set);
 
 static MenuPageSetting page_value(vue, &page_set);
+
+static MenuPagePairing page_pair(vue, &page_set, _page1_mode_ant_list);
 
 
 static eFuncMenuAction _page0_mode_crs(int var) {
@@ -114,6 +117,8 @@ static eFuncMenuAction _page0_settings(int var) {
 
 static eFuncMenuAction _page1_pair_hrm(int var) {
 
+	ant_device_manager_search_start(eAntParingSensorTypeHRM);
+
 	return eFuncMenuActionNone;
 }
 
@@ -125,6 +130,45 @@ static eFuncMenuAction _page1_pair_bsc(int var) {
 static eFuncMenuAction _page1_pair_fec(int var) {
 
 	return eFuncMenuActionNone;
+}
+
+static eFuncMenuAction _page0_mode_ant_stop(int var) {
+
+	// search cancel
+	ant_device_manager_search_cancel();
+
+	return eFuncMenuActionEndMenu;
+}
+
+static eFuncMenuAction _page0_mode_ant_go(int var) {
+
+	// sensor selection
+	ant_device_manager_search_validate(var);
+
+	return eFuncMenuActionEndMenu;
+}
+
+static void _page1_mode_ant_list(int var) {
+
+	page_pair.removeAllItems();
+
+	// populate list: map sensor ID to item
+	sAntPairingSensorList* s_list = ant_device_manager_get_sensors_list();
+
+	MenuItem item_can(page_pair, "Cancel", _page0_mode_ant_stop);
+	page_pair.addItem(item_can);
+
+	String name;
+	for (int i=0; i < s_list->nb_sensors; i++) {
+
+		name = String(s_list->sensors[i].dev_id);
+		name += "   ";
+		name += String(s_list->sensors[i].ssid);
+
+		MenuItem item_sns(page_pair, name.c_str(), _page0_mode_ant_go);
+
+		page_pair.addItem(item_sns);
+	}
 }
 
 static int get_cur_ftp(int var) {

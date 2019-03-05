@@ -133,6 +133,10 @@ void MenuPageItems::addItem(MenuItem& item) {
 	m_items.push_back(item);
 }
 
+void MenuPageItems::removeAllItems(void) {
+	m_items.clear();
+}
+
 uint16_t MenuPageItems::nbItems(void) {
 	return m_items.size();
 }
@@ -241,4 +245,18 @@ void MenuPageSetting::render(void) {
 
 	vue.print("  ");
 	vue.println(String(m_value));
+}
+
+MenuPagePairing::MenuPagePairing(Menuable &menu, MenuPage *parent, f_pairing_callback func) :
+		MenuPageItems(menu, parent), m_func(func) {
+
+}
+
+void MenuPagePairing::render(void) {
+
+	// populate through call
+	if (m_func) m_func(0);
+
+	// render page
+	MenuPageItems::render();
 }

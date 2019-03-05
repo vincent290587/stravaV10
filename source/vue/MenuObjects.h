@@ -27,6 +27,8 @@ typedef eFuncMenuAction (*f_menu_callback)(int);
 
 typedef int (*f_setting_callback)(int);
 
+typedef void (*f_pairing_callback)(int);
+
 typedef struct {
 	f_setting_callback pre_hook;
 	f_setting_callback post_hook;
@@ -85,6 +87,7 @@ public:
 	MenuPageItems(Menuable &menu, MenuPage *parent = nullptr);
 
 	void addItem(MenuItem &item);
+	void removeAllItems(void);
 	uint16_t nbItems(void);
 
 	virtual void render(void);
@@ -95,7 +98,6 @@ public:
 private:
 	std::vector<MenuItem> m_items;
 };
-
 
 class MenuPageSetting : public MenuPage {
 public:
@@ -115,6 +117,15 @@ private:
 	sSettingsCallbacks m_callbacks;
 };
 
+class MenuPagePairing : public MenuPageItems {
+public:
+	MenuPagePairing(Menuable &menu, MenuPage *parent = nullptr, f_pairing_callback func = nullptr);
+
+	virtual void render(void);
+
+private:
+	f_pairing_callback m_func;
+};
 
 
 #endif /* SOURCE_VUE_MENUOBJECTS_H_ */
