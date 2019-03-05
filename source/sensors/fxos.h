@@ -50,6 +50,8 @@
 
 bool fxos_init(void);
 
+void fxos_calibration_start(void);
+
 void fxos_readChip(void);
 
 bool is_fxos_updated(void);

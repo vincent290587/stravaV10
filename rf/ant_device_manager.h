@@ -13,10 +13,10 @@
 #define ANT_DEVICE_MANAGER_MAX_SENSORS_NB    8
 
 typedef enum {
-	eAntParingSensorTypeNone,
-	eAntParingSensorTypeHRM,
-	eAntParingSensorTypeBSC,
-	eAntParingSensorTypeFEC
+	eAntPairingSensorTypeNone,
+	eAntPairingSensorTypeHRM,
+	eAntPairingSensorTypeBSC,
+	eAntPairingSensorTypeFEC
 } eAntPairingSensorType;
 
 typedef struct {

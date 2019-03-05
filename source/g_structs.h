@@ -44,6 +44,11 @@ typedef struct {
 	uint8_t el_time;
 } sFecInfo;
 
+typedef struct {
+	int16_t calib[3];
+	uint16_t is_present;
+} sMagCal;
+
 typedef union {
 	struct {
 		uint16_t hrm_devid;
@@ -53,6 +58,7 @@ typedef union {
 		uint16_t FTP;
 		uint16_t weight;
 		uint16_t version;
+		sMagCal mag_cal;
 		uint16_t crc;
 	};
 	uint8_t flat_user_params;

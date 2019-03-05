@@ -10,7 +10,7 @@
 
 static sAntPairingSensorList m_sensors_list;
 
-static eAntPairingSensorType m_search_type = eAntParingSensorTypeNone;
+static eAntPairingSensorType m_search_type = eAntPairingSensorTypeNone;
 
 
 sAntPairingSensorList* ant_device_manager_get_sensors_list(void) {
@@ -46,28 +46,28 @@ void ant_device_manager_search_start(eAntPairingSensorType dev_type) {
 
 void ant_device_manager_search_validate(int var) {
 
-	if (eAntParingSensorTypeNone == m_search_type) return;
+	if (eAntPairingSensorTypeNone == m_search_type) return;
 	if (var < 0 || var >= m_sensors_list.nb_sensors) return;
 	if (m_sensors_list.nb_sensors == 0) return;
 
 	// TODO
 	switch (m_search_type) {
-	case eAntParingSensorTypeHRM:
+	case eAntPairingSensorTypeHRM:
 		break;
-	case eAntParingSensorTypeBSC:
+	case eAntPairingSensorTypeBSC:
 		break;
-	case eAntParingSensorTypeFEC:
+	case eAntPairingSensorTypeFEC:
 		break;
 	default:
 		break;
 	}
 
-	m_search_type = eAntParingSensorTypeNone;
+	m_search_type = eAntPairingSensorTypeNone;
 }
 
 void ant_device_manager_search_cancel(void) {
 
-	m_search_type = eAntParingSensorTypeNone;
+	m_search_type = eAntPairingSensorTypeNone;
 
 	// TODO close search channel
 

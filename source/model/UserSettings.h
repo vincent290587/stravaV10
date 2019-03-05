@@ -56,6 +56,9 @@ public:
 		return m_params.weight;
 	}
 
+	sMagCal &getMagCal(void) const {
+		return m_params.mag_cal;
+	}
 
 private:
 	bool m_is_init = false;

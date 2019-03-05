@@ -117,17 +117,21 @@ static eFuncMenuAction _page0_settings(int var) {
 
 static eFuncMenuAction _page1_pair_hrm(int var) {
 
-	ant_device_manager_search_start(eAntParingSensorTypeHRM);
+	ant_device_manager_search_start(eAntPairingSensorTypeHRM);
 
 	return eFuncMenuActionNone;
 }
 
 static eFuncMenuAction _page1_pair_bsc(int var) {
 
+	ant_device_manager_search_start(eAntPairingSensorTypeBSC);
+
 	return eFuncMenuActionNone;
 }
 
 static eFuncMenuAction _page1_pair_fec(int var) {
+
+	ant_device_manager_search_start(eAntPairingSensorTypeFEC);
 
 	return eFuncMenuActionNone;
 }
@@ -219,6 +223,13 @@ static eFuncMenuAction _page1_set_weight(int var) {
 	return eFuncMenuActionNone;
 }
 
+static eFuncMenuAction _page1_start_cal(int var) {
+
+	fxos_calibration_start();
+
+	return eFuncMenuActionEndMenu;
+}
+
 Menuable::Menuable() {
 	m_is_menu_selected = false;
 	p_cur_page = nullptr;
@@ -251,6 +262,7 @@ void Menuable::initMenu(void) {
 	MenuItem item_pec(page_set, "Pair FEC", _page1_pair_fec, &page_pair);
 	MenuItem item_ftpf(page_set, "Set FTP", _page1_set_ftp, &page_value);
 	MenuItem item_weif(page_set, "Set Weight", _page1_set_weight, &page_value);
+	MenuItem item_cal(page_set, "Cal. mag", _page1_start_cal);
 	MenuItem item_era(page_set, "Erase GPX", _page1_erase);
 	MenuItem item_for(page_set, "! Format !", _page1_format);
 
@@ -259,6 +271,7 @@ void Menuable::initMenu(void) {
 	page_set.addItem(item_pec);
 	page_set.addItem(item_ftpf);
 	page_set.addItem(item_weif);
+	page_set.addItem(item_cal);
 	page_set.addItem(item_era);
 	page_set.addItem(item_for);
 
