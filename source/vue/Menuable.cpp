@@ -16,10 +16,12 @@
 #include "Menuable.h"
 
 
-static MenuPage m_main_page(vue, nullptr);
-static MenuPage prc_sel(vue, &m_main_page);
-static MenuPage page_set(vue, &m_main_page);
-static MenuPage page_pair(vue, &page_set);
+static MenuPageItems m_main_page(vue, nullptr);
+static MenuPageItems prc_sel(vue, &m_main_page);
+static MenuPageItems page_set(vue, &m_main_page);
+static MenuPageItems page_pair(vue, &page_set);
+
+static MenuPageSetting page_value(vue, &page_set);
 
 
 static eFuncMenuAction _page0_mode_crs(int var) {
@@ -125,14 +127,50 @@ static eFuncMenuAction _page1_pair_fec(int var) {
 	return eFuncMenuActionNone;
 }
 
+static int get_cur_ftp(int var) {
+	return u_settings.getFTP();
+}
+
+static int set_cur_ftp(int var) {
+
+	sUserParameters *settings = user_settings_get();
+	settings->FTP = (uint16_t) var;
+
+	return 0;
+}
+
 static eFuncMenuAction _page1_set_ftp(int var) {
 
-	LOG_INFO("FTP entered: %d", var);
+	sSettingsCallbacks callbacks = {
+			get_cur_ftp,
+			set_cur_ftp};
+
+	page_value.setCallbacks(callbacks);
+	page_value.setName("FTP:");
 
 	return eFuncMenuActionNone;
 }
 
+static int get_cur_weight(int var) {
+	return u_settings.getWeight();
+}
+
+static int set_cur_weight(int var) {
+
+	sUserParameters *settings = user_settings_get();
+	settings->weight = (uint16_t) var;
+
+	return 0;
+}
+
 static eFuncMenuAction _page1_set_weight(int var) {
+
+	sSettingsCallbacks callbacks = {
+			get_cur_weight,
+			set_cur_weight};
+
+	page_value.setCallbacks(callbacks);
+	page_value.setName("Weight:");
 
 	return eFuncMenuActionNone;
 }
@@ -163,17 +201,12 @@ void Menuable::initMenu(void) {
 	m_main_page.addItem(item_set);
 	m_main_page.addItem(item_shu);
 
-	int val = u_settings.getFTP();
-	static MenuPageSetting page_ftp(val, vue, &page_set);
-
-	val = u_settings.getWeight();
-	static MenuPageSetting page_weight(val, vue, &page_set);
 
 	MenuItem item_prm(page_set, "Pair HRM", _page1_pair_hrm, &page_pair);
 	MenuItem item_psc(page_set, "Pair BSC", _page1_pair_bsc, &page_pair);
 	MenuItem item_pec(page_set, "Pair FEC", _page1_pair_fec, &page_pair);
-	MenuItem item_ftpf(page_set, "Set FTP", nullptr, &page_ftp);
-	MenuItem item_weif(page_set, "Set Weight", nullptr, &page_weight);
+	MenuItem item_ftpf(page_set, "Set FTP", _page1_set_ftp, &page_value);
+	MenuItem item_weif(page_set, "Set Weight", _page1_set_weight, &page_value);
 	MenuItem item_era(page_set, "Erase GPX", _page1_erase);
 	MenuItem item_for(page_set, "! Format !", _page1_format);
 
@@ -185,11 +218,6 @@ void Menuable::initMenu(void) {
 	page_set.addItem(item_era);
 	page_set.addItem(item_for);
 
-	MenuItem item_ftp(page_set, "Set FTP", _page1_set_ftp);
-	MenuItem item_wei(page_set, "Set Weight", _page1_set_weight);
-
-	page_ftp.addItem(item_ftp);
-	page_weight.addItem(item_wei);
 
 	// init variables
 	this->closeMenu();

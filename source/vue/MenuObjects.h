@@ -25,6 +25,13 @@ typedef enum {
 
 typedef eFuncMenuAction (*f_menu_callback)(int);
 
+typedef int (*f_setting_callback)(int);
+
+typedef struct {
+	f_setting_callback pre_hook;
+	f_setting_callback post_hook;
+} sSettingsCallbacks;
+
 #ifndef SOURCE_VUE_MENUABLE_H_
 #endif
 
@@ -59,13 +66,9 @@ public:
 	void closeMenuPopagate(void);
 
 	virtual void render(void);
-
 	virtual void propagateEvent(eButtonsEvent event);
 
 	void goToPage(MenuPage *page);
-
-	void addItem(MenuItem &item);
-	uint16_t nbItems(void);
 
 	MenuPage* getParent() const {
 		return p_parent;
@@ -74,14 +77,32 @@ public:
 protected:
 	MenuPage *p_parent;
 	Menuable &p_menu;
-	std::vector<MenuItem> m_items;
 	uint8_t ind_sel;
+};
+
+class MenuPageItems : public MenuPage {
+public:
+	MenuPageItems(Menuable &menu, MenuPage *parent = nullptr);
+
+	void addItem(MenuItem &item);
+	uint16_t nbItems(void);
+
+	virtual void render(void);
+
+	virtual void propagateEvent(eButtonsEvent event);
+
+
+private:
+	std::vector<MenuItem> m_items;
 };
 
 
 class MenuPageSetting : public MenuPage {
 public:
-	MenuPageSetting(int value, Menuable &menu, MenuPage *parent = nullptr);
+	MenuPageSetting(Menuable &menu, MenuPage *parent = nullptr);
+
+	void setCallbacks(sSettingsCallbacks &calls);
+	void setName(const char *name) {m_name = name;}
 
 	virtual void render(void);
 
@@ -90,6 +111,8 @@ public:
 
 private:
 	int m_value;
+	String m_name;
+	sSettingsCallbacks m_callbacks;
 };
 
 

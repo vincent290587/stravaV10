@@ -75,8 +75,6 @@ void MenuItem::addSubPage(MenuPage &page) {
 
 MenuPage::MenuPage(Menuable &menu, MenuPage *parent) : p_parent(parent), p_menu(menu) {
 
-	// insert the "go back" element
-	m_items.push_back(MenuItem(*this, "Retour"));
 	ind_sel = 0;
 }
 
@@ -90,7 +88,56 @@ void MenuPage::goToPage(MenuPage *page) {
 	ind_sel = 0;
 }
 
+void MenuPage::closeMenuPopagate(void) {
+	p_menu.closeMenu();
+}
+
 void MenuPage::propagateEvent(eButtonsEvent event) {
+
+	ind_sel = 0;
+
+	switch (event) {
+	case eButtonsEventLeft:
+	{
+	}
+	break;
+
+	case eButtonsEventRight:
+	{
+	}
+	break;
+
+	case eButtonsEventCenter:
+	{
+		this->goToParent();
+	}
+	break;
+
+	default:
+		break;
+	}
+
+}
+
+void MenuPage::render(void) {
+
+}
+
+MenuPageItems::MenuPageItems(Menuable &menu, MenuPage *parent) : MenuPage(menu, parent) {
+
+	// insert the "go back" element
+	m_items.push_back(MenuItem(*this, "Retour"));
+}
+
+void MenuPageItems::addItem(MenuItem& item) {
+	m_items.push_back(item);
+}
+
+uint16_t MenuPageItems::nbItems(void) {
+	return m_items.size();
+}
+
+void MenuPageItems::propagateEvent(eButtonsEvent event) {
 
 	switch (event) {
 	case eButtonsEventLeft:
@@ -120,7 +167,7 @@ void MenuPage::propagateEvent(eButtonsEvent event) {
 	ind_sel = ind_sel % m_items.size();
 }
 
-void MenuPage::render(void) {
+void MenuPageItems::render(void) {
 	// render page
 	vue.setCursor(0, 20);
 	vue.setTextSize(3);
@@ -135,21 +182,19 @@ void MenuPage::render(void) {
 	LOG_INFO("Menu displayed: %u items", i);
 }
 
-void MenuPage::closeMenuPopagate(void) {
-	p_menu.closeMenu();
+
+MenuPageSetting::MenuPageSetting(Menuable &menu, MenuPage *parent) : MenuPage(menu, parent), m_value(0), m_name("Value:") {
+
+	m_callbacks.pre_hook = nullptr;
+	m_callbacks.post_hook = nullptr;
 }
 
-void MenuPage::addItem(MenuItem& item) {
-	m_items.push_back(item);
-}
+void MenuPageSetting::setCallbacks(sSettingsCallbacks &calls) {
 
-uint16_t MenuPage::nbItems(void) {
-	return m_items.size();
-}
+	m_callbacks.pre_hook = calls.pre_hook;
+	m_callbacks.post_hook = calls.post_hook;
 
-
-MenuPageSetting::MenuPageSetting(int value, Menuable &menu, MenuPage *parent) : MenuPage(menu, parent), m_value(value) {
-
+	m_value = m_callbacks.pre_hook(0);
 }
 
 void MenuPageSetting::propagateEvent(eButtonsEvent event) {
@@ -171,8 +216,8 @@ void MenuPageSetting::propagateEvent(eButtonsEvent event) {
 
 	case eButtonsEventCenter:
 	{
-		ASSERT(m_items.size() > 1);
-		m_items[1].validateAction(m_value);
+		if (m_callbacks.post_hook) m_callbacks.post_hook(m_value);
+		this->goToParent();
 	}
 	break;
 
@@ -184,13 +229,14 @@ void MenuPageSetting::propagateEvent(eButtonsEvent event) {
 
 void MenuPageSetting::render(void) {
 	// render page
-	vue.setCursor(0, 20);
+	vue.setCursor(20, 20);
 	vue.setTextSize(3);
 
-	ASSERT(m_items.size() > 1);
-	m_items[1].render();
+	// print name
+	vue.println(m_name);
 
-	vue.println();
+	// print value
+	vue.setCursor(50, 50);
 	vue.setTextSize(4);
 
 	vue.print("  ");
