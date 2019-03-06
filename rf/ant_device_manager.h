@@ -8,16 +8,10 @@
 #ifndef RF_ANT_DEVICE_MANAGER_H_
 #define RF_ANT_DEVICE_MANAGER_H_
 
+#include "ant.h"
 #include <stdint.h>
 
 #define ANT_DEVICE_MANAGER_MAX_SENSORS_NB    8
-
-typedef enum {
-	eAntPairingSensorTypeNone,
-	eAntPairingSensorTypeHRM,
-	eAntPairingSensorTypeBSC,
-	eAntPairingSensorTypeFEC
-} eAntPairingSensorType;
 
 typedef struct {
 	uint16_t dev_id;

@@ -26,6 +26,16 @@
 
 #define TACX_DEVICE_NUMBER              2766U
 
+
+
+typedef enum {
+	eAntPairingSensorTypeNone,
+	eAntPairingSensorTypeHRM,
+	eAntPairingSensorTypeBSC,
+	eAntPairingSensorTypeFEC
+} eAntPairingSensorType;
+
+
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;
 
@@ -36,6 +46,8 @@ extern "C" {
 void ant_stack_init(void);
 
 int ant_setup_start(void);
+
+void ant_search_start(eAntPairingSensorType search_type);
 
 void ant_timers_init(void);
 

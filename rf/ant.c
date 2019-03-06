@@ -142,6 +142,8 @@ static bsc_disp_calc_data_t m_cadence_calc_data = {0};
 static uint8_t is_hrm_init = 0;
 static uint8_t is_cad_init = 0;
 
+static eAntPairingSensorType m_search_type = eAntPairingSensorTypeNone;
+
 
 /**
  *
@@ -576,9 +578,38 @@ static void ant_profile_setup(void)
 
 //	err_code = ant_glasses_open(&m_ant_glasses);
 //	APP_ERROR_CHECK(err_code);
+
+
+
 	LOG_INFO("ANT ready");
 }
 
+
+void ant_search_start(eAntPairingSensorType search_type) {
+
+	uint32_t err_code;
+	m_search_type = search_type;
+
+	ant_channel_config_t p_channel_config;
+	ant_channel_init(&p_channel_config);
+
+	switch (search_type) {
+	case eAntPairingSensorTypeNone:
+	{
+
+	} break;
+	case eAntPairingSensorTypeHRM:
+	{
+
+	} break;
+	case eAntPairingSensorTypeBSC:
+		break;
+	case eAntPairingSensorTypeFEC:
+		break;
+	default:
+		break;
+	}
+}
 
 /**@brief Function for application main entry.
  */
