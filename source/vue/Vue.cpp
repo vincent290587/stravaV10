@@ -209,11 +209,15 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 	int decal = 0;
 	if (len > 6) {
 		affi = "---";
-	} else if(len > 4) {
-		decal += 20;
 	}
+//	else if(len > 4) {
+//		decal += 20;
+//	}
 
-	setCursor(x - 40 + decal, y - 10 + (_height / (nb_lig*2)));
+	int16_t x1; int16_t y1; uint16_t w=40; uint16_t h;
+	getTextBounds((char*)affi.c_str(), x, y, &x1, &y1, &w, &h);
+
+	setCursor(x - 50 + w, y - 10 + (_height / (nb_lig*2)));
 	setTextSize(3);
 
 	printRev(affi);
