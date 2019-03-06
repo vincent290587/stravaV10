@@ -195,29 +195,33 @@ void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi
 
 void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite) {
 
-	int decal = 0;
-	int x = _width / 2 * (p_col - 1);
-	int y = _height / nb_lig * (p_lig - 1);
+	const int x = _width / 2 * p_col;
+	const int y = _height / nb_lig * (p_lig - 1);
 
-	setCursor(x + 5, y + 8);
-	setTextSize(1);
-
-	if (champ) print(champ);
-
-	if (affi.length() <= 6) {
-		decal = (4 - affi.length()) * 14;
-	} else {
-		affi = "---";
+	if (champ) {
+		setCursor(x + 5 - _width / 2, y + 8);
+		setTextSize(1);
+		print(champ);
 	}
-	setCursor(x + 25 + decal, y - 10 + (_height / (nb_lig*2)));
+
+	const int len = affi.length();
+
+	int decal = 0;
+	if (len > 6) {
+		affi = "---";
+	} else if(len > 4) {
+		decal += 20;
+	}
+
+	setCursor(x - 40 + decal, y - 10 + (_height / (nb_lig*2)));
 	setTextSize(3);
 
-	print(affi);
+	printRev(affi);
 
 	setTextSize(1);
-	setCursor(x + 95, y + 8); // y + 42
+	setCursor(x - 8, y + 8);
 
-	if (p_unite) print(p_unite);
+	if (p_unite) printRev(p_unite);
 
 	// print delimiters
 	drawFastVLine(_width / 2, _height / nb_lig * (p_lig - 1), _height / nb_lig, 1);
@@ -228,7 +232,7 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 
 void Vue::HistoH(uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_) {
 
-	int y_base = _height / nb_lig * (p_lig);
+	const int y_base = _height / nb_lig * (p_lig);
 
 	if (h_config_.cur_elem_nb) {
 

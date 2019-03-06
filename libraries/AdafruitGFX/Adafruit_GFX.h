@@ -78,6 +78,7 @@ class Adafruit_GFX : public Print {
       int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h);
 
   virtual size_t write(uint8_t);
+  virtual size_t writeRev(uint8_t);
 
   int16_t height(void) const;
   int16_t width(void) const;
