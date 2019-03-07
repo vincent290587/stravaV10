@@ -31,6 +31,14 @@
 
 
 
+size_t Print::writeRev(const uint8_t *buffer, size_t size)
+{
+	size_t count = 0;
+	size_t ind = size;
+	for (int i=size-1; i >= 0; i--) count += writeRev(buffer[i]);
+	return count;
+}
+
 size_t Print::write(const uint8_t *buffer, size_t size)
 {
 	size_t count = 0;
@@ -38,6 +46,21 @@ size_t Print::write(const uint8_t *buffer, size_t size)
 	return count;
 }
 
+size_t Print::printRev(const String &s) {
+	uint8_t buffer[33];
+	size_t count = 0;
+	unsigned int index = 0;
+	unsigned int len = s.length();
+	while (len > 0) {
+		s.getBytes(buffer, sizeof(buffer), index);
+		unsigned int nbytes = len;
+		if (nbytes > sizeof(buffer)-1) nbytes = sizeof(buffer)-1;
+		index += nbytes;
+		len -= nbytes;
+		count += this->writeRev(buffer, nbytes);
+	}
+	return count;
+}
 
 size_t Print::print(const String &s)
 {

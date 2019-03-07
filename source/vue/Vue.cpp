@@ -17,6 +17,7 @@
 Vue::Vue() : Adafruit_GFX(LS027_HW_WIDTH, LS027_HW_HEIGHT) {
 
 	m_global_mode = VUE_DEFAULT_MODE;
+	m_last_refreshed = 0;
 
 }
 
@@ -195,29 +196,39 @@ void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi
 
 void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite) {
 
+	const int x = _width / 2 * p_col;
+	const int y = _height / nb_lig * (p_lig - 1);
+
+	if (champ) {
+		setCursor(x + 5 - _width / 2, y + 8);
+		setTextSize(1);
+		print(champ);
+	}
+
+	const int len = affi.length();
+
 	int decal = 0;
-	int x = _width / 2 * (p_col - 1);
-	int y = _height / nb_lig * (p_lig - 1);
-
-	setCursor(x + 5, y + 8);
-	setTextSize(1);
-
-	if (champ) print(champ);
-
-	if (affi.length() <= 6) {
-		decal = (4 - affi.length()) * 14;
-	} else {
+	if (len > 6) {
 		affi = "---";
 	}
-	setCursor(x + 25 + decal, y - 10 + (_height / (nb_lig*2)));
+//	else if(len > 4) {
+//		decal += 20;
+//	}
+
 	setTextSize(3);
 
-	print(affi);
+	int16_t x1; int16_t y1; uint16_t w=40; uint16_t h;
+	getTextBounds((char*)affi.c_str(), 0, 0, &x1, &y1, &w, &h);
+
+	setCursor(x - 55 + w/2, y - 10 + (_height / (nb_lig*2)));
+	//drawRect (x - 60 + w/2, y - 10 + (_height / (nb_lig*2)), -w, h, 1);
+
+	printRev(affi);
 
 	setTextSize(1);
-	setCursor(x + 95, y + 8); // y + 42
+	setCursor(x - 4, y + 8);
 
-	if (p_unite) print(p_unite);
+	if (p_unite) printRev(p_unite);
 
 	// print delimiters
 	drawFastVLine(_width / 2, _height / nb_lig * (p_lig - 1), _height / nb_lig, 1);
@@ -228,7 +239,7 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 
 void Vue::HistoH(uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_) {
 
-	int y_base = _height / nb_lig * (p_lig);
+	const int y_base = _height / nb_lig * (p_lig);
 
 	if (h_config_.cur_elem_nb) {
 

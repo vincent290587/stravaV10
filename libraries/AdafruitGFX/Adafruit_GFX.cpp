@@ -550,6 +550,63 @@ size_t Adafruit_GFX::write(uint8_t c) {
 
 	return 1;
 
+
+
+}
+
+size_t Adafruit_GFX::writeRev(uint8_t c) {
+
+	if(!gfxFont) { // 'Classic' built-in font
+
+		if(c == '\n') {
+			cursor_y -= textsize*8;
+			cursor_x  = 0;
+		} else if(c == '\r') {
+			// skip em
+		} else {
+			if(wrap && ((cursor_x + textsize * 6) >= _width)) { // Heading off edge?
+				cursor_x  = 0;            // Reset x to zero
+				cursor_y -= textsize * 8; // Advance y one line
+			}
+			cursor_x -= textsize * 6;
+			drawChar(cursor_x, cursor_y, c, textcolor, textbgcolor, textsize);
+		}
+
+	} else { // Custom font
+
+		if(c == '\n') {
+			cursor_x  = 0;
+			cursor_y -= (int16_t)textsize *
+					(uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+		} else if(c != '\r') {
+			uint8_t first = pgm_read_byte(&gfxFont->first);
+			if((c >= first) && (c <= (uint8_t)pgm_read_byte(&gfxFont->last))) {
+				uint8_t   c2    = c - pgm_read_byte(&gfxFont->first);
+				GFXglyph *glyph = &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c2]);
+				uint8_t   w     = pgm_read_byte(&glyph->width),
+						h     = pgm_read_byte(&glyph->height);
+				if((w > 0) && (h > 0)) { // Is there an associated bitmap?
+					int16_t xo = (int8_t)pgm_read_byte(&glyph->xOffset); // sic
+					if(wrap && ((cursor_x + textsize * (xo + w)) >= _width)) {
+						// Drawing character would go off right edge; wrap to new line
+						cursor_x  = 0;
+						cursor_y -= (int16_t)textsize *
+								(uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+					}
+
+					//LOG_INFO("drawChar x=%d y=%d\r\n",cursor_x, cursor_y);
+					cursor_x -= pgm_read_byte(&glyph->xAdvance) * (int16_t)textsize;
+					drawChar(cursor_x, cursor_y, c, textcolor, textbgcolor, textsize);
+				}
+			}
+		}
+
+	}
+
+	return 1;
+
+
+
 }
 
 // Draw a character
