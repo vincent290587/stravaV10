@@ -17,6 +17,7 @@
 Vue::Vue() : Adafruit_GFX(LS027_HW_WIDTH, LS027_HW_HEIGHT) {
 
 	m_global_mode = VUE_DEFAULT_MODE;
+	m_last_refreshed = 0;
 
 }
 
@@ -214,16 +215,18 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 //		decal += 20;
 //	}
 
-	int16_t x1; int16_t y1; uint16_t w=40; uint16_t h;
-	getTextBounds((char*)affi.c_str(), x, y, &x1, &y1, &w, &h);
-
-	setCursor(x - 50 + w, y - 10 + (_height / (nb_lig*2)));
 	setTextSize(3);
+
+	int16_t x1; int16_t y1; uint16_t w=40; uint16_t h;
+	getTextBounds((char*)affi.c_str(), 0, 0, &x1, &y1, &w, &h);
+
+	setCursor(x - 55 + w/2, y - 10 + (_height / (nb_lig*2)));
+	//drawRect (x - 60 + w/2, y - 10 + (_height / (nb_lig*2)), -w, h, 1);
 
 	printRev(affi);
 
 	setTextSize(1);
-	setCursor(x - 8, y + 8);
+	setCursor(x - 4, y + 8);
 
 	if (p_unite) printRev(p_unite);
 
