@@ -24,7 +24,7 @@
 
 #define FEC_CHANNEL_NUMBER              0x03
 
-#define TACX_DEVICE_NUMBER              2766U
+#define TACX_DEVICE_NUMBER              2846U
 
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;
