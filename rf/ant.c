@@ -255,22 +255,26 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 {
 	uint32_t err_code = NRF_SUCCESS;
 
-	uint16_t pusDeviceNumber = 0;
-	uint8_t pucDeviceType    = 0;
-	uint8_t pucTransmitType  = 0;
-
 	switch (p_ant_evt->event)
 	{
 	case EVENT_RX:
 	{
-		sd_ant_channel_id_get (BS_CHANNEL_NUMBER,
-				&pusDeviceNumber,
-				&pucDeviceType,
-				&pucTransmitType);
+		uint16_t m_last_device_id;
+		uint8_t m_last_rssi = 0;
 
-		LOG_INFO("Scanned device 0x%04X", pusDeviceNumber);
+        if (p_ant_evt->message.ANT_MESSAGE_stExtMesgBF.bANTRssi)
+        {
+            m_last_rssi = p_ant_evt->message.ANT_MESSAGE_aucExtData[5];
+        }
 
-		ant_device_manager_search_add(pusDeviceNumber, -5);
+        if (p_ant_evt->message.ANT_MESSAGE_stExtMesgBF.bANTDeviceID)
+        {
+        	m_last_device_id = uint16_decode(p_ant_evt->message.ANT_MESSAGE_aucExtData);
+
+    		LOG_WARNING("Scanned device 0x%04X", m_last_device_id);
+
+        	ant_device_manager_search_add(m_last_device_id, m_last_rssi);
+        }
 
 	} break;
 	case EVENT_RX_FAIL:
@@ -625,25 +629,38 @@ static void ant_profile_setup(void)
 
 void ant_search_start(eAntPairingSensorType search_type) {
 
-//    // Background search
-//    const ant_channel_config_t bs_channel_config =
-//    {
-//        .channel_number    = BS_CHANNEL_NUMBER,
-//        .channel_type      = CHANNEL_TYPE_SLAVE,
-//        .ext_assign        = EXT_PARAM_ALWAYS_SEARCH,
-//        .rf_freq           = 0x39,              // ANT+ frequency
-//        .transmission_type = WILDCARD_TRANSMISSION_TYPE,
-//        .device_type       = 0x00,              // Wild card
-//        .device_number     = 0x00,              // Wild card
-//        .channel_period    = 0x00,              // This is not taken into account.
-//        .network_number    = ANTPLUS_NETWORK_NUMBER,
-//    };
-//
-//    err_code = ant_channel_init(&bs_channel_config);
-//    APP_ERROR_CHECK(err_code);
-//
-//    err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
-//    APP_ERROR_CHECK(err_code);
+	const ant_search_config_t bs_search_config =
+	{
+			.channel_number        = BS_CHANNEL_NUMBER,
+			.low_priority_timeout  = ANT_LOW_PRIORITY_TIMEOUT_DISABLE,
+			.high_priority_timeout = 80,
+			.search_sharing_cycles = ANT_SEARCH_SHARING_CYCLES_DISABLE,
+			.search_priority       = ANT_SEARCH_PRIORITY_DEFAULT,
+			.waveform              = ANT_WAVEFORM_DEFAULT,
+	};
+
+    // Background search
+    const ant_channel_config_t bs_channel_config =
+    {
+        .channel_number    = BS_CHANNEL_NUMBER,
+        .channel_type      = CHANNEL_TYPE_SLAVE,
+        .ext_assign        = EXT_PARAM_ALWAYS_SEARCH,
+        .rf_freq           = 0x39u,              	// ANT+ frequency
+        .transmission_type = WILDCARD_TRANSMISSION_TYPE,
+        .device_type       = 0x00,   // Wild card
+        .device_number     = 0x00,              // Wild card
+        .channel_period    = 0x00,              // This is not taken into account.
+        .network_number    = ANTPLUS_NETWORK_NUMBER,
+    };
+
+    ret_code_t err_code = ant_channel_init(&bs_channel_config);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = ant_search_init(&bs_search_config);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
+    APP_ERROR_CHECK(err_code);
 
 	switch (search_type) {
 	case eAntPairingSensorTypeNone:
@@ -673,13 +690,17 @@ void ant_search_start(eAntPairingSensorType search_type) {
 
 void ant_search_end(uint16_t dev_id) {
 
-//	ret_code_t err_code;
-//
-//    err_code = sd_ant_channel_close(BS_CHANNEL_NUMBER);
-//    APP_ERROR_CHECK(err_code);
-//
-//    err_code = sd_ant_channel_unassign(BS_CHANNEL_NUMBER);
-//    APP_ERROR_CHECK(err_code);
+	ret_code_t err_code;
+
+    err_code = sd_ant_channel_close(BS_CHANNEL_NUMBER);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = sd_ant_channel_unassign(BS_CHANNEL_NUMBER);
+    APP_ERROR_CHECK(err_code);
+
+	m_search_type = eAntPairingSensorTypeNone;
+
+	if (!dev_id) return;
 
 	switch (m_search_type) {
 	case eAntPairingSensorTypeNone:
@@ -704,8 +725,6 @@ void ant_search_end(uint16_t dev_id) {
 	default:
 		break;
 	}
-
-	m_search_type = eAntPairingSensorTypeNone;
 }
 
 /**@brief Function for application main entry.
