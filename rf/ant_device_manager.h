@@ -25,6 +25,10 @@ typedef struct {
 
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 void ant_device_manager_search_start(eAntPairingSensorType dev_type);
 
@@ -37,5 +41,8 @@ void ant_device_manager_search_add(uint16_t sensor_id, int8_t ssid);
 sAntPairingSensorList* ant_device_manager_get_sensors_list(void);
 
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RF_ANT_DEVICE_MANAGER_H_ */

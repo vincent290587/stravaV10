@@ -8,7 +8,6 @@
 
 
 
-#include "nrf_assert.h"
 #include "ant.h"
 #include "fec.h"
 #include "Model.h"
@@ -16,6 +15,7 @@
 #include "ant_fec_pages.h"
 #include "ant_fec_utils.h"
 #include "ant_interface.h"
+#include "ant_device_manager.h"
 
 #include "app_timer.h"
 #include "segger_wrapper.h"
@@ -53,14 +53,16 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 		break;
 
 	case EVENT_RX:
-		if (!is_fec_init) {
+		{
 			uint16_t pusDeviceNumber = 0;
 			uint8_t pucDeviceType    = 0;
 			uint8_t pucTransmitType  = 0;
 			sd_ant_channel_id_get (FEC_CHANNEL_NUMBER,
 					&pusDeviceNumber, &pucDeviceType, &pucTransmitType);
 
-			if (pusDeviceNumber) {
+			ant_device_manager_search_add(pusDeviceNumber, -5);
+
+			if (pusDeviceNumber && !is_fec_init) {
 				is_fec_init = 1;
 
 				err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);

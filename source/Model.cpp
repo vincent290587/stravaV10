@@ -20,6 +20,10 @@
 #include "ble_api_base.h"
 #endif
 
+#ifdef ANT_STACK_SUPPORT_REQD
+#include "ant.h"
+#endif
+
 
 #ifdef USB_ENABLED
 #include "usb_cdc.h"
@@ -293,6 +297,7 @@ void peripherals_task(void * p_context)
 #endif
 
 #ifdef ANT_STACK_SUPPORT_REQD
+		ant_tasks();
 		roller_manager_tasks();
 		suffer_score.addHrmData(hrm_info.bpm, millis());
 #endif

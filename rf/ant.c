@@ -34,14 +34,13 @@
 
 #include "ant.h"
 #include "nordic_common.h"
-#include "nrf.h"
 #include "app_error.h"
 #include "app_scheduler.h"
 #include "nrf_soc.h"
 #include "nrf_delay.h"
 #include "nrf_sdh.h"
 #include "app_timer.h"
-#include "nrf_drv_wdt.h"
+#include "ant_device_manager.h"
 
 #ifdef ANT_STACK_SUPPORT_REQD
 #include "ant_key_manager.h"
@@ -87,11 +86,9 @@
 APP_TIMER_DEF(m_sec_hrm);
 APP_TIMER_DEF(m_sec_bsc);
 
-nrf_drv_wdt_channel_id wdt_channel_id;
 
-
-void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event);
-void ant_evt_glasses (ant_evt_t * p_ant_evt);
+static void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event);
+static void ant_evt_glasses (ant_evt_t * p_ant_evt);
 
 
 BSC_DISP_CHANNEL_CONFIG_DEF(m_ant_bsc,
@@ -171,7 +168,7 @@ static void bsc_connect(void * p_context)
 /**
  *
  */
-void ant_evt_bsc (ant_evt_t * p_ant_evt)
+static void ant_evt_bsc (ant_evt_t * p_ant_evt)
 {
 	uint32_t err_code = NRF_SUCCESS;
 
@@ -215,7 +212,7 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
 /**
  *
  */
-void ant_evt_hrm (ant_evt_t * p_ant_evt)
+static void ant_evt_hrm (ant_evt_t * p_ant_evt)
 {
 	uint32_t err_code = NRF_SUCCESS;
 
@@ -251,6 +248,44 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
 }
 
 
+/**
+ * Event handler for background search
+ */
+static void ant_evt_bs (ant_evt_t * p_ant_evt)
+{
+	uint32_t err_code = NRF_SUCCESS;
+
+	uint16_t pusDeviceNumber = 0;
+	uint8_t pucDeviceType    = 0;
+	uint8_t pucTransmitType  = 0;
+
+	switch (p_ant_evt->event)
+	{
+	case EVENT_RX:
+	{
+		sd_ant_channel_id_get (BS_CHANNEL_NUMBER,
+				&pusDeviceNumber,
+				&pucDeviceType,
+				&pucTransmitType);
+
+		LOG_INFO("Scanned device 0x%04X", pusDeviceNumber);
+
+		ant_device_manager_search_add(pusDeviceNumber, -5);
+
+	} break;
+	case EVENT_RX_FAIL:
+		break;
+	case EVENT_RX_FAIL_GO_TO_SEARCH:
+		break;
+	case EVENT_RX_SEARCH_TIMEOUT:
+		break;
+	case EVENT_CHANNEL_CLOSED:
+		break;
+	}
+
+	APP_ERROR_CHECK(err_code);
+}
+
 
 /**@brief Function for dispatching a ANT stack event to all modules with a ANT stack event handler.
  *
@@ -278,6 +313,10 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 
 	case FEC_CHANNEL_NUMBER:
 		ant_evt_fec (p_ant_evt);
+		break;
+
+	case BS_CHANNEL_NUMBER:
+		ant_evt_bs (p_ant_evt);
 		break;
 
 	default:
@@ -360,7 +399,7 @@ static uint32_t calculate_cadence(int32_t rev_cnt, int32_t evt_time)
 /**
  *
  */
-void ant_evt_glasses (ant_evt_t * p_ant_evt)
+static void ant_evt_glasses (ant_evt_t * p_ant_evt)
 {
 	uint32_t err_code = NRF_SUCCESS;
 
@@ -387,7 +426,7 @@ void ant_evt_glasses (ant_evt_t * p_ant_evt)
 /**
  *
  */
-void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event)
+static void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event)
 {
 	switch (event)
 	{
@@ -580,20 +619,69 @@ static void ant_profile_setup(void)
 //	APP_ERROR_CHECK(err_code);
 
 
-
 	LOG_INFO("ANT ready");
 }
 
 
 void ant_search_start(eAntPairingSensorType search_type) {
 
-	uint32_t err_code;
-	m_search_type = search_type;
-
-	ant_channel_config_t p_channel_config;
-	ant_channel_init(&p_channel_config);
+//    // Background search
+//    const ant_channel_config_t bs_channel_config =
+//    {
+//        .channel_number    = BS_CHANNEL_NUMBER,
+//        .channel_type      = CHANNEL_TYPE_SLAVE,
+//        .ext_assign        = EXT_PARAM_ALWAYS_SEARCH,
+//        .rf_freq           = 0x39,              // ANT+ frequency
+//        .transmission_type = WILDCARD_TRANSMISSION_TYPE,
+//        .device_type       = 0x00,              // Wild card
+//        .device_number     = 0x00,              // Wild card
+//        .channel_period    = 0x00,              // This is not taken into account.
+//        .network_number    = ANTPLUS_NETWORK_NUMBER,
+//    };
+//
+//    err_code = ant_channel_init(&bs_channel_config);
+//    APP_ERROR_CHECK(err_code);
+//
+//    err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
+//    APP_ERROR_CHECK(err_code);
 
 	switch (search_type) {
+	case eAntPairingSensorTypeNone:
+	{
+
+	} break;
+	case eAntPairingSensorTypeHRM:
+	{
+	} break;
+	case eAntPairingSensorTypeBSC:
+		break;
+	case eAntPairingSensorTypeFEC:
+	{
+		// Set Channel ID.
+		ret_code_t err_code = sd_ant_channel_id_set(FEC_CHANNEL_NUMBER,
+				0x0000,      // wildcard
+				FEC_DEVICE_TYPE,
+				WILDCARD_TRANSMISSION_TYPE);
+		APP_ERROR_CHECK(err_code);
+	} break;
+	default:
+		break;
+	}
+
+	m_search_type = search_type;
+}
+
+void ant_search_end(uint16_t dev_id) {
+
+//	ret_code_t err_code;
+//
+//    err_code = sd_ant_channel_close(BS_CHANNEL_NUMBER);
+//    APP_ERROR_CHECK(err_code);
+//
+//    err_code = sd_ant_channel_unassign(BS_CHANNEL_NUMBER);
+//    APP_ERROR_CHECK(err_code);
+
+	switch (m_search_type) {
 	case eAntPairingSensorTypeNone:
 	{
 
@@ -605,10 +693,19 @@ void ant_search_start(eAntPairingSensorType search_type) {
 	case eAntPairingSensorTypeBSC:
 		break;
 	case eAntPairingSensorTypeFEC:
-		break;
+	{
+		// Set the new device ID.
+		ret_code_t err_code = sd_ant_channel_id_set(FEC_CHANNEL_NUMBER,
+				dev_id,
+				FEC_DEVICE_TYPE,
+				WILDCARD_TRANSMISSION_TYPE);
+		APP_ERROR_CHECK(err_code);
+	} break;
 	default:
 		break;
 	}
+
+	m_search_type = eAntPairingSensorTypeNone;
 }
 
 /**@brief Function for application main entry.
@@ -618,6 +715,36 @@ int ant_setup_start(void)
 	ant_profile_setup();
 
 	return 0;
+}
+
+void ant_tasks(void) {
+
+	if (eAntPairingSensorTypeNone != m_search_type) {
+		// we are in normal mode: check all channels are open
+
+		for (eAntSensorsChannelNumber channel = eAntSensorsChannelHRM; channel < eAntSensorsChannelBS; channel++) {
+
+			uint8_t status = 0;
+			sd_ant_channel_status_get((uint8_t)channel, &status);
+
+			if (STATUS_SEARCHING_CHANNEL != status &&
+					STATUS_TRACKING_CHANNEL != status) {
+
+				// channel is not searching and not tracking...
+				// TODO smth
+				LOG_WARNING("Channel %u status is weird...", (uint8_t)channel);
+			}
+
+		}
+
+
+	} else {
+		// we are searching
+
+
+	}
+
+
 }
 
 

@@ -5,6 +5,8 @@
  *      Author: v.golle
  */
 
+#include "ant.h"
+#include "ant_interface.h"
 #include "Model.h"
 #include "ant_device_manager.h"
 
@@ -35,13 +37,16 @@ void ant_device_manager_connect(void) {
 
 void ant_device_manager_search_start(eAntPairingSensorType dev_type) {
 
-	// close ANT+ channels
+	ret_code_t err_code;
+
+	// TODO close ANT+ channels
 
 	// prepare ANT+ search
 	m_sensors_list.nb_sensors = 0;
 	m_search_type = dev_type;
 
 	// TODO start search channel
+	ant_search_start(dev_type);
 }
 
 void ant_device_manager_search_validate(int var) {
@@ -71,7 +76,8 @@ void ant_device_manager_search_cancel(void) {
 
 	// TODO close search channel
 
-	// TODO start normal channel
+	// start normal channel
+	ant_search_end(0x0000);
 }
 
 void ant_device_manager_search_add(uint16_t sensor_id, int8_t ssid) {
