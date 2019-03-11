@@ -606,27 +606,7 @@ static void ant_profile_setup(void)
     err_code = ant_search_init(&ant_search_config);
     APP_ERROR_CHECK(err_code);
 
-    // Open the ANT channels
-
-	err_code = ant_hrm_disp_open(&m_ant_hrm);
-	APP_ERROR_CHECK(err_code);
-
-	err_code = ant_bsc_disp_open(&m_ant_bsc);
-	APP_ERROR_CHECK(err_code);
-
-	err_code = ant_fec_disp_open(&m_ant_fec);
-	APP_ERROR_CHECK(err_code);
-
-//	err_code = ant_glasses_open(&m_ant_glasses);
-//	APP_ERROR_CHECK(err_code);
-
-
-	LOG_INFO("ANT ready");
-}
-
-
-void ant_search_start(eAntPairingSensorType search_type) {
-
+    // BS
 	const ant_search_config_t bs_search_config =
 	{
 			.channel_number        = BS_CHANNEL_NUMBER,
@@ -657,12 +637,33 @@ void ant_search_start(eAntPairingSensorType search_type) {
     err_code = ant_search_init(&bs_search_config);
     APP_ERROR_CHECK(err_code);
 
-//    uint8_t pucANTLibConfig;
-//    err_code = sd_ant_lib_config_get (&pucANTLibConfig);
-//    APP_ERROR_CHECK(err_code);
-//
-//    err_code = sd_ant_lib_config_set (pucANTLibConfig | ANT_LIB_CONFIG_MESG_OUT_INC_RSSI);
-//    APP_ERROR_CHECK(err_code);
+    //    uint8_t pucANTLibConfig;
+    //    err_code = sd_ant_lib_config_get (&pucANTLibConfig);
+    //    APP_ERROR_CHECK(err_code);
+    //
+    //    err_code = sd_ant_lib_config_set (pucANTLibConfig | ANT_LIB_CONFIG_MESG_OUT_INC_RSSI);
+    //    APP_ERROR_CHECK(err_code);
+
+    // Open the ANT channels
+
+	err_code = ant_hrm_disp_open(&m_ant_hrm);
+	APP_ERROR_CHECK(err_code);
+
+	err_code = ant_bsc_disp_open(&m_ant_bsc);
+	APP_ERROR_CHECK(err_code);
+
+	err_code = ant_fec_disp_open(&m_ant_fec);
+	APP_ERROR_CHECK(err_code);
+
+//	err_code = ant_glasses_open(&m_ant_glasses);
+//	APP_ERROR_CHECK(err_code);
+
+
+	LOG_INFO("ANT ready");
+}
+
+
+void ant_search_start(eAntPairingSensorType search_type) {
 
     err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
     APP_ERROR_CHECK(err_code);
@@ -704,10 +705,22 @@ void ant_search_end(uint16_t dev_id) {
 	} break;
 	case eAntPairingSensorTypeHRM:
 	{
-
+		// Set the new device ID.
+		ret_code_t err_code = sd_ant_channel_id_set(HRM_CHANNEL_NUMBER,
+				dev_id,
+				HRM_DEVICE_TYPE,
+				WILDCARD_TRANSMISSION_TYPE);
+		APP_ERROR_CHECK(err_code);
 	} break;
 	case eAntPairingSensorTypeBSC:
-		break;
+	{
+		// Set the new device ID.
+		ret_code_t err_code = sd_ant_channel_id_set(BSC_CHANNEL_NUMBER,
+				dev_id,
+				BSC_DEVICE_TYPE,
+				WILDCARD_TRANSMISSION_TYPE);
+		APP_ERROR_CHECK(err_code);
+	} break;
 	case eAntPairingSensorTypeFEC:
 	{
 		// Set the new device ID.
