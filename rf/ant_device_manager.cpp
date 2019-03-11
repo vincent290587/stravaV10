@@ -9,6 +9,7 @@
 #include "ant_interface.h"
 #include "Model.h"
 #include "ant_device_manager.h"
+#include "segger_wrapper.h"
 
 static sAntPairingSensorList m_sensors_list;
 
@@ -37,16 +38,14 @@ void ant_device_manager_connect(void) {
 
 void ant_device_manager_search_start(eAntPairingSensorType dev_type) {
 
-	ret_code_t err_code;
-
-	// TODO close ANT+ channels
-
-	// prepare ANT+ search
+	// prepare ANT+ search list
 	m_sensors_list.nb_sensors = 0;
+
+	// start search channel
+	ant_search_start(dev_type);
 	m_search_type = dev_type;
 
-	// TODO start search channel
-	ant_search_start(dev_type);
+	LOG_WARNING("Starting ANT+ search...");
 }
 
 void ant_device_manager_search_validate(int var) {
@@ -55,26 +54,18 @@ void ant_device_manager_search_validate(int var) {
 	if (var < 0 || var >= m_sensors_list.nb_sensors) return;
 	if (m_sensors_list.nb_sensors == 0) return;
 
-	// TODO
-	switch (m_search_type) {
-	case eAntPairingSensorTypeHRM:
-		break;
-	case eAntPairingSensorTypeBSC:
-		break;
-	case eAntPairingSensorTypeFEC:
-		break;
-	default:
-		break;
-	}
+	ant_search_end(m_sensors_list.sensors[var].dev_id);
 
 	m_search_type = eAntPairingSensorTypeNone;
+
+	LOG_WARNING("ANT+ search ended");
 }
 
 void ant_device_manager_search_cancel(void) {
 
 	m_search_type = eAntPairingSensorTypeNone;
 
-	// TODO close search channel
+	LOG_WARNING("ANT+ search cancelled");
 
 	// start normal channel
 	ant_search_end(0x0000);
@@ -96,4 +87,6 @@ void ant_device_manager_search_add(uint16_t sensor_id, int8_t ssid) {
 	}
 
 	m_sensors_list.sensors[m_sensors_list.nb_sensors++].dev_id = sensor_id;
+
+	LOG_WARNING("Found ANT+ sensor %u", sensor_id);
 }

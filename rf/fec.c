@@ -232,7 +232,7 @@ void fec_init(void) {
 	memset(&m_fec_message_payload, 0, sizeof(m_fec_message_payload));
 
 	fec_control.type = eFecControlTargetNone;
-	fec_control.data.power_control.target_power_w = 150;
+	fec_control.data.power_control.target_power_w = 100;
 
 }
 

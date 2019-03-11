@@ -262,16 +262,14 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 		uint16_t m_last_device_id;
 		uint8_t m_last_rssi = 0;
 
-        if (p_ant_evt->message.ANT_MESSAGE_stExtMesgBF.bANTRssi)
-        {
-            m_last_rssi = p_ant_evt->message.ANT_MESSAGE_aucExtData[5];
-        }
+        m_last_rssi = p_ant_evt->message.ANT_MESSAGE_aucExtData[5];
+        m_last_device_id = uint16_decode(p_ant_evt->message.ANT_MESSAGE_aucExtData);
 
-        if (p_ant_evt->message.ANT_MESSAGE_stExtMesgBF.bANTDeviceID)
+        if (m_last_device_id)
         {
         	m_last_device_id = uint16_decode(p_ant_evt->message.ANT_MESSAGE_aucExtData);
 
-    		LOG_WARNING("Scanned device 0x%04X", m_last_device_id);
+    		LOG_WARNING("Dev. ID 0x%04X %d", m_last_device_id, (int8_t)m_last_rssi);
 
         	ant_device_manager_search_add(m_last_device_id, m_last_rssi);
         }
@@ -659,28 +657,25 @@ void ant_search_start(eAntPairingSensorType search_type) {
     err_code = ant_search_init(&bs_search_config);
     APP_ERROR_CHECK(err_code);
 
+//    uint8_t pucANTLibConfig;
+//    err_code = sd_ant_lib_config_get (&pucANTLibConfig);
+//    APP_ERROR_CHECK(err_code);
+//
+//    err_code = sd_ant_lib_config_set (pucANTLibConfig | ANT_LIB_CONFIG_MESG_OUT_INC_RSSI);
+//    APP_ERROR_CHECK(err_code);
+
     err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
     APP_ERROR_CHECK(err_code);
 
 	switch (search_type) {
 	case eAntPairingSensorTypeNone:
-	{
-
-	} break;
+		break;
 	case eAntPairingSensorTypeHRM:
-	{
-	} break;
+		break;
 	case eAntPairingSensorTypeBSC:
 		break;
 	case eAntPairingSensorTypeFEC:
-	{
-		// Set Channel ID.
-		ret_code_t err_code = sd_ant_channel_id_set(FEC_CHANNEL_NUMBER,
-				0x0000,      // wildcard
-				FEC_DEVICE_TYPE,
-				WILDCARD_TRANSMISSION_TYPE);
-		APP_ERROR_CHECK(err_code);
-	} break;
+		break;
 	default:
 		break;
 	}
@@ -695,8 +690,8 @@ void ant_search_end(uint16_t dev_id) {
     err_code = sd_ant_channel_close(BS_CHANNEL_NUMBER);
     APP_ERROR_CHECK(err_code);
 
-    err_code = sd_ant_channel_unassign(BS_CHANNEL_NUMBER);
-    APP_ERROR_CHECK(err_code);
+//    err_code = sd_ant_channel_unassign(BS_CHANNEL_NUMBER);
+//    APP_ERROR_CHECK(err_code);
 
 	m_search_type = eAntPairingSensorTypeNone;
 
