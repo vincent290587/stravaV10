@@ -91,7 +91,7 @@ bool test_fram(void) {
 	if (!u_settings.isConfigValid())
 		return false;
 
-	if (!u_settings.getFECdevID() != 0U)
+	if (u_settings.getFECdevID() == 0U)
 		return false;
 
 	if (!u_settings.resetConfig())
@@ -100,7 +100,7 @@ bool test_fram(void) {
 	if (!u_settings.isConfigValid())
 		return false;
 
-	if (u_settings.getFECdevID() != 0U)
+	if (u_settings.getFECdevID() == 0U)
 		return false;
 
 	LOG_INFO("FRAM OK");
