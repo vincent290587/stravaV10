@@ -12,13 +12,26 @@
 #include "fec.h"
 #include "Model.h"
 #ifdef ANT_STACK_SUPPORT_REQD
+#include "ant_fec.h"
 #include "ant_fec_pages.h"
 #include "ant_fec_utils.h"
 #include "ant_interface.h"
+#include "ant_search_config.h"
 #include "ant_device_manager.h"
 
 #include "app_timer.h"
 #include "segger_wrapper.h"
+
+static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event);
+
+
+FEC_DISP_CHANNEL_CONFIG_DEF(m_ant_fec,
+		FEC_CHANNEL_NUMBER,
+		WILDCARD_TRANSMISSION_TYPE,
+		TACX_DEVICE_NUMBER,
+		ANTPLUS_NETWORK_NUMBER);
+FEC_DISP_PROFILE_CONFIG_DEF(m_ant_fec,
+		ant_fec_evt_handler);
 
 
 #define FEC_CONTROL_DELAY           APP_TIMER_TICKS(1500)
@@ -40,7 +53,7 @@ static void roller_manager(void * p_context);
  */
 void ant_evt_fec (ant_evt_t * p_ant_evt)
 {
-	uint32_t err_code = NRF_SUCCESS;
+	ret_code_t err_code = NRF_SUCCESS;
 
 	switch (p_ant_evt->event)
 	{
@@ -53,24 +66,24 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 		break;
 
 	case EVENT_RX:
-		{
-			uint16_t pusDeviceNumber = 0;
-			uint8_t pucDeviceType    = 0;
-			uint8_t pucTransmitType  = 0;
-			sd_ant_channel_id_get (FEC_CHANNEL_NUMBER,
-					&pusDeviceNumber, &pucDeviceType, &pucTransmitType);
+	{
+		uint16_t pusDeviceNumber = 0;
+		uint8_t pucDeviceType    = 0;
+		uint8_t pucTransmitType  = 0;
+		sd_ant_channel_id_get (FEC_CHANNEL_NUMBER,
+				&pusDeviceNumber, &pucDeviceType, &pucTransmitType);
 
-			ant_device_manager_search_add(pusDeviceNumber, -5);
+		ant_device_manager_search_add(pusDeviceNumber, -5);
 
-			if (pusDeviceNumber && !is_fec_init) {
-				is_fec_init = 1;
+		if (pusDeviceNumber && !is_fec_init) {
+			is_fec_init = 1;
 
-				err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
-				APP_ERROR_CHECK(err_code);
-			}
+			err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
+			APP_ERROR_CHECK(err_code);
 		}
-		ant_fec_disp_evt_handler(p_ant_evt, &m_ant_fec);
-		break;
+	}
+	ant_fec_disp_evt_handler(p_ant_evt, &m_ant_fec);
+	break;
 	case EVENT_RX_FAIL:
 		break;
 	case EVENT_RX_FAIL_GO_TO_SEARCH:
@@ -90,15 +103,13 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 		NRF_LOG_WARNING("ANT FEC event %02X", p_ant_evt->event);
 		break;
 	}
-
-	APP_ERROR_CHECK(err_code);
 }
 
 
 /**@brief Function for handling Bicycle Power profile's events
  *
  */
-void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
+static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 {
 	switch (event)
 	{
@@ -116,14 +127,14 @@ void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 	{
 		fec_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
 		fec_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
-    	events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
+		events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	}
 	break;
 
 	case ANT_FEC_PAGE_25_UPDATED:
 	{
 		fec_info.power = p_profile->page_25.inst_power;
-    	events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
+		events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
 	}
 	break;
 
@@ -226,7 +237,7 @@ void roller_manager_tasks(void) {
 void fec_init(void) {
 
 	// Create timer.
-	uint32_t err_code = app_timer_create(&m_fec_update, APP_TIMER_MODE_REPEATED, roller_manager);
+	ret_code_t err_code = app_timer_create(&m_fec_update, APP_TIMER_MODE_REPEATED, roller_manager);
 	APP_ERROR_CHECK(err_code);
 
 	memset(&m_fec_message_payload, 0, sizeof(m_fec_message_payload));
@@ -242,6 +253,42 @@ void fec_set_control(sFecControl* tbc) {
 
 	memcpy(&fec_control, tbc, sizeof(fec_control));
 
+}
+
+/**
+ *
+ */
+void fec_profile_setup(void) {
+
+	ret_code_t err_code;
+	ant_search_config_t ant_search_config   = DEFAULT_ANT_SEARCH_CONFIG(0);
+
+	// Disable high priority search to minimize disruption to other channels while searching
+	ant_search_config.high_priority_timeout = ANT_HIGH_PRIORITY_SEARCH_DISABLE;
+	ant_search_config.low_priority_timeout  = 80;
+	ant_search_config.search_sharing_cycles = 0x10;
+	ant_search_config.search_priority       = ANT_SEARCH_PRIORITY_LOWEST;
+
+	// FEC
+	err_code = ant_fec_disp_init(&m_ant_fec,
+			FEC_DISP_CHANNEL_CONFIG(m_ant_fec),
+			FEC_DISP_PROFILE_CONFIG(m_ant_fec));
+	APP_ERROR_CHECK(err_code);
+
+	ant_search_config.channel_number = FEC_CHANNEL_NUMBER;
+	err_code = ant_search_init(&ant_search_config);
+	APP_ERROR_CHECK(err_code);
+}
+
+/**
+ *
+ */
+void fec_profile_start(void) {
+
+	ret_code_t err_code;
+
+	err_code = ant_fec_disp_open(&m_ant_fec);
+	APP_ERROR_CHECK(err_code);
 }
 
 #endif
