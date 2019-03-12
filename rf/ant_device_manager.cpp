@@ -21,16 +21,17 @@ sAntPairingSensorList* ant_device_manager_get_sensors_list(void) {
 
 void ant_device_manager_init(void) {
 
+	// init channels
+	ant_stack_init();
+	ant_timers_init();
+	ant_setup_init();
+
 	// check registered devices
-
-}
-
-void ant_device_manager_connect(void) {
-
-	// end ANT+ search
-
-	// open ANT+ channels
-
+	if (u_settings.isConfigValid()) {
+		ant_setup_start(u_settings.getHRMdevID(), u_settings.getBSCdevID(), u_settings.getFECdevID());
+	} else {
+		LOG_ERROR("Impossible to start ANT channels: wrong configuration");
+	}
 }
 
 void ant_device_manager_search_start(eAntPairingSensorType dev_type) {

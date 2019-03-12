@@ -13,6 +13,10 @@
 #include "nrf_sdh_ant.h"
 #endif
 
+#define BSC_CHANNEL_NUMBER              0x01
+#define BSC_DEVICE_NUMBER               0xB02B    /**< Device Number. */
+#define BSC_DEVICE_TYPE                 0x79
+
 /////////////  FUNCTIONS
 
 #ifdef ANT_STACK_SUPPORT_REQD

@@ -6,6 +6,7 @@
  */
 
 #include "ant.h"
+#include "segger_wrapper.h"
 
 void ant_search_start(eAntPairingSensorType search_type) {
 
@@ -13,5 +14,20 @@ void ant_search_start(eAntPairingSensorType search_type) {
 
 void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
 
+}
 
+void ant_timers_init(void) {
+
+}
+
+void ant_stack_init(void) {
+
+}
+
+void ant_setup_init(void) {
+
+}
+
+void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id) {
+	LOG_INFO("ANT started");
 }

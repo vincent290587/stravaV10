@@ -7,6 +7,8 @@
 #include "ant_glasses.h"
 #include "nrf_sdh_ant.h"
 
+#define GLASSES_CHANNEL_NUMBER          0x02
+
 extern ant_glasses_profile_t       m_ant_glasses;
 
 extern uint8_t m_glasses_payload[8];

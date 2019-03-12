@@ -29,6 +29,7 @@ typedef struct {
 extern "C" {
 #endif
 
+void ant_device_manager_init(void);
 
 void ant_device_manager_search_start(eAntPairingSensorType dev_type);
 

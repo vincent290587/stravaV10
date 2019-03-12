@@ -232,15 +232,6 @@ static void ant_profile_setup(void)
     //
     //    err_code = sd_ant_lib_config_set (pucANTLibConfig | ANT_LIB_CONFIG_MESG_OUT_INC_RSSI);
     //    APP_ERROR_CHECK(err_code);
-
-    // Open the ANT channels
-    hrm_profile_start();
-	bsc_profile_start();
-	fec_profile_start();
-
-//	glasses_profile_start();
-
-	LOG_INFO("ANT ready");
 }
 
 
@@ -313,15 +304,56 @@ void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
 	}
 }
 
-/**@brief Function for application main entry.
+/**
+ *
  */
-int ant_setup_start(void)
-{
+void ant_setup_init(void) {
+
 	ant_profile_setup();
 
-	return 0;
 }
 
+/**
+ *
+ */
+void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id)
+{
+	ret_code_t err_code;
+
+	// Set the new device ID.
+	err_code = sd_ant_channel_id_set(HRM_CHANNEL_NUMBER,
+			hrm_id,
+			HRM_DEVICE_TYPE,
+			WILDCARD_TRANSMISSION_TYPE);
+	APP_ERROR_CHECK(err_code);
+
+	// Set the new device ID.
+	err_code = sd_ant_channel_id_set(BSC_CHANNEL_NUMBER,
+			bsc_id,
+			BSC_DEVICE_TYPE,
+			WILDCARD_TRANSMISSION_TYPE);
+	APP_ERROR_CHECK(err_code);
+
+	// Set the new device ID.
+	err_code = sd_ant_channel_id_set(FEC_CHANNEL_NUMBER,
+			fec_id,
+			FEC_DEVICE_TYPE,
+			WILDCARD_TRANSMISSION_TYPE);
+	APP_ERROR_CHECK(err_code);
+
+	// Open the ANT channels
+	hrm_profile_start();
+	bsc_profile_start();
+	fec_profile_start();
+
+//	glasses_profile_start();
+
+	LOG_INFO("ANT started");
+}
+
+/**
+ *
+ */
 void ant_tasks(void) {
 
 	// check all channels are open

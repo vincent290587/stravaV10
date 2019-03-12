@@ -12,6 +12,9 @@
 #include "nrf_sdh_ant.h"
 #endif
 
+#define HRM_CHANNEL_NUMBER              0x00
+#define HRM_DEVICE_NUMBER               0x0D22    /**< Device Number. */
+
 /////////////  FUNCTIONS
 
 #ifdef ANT_STACK_SUPPORT_REQD

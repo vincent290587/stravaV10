@@ -15,6 +15,9 @@
 #include "mk64f_parser.h"
 #include "g_structs.h"
 
+#define FEC_CHANNEL_NUMBER              0x03
+#define TACX_DEVICE_NUMBER              2846U
+
 /////////////  STRUCTS
 
 extern sFecControl          fec_control;
