@@ -54,6 +54,8 @@ void ant_device_manager_search_validate(int var) {
 
 	ant_search_end(m_search_type, m_sensors_list.sensors[var].dev_id);
 
+	vue.addNotif("ANT", "New device added", 4, eNotificationTypeComplete);
+
 	m_search_type = eAntPairingSensorTypeNone;
 
 	LOG_WARNING("ANT+ search ended");

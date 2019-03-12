@@ -146,8 +146,17 @@ static eFuncMenuAction _page0_mode_ant_stop(int var) {
 
 static eFuncMenuAction _page0_mode_ant_go(int var) {
 
-	// sensor selection
-	ant_device_manager_search_validate(var);
+	if (var <= 0) {
+		// stop search
+		ant_device_manager_search_cancel();
+
+		vue.addNotif("ANT", "Search cancelled", 2, eNotificationTypeComplete);
+	} else {
+
+		// sensor selection
+		ant_device_manager_search_validate(var);
+
+	}
 
 	return eFuncMenuActionEndMenu;
 }
@@ -165,9 +174,11 @@ static void _page1_mode_ant_list(int var) {
 	String name;
 	for (int i=0; i < s_list->nb_sensors; i++) {
 
-		name = String(s_list->sensors[i].dev_id);
+		name = "ANT+";
 		name += "   ";
-		name += String(s_list->sensors[i].ssid);
+		name += String(s_list->sensors[i].dev_id);
+		//name += "   ";
+		//name += String(s_list->sensors[i].ssid);
 
 		MenuItem item_sns(page_pair, name.c_str(), _page0_mode_ant_go);
 
