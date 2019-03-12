@@ -10,6 +10,7 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/libraries/*/*.cpp) \
   $(wildcard $(PROJ_DIR)/sd/*.c) \
   $(wildcard $(PROJ_DIR)/sd/*.cpp) \
+  $(wildcard $(PROJ_DIR)/rf/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/*.c) \
   $(wildcard $(PROJ_DIR)/source/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/display/*.c) \

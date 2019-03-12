@@ -7,24 +7,25 @@
 
 
 #define WILDCARD_TRANSMISSION_TYPE      0x00
-#define ANTPLUS_NETWORK_NUMBER          0x00                                           /**< Network number. */
+#define ANTPLUS_NETWORK_NUMBER          0x00      /**< Network number. */
 
-#define HRM_CHANNEL_NUMBER              0x00
-#define HRM_DEVICE_NUMBER               0x0D22    /**< Device Number. */
-
-#define BSC_CHANNEL_NUMBER              0x01
-#define BSC_DEVICE_NUMBER               0xB02B    /**< Device Number. */
-#define BSC_DEVICE_TYPE                 0x79
-
-#define GLASSES_CHANNEL_NUMBER          0x02                                            /**< Default ANT Channel. */
+#define BS_CHANNEL_NUMBER               0x04
 
 
+typedef enum {
+	eAntSensorsChannelHRM,
+	eAntSensorsChannelBSC,
+	eAntSensorsChannelFEC,
+	eAntSensorsChannelBS
+} eAntSensorsChannelNumber;
 
-#define ANTPLUS_NETWORK_NUMBER          0x00                                           /**< Network number. */
+typedef enum {
+	eAntPairingSensorTypeNone,
+	eAntPairingSensorTypeHRM,
+	eAntPairingSensorTypeBSC,
+	eAntPairingSensorTypeFEC
+} eAntPairingSensorType;
 
-#define FEC_CHANNEL_NUMBER              0x03
-
-#define TACX_DEVICE_NUMBER              2766U
 
 extern sHrmInfo hrm_info;
 extern sBscInfo bsc_info;
@@ -33,11 +34,21 @@ extern sBscInfo bsc_info;
 extern "C" {
 #endif
 
+
+void ant_tasks(void);
+
 void ant_stack_init(void);
 
-int ant_setup_start(void);
+void ant_setup_init(void);
+
+void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id);
+
+void ant_search_start(eAntPairingSensorType search_type);
+
+void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id);
 
 void ant_timers_init(void);
+
 
 #ifdef __cplusplus
 }

@@ -1,12 +1,3 @@
-/*
- * Copyright (c) 2014 Nordic Semiconductor. All Rights Reserved.
- *
- * The information contained herein is confidential property of Nordic Semiconductor. The use,
- * copying, transfer or disclosure of such information is prohibited except by express written
- * agreement with Nordic Semiconductor.
- *
- */
-
 
 #include <stdint.h>
 #include <stdio.h>

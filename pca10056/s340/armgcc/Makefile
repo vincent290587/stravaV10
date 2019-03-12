@@ -13,6 +13,8 @@ $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
 SRC_FILES += \
   $(PROJ_DIR)/rf/ant.c \
   $(PROJ_DIR)/rf/fec.c \
+  $(PROJ_DIR)/rf/hrm.c \
+  $(PROJ_DIR)/rf/bsc.c \
   $(PROJ_DIR)/rf/glasses.c \
   $(PROJ_DIR)/rf/ble_api6.c \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \

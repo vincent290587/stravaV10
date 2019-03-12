@@ -5,30 +5,88 @@
  *      Author: v.golle
  */
 
+#include "ant.h"
 #include "Model.h"
 #include "ant_device_manager.h"
+#include "segger_wrapper.h"
 
+static sAntPairingSensorList m_sensors_list;
+
+static eAntPairingSensorType m_search_type = eAntPairingSensorTypeNone;
+
+
+sAntPairingSensorList* ant_device_manager_get_sensors_list(void) {
+	return &m_sensors_list;
+}
 
 void ant_device_manager_init(void) {
 
+	// init channels
+	ant_stack_init();
+	ant_timers_init();
+	ant_setup_init();
+
 	// check registered devices
-
-	// can we start ANT+ ?
-
+	if (u_settings.isConfigValid()) {
+		ant_setup_start(u_settings.getHRMdevID(), u_settings.getBSCdevID(), u_settings.getFECdevID());
+	} else {
+		LOG_ERROR("Impossible to start ANT channels: wrong configuration");
+	}
 }
 
-void ant_device_manager_search(void) {
+void ant_device_manager_search_start(eAntPairingSensorType dev_type) {
 
-	// close ANT+ channels
+	// prepare ANT+ search list
+	m_sensors_list.nb_sensors = 0;
 
-	// go to ANT+ search
+	// start search channel
+	ant_search_start(dev_type);
+	m_search_type = dev_type;
 
+	LOG_WARNING("Starting ANT+ search...");
 }
 
-void ant_device_manager_connect(void) {
+void ant_device_manager_search_validate(int var) {
 
-	// end ANT+ search
+	if (eAntPairingSensorTypeNone == m_search_type) return;
+	if (var < 0 || var >= m_sensors_list.nb_sensors) return;
+	if (m_sensors_list.nb_sensors == 0) return;
 
-	// open ANT+ channels
+	ant_search_end(m_search_type, m_sensors_list.sensors[var].dev_id);
 
+	vue.addNotif("ANT", "New device added", 4, eNotificationTypeComplete);
+
+	m_search_type = eAntPairingSensorTypeNone;
+
+	LOG_WARNING("ANT+ search ended");
+}
+
+void ant_device_manager_search_cancel(void) {
+
+	// start normal channel
+	ant_search_end(m_search_type, 0x0000);
+
+	m_search_type = eAntPairingSensorTypeNone;
+
+	LOG_WARNING("ANT+ search cancelled");
+}
+
+void ant_device_manager_search_add(uint16_t sensor_id, int8_t ssid) {
+
+	// sensor list full
+	if (m_sensors_list.nb_sensors >= ANT_DEVICE_MANAGER_MAX_SENSORS_NB - 1) return;
+
+	for (int i=0; i < m_sensors_list.nb_sensors; i++) {
+		if (sensor_id == m_sensors_list.sensors[i].dev_id) {
+
+			// update properties
+			m_sensors_list.sensors[i].ssid = ssid;
+
+			return;
+		}
+	}
+
+	m_sensors_list.sensors[m_sensors_list.nb_sensors++].dev_id = sensor_id;
+
+	LOG_WARNING("Found ANT+ sensor %u", sensor_id);
 }

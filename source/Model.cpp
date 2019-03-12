@@ -10,6 +10,7 @@
 #include "neopixel.h"
 #include "helper.h"
 #include "sd_hal.h"
+#include "app_scheduler.h"
 #include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
@@ -18,6 +19,10 @@
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 #include "ble_api_base.h"
+#endif
+
+#ifdef ANT_STACK_SUPPORT_REQD
+#include "ant.h"
 #endif
 
 
@@ -293,6 +298,7 @@ void peripherals_task(void * p_context)
 #endif
 
 #ifdef ANT_STACK_SUPPORT_REQD
+		ant_tasks();
 		roller_manager_tasks();
 		suffer_score.addHrmData(hrm_info.bpm, millis());
 #endif

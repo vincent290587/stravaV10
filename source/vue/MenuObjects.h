@@ -25,6 +25,15 @@ typedef enum {
 
 typedef eFuncMenuAction (*f_menu_callback)(int);
 
+typedef int (*f_setting_callback)(int);
+
+typedef void (*f_pairing_callback)(int);
+
+typedef struct {
+	f_setting_callback pre_hook;
+	f_setting_callback post_hook;
+} sSettingsCallbacks;
+
 #ifndef SOURCE_VUE_MENUABLE_H_
 #endif
 
@@ -32,7 +41,11 @@ class MenuItem {
 public:
 	MenuItem(MenuPage &parent, const char *name, f_menu_callback _p_func = nullptr, MenuPage *p_page = nullptr);
 
-	eFuncMenuAction clickAction(uint8_t ind_sel);
+	virtual eFuncMenuAction clickAction(uint8_t ind_sel);
+	virtual eFuncMenuAction validateAction(int var);
+
+	virtual void render(void);
+	virtual void render(bool isSelec);
 
 	const char* getName(void) {
 		return m_name.c_str();
@@ -53,27 +66,66 @@ public:
 
 	void goToParent(void);
 	void closeMenuPopagate(void);
-	void render(void);
 
-	void propagateEvent(eButtonsEvent event);
+	virtual void render(void);
+	virtual void propagateEvent(eButtonsEvent event);
 
 	void goToPage(MenuPage *page);
-
-	void addItem(MenuItem &item);
-	uint16_t nbItems(void);
 
 	MenuPage* getParent() const {
 		return p_parent;
 	}
 
-private:
+protected:
 	MenuPage *p_parent;
 	Menuable &p_menu;
-	std::vector<MenuItem> m_items;
 	uint8_t ind_sel;
 };
 
+class MenuPageItems : public MenuPage {
+public:
+	MenuPageItems(Menuable &menu, MenuPage *parent = nullptr);
 
+	void addItem(MenuItem &item);
+	void removeAllItems(void);
+	uint16_t nbItems(void);
+
+	virtual void render(void);
+
+	virtual void propagateEvent(eButtonsEvent event);
+
+
+private:
+	std::vector<MenuItem> m_items;
+};
+
+class MenuPageSetting : public MenuPage {
+public:
+	MenuPageSetting(Menuable &menu, MenuPage *parent = nullptr);
+
+	void setCallbacks(sSettingsCallbacks &calls);
+	void setName(const char *name) {m_name = name;}
+
+	virtual void render(void);
+
+	virtual void propagateEvent(eButtonsEvent event);
+
+
+private:
+	int m_value;
+	String m_name;
+	sSettingsCallbacks m_callbacks;
+};
+
+class MenuPagePairing : public MenuPageItems {
+public:
+	MenuPagePairing(Menuable &menu, MenuPage *parent = nullptr, f_pairing_callback func = nullptr);
+
+	virtual void render(void);
+
+private:
+	f_pairing_callback m_func;
+};
 
 
 #endif /* SOURCE_VUE_MENUOBJECTS_H_ */

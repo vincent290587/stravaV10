@@ -51,7 +51,9 @@ static void _i2c_scheduling_sensors_init() {
 	// init configuration
 	stc.init(STC3100_CUR_SENS_RES_MO);
 
+#ifdef FRAM_PRESENT
 	fram_init_sensor();
+#endif
   
 	bme280_init_sensor();
 

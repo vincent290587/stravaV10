@@ -29,6 +29,7 @@ extern sTasksIDs m_tasks_id;
 #include "Segment.h"
 #include "Parcours.h"
 #include "Locator.h"
+#include "fxos.h"
 #include "SegmentManager.h"
 #include "Boucle.h"
 #include "STC3100.h"

@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include "hardfault.h"
-#include "ant.h"
 #include "i2c.h"
 #include "notifications.h"
 #include "backlighting.h"
@@ -19,7 +18,7 @@
 #include "bsp.h"
 #include "spi.h"
 #include "i2c.h"
-#include "fec.h"
+#include "fram.h"
 #include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
@@ -34,6 +33,7 @@
 #include "diskio_nor.h"
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
+#include "ant_device_manager.h"
 #include "Model.h"
 #include "sd_hal.h"
 #include "ble_api_base.h"
@@ -57,7 +57,7 @@ extern "C" {
 #ifdef SVCALL_AS_NORMAL_FUNCTION
 #define SCHED_QUEUE_SIZE               20                                           /**< Maximum number of events in the scheduler queue. More is needed in case of Serialization. */
 #else
-#define SCHED_QUEUE_SIZE               10                                           /**< Maximum number of events in the scheduler queue. */
+#define SCHED_QUEUE_SIZE               20                                           /**< Maximum number of events in the scheduler queue. */
 #endif
 
 APP_TIMER_DEF(m_job_timer);
@@ -460,13 +460,15 @@ int main(void)
 #ifdef SOFTDEVICE_PRESENT
 	sdh_init();
 #endif
+#ifdef FDS_PRESENT
+	fram_init_sensor();
+	u_settings.checkConfigVersion();
+#endif
 #if defined (BLE_STACK_SUPPORT_REQD)
 	ble_init();
 #endif
 #if defined (ANT_STACK_SUPPORT_REQD)
-	ant_stack_init();
-	ant_setup_start();
-	ant_timers_init();
+	ant_device_manager_init();
 #endif
 
 	// turn USB events ON

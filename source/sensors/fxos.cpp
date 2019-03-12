@@ -10,7 +10,8 @@
 #include "fsl_fxos.h"
 #include "gpio.h"
 #include "boards.h"
-#include "parameters.h"
+//#include "parameters.h"
+#include "UserSettings.h"
 #include "segger_wrapper.h"
 #include "fxos.h"
 #include "Model.h"
@@ -108,6 +109,14 @@ double g_Pitch = 0;
 double g_Roll = 0;
 
 bool g_FirstRun = true;
+
+
+static int16_t Mx_max = 0;
+static int16_t My_max = 0;
+static int16_t Mz_max = 0;
+static int16_t Mx_min = 0;
+static int16_t My_min = 0;
+static int16_t Mz_min = 0;
 
 bool g_Calibration_Done = false;
 
@@ -207,31 +216,11 @@ static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *A
 
 }
 
-static int Magnetometer_Calibrate(void)
+static int Magnetometer_Calibrate_Task(void)
 {
-	static int16_t Mx_max = 0;
-	static int16_t My_max = 0;
-	static int16_t Mz_max = 0;
-	static int16_t Mx_min = 0;
-	static int16_t My_min = 0;
-	static int16_t Mz_min = 0;
 
-	static uint32_t times = 0;
-
-	if (1)
+	//if (!g_Calibration_Done)
 	{
-		if (times == 0)
-		{
-			Mx_max = Mx_min = g_Mx_Raw;
-			My_max = My_min = g_My_Raw;
-			Mz_max = Mz_min = g_Mz_Raw;
-
-			LOG_INFO("Calibrating magnetometer...");
-
-			times = 1;
-
-			vue.addNotif("Event", "Calibrating magnetometer...", 4, eNotificationTypeComplete);
-		}
 		if (g_Mx_Raw > Mx_max)
 		{
 			Mx_max = g_Mx_Raw;
@@ -277,6 +266,15 @@ static int Magnetometer_Calibrate(void)
 					Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
 			vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
 
+			// save calibration to settings
+			sUserParameters *settings = user_settings_get();
+			settings->mag_cal.calib[0] = g_Mx_Offset;
+			settings->mag_cal.calib[1] = g_My_Offset;
+			settings->mag_cal.calib[2] = g_Mz_Offset;
+			settings->mag_cal.is_present = 1;
+
+			u_settings.writeConfig();
+
 			g_Calibration_Done = true;
 
 		} else if (millis() > FXOS_MEAS_CAL_LIM_MS) {
@@ -291,6 +289,18 @@ static int Magnetometer_Calibrate(void)
 	}
 
 	return 0;
+}
+
+void fxos_calibration_start(void) {
+	g_Calibration_Done = false;
+
+	Mx_max = Mx_min = g_Mx_Raw;
+	My_max = My_min = g_My_Raw;
+	Mz_max = Mz_min = g_Mz_Raw;
+
+	LOG_INFO("Calibrating magnetometer...");
+
+	vue.addNotif("Event", "Calibrating magnetometer...", 4, eNotificationTypeComplete);
 }
 
 /**
@@ -662,9 +672,29 @@ void fxos_tasks()
 		{
 		}
 
+		sMagCal &mag_cal = u_settings.getMagCal();
+
+		// check if we have a previous calibration
+		if (mag_cal.is_present) {
+
+			sUserParameters *settings = user_settings_get();
+
+			g_Mx_Offset = settings->mag_cal.calib[0];
+			g_My_Offset = settings->mag_cal.calib[1];
+			g_Mz_Offset = settings->mag_cal.calib[2];
+
+			g_Calibration_Done = true;
+
+			LOG_WARNING("Magnetometer calibration found");
+
+			//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
+
+		}
+
 	}
 
-	if (Magnetometer_Calibrate()) return;
+	if (!g_Calibration_Done)
+		if (Magnetometer_Calibrate_Task()) return;
 
 	if(g_FirstRun)
 	{

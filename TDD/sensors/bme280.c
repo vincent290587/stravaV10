@@ -48,5 +48,5 @@ float bme280_get_pressure(void) {
 }
 
 bool bme280_is_data_ready(void) {
-	return m_data.is_updated == 1;
+	return bme280_is_updated();
 }
