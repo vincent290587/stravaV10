@@ -357,20 +357,20 @@ void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id)
 void ant_tasks(void) {
 
 	// check all channels are open
-	for (eAntSensorsChannelNumber channel = eAntSensorsChannelHRM; channel < eAntSensorsChannelBS; channel++) {
-
-		uint8_t status = 0;
-		sd_ant_channel_status_get((uint8_t)channel, &status);
-
-		if (STATUS_SEARCHING_CHANNEL != status &&
-				STATUS_TRACKING_CHANNEL != status) {
-
-			// channel is not searching and not tracking...
-			// TODO smth
-			LOG_WARNING("Channel %u status is weird...", (uint8_t)channel);
-		}
-
-	}
+//	for (eAntSensorsChannelNumber channel = eAntSensorsChannelHRM; channel < eAntSensorsChannelBS; channel++) {
+//
+//		uint8_t status = 0;
+//		sd_ant_channel_status_get((uint8_t)channel, &status);
+//
+//		if (STATUS_SEARCHING_CHANNEL != status &&
+//				STATUS_TRACKING_CHANNEL != status) {
+//
+//			// channel is not searching and not tracking...
+//			// TODO smth
+//			LOG_WARNING("Channel %u status is weird...", (uint8_t)channel);
+//		}
+//
+//	}
 
 }
 

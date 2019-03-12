@@ -36,6 +36,8 @@ public:
 	bool isConfigValid(void);
 	bool resetConfig(void);
 
+	void checkConfigVersion(void);
+
 	uint16_t getHRMdevID(void) const {
 		return m_params.hrm_devid;
 	}

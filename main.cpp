@@ -18,6 +18,7 @@
 #include "bsp.h"
 #include "spi.h"
 #include "i2c.h"
+#include "fram.h"
 #include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
@@ -32,7 +33,7 @@
 #include "diskio_nor.h"
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
-#include "ant_Device_manager.h"
+#include "ant_device_manager.h"
 #include "Model.h"
 #include "sd_hal.h"
 #include "ble_api_base.h"
@@ -458,6 +459,10 @@ int main(void)
 	// init BLE + ANT
 #ifdef SOFTDEVICE_PRESENT
 	sdh_init();
+#endif
+#ifdef FDS_PRESENT
+	fram_init_sensor();
+	u_settings.checkConfigVersion();
 #endif
 #if defined (BLE_STACK_SUPPORT_REQD)
 	ble_init();

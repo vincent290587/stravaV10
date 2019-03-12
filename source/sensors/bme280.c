@@ -160,7 +160,7 @@ static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 	bme280_data *buf = p_user_data;
 
 	if (result) {
-		LOG_INFO("BME read error");
+		LOG_WARNING("BME read error");
 		return;
 	}
 
@@ -168,7 +168,7 @@ static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 
 	memcpy(&m_data, buf, BME280_DATA_T_SIZE);
 
-	LOG_INFO("BME read");
+	LOG_DEBUG("BME read");
 
 }
 
@@ -188,13 +188,13 @@ void bme280_refresh(void) {
 	LOG_INFO("BME temp: %d", m_data.comp_temp);
 
 	if (!bme280_compensate_press(&m_data, adc_press)) {
-		LOG_INFO("BME press error");
+		LOG_WARNING("BME press error");
 		return;
 	}
 
 	m_data.is_updated = true;
 
-	LOG_INFO("BME press: %d", m_data.comp_press / 256);
+	LOG_DEBUG("BME press: %d", m_data.comp_press / 256);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -225,9 +225,7 @@ void bme280_init_sensor() {
 		return;
 	}
 
-	LOG_WARNING("BME iD: %u", p_ans_buffer[0]);
-
-	nrf_delay_ms(500);
+	delay_ms(500);
 
 	{
 		static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND wai_reg1[] = {BME280_CHIP_ID_REG,
@@ -267,7 +265,7 @@ void bme280_init_sensor() {
 	bme280_cfg_config();
 	bme280_meas_config();
 
-	LOG_WARNING("BME init done");
+	LOG_INFO("BME init done");
 
 }
 

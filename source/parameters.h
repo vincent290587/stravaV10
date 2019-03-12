@@ -67,5 +67,6 @@
 
 //#define _DEBUG_TWI
 
+#define FDS_PRESENT
 
 #endif /* SOURCE_PARAMETERS_H_ */

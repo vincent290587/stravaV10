@@ -13,6 +13,20 @@
 
 #define ANT_DEVICE_MANAGER_MAX_SENSORS_NB    8
 
+
+#define HRM_CHANNEL_NUMBER              0x00
+#define HRM_DEVICE_NUMBER               0x0D22    /**< Device Number. */
+
+#define BSC_CHANNEL_NUMBER              0x01
+#define BSC_DEVICE_NUMBER               0xB02B    /**< Device Number. */
+#define BSC_DEVICE_TYPE                 0x79
+
+#define GLASSES_DEVICE_NUMBER   0xFDDA
+
+#define FEC_CHANNEL_NUMBER              0x03
+#define TACX_DEVICE_NUMBER              2846U
+
+
 typedef struct {
 	uint16_t dev_id;
 	int8_t ssid;

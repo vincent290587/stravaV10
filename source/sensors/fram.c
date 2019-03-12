@@ -8,6 +8,7 @@
 #include <string.h>
 #include "fram.h"
 #include "utils.h"
+#include "parameters.h"
 #include "nordic_common.h"
 #include "segger_wrapper.h"
 #include "task_manager_wrapper.h"
@@ -83,10 +84,150 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 	return true;
 }
 
+#elif defined( FDS_PRESENT )
+
+
+#include "fds.h"
+#include "Model.h"
+#include "UserSettings.h"
+
+/* File ID and Key used for the configuration record. */
+
+#define CONFIG_FILE     (0xF010)
+#define CONFIG_REC_KEY  (0x7010)
+
+/* Flag to check fds initialization. */
+static bool volatile m_fds_initialized;
+static bool volatile m_fds_rd_pending;
+static bool volatile m_fds_wr_pending;
+
+
+static void fds_evt_handler(fds_evt_t const * p_evt)
+{
+	switch (p_evt->id)
+	{
+	case FDS_EVT_INIT:
+		if (p_evt->result == FDS_SUCCESS)
+		{
+			m_fds_initialized = true;
+		}
+		break;
+
+	case FDS_EVT_WRITE:
+	{
+		if (p_evt->result != FDS_SUCCESS)
+		{
+			LOG_ERROR("Record write error");
+		}
+		m_fds_wr_pending = false;
+	} break;
+
+	case FDS_EVT_UPDATE:
+	{
+		if (p_evt->result != FDS_SUCCESS)
+		{
+			LOG_ERROR("Record update error");
+		}
+	} break;
+
+	default:
+		break;
+	}
+}
+
+void fram_init_sensor() {
+
+	ret_code_t rc;
+
+	/* Register first to receive an event when initialization is complete. */
+	rc = fds_register(fds_evt_handler);
+	APP_ERROR_CHECK(rc);
+
+	rc = fds_init();
+	APP_ERROR_CHECK(rc);
+
+	LOG_WARNING("FRAM init pending...");
+
+	while (!m_fds_initialized)
+	{
+		perform_system_tasks_light();
+	}
+
+	LOG_WARNING("FRAM init done");
+
+}
+
+bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
+
+	fds_record_desc_t desc = {0};
+	fds_find_token_t  tok  = {0};
+
+	ASSERT(m_fds_initialized);
+
+	LOG_DEBUG("Reading config file...");
+
+	ret_code_t rc = fds_record_find(CONFIG_FILE, CONFIG_REC_KEY, &desc, &tok);
+
+	if (rc == FDS_SUCCESS)
+	{
+		/* A config file is in flash. Let's update it. */
+		fds_flash_record_t config = {0};
+
+		/* Open the record and read its contents. */
+		rc = fds_record_open(&desc, &config);
+		APP_ERROR_CHECK(rc);
+
+		if (rc) return false;
+
+		/* Copy the configuration from flash into readout. */
+		length = MIN(sizeof(sUserParameters), length);
+		memcpy(readout, config.p_data, length);
+
+		/* Close the record when done reading. */
+		rc = fds_record_close(&desc);
+		APP_ERROR_CHECK(rc);
+
+		return true;
+	}
+
+	LOG_ERROR("FDS record not found");
+
+	return true;
+}
+
+bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
+
+	fds_record_desc_t desc = {0};
+
+	ASSERT(m_fds_initialized);
+
+	/* System config not found; write a new one. */
+	LOG_DEBUG("Writing config file...");
+
+	fds_record_t _record =
+	{
+			.file_id           = CONFIG_FILE,
+			.key               = CONFIG_REC_KEY,
+			.data.p_data       = writeout,
+			/* The length of a record is always expressed in 4-byte units (words). */
+			.data.length_words = (length + 3) / sizeof(uint32_t),
+	};
+
+	ret_code_t rc = fds_record_write(&desc, &_record);
+	APP_ERROR_CHECK(rc);
+
+	m_fds_wr_pending = true;
+
+	while (m_fds_wr_pending) {
+		perform_system_tasks_light();
+	}
+
+	return true;
+}
+
 #else
 
 #include "g_structs.h"
-#include "parameters.h"
 #include "UserSettings.h"
 
 static sUserParameters m_params;
