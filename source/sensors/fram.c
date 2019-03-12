@@ -237,7 +237,7 @@ void fram_init_sensor() {
 
 	m_params.hrm_devid = 0x0D22;
 	m_params.bsc_devid = 0xB02B;
-	m_params.fec_devid = 2766U;
+	m_params.fec_devid = 2846U;
 	m_params.version = 1U;
 	m_params.FTP = USER_FTP;
 	m_params.weight = USER_WEIGHT;

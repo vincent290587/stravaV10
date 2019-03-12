@@ -1,38 +1,3 @@
-/*
- * hrm.c
- *
- *  Created on: 12 mrt. 2019
- *      Author: v.golle
- */
-
-
-/* Copyright (c) 2012 Nordic Semiconductor. All Rights Reserved.
- *
- * The information contained herein is property of Nordic Semiconductor ASA.
- * Terms and conditions of usage are described in detail in NORDIC
- * SEMICONDUCTOR STANDARD SOFTWARE LICENSE AGREEMENT.
- *
- * Licensees are granted free, non-transferable use of the information. NO
- * WARRANTY of ANY KIND is provided. This heading must NOT be removed from
- * the file.
- */
-
-/** @file
- *
- * @defgroup ble_sdk_apple_notification_main main.c
- * @{
- * @ingroup ble_sdk_app_apple_notification
- * @brief Apple Notification Client Sample Application main file. Disclaimer:
- * This client implementation of the Apple Notification Center Service can and
- * will be changed at any time by Nordic Semiconductor ASA.
- *
- * Server implementations such as the ones found in iOS can be changed at any
- * time by Apple and may cause this client implementation to stop working.
- *
- * This file contains the source code for a sample application using the Apple
- * Notification Center Service Client.
- */
-
 
 
 #include <stdbool.h>

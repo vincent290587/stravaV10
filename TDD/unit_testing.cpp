@@ -91,7 +91,7 @@ bool test_fram(void) {
 	if (!u_settings.isConfigValid())
 		return false;
 
-	if (u_settings.getFECdevID() != 2766U)
+	if (!u_settings.getFECdevID() != 0U)
 		return false;
 
 	if (!u_settings.resetConfig())
