@@ -84,7 +84,7 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 	return true;
 }
 
-#elif defined( FDS_PRESENT )
+#elif defined( FDS_PRESENT ) && !defined(TDD)
 
 
 #include "fds.h"
