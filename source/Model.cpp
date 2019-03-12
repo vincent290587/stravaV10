@@ -10,6 +10,7 @@
 #include "neopixel.h"
 #include "helper.h"
 #include "sd_hal.h"
+#include "app_scheduler.h"
 #include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 

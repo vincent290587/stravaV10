@@ -57,7 +57,7 @@ extern "C" {
 #ifdef SVCALL_AS_NORMAL_FUNCTION
 #define SCHED_QUEUE_SIZE               20                                           /**< Maximum number of events in the scheduler queue. More is needed in case of Serialization. */
 #else
-#define SCHED_QUEUE_SIZE               10                                           /**< Maximum number of events in the scheduler queue. */
+#define SCHED_QUEUE_SIZE               20                                           /**< Maximum number of events in the scheduler queue. */
 #endif
 
 APP_TIMER_DEF(m_job_timer);
