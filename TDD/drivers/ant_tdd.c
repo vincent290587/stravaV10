@@ -5,10 +5,19 @@
  *      Author: v.golle
  */
 
+#include <stdbool.h>
 #include "ant.h"
+#include "ant_device_manager.h"
+#include "millis.h"
 #include "segger_wrapper.h"
 
+static bool m_is_searching = false;
+
 void ant_search_start(eAntPairingSensorType search_type) {
+
+	ant_device_manager_search_add(2846U, 0);
+	ant_device_manager_search_add(7777U, 0);
+	ant_device_manager_search_add(12U, 0);
 
 }
 

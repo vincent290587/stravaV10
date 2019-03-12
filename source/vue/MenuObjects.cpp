@@ -63,9 +63,18 @@ void MenuItem::render(void) {
 void MenuItem::render(bool isSelec) {
 
 	vue.print("  ");
-	vue.print(this->getName());
-	if (isSelec) vue.println(" <=");
-	else vue.println();
+
+	if (isSelec) {
+		int16_t x0 = vue.getCursorX() - 20;
+		int16_t y0 = vue.getCursorY() - 1;
+
+		vue.println(this->getName());
+		vue.fillRoundRect(x0, y0, 215, 23,
+		      6, 2);
+	}
+	else {
+		vue.println(this->getName());
+	}
 
 }
 
