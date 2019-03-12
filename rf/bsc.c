@@ -243,7 +243,7 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
 
 /**@brief Function for initializing the timer module.
  */
-static void bsc_timers_init(void)
+void bsc_init(void)
 {
 	ret_code_t err_code;
 
@@ -276,7 +276,6 @@ void bsc_profile_setup(void) {
 	err_code = ant_search_init(&ant_search_config);
 	APP_ERROR_CHECK(err_code);
 
-	bsc_timers_init();
 }
 
 /**

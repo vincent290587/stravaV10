@@ -179,7 +179,7 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
 
 /**@brief Function for initializing the timer module.
  */
-static void hrm_timers_init(void)
+void hrm_init(void)
 {
 	ret_code_t err_code;
 
@@ -207,13 +207,6 @@ void hrm_profile_setup(void) {
 
 	ant_search_config.channel_number = HRM_CHANNEL_NUMBER;
 	err_code = ant_search_init(&ant_search_config);
-	APP_ERROR_CHECK(err_code);
-
-	hrm_timers_init();
-
-	// Open the ANT channels
-
-	err_code = ant_hrm_disp_open(&m_ant_hrm);
 	APP_ERROR_CHECK(err_code);
 
 }

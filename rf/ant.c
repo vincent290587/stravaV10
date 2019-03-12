@@ -64,9 +64,6 @@
 #define APP_ANT_OBSERVER_PRIO       1
 
 
-static eAntPairingSensorType m_search_type = eAntPairingSensorTypeNone;
-
-
 /**
  * Event handler for background search
  */
@@ -153,7 +150,9 @@ NRF_SDH_ANT_OBSERVER(m_ant_observer, APP_ANT_OBSERVER_PRIO, ant_evt_handler, 0);
  */
 void ant_timers_init(void)
 {
-//	hrm_timers_init();
+	hrm_init();
+
+	bsc_init();
 
 	fec_init();
 
@@ -193,7 +192,7 @@ static void ant_profile_setup(void)
 	fec_profile_setup();
 
 	// GLASSES
-	glasses_profile_setup();
+//	glasses_profile_setup();
 
     // BS
 	const ant_search_config_t bs_search_config =
@@ -239,7 +238,7 @@ static void ant_profile_setup(void)
 	bsc_profile_start();
 	fec_profile_start();
 
-	//glasses_profile_start();
+//	glasses_profile_start();
 
 	LOG_INFO("ANT ready");
 }
@@ -265,10 +264,9 @@ void ant_search_start(eAntPairingSensorType search_type) {
 		break;
 	}
 
-	m_search_type = search_type;
 }
 
-void ant_search_end(uint16_t dev_id) {
+void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
 
 	ret_code_t err_code;
 
@@ -278,15 +276,11 @@ void ant_search_end(uint16_t dev_id) {
 //    err_code = sd_ant_channel_unassign(BS_CHANNEL_NUMBER);
 //    APP_ERROR_CHECK(err_code);
 
-	m_search_type = eAntPairingSensorTypeNone;
-
 	if (!dev_id) return;
 
-	switch (m_search_type) {
+	switch (search_type) {
 	case eAntPairingSensorTypeNone:
-	{
-
-	} break;
+	    break;
 	case eAntPairingSensorTypeHRM:
 	{
 		// Set the new device ID.
@@ -330,31 +324,21 @@ int ant_setup_start(void)
 
 void ant_tasks(void) {
 
-	if (eAntPairingSensorTypeNone != m_search_type) {
-		// we are in normal mode: check all channels are open
+	// check all channels are open
+	for (eAntSensorsChannelNumber channel = eAntSensorsChannelHRM; channel < eAntSensorsChannelBS; channel++) {
 
-		for (eAntSensorsChannelNumber channel = eAntSensorsChannelHRM; channel < eAntSensorsChannelBS; channel++) {
+		uint8_t status = 0;
+		sd_ant_channel_status_get((uint8_t)channel, &status);
 
-			uint8_t status = 0;
-			sd_ant_channel_status_get((uint8_t)channel, &status);
+		if (STATUS_SEARCHING_CHANNEL != status &&
+				STATUS_TRACKING_CHANNEL != status) {
 
-			if (STATUS_SEARCHING_CHANNEL != status &&
-					STATUS_TRACKING_CHANNEL != status) {
-
-				// channel is not searching and not tracking...
-				// TODO smth
-				LOG_WARNING("Channel %u status is weird...", (uint8_t)channel);
-			}
-
+			// channel is not searching and not tracking...
+			// TODO smth
+			LOG_WARNING("Channel %u status is weird...", (uint8_t)channel);
 		}
 
-
-	} else {
-		// we are searching
-
-
 	}
-
 
 }
 

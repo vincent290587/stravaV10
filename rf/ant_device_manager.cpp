@@ -51,7 +51,7 @@ void ant_device_manager_search_validate(int var) {
 	if (var < 0 || var >= m_sensors_list.nb_sensors) return;
 	if (m_sensors_list.nb_sensors == 0) return;
 
-	ant_search_end(m_sensors_list.sensors[var].dev_id);
+	ant_search_end(m_search_type, m_sensors_list.sensors[var].dev_id);
 
 	m_search_type = eAntPairingSensorTypeNone;
 
@@ -60,12 +60,12 @@ void ant_device_manager_search_validate(int var) {
 
 void ant_device_manager_search_cancel(void) {
 
+	// start normal channel
+	ant_search_end(m_search_type, 0x0000);
+
 	m_search_type = eAntPairingSensorTypeNone;
 
 	LOG_WARNING("ANT+ search cancelled");
-
-	// start normal channel
-	ant_search_end(0x0000);
 }
 
 void ant_device_manager_search_add(uint16_t sensor_id, int8_t ssid) {

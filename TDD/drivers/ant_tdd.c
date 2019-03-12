@@ -11,7 +11,7 @@ void ant_search_start(eAntPairingSensorType search_type) {
 
 }
 
-void ant_search_end(uint16_t dev_id) {
+void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
 
 
 }

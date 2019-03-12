@@ -21,6 +21,7 @@
 extern "C" {
 #endif
 
+void bsc_init(void);
 
 void ant_evt_bsc (ant_evt_t * p_ant_evt);
 

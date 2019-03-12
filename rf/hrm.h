@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+void hrm_init(void);
 
 void ant_evt_hrm (ant_evt_t * p_ant_evt);
 
