@@ -54,6 +54,13 @@ bool UserSettings::isConfigValid(void) {
 	return true;
 }
 
+bool UserSettings::writeConfig(void) {
+
+	LOG_WARNING("User params written");
+
+	return fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
+}
+
 bool UserSettings::resetConfig(void) {
 
 	m_is_init = false;

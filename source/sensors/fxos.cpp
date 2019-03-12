@@ -219,7 +219,7 @@ static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *A
 static int Magnetometer_Calibrate_Task(void)
 {
 
-	if (!g_Calibration_Done)
+	//if (!g_Calibration_Done)
 	{
 		if (g_Mx_Raw > Mx_max)
 		{
@@ -272,6 +272,8 @@ static int Magnetometer_Calibrate_Task(void)
 			settings->mag_cal.calib[1] = g_My_Offset;
 			settings->mag_cal.calib[2] = g_Mz_Offset;
 			settings->mag_cal.is_present = 1;
+
+			u_settings.writeConfig();
 
 			g_Calibration_Done = true;
 
@@ -683,9 +685,9 @@ void fxos_tasks()
 
 			g_Calibration_Done = true;
 
-			LOG_INFO("Magnetometer calibration found");
+			LOG_WARNING("Magnetometer calibration found");
 
-			vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
+			//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
 
 		}
 

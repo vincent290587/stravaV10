@@ -35,6 +35,7 @@ public:
 
 	bool isConfigValid(void);
 	bool resetConfig(void);
+	bool writeConfig(void);
 
 	void checkConfigVersion(void);
 
