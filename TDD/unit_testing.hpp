@@ -24,4 +24,6 @@ bool test_nb_points(void);
 
 bool test_fram(void);
 
+bool test_rollover(void);
+
 #endif /* TDD_UNIT_TESTING_HPP_ */

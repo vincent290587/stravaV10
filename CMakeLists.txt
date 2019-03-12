@@ -76,6 +76,7 @@ set(SRCS
     sensors/STC3100.cpp
     sensors/bme280.c
 	drivers/uart_tdd.c
+	drivers/ant_tdd.c
 	drivers/gpio_tdd.cpp
 	drivers/ls027_tdd.cpp
 	drivers/neopixel_tdd.c

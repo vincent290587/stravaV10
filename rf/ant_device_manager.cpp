@@ -6,7 +6,6 @@
  */
 
 #include "ant.h"
-#include "ant_interface.h"
 #include "Model.h"
 #include "ant_device_manager.h"
 #include "segger_wrapper.h"
@@ -23,8 +22,6 @@ sAntPairingSensorList* ant_device_manager_get_sensors_list(void) {
 void ant_device_manager_init(void) {
 
 	// check registered devices
-
-	// can we start ANT+ ?
 
 }
 

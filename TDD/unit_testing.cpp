@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include "Model_tdd.h"
 #include "Screenutils.h"
@@ -16,6 +17,48 @@
 #include "order1_filter.h"
 
 #define TEST_FILTRE_NB    15
+
+#define TEST_ROLLOF_NB    48759
+
+bool test_rollover(void) {
+
+	LOG_INFO("Testing overflow...");
+
+	uint8_t el_time_prev;
+	uint8_t fec_info_el_time;
+	uint32_t m_el_time = 0;
+	uint32_t m_el_time_ref = 0;
+
+	for (uint16_t i=1; i< TEST_ROLLOF_NB; ) {
+
+		int rnd_add;
+		rnd_add = (rand() % 5);
+
+		i+= rnd_add;
+
+		fec_info_el_time = (uint8_t)i;
+
+		// WORKS
+		uint8_t rollof = fec_info_el_time;
+		rollof -= el_time_prev;
+		rollof &= 0x3F;
+		if (rollof) {
+			m_el_time += rollof;
+			el_time_prev = fec_info_el_time;
+		}
+
+		m_el_time_ref = i;
+	}
+
+	if (m_el_time != m_el_time_ref) {
+		LOG_ERROR("Overflow fail: %u vs. %u", m_el_time, m_el_time_ref);
+		return false;
+	}
+
+	LOG_INFO("Overflow OK");
+
+	return true;
+}
 
 bool test_lsq(void) {
 
