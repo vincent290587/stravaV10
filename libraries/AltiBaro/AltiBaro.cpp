@@ -18,7 +18,14 @@
 /** Auxiliary macro used by @ref CONCAT_2 */
 #define CONCAT_2_(p1, p2)     p1##p2
 
-#define BARO_WRAPPER(X)       CONCAT_2(BARO_TYPE, X)
+
+#define CONCAT_3(p1, p2, p3)  CONCAT_3_(p1, p2, p3)
+/** Auxiliary macro used by @ref CONCAT_3 */
+#define CONCAT_3_(p1, p2, p3) p1##p2##p3
+
+
+#define BARO_WRAPPER(X)           CONCAT_2(BARO_TYPE, X)
+#define BARO_WRAPPER3(X, Y)       CONCAT_3(X, BARO_TYPE, Y)
 
 #ifdef USE_JSCOPE
 #include "JScope.h"
@@ -46,8 +53,40 @@ AltiBaro::AltiBaro() {
  *
  * @return True if updated
  */
-bool AltiBaro::isUpdated() {
+bool AltiBaro::isDataReady() {
 	return BARO_WRAPPER(_is_data_ready());
+}
+
+/**
+ *
+ * @return True if updated
+ */
+bool AltiBaro::isUpdated() {
+	return BARO_WRAPPER3(is_, _updated());
+}
+
+/**
+ *
+ * @return True if updated
+ */
+void AltiBaro::sensorRefresh() {
+	BARO_WRAPPER(_refresh());
+}
+
+/**
+ *
+ * @return True if updated
+ */
+void AltiBaro::sensorRead() {
+	BARO_WRAPPER(_read_sensor());
+}
+
+/**
+ *
+ * @return True if updated
+ */
+void AltiBaro::sensorInit() {
+	BARO_WRAPPER(_init_sensor());
 }
 
 /**

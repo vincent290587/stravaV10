@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-void ms5637_init(void);
+void ms5637_init_sensor(void);
 
 void ms5637_read_sensor(void);
 

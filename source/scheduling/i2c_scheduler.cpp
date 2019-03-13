@@ -13,7 +13,6 @@
 #include "millis.h"
 #include "fxos.h"
 #include "fram.h"
-#include "bme280.h"
 #include "app_timer.h"
 #include "Model.h"
 
@@ -54,7 +53,7 @@ static void _i2c_scheduling_sensors_init() {
 	fram_init_sensor();
 #endif
   
-	bme280_init_sensor();
+	baro.sensorInit();
 
 	// post-init steps
 	_i2c_scheduling_sensors_post_init();
@@ -69,7 +68,7 @@ static void timer_handler(void * p_context)
 	W_SYSVIEW_RecordEnterISR();
 
 	if (boucle.getGlobalMode() != eBoucleGlobalModesFEC)
-		bme280_read_sensor();
+		baro.sensorRead();
 
 	if (++m_last_polled_index >= SENSORS_REFRESH_PER_MS / I2C_SCHEDULING_PERIOD_MS) {
 		m_last_polled_index = 0;
@@ -115,9 +114,9 @@ void i2c_scheduling_init(void) {
 
 void i2c_scheduling_tasks(void) {
 #ifndef _DEBUG_TWI
-	if (is_bme280_updated()) {
+	if (baro.isUpdated()) {
 		sysview_task_void_enter(I2cMgmtReadMs);
-		bme280_refresh();
+		baro.sensorRefresh();
 		sysview_task_void_exit(I2cMgmtReadMs);
 	}
 	if (is_fxos_updated()) {
