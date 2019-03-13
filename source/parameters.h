@@ -51,7 +51,7 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define BARO_REFRESH_PER_MS            168
+#define BARO_REFRESH_PER_MS            333
 
 #define SENSORS_REFRESH_PER_MS         1000
 
