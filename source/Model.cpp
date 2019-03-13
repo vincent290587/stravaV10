@@ -308,7 +308,7 @@ void peripherals_task(void * p_context)
 			vue.refresh();
 		}
 
-		if (baro.isUpdated()) {
+		if (baro.isDataReady()) {
 			baro.runFilter();
 		}
 

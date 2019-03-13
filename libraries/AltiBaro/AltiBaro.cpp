@@ -6,13 +6,26 @@
  */
 
 #include "bme280.h"
+#include "ms5637.h"
 #include "AltiBaro.h"
-#include "parameters.h"
 #include "utils.h"
 #include "Model.h"
 #include "math_wrapper.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
+
+#define CONCAT_2(p1, p2)      CONCAT_2_(p1, p2)
+/** Auxiliary macro used by @ref CONCAT_2 */
+#define CONCAT_2_(p1, p2)     p1##p2
+
+
+#define CONCAT_3(p1, p2, p3)  CONCAT_3_(p1, p2, p3)
+/** Auxiliary macro used by @ref CONCAT_3 */
+#define CONCAT_3_(p1, p2, p3) p1##p2##p3
+
+
+#define BARO_WRAPPER(X)           CONCAT_2(BARO_TYPE, X)
+#define BARO_WRAPPER3(X, Y)       CONCAT_3(X, BARO_TYPE, Y)
 
 #ifdef USE_JSCOPE
 #include "JScope.h"
@@ -40,8 +53,40 @@ AltiBaro::AltiBaro() {
  *
  * @return True if updated
  */
+bool AltiBaro::isDataReady() {
+	return BARO_WRAPPER(_is_data_ready());
+}
+
+/**
+ *
+ * @return True if updated
+ */
 bool AltiBaro::isUpdated() {
-	return bme280_is_data_ready();
+	return BARO_WRAPPER3(is_, _updated());
+}
+
+/**
+ *
+ * @return True if updated
+ */
+void AltiBaro::sensorRefresh() {
+	BARO_WRAPPER(_refresh());
+}
+
+/**
+ *
+ * @return True if updated
+ */
+void AltiBaro::sensorRead() {
+	BARO_WRAPPER(_read_sensor());
+}
+
+/**
+ *
+ * @return True if updated
+ */
+void AltiBaro::sensorInit() {
+	BARO_WRAPPER(_init_sensor());
 }
 
 /**
@@ -60,7 +105,7 @@ bool AltiBaro::computeAlti(float& alti_) {
 
 	// m_temperature, m_pressure;
 	if (nb_filtering <= FILTRE_NB) {
-		alti_ = this->pressureToAltitude(bme280_get_pressure());
+		alti_ = this->pressureToAltitude(BARO_WRAPPER(_get_pressure()));
 	} else {
 		alti_ = m_alti_f;
 	}
@@ -99,8 +144,8 @@ void AltiBaro::runFilter(void) {
 #ifdef TDD
 	float input = this->getAlti();
 #else
-	bme280_clear_flags();
-	float input = this->pressureToAltitude(bme280_get_pressure());
+	BARO_WRAPPER(_clear_flags());
+	float input = this->pressureToAltitude(BARO_WRAPPER(_get_pressure()));
 #endif
 	xk1[ind++] = input;
 	ind = ind % MOV_AV_NB_VAL;
@@ -129,7 +174,7 @@ void AltiBaro::runFilter(void) {
 	uint16_t ind_tmp = ind2;
 	for (int i = 0; i < FILTRE_NB; i++) {
 
-		_x[i] = - i * MS5637_REFRESH_PER_MS / 1000.;
+		_x[i] = - i * BARO_REFRESH_PER_MS / 1000.;
 
 		ind_tmp += FILTRE_NB - 1;
 		ind_tmp = ind_tmp % FILTRE_NB;
@@ -217,7 +262,7 @@ void AltiBaro::seaLevelForAltitude(float altitude)
 	// Note that using the equation from wikipedia can give bad results
 	// at high altitude.  See this thread for more information:
 	//  http://forums.adafruit.com/viewtopic.php?f=22&t=58064
-	float atmospheric = bme280_get_pressure();
+	float atmospheric = BARO_WRAPPER(_get_pressure());
 
 	ASSERT(atmospheric != 0.0f);
 

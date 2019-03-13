@@ -24,6 +24,10 @@ public:
 	void runFilter(void);
 
 	bool isUpdated(void);
+	bool isDataReady(void);
+	void sensorRefresh(void);
+	void sensorRead(void);
+	void sensorInit(void);
 
 #ifdef TDD
 	float getAlti() const {

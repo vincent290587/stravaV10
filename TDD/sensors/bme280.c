@@ -27,16 +27,19 @@ void bme280_read_sensor(void) {
 
 }
 
-bool bme280_is_updated(void) {
+bool is_bme280_updated(void) {
+
+	bool updated = false;
 
 	if (millis() >= BME280_TDD_UPDATE_TIME_MS &&
 			!m_data.is_updated) {
 		m_data.comp_press = 1011.0f * (256.0F * 100.0F);
 		m_data.comp_temp = 20.7f * 100.0F;
+		updated = true;
 		m_data.is_updated = true;
 	}
 
-	return m_data.is_updated;
+	return updated;
 }
 
 bme280_data *bme280_get_data_handle(void) {
@@ -48,5 +51,9 @@ float bme280_get_pressure(void) {
 }
 
 bool bme280_is_data_ready(void) {
-	return bme280_is_updated();
+	return m_data.is_updated;
+}
+
+void bme280_refresh(void) {
+	m_data.is_updated = true;
 }
