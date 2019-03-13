@@ -5,8 +5,8 @@ GROUP(-lgcc -lc -lnosys)
 
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x2D000, LENGTH = 0x52000
-  RAM (rwx) :  ORIGIN = 0x20004150, LENGTH = 0x35000
+  FLASH (rx) : ORIGIN = 0x31000, LENGTH = 0xcf000
+  RAM (rwx) :  ORIGIN = 0x20004150, LENGTH = 0x3beb0
   NOINIT (rwx) :  ORIGIN = 0x20004000, LENGTH = 0x150
 }
 
@@ -42,6 +42,12 @@ SECTIONS
     KEEP(*(SORT(.log_dynamic_data*)))
     PROVIDE(__stop_log_dynamic_data = .);
   } > RAM
+  .log_filter_data :
+  {
+    PROVIDE(__start_log_filter_data = .);
+    KEEP(*(SORT(.log_filter_data*)))
+    PROVIDE(__stop_log_filter_data = .);
+  } > RAM
 
 } INSERT AFTER .data;
 
@@ -50,23 +56,29 @@ SECTIONS
   .mem_section_dummy_rom :
   {
   }
-  .sdh_ble_observers :
-  {
-    PROVIDE(__start_sdh_ble_observers = .);
-    KEEP(*(SORT(.sdh_ble_observers*)))
-    PROVIDE(__stop_sdh_ble_observers = .);
-  } > FLASH
   .sdh_soc_observers :
   {
     PROVIDE(__start_sdh_soc_observers = .);
     KEEP(*(SORT(.sdh_soc_observers*)))
     PROVIDE(__stop_sdh_soc_observers = .);
   } > FLASH
-  .sdh_state_observers :
+  .pwr_mgmt_data :
   {
-    PROVIDE(__start_sdh_state_observers = .);
-    KEEP(*(SORT(.sdh_state_observers*)))
-    PROVIDE(__stop_sdh_state_observers = .);
+    PROVIDE(__start_pwr_mgmt_data = .);
+    KEEP(*(SORT(.pwr_mgmt_data*)))
+    PROVIDE(__stop_pwr_mgmt_data = .);
+  } > FLASH
+  .sdh_ble_observers :
+  {
+    PROVIDE(__start_sdh_ble_observers = .);
+    KEEP(*(SORT(.sdh_ble_observers*)))
+    PROVIDE(__stop_sdh_ble_observers = .);
+  } > FLASH
+  .sdh_ant_observers :
+  {
+    PROVIDE(__start_sdh_ant_observers = .);
+    KEEP(*(SORT(.sdh_ant_observers*)))
+    PROVIDE(__stop_sdh_ant_observers = .);
   } > FLASH
   .sdh_stack_observers :
   {
@@ -80,11 +92,11 @@ SECTIONS
     KEEP(*(SORT(.sdh_req_observers*)))
     PROVIDE(__stop_sdh_req_observers = .);
   } > FLASH
-  .sdh_ant_observers :
+  .sdh_state_observers :
   {
-    PROVIDE(__start_sdh_ant_observers = .);
-    KEEP(*(SORT(.sdh_ant_observers*)))
-    PROVIDE(__stop_sdh_ant_observers = .);
+    PROVIDE(__start_sdh_state_observers = .);
+    KEEP(*(SORT(.sdh_state_observers*)))
+    PROVIDE(__stop_sdh_state_observers = .);
   } > FLASH
     .nrf_queue :
   {
@@ -110,17 +122,17 @@ SECTIONS
     KEEP(*(SORT(.crypto_data*)))
     PROVIDE(__stop_crypto_data = .);
   } > FLASH
-  .pwr_mgmt_data :
-  {
-    PROVIDE(__start_pwr_mgmt_data = .);
-    KEEP(*(SORT(.pwr_mgmt_data*)))
-    PROVIDE(__stop_pwr_mgmt_data = .);
-  } > FLASH
   .log_const_data :
   {
     PROVIDE(__start_log_const_data = .);
     KEEP(*(SORT(.log_const_data*)))
     PROVIDE(__stop_log_const_data = .);
+  } > FLASH
+  .log_backends :
+  {
+    PROVIDE(__start_log_backends = .);
+    KEEP(*(SORT(.log_backends*)))
+    PROVIDE(__stop_log_backends = .);
   } > FLASH
 
 } INSERT AFTER .text
