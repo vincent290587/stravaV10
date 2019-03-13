@@ -51,7 +51,7 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define MS5637_REFRESH_PER_MS          333
+#define BARO_REFRESH_PER_MS            333
 
 #define SENSORS_REFRESH_PER_MS         1000
 
@@ -65,8 +65,11 @@
 
 ///// CODE FLAGS
 
+#define FDS_PRESENT
+
+#define BARO_TYPE                      bme280
+
 //#define _DEBUG_TWI
 
-#define FDS_PRESENT
 
 #endif /* SOURCE_PARAMETERS_H_ */

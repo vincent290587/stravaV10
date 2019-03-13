@@ -92,6 +92,8 @@ void UserSettings::checkConfigVersion(void) {
 			this->resetConfig();
 
 			LOG_WARNING("Basic user params set");
+		} else {
+			m_is_init = true;
 		}
 	}
 }

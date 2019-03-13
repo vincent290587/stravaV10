@@ -10,8 +10,7 @@
 #include "segger_wrapper.h"
 #include "parameters.h"
 #include "millis.h"
-#include "nrf_assert.h"
-#include "nrf_delay.h"
+#include "millis.h"
 #include "fxos.h"
 #include "fram.h"
 #include "bme280.h"
@@ -22,7 +21,7 @@
 
 #ifndef _DEBUG_TWI
 
-#define I2C_SCHEDULING_PERIOD_MS      (MS5637_REFRESH_PER_MS)
+#define I2C_SCHEDULING_PERIOD_MS      (BARO_REFRESH_PER_MS)
 
 static uint32_t m_last_polled_index = 0;
 
