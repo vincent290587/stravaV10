@@ -51,7 +51,7 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define BARO_REFRESH_PER_MS            333
+#define BARO_REFRESH_PER_MS            168
 
 #define SENSORS_REFRESH_PER_MS         1000
 
@@ -67,7 +67,7 @@
 
 #define FDS_PRESENT
 
-#define BARO_TYPE                      bme280
+#define BARO_TYPE                      ms5637
 
 //#define _DEBUG_TWI
 
