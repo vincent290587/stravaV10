@@ -321,7 +321,7 @@ static void ms5637_reset() {
 
 }
 
-void ms5637_init(void) {
+void ms5637_init_sensor(void) {
 
 	initialised = false;
 	m_temperature = 20.;
