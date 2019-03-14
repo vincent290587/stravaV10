@@ -29,9 +29,7 @@ PowerZone::PowerZone(void) : BinnedData() {
 	memset(m_pw_bins, 0, sizeof(m_pw_bins));
 }
 
-void PowerZone::addPowerData(int pw_meas) {
-
-	uint32_t timestamp = millis();
+void PowerZone::addPowerData(int pw_meas, uint32_t timestamp) {
 
 	// first call
 	if (m_last_timestamp == 0) {
@@ -59,6 +57,8 @@ void PowerZone::addPowerData(int pw_meas) {
 
 			m_pw_bins[i] += time_integ;
 
+			LOG_INFO("Logging PW in bin %d %f", i, time_integ);
+
 			// update state
 			m_last_timestamp = timestamp;
 
@@ -75,4 +75,12 @@ uint32_t PowerZone::getTimeTotal(void) {
 	float tot_time = 0;
 	for (int i=0; i< PW_ZONES_NB; i++) tot_time += m_pw_bins[i];
 	return (uint32_t)tot_time;
+}
+
+uint32_t PowerZone::getTimeZX(uint16_t i) {
+	return (uint32_t)m_pw_bins[i];
+}
+
+uint32_t PowerZone::getNbBins(void) {
+	return PW_ZONES_NB;
 }

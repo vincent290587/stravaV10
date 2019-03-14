@@ -27,7 +27,7 @@ public:
 	virtual void Histo(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, sVueHistoConfiguration& h_config_)=0;
 	virtual void HistoH (uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_)=0;
 
-	void cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, const BinnedData &data);
+	void cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, BinnedData &data);
 
 protected:
 	eVueFECScreenModes m_fec_screen_mode;

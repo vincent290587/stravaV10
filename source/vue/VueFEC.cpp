@@ -75,7 +75,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		this->cadran(3, VUE_FEC_NB_LINES, 1, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
-		this->cadranZones(3, VUE_FEC_NB_LINES, 2, "Pwr", zPower);
+		this->cadranZones(3, VUE_FEC_NB_LINES, 2, "PZ", zPower);
 
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
 		this->cadran(4, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
@@ -96,7 +96,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 	return res;
 }
 
-void VueFEC::cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, const BinnedData &data) {
+void VueFEC::cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, BinnedData &data) {
 
 	const int x = _width / 2 * p_col;
 	const int y = _height / nb_lig * (p_lig - 1);
@@ -111,11 +111,14 @@ void VueFEC::cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const cha
 	setCursor(x, y + 20);
 
 	uint32_t tot = data.getTimeTotal();
-	for (uint32_t i=0; i< data.getNbBins(); i++) {
+	LOG_INFO("PZ time %u", tot);
+	if (tot) {
+		for (uint32_t i=0; i< data.getNbBins(); i++) {
 
-		int16_t width = regFenLim(data.getTimeZX(i), 0, tot, 0, _width / 2 - 10);
-		this->fillRect(x, y + i*6, width, 4, 1);
+			int16_t width = regFenLim((float)data.getTimeZX(i), 0, tot, 0, _width / 2 - 10);
+			this->fillRect(x, y + i*6, width, 4, 1);
 
+		}
 	}
 
 	// print delimiters

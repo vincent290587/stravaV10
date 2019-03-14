@@ -20,17 +20,13 @@ class PowerZone : public BinnedData {
 public:
 	PowerZone();
 
-	void addPowerData(int pw_meas);
+	void addPowerData(int pw_meas, uint32_t timestamp);
 
 	virtual uint32_t getTimeTotal(void);
 
-	virtual uint32_t getTimeZX(uint16_t i) {
-		return (uint32_t)m_pw_bins[i];
-	}
+	virtual uint32_t getTimeZX(uint16_t i);
 
-	virtual uint32_t getNbBins(void) {
-		return PW_ZONES_NB;
-	}
+	virtual uint32_t getNbBins(void);
 
 private:
 	uint32_t m_tot_time;

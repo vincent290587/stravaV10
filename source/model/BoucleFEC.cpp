@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <BoucleFEC.h>
 #include "fec.h"
+#include "millis.h"
 #include "Model.h"
 #include "segger_wrapper.h"
 #include "parameters.h"
@@ -72,7 +73,7 @@ void BoucleFEC::run() {
 		m_pw_buffer.popLast();
 	}
 	m_pw_buffer.add(&fec_info.power);
-	zPower.addPowerData(fec_info.power);
+	zPower.addPowerData(fec_info.power, millis());
 #endif
 
 	vue.refresh();

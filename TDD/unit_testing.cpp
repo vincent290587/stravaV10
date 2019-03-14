@@ -289,6 +289,26 @@ bool test_score(void) {
 	return true;
 }
 
+bool test_power_zone(void) {
+
+	PowerZone p_zones;
+	uint32_t timestamp = 0;
+
+	LOG_INFO("Testing suffer score...");
+
+	for (int i=0; i < 116; i++) p_zones.addPowerData(110, (timestamp++)*1000);
+	for (int i=0; i < 158; i++) p_zones.addPowerData(130, (timestamp++)*1000);
+	for (int i=0; i < 1831; i++) p_zones.addPowerData(155, (timestamp++)*1000);
+	for (int i=0; i < 812; i++) p_zones.addPowerData(170, (timestamp++)*1000);
+	for (int i=0; i < 330; i++) p_zones.addPowerData(180, (timestamp++)*1000);
+
+	LOG_INFO("Time spent in PZ %u", p_zones.getTimeTotal());
+
+	if (p_zones.getTimeTotal() < 4) return false;
+
+	return true;
+}
+
 #define U_LAT     (45.)
 #define D_LAT     (0.0001)
 #define D_LON     (0.0005)
