@@ -10,7 +10,7 @@
 #include "PowerZone.h"
 
 
-static const float pw_lims[PW_ZONES_NB+1] = {
+static float pw_lims[PW_ZONES_NB+1] = {
 		-100.0f,
 		0.55f,
 		0.75f,
@@ -77,6 +77,7 @@ void PowerZone::addPowerData(uint16_t pw_meas, uint32_t timestamp) {
 uint32_t PowerZone::getTimeMax(void) {
 	uint32_t max_time = m_pw_bins[0];
 	for (int i=1; i< PW_ZONES_NB; i++) if (m_pw_bins[i] > max_time) max_time = m_pw_bins[i];
+	return max_time;
 }
 
 uint32_t PowerZone::getTimeTotal(void) {
