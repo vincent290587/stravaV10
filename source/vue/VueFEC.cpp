@@ -75,7 +75,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		this->cadran(3, VUE_FEC_NB_LINES, 1, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
-//		this->cadran(3, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
+		this->cadranZones(3, VUE_FEC_NB_LINES, 2, "PZone", zPower);
 
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
 		this->cadran(4, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
@@ -94,4 +94,48 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 	this->cadran(6, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
 	return res;
+}
+
+void VueFEC::cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, BinnedData &data) {
+
+	const int x = _width / 2 * p_col;
+	const int y = _height / nb_lig * (p_lig - 1);
+
+	if (champ) {
+		setCursor(x + 5 - _width / 2, y + 8);
+		setTextSize(1);
+		print(champ);
+	}
+
+	// Print the data
+	setCursor(x - 55 - 20, y - 10 + (_height / (nb_lig*2)));
+	setTextSize(3);
+
+	uint32_t tot = data.getTimeMax();
+	uint32_t cur_zone = data.getCurBin();
+	LOG_INFO("PZ time %u", tot);
+	if (tot) {
+		for (uint32_t i=0; i< data.getNbBins(); i++) {
+
+			int16_t width = regFenLim((float)data.getTimeZX(i), 0, tot, 0, _width / 2 - 30);
+			this->fillRect(x - _width / 2 + 10, y + 20 + i*6, width, 4, 1);
+
+			if (i == cur_zone) {
+				setCursor(x - _width / 2 + 20 + width, y + 16 + i*6);
+				setTextSize(2);
+				print("<");
+			}
+		}
+
+
+	} else {
+		print("--");
+	}
+
+	// print delimiters
+	drawFastVLine(_width / 2, _height / nb_lig * (p_lig - 1), _height / nb_lig, 1);
+
+	if (p_lig > 1)      drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * (p_lig - 1), _width / 2, 1);
+	if (p_lig < nb_lig) drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * p_lig, _width / 2, 1);
+
 }

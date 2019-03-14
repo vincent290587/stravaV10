@@ -41,6 +41,12 @@ void SufferScore::updateScore(void) {
 
 void SufferScore::addHrmData(int hrm_meas, uint32_t timestamp) {
 
+	if (m_last_timestamp == 0) {
+		// first call
+		m_last_timestamp = timestamp;
+		return;
+	}
+
 	float time_integ = ((float)timestamp - (float)m_last_timestamp) / 1000.;
 
 	if (hrm_meas > HRM_Z1_LIM &&

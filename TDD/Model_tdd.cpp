@@ -47,6 +47,8 @@ sAppErrorDescr m_app_error;
 
 SufferScore   suffer_score;
 
+PowerZone     zPower;
+
 UserSettings   u_settings;
 
 sHrmInfo hrm_info;

@@ -93,9 +93,9 @@ static eFuncMenuAction _page0_shutdown(int var) {
 static eFuncMenuAction _page1_erase(int var) {
 
 	if (sd_erase_pos()) {
-		vue.addNotif("Erasing... ", "", 4, eNotificationTypePartial);
+		vue.addNotif("GPX", "Erasing... ", 4, eNotificationTypeComplete);
 	} else {
-		vue.addNotif("Erase failed", "", 4, eNotificationTypePartial);
+		vue.addNotif("GPX", "Erase failed", 4, eNotificationTypeComplete);
 	}
 
 	return eFuncMenuActionEndMenu;
@@ -105,7 +105,7 @@ static eFuncMenuAction _page1_format(int var) {
 
 	format_memory();
 
-	vue.addNotif("Formatting... ", "", 4, eNotificationTypePartial);
+	vue.addNotif("", "Formatting... ", 4, eNotificationTypePartial);
 
 	return eFuncMenuActionEndMenu;
 }
