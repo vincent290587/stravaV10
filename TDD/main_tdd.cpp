@@ -145,11 +145,6 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
-	if (!test_power_zone()) {
-		LOG_ERROR("Unit testing failed !");
-		exit(-1);
-	}
-
 	if (!test_rollover()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);
@@ -161,6 +156,11 @@ int main(void)
 	}
 
 	if (!test_fram()) {
+		LOG_ERROR("Unit testing failed !");
+		exit(-1);
+	}
+
+	if (!test_power_zone()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);
 	}

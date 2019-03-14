@@ -18,9 +18,11 @@ public:
 	BinnedData() {
 	}
 
+	virtual uint32_t getTimeMax(void)=0;
 	virtual uint32_t getTimeTotal(void)=0;
 	virtual uint32_t getTimeZX(uint16_t i)=0;
 	virtual uint32_t getNbBins(void)=0;
+	virtual uint32_t getCurBin(void)=0;
 
 };
 

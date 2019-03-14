@@ -24,12 +24,13 @@ static const float pw_lims[PW_ZONES_NB+1] = {
 
 PowerZone::PowerZone(void) : BinnedData() {
 	m_tot_time = 0;
+	m_last_bin = 0;
 	m_last_timestamp = 0;
 
 	memset(m_pw_bins, 0, sizeof(m_pw_bins));
 }
 
-void PowerZone::addPowerData(int pw_meas, uint32_t timestamp) {
+void PowerZone::addPowerData(uint16_t pw_meas, uint32_t timestamp) {
 
 	// first call
 	if (m_last_timestamp == 0) {
@@ -38,7 +39,7 @@ void PowerZone::addPowerData(int pw_meas, uint32_t timestamp) {
 	}
 
 	// do not record if outside the admissible window
-	if (pw_meas < 50.0f || pw_meas > 1950.0f) {
+	if (pw_meas < 50 || pw_meas > 1950) {
 		m_last_timestamp = timestamp;
 		return;
 	}
@@ -52,12 +53,14 @@ void PowerZone::addPowerData(int pw_meas, uint32_t timestamp) {
 	// find the zone
 	for (int i=0; i < PW_ZONES_NB; i++) {
 
-		if (pw_meas > pw_lims[i] * ftp &&
+		if (pw_meas >= pw_lims[i] * ftp &&
 				pw_meas < pw_lims[i+1] * ftp) {
 
 			m_pw_bins[i] += time_integ;
 
-			LOG_INFO("Logging PW in bin %d %f", i, time_integ);
+			m_last_bin = i;
+
+			LOG_DEBUG("Logging PW in bin %d %f", i, time_integ);
 
 			// update state
 			m_last_timestamp = timestamp;
@@ -68,7 +71,12 @@ void PowerZone::addPowerData(int pw_meas, uint32_t timestamp) {
 	}
 
 	// should never be here
-	LOG_ERROR("Wrong bin power");
+	LOG_ERROR("Wrong bin power: pw_meas: %u ftp: %u", pw_meas, ftp);
+}
+
+uint32_t PowerZone::getTimeMax(void) {
+	uint32_t max_time = m_pw_bins[0];
+	for (int i=1; i< PW_ZONES_NB; i++) if (m_pw_bins[i] > max_time) max_time = m_pw_bins[i];
 }
 
 uint32_t PowerZone::getTimeTotal(void) {
@@ -83,4 +91,8 @@ uint32_t PowerZone::getTimeZX(uint16_t i) {
 
 uint32_t PowerZone::getNbBins(void) {
 	return PW_ZONES_NB;
+}
+
+uint32_t PowerZone::getCurBin(void) {
+	return m_last_bin;
 }

@@ -359,13 +359,6 @@ int main(void)
 {
 	ret_code_t err_code;
 
-	// errata 20 RTC
-//	NRF_CLOCK->EVENTS_LFCLKSTARTED  = 0;
-//	NRF_CLOCK->TASKS_LFCLKSTART     = 1;
-//	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {}
-//	NRF_RTC0->TASKS_STOP = 0;
-//	NRF_RTC1->TASKS_STOP = 0;
-
 	m_tasks_id.boucle_id = TASK_ID_INVALID;
 	m_tasks_id.system_id = TASK_ID_INVALID;
 	m_tasks_id.peripherals_id = TASK_ID_INVALID;
@@ -390,24 +383,6 @@ int main(void)
 #endif
 
 	pins_init();
-
-	uint32_t reset_reason = NRF_POWER->RESETREAS;
-	NRF_POWER->RESETREAS = 0xffffffff;
-	NRF_LOG_WARNING("Reset_reason: 0x%08x.\n", reset_reason);
-
-	if (reset_reason == 0)
-	{
-		// watchdog reset
-		//while(1) ;
-		NVIC_SystemReset();
-	}
-
-//    char buff[100];
-//    memset(buff, 0, sizeof(buff));
-//    snprintf(buff, sizeof(buff), "Reset_reason: 0x%04lX",
-//    		reset_reason);
-//    vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
-
 
     err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);

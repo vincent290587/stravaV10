@@ -44,8 +44,8 @@
 
 #define FEC_PW_BUFFER_NB_ELEM          (240/2)
 
-#define BOUCLE_DEFAULT_MODE            eBoucleGlobalModesFEC
-#define VUE_DEFAULT_MODE               eVueGlobalScreenFEC
+#define BOUCLE_DEFAULT_MODE            eBoucleGlobalModesCRS
+#define VUE_DEFAULT_MODE               eVueGlobalScreenCRS
 
 #define USB_TIMEOUT_MS                 20
 
