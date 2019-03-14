@@ -109,21 +109,25 @@ void Vue::refresh(void) {
 		this->setCursor(5, 5);
 		this->setTextSize(2);
 
+		String text;
+
 		if (eNotificationTypeComplete == notif.m_type) {
-			this->print(notif.m_title);
-			this->println(":");
+			text = notif.m_title;
+			text += ": ";
 		}
 
+		text += notif.m_msg;
+
 		int16_t x1; int16_t y1; uint16_t w; uint16_t h;
-		this->getTextBounds((char*)notif.m_msg.c_str(), this->getCursorX(), this->getCursorY(), &x1, &y1, &w, &h);
+		if (text > 2)
+			this->getTextBounds((char*)text.c_str(), this->getCursorX(), this->getCursorY(), &x1, &y1, &w, &h);
 
 		h += this->getCursorY() + 15;
 		this->drawFastHLine(0, h, _width, textcolor);
 		this->fillRect(0, 0, _width, h, textbgcolor);
-		this->print(notif.m_msg);
+		this->print(text);
 
-		notif.m_persist--;
-		if (notif.m_persist == 0) {
+		if (notif.m_persist-- == 0) {
 			m_notifs.pop_front();
 		}
 
@@ -159,6 +163,24 @@ void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {
 	}
 
 	LS027_drawPixel(x, y, color);
+}
+
+// Fill a rounded rectangle
+void Vue::fillRoundRect(int16_t x, int16_t y, int16_t w,
+		int16_t h, int16_t r, uint16_t color) {
+
+	// smarter version
+	for (int i=1; i <= r; i++) {
+
+		int c_port = r-floorSqrt(r*r - i*i);
+
+		drawFastVLine(x-i       , y+c_port , h-2*c_port, color); // Left
+		drawFastVLine(x+w-2*r+i , y+c_port , h-2*c_port, color); // Right
+
+	}
+
+	fillRect(x, y , w-2*r+1, h, color);
+
 }
 
 void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite) {

@@ -72,6 +72,7 @@ void BoucleFEC::run() {
 		m_pw_buffer.popLast();
 	}
 	m_pw_buffer.add(&fec_info.power);
+	zPower.addPowerData(fec_info.power);
 #endif
 
 	vue.refresh();

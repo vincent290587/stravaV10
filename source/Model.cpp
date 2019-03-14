@@ -34,6 +34,8 @@ SAtt att;
 
 SufferScore   suffer_score;
 
+PowerZone     zPower;
+
 UserSettings   u_settings;
 
 Attitude      attitude;

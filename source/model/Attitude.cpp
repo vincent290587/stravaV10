@@ -250,8 +250,11 @@ float Attitude::computePower(float speed_) {
 
 		float weight = (float)u_settings.getWeight();
 
+		// coefficient used to limit the calculated power at low speeds
+		float coeff = regFenLim(speed_, 0.0f, 5.0f, 0.0f, 1.0f);
+
 		// STEP 2 : Calcul
-		power = 9.81f * weight * att.vit_asc; // grav
+		power = 9.81f * weight * att.vit_asc * coeff; // grav
 		power += 0.004f * 9.81f * weight * fSpeed; // sol + meca
 		power += 0.204f * fSpeed * fSpeed * fSpeed; // air
 		power *= 1.025f; // transmission (rendement velo)

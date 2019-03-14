@@ -81,6 +81,8 @@ float simpLinReg(float* x, float* y, float* lrCoef, int n);
 
 uint8_t calculate_crc(uint8_t input_a[], uint16_t length);
 
+int floorSqrt(int x);
+
 #ifdef	__cplusplus
 }
 #endif

@@ -37,6 +37,7 @@ extern sTasksIDs m_tasks_id;
 #include "GPSMGMT.h"
 #include "Attitude.h"
 #include "SufferScore.h"
+#include "PowerZone.h"
 #include "UserSettings.h"
 #include "mk64f_parser.h"
 #include "Vue.h"
@@ -74,6 +75,8 @@ extern sAppErrorDescr m_app_error;
 extern AltiBaro      baro;
 
 extern SufferScore   suffer_score;
+
+extern PowerZone     zPower;
 
 extern UserSettings   u_settings;
 
