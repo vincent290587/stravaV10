@@ -114,23 +114,20 @@ void VueFEC::cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const cha
 	uint32_t tot = data.getTimeMax();
 	uint32_t cur_zone = data.getCurBin();
 	LOG_INFO("PZ time %u", tot);
-	if (tot) {
-		for (uint32_t i=0; i< data.getNbBins(); i++) {
 
-			int16_t width = regFenLim((float)data.getTimeZX(i), 0, tot, 0, _width / 2 - 30);
-			this->fillRect(x - _width / 2 + 10, y + 20 + i*6, width, 4, 1);
+	// loop over bins
+	for (uint32_t i=0; i< data.getNbBins(); i++) {
 
-			if (i == cur_zone) {
-				setCursor(x - _width / 2 + 20 + width, y + 16 + i*6);
-				setTextSize(2);
-				print("<");
-			}
+		int16_t width = regFenLim((float)data.getTimeZX(i), 0, tot, 2, _width / 2 - 30);
+		this->fillRect(x - _width / 2 + 10, y + 20 + i*6, width, 4, 1);
+
+		if (i == cur_zone) {
+			setCursor(x - _width / 2 + 20 + width, y + 14 + i*6);
+			setTextSize(2);
+			print((char)('<'));
 		}
-
-
-	} else {
-		print("--");
 	}
+
 
 	// print delimiters
 	drawFastVLine(_width / 2, _height / nb_lig * (p_lig - 1), _height / nb_lig, 1);
