@@ -239,6 +239,11 @@ void peripherals_task(void * p_context)
 			vue.refresh();
 		}
 
+		baro.sensorRead();
+		if (baro.isUpdated()) {
+			baro.sensorRefresh();
+		}
+
 		neopixel_radio_callback_handler(false);
 
 		// update date

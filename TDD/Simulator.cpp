@@ -41,6 +41,60 @@ static FIL* g_fileObject;   /* File object */
 static uint32_t last_point_ms = 0;
 static uint32_t nb_gps_loc = 0;
 
+static void simulator_modes(void) {
+
+	enum eSimulationStep {
+		eSimulationStepCRS1,
+		eSimulationStepMenu1,
+		eSimulationStepFEC,
+		eSimulationStepMenu2,
+		eSimulationStepCRS2
+	};
+
+	static eSimulationStep m_step = eSimulationStepCRS1;
+	static uint32_t m_next_event_ms = 15000;
+
+	switch (m_step) {
+	case eSimulationStepCRS1:
+		if (millis() > m_next_event_ms) {
+			vue.tasks(eButtonsEventCenter);
+			vue.tasks(eButtonsEventRight);
+
+			m_next_event_ms += 30000;
+
+			m_step = eSimulationStepMenu1;
+		}
+		break;
+	case eSimulationStepMenu1:
+	{
+		vue.tasks(eButtonsEventCenter);
+
+		m_step = eSimulationStepFEC;
+	} break;
+	case eSimulationStepFEC:
+	if (millis() > m_next_event_ms) {
+		vue.tasks(eButtonsEventCenter);
+		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
+
+		m_step = eSimulationStepMenu2;
+	} break;
+	case eSimulationStepMenu2:
+	{
+		vue.tasks(eButtonsEventCenter);
+		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
+
+		m_step = eSimulationStepCRS2;
+	} break;
+	case eSimulationStepCRS2:
+		// no break
+	default:
+		break;
+	}
+
+}
+
 void simulator_init(void) {
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
@@ -89,6 +143,8 @@ void simulator_tasks(void) {
 	print_mem_state();
 
 	last_point_ms = millis();
+
+	simulator_modes();
 
 	if (fgets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
 

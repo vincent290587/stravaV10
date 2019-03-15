@@ -44,6 +44,8 @@ double sq(double value) {
 }
 
 float regFen(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
+
+  if (b1_f == b1_i) return b2_i;
   
   float x, res;
   // calcul x
@@ -55,7 +57,9 @@ float regFen(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
 }
 
 float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
-  
+
+  if (b1_f == b1_i) return b2_i;
+
   float x, res;
   // calcul x
   x = (val_ - b1_i) / (b1_f - b1_i);

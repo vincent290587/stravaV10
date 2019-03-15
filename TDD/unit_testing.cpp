@@ -306,6 +306,8 @@ bool test_power_zone(void) {
 
 	if (p_zones.getTimeTotal() < 4) return false;
 
+	if (fabsf(p_zones.getTimeMax() - 1831) > 2) return false;
+
 	return true;
 }
 

@@ -15,6 +15,8 @@
 
 static bme280_data m_data;
 
+static bool m_is_updated = false;
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void bme280_init_sensor() {
@@ -24,22 +26,11 @@ void bme280_init_sensor() {
 }
 
 void bme280_read_sensor(void) {
-
+	m_is_updated = true;
 }
 
 bool is_bme280_updated(void) {
-
-	bool updated = false;
-
-	if (millis() >= BME280_TDD_UPDATE_TIME_MS &&
-			!m_data.is_updated) {
-		m_data.comp_press = 1011.0f * (256.0F * 100.0F);
-		m_data.comp_temp = 20.7f * 100.0F;
-		updated = true;
-		m_data.is_updated = true;
-	}
-
-	return updated;
+	return m_is_updated;
 }
 
 bme280_data *bme280_get_data_handle(void) {
@@ -55,5 +46,15 @@ bool bme280_is_data_ready(void) {
 }
 
 void bme280_refresh(void) {
-	m_data.is_updated = true;
+
+	if (m_is_updated) {
+		m_is_updated = false;
+
+		m_data.comp_press = 1011.0f * (256.0F * 100.0F);
+		m_data.comp_temp = 20.7f * 100.0F;
+
+		m_data.is_updated = true;
+
+	}
+
 }

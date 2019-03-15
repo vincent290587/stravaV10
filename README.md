@@ -48,9 +48,17 @@ make flash            (or) make dfu
 
 ## Screenshots
 
-![](docs/crs.png) ![](docs/crs_2seg.png) ![](docs/prc.png)
+Outdoor modes:
 
+![](docs/crs.png) ![](docs/crs_2seg.png) ![](docs/prc.png)  
 
+Indoor mode:
+
+![](docs/FEC.png)  
+
+Menu:
+
+![](docs/menu1.png) ![](docs/menu2.png)
 
 
 
