@@ -38,8 +38,6 @@ PowerZone     zPower;
 
 UserSettings   u_settings;
 
-Attitude      attitude;
-
 ListeSegments mes_segments;
 
 ListeParcours mes_parcours;
@@ -59,6 +57,8 @@ STC3100       stc;
 VEML6075      veml;
 
 AltiBaro      baro;
+
+Attitude      attitude(baro);
 
 GPS_MGMT      gps_mgmt;
 

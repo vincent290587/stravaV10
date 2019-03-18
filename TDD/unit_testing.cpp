@@ -12,6 +12,7 @@
 #include "Model_tdd.h"
 #include "Screenutils.h"
 #include "fram.h"
+#include "bme280.h"
 #include "utils.h"
 
 #include "order1_filter.h"
@@ -19,6 +20,56 @@
 #define TEST_FILTRE_NB    15
 
 #define TEST_ROLLOF_NB    48759
+
+bool test_fusion(void) {
+
+	AltiBaro baro_tdd;
+	Attitude atti_tdd(baro_tdd);
+
+	LOG_INFO("Testing fusion...");
+
+	const float speed = 20.0f;
+
+	const float yaw0 = 5 * 3.1415 / 180; // mounting offset
+
+	float yaw_rad = 2 * 3.1415 / 180;
+
+	fxos_set_yaw(yaw_rad + yaw0);
+
+	baro_tdd.sensorRead();
+	baro_tdd.sensorRefresh();
+
+	baro_tdd.setPressure(1003.);
+	baro_tdd.seaLevelForAltitude(0.);
+
+	ASSERT(baro_tdd.hasSeaLevelRef() == true);
+
+	float alti = 0.;
+	for (int i=0; i< 240; i++) {
+
+		alti += SENSORS_REFRESH_PER_MS * speed * tanf(yaw_rad) / 3600.0f;
+		baro_tdd.setAlti(alti);
+
+		atti_tdd.computePower(speed, SENSORS_REFRESH_PER_MS / 1000.);
+
+		if (i== 120) {
+			LOG_INFO("Vert. speed should be %f", speed * tanf(yaw_rad) / 3.6f);
+
+			yaw_rad = -2 * 3.1415 / 180;
+
+			fxos_set_yaw(yaw_rad + yaw0);
+
+			LOG_INFO("Slope inversion");
+		}
+
+	}
+
+	LOG_INFO("Vert. speed should be %f", speed * tanf(yaw_rad) / 3.6f);
+
+	LOG_INFO("Fusion OK");
+
+	return true;
+}
 
 bool test_rollover(void) {
 

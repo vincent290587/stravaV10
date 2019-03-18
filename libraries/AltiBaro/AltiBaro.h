@@ -37,6 +37,10 @@ public:
 	void setAlti(float alti) {
 		m_alti = alti;
 	}
+
+	void setPressure(float press) {
+		sea_level_pressure = press;
+	}
 #endif
 
 private:

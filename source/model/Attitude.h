@@ -67,14 +67,17 @@ typedef struct {
 } sAppErrorDescr;
 
 #if defined(__cplusplus)
+#include "AltiBaro.h"
 class Attitude {
 public:
-	Attitude();
+	Attitude(AltiBaro &_baro);
 
 	void addNewDate(SDate *date_);
 	void addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_);
 
 	void addNewFECPoint(sFecInfo& fec_);
+
+	float computePower(float speed_, float dt);
 
 private:
 	float m_climb;
@@ -85,6 +88,9 @@ private:
 	bool m_is_init;
 	bool m_is_acc_init;
 	bool m_is_alt_init;
+	bool m_is_pw_init;
+
+	AltiBaro &m_baro;
 
 	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
 	uint16_t m_st_buffer_nb_elem;
@@ -92,7 +98,6 @@ private:
 	float filterElevation(SLoc& loc_);
 	float computeElevation(SLoc& loc_, eLocationSource source_);
 	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
-	float computePower(float speed_);
 };
 #endif
 

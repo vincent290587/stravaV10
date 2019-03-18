@@ -747,3 +747,10 @@ void fxos_tasks()
 	LOG_INFO("Compass Angle filtered: %d", (int)g_Yaw_LP);
 
 }
+
+bool fxos_get_yaw(float &yaw_rad) {
+
+
+
+	return true;
+}

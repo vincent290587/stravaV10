@@ -58,4 +58,6 @@ bool is_fxos_updated(void);
 
 void fxos_tasks(void);
 
+bool fxos_get_yaw(float &yaw_rad);
+
 #endif /* SOURCE_SENSORS_FXOS_H_ */
