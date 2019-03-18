@@ -10,7 +10,6 @@
 #include "fsl_fxos.h"
 #include "gpio.h"
 #include "boards.h"
-//#include "parameters.h"
 #include "UserSettings.h"
 #include "segger_wrapper.h"
 #include "fxos.h"
@@ -60,7 +59,7 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
  * Definitions
  ******************************************************************************/
 
-#define MAX_ACCEL_AVG_COUNT 1U
+#define MAX_ACCEL_AVG_COUNT 5U
 
 /* multiplicative conversion constants */
 #define DegToRad 0.017453292
@@ -79,9 +78,9 @@ int16_t g_Ax_Raw = 0;
 int16_t g_Ay_Raw = 0;
 int16_t g_Az_Raw = 0;
 
-double g_Ax = 0;
-double g_Ay = 0;
-double g_Az = 0;
+float g_Ax = 0;
+float g_Ay = 0;
+float g_Az = 0;
 
 int16_t g_Ax_buff[MAX_ACCEL_AVG_COUNT] = {0};
 int16_t g_Ay_buff[MAX_ACCEL_AVG_COUNT] = {0};
@@ -95,18 +94,18 @@ int16_t g_Mx_Offset = 0;
 int16_t g_My_Offset = 0;
 int16_t g_Mz_Offset = 0;
 
-double g_Mx = 0;
-double g_My = 0;
-double g_Mz = 0;
+float g_Mx = 0;
+float g_My = 0;
+float g_Mz = 0;
 
-double g_Mx_LP = 0;
-double g_My_LP = 0;
-double g_Mz_LP = 0;
+float g_Mx_LP = 0;
+float g_My_LP = 0;
+float g_Mz_LP = 0;
 
-double g_Yaw = 0;
-double g_Yaw_LP = 0;
-double g_Pitch = 0;
-double g_Roll = 0;
+float g_Yaw = 0;
+float g_Yaw_LP = 0;
+float g_Pitch = 0;
+float g_Roll = 0;
 
 bool g_FirstRun = true;
 
@@ -607,10 +606,10 @@ void fxos_tasks()
 	m_is_updated = false;
 
 	uint16_t i = 0;
-	double sinAngle = 0;
-	double cosAngle = 0;
-	double Bx = 0;
-	double By = 0;
+	float sinAngle = 0;
+	float cosAngle = 0;
+	float Bx = 0;
+	float By = 0;
 
 	SampleEventFlag = 0;
 	g_Ax_Raw = 0;
@@ -643,9 +642,9 @@ void fxos_tasks()
 
 	for (i = 0; i < MAX_ACCEL_AVG_COUNT; i++)
 	{
-		g_Ax += (double)g_Ax_buff[i];
-		g_Ay += (double)g_Ay_buff[i];
-		g_Az += (double)g_Az_buff[i];
+		g_Ax += (float)g_Ax_buff[i];
+		g_Ay += (float)g_Ay_buff[i];
+		g_Az += (float)g_Az_buff[i];
 	}
 
 	g_Ax /= MAX_ACCEL_AVG_COUNT;
@@ -704,9 +703,9 @@ void fxos_tasks()
 	}
 
 	// filtre ?
-	g_Mx_LP += ((double)g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
-	g_My_LP += ((double)g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
-	g_Mz_LP += ((double)g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
+	g_Mx_LP += ((float)g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
+	g_My_LP += ((float)g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
+	g_Mz_LP += ((float)g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
 
 	/* Calculate magnetometer values */
 	g_Mx = g_Mx_LP - g_Mx_Offset;
@@ -726,15 +725,17 @@ void fxos_tasks()
 	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
 
 	/* Calculate pitch angle g_Pitch (-90deg, 90deg) and sin, cos*/
-	g_Pitch = atan2(-g_Ax , g_Az) * RadToDeg;
-	sinAngle = sin(g_Pitch * DegToRad);
-	cosAngle = cos(g_Pitch * DegToRad);
+	g_Pitch = atan2f(-g_Ax , g_Az) * RadToDeg;
+	sinAngle = sinf(g_Pitch * DegToRad);
+	cosAngle = cosf(g_Pitch * DegToRad);
+
+	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10));
 
 	/* De-rotate by pitch angle g_Pitch */
 	Bx = g_Mx * cosAngle + g_Mz * sinAngle;
 
 	/* Calculate yaw = ecompass angle psi (-180deg, 180deg) */
-	g_Yaw = atan2(-By, Bx) * RadToDeg;
+	g_Yaw = atan2f(-By, Bx) * RadToDeg;
 	if(g_FirstRun)
 	{
 		g_Yaw_LP = g_Yaw;
@@ -750,7 +751,7 @@ void fxos_tasks()
 
 bool fxos_get_yaw(float &yaw_rad) {
 
-
+	yaw_rad = g_Pitch;
 
 	return true;
 }
