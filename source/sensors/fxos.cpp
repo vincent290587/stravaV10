@@ -384,8 +384,8 @@ bool fxos_init(void) {
 		return kStatus_Fail;
 	}
 #else
-	/* enable auto-sleep, low power in sleep, high res in wake */
-	if(FXOS_WriteReg(nullptr, CTRL_REG2, MOD_HIGH_RES) != kStatus_Success)
+	/* high res in wake */
+	if(FXOS_WriteReg(nullptr, CTRL_REG2, MOD_LOW_NOISE) != kStatus_Success)
 	{
 		APP_ERROR_CHECK(0x7);
 		return kStatus_Fail;
@@ -443,7 +443,14 @@ bool fxos_init(void) {
 	}
 #endif
 	/* default set to 4g mode */
-	if(FXOS_WriteReg(nullptr, XYZ_DATA_CFG_REG, FULL_SCALE_4G) != kStatus_Success)
+	if(FXOS_WriteReg(nullptr, XYZ_DATA_CFG_REG, FULL_SCALE_4G | HPF_OUT_MASK) != kStatus_Success)
+	{
+		APP_ERROR_CHECK(0x7);
+		return kStatus_Fail;
+	}
+
+	/* Use LPF */
+	if(FXOS_WriteReg(nullptr, HP_FILTER_CUTOFF_REG, PULSE_LPF_EN_MASK) != kStatus_Success)
 	{
 		APP_ERROR_CHECK(0x7);
 		return kStatus_Fail;
@@ -478,7 +485,7 @@ bool fxos_init(void) {
 	}
 #else
 	/* Setup the ODR for 50 Hz and activate the accelerometer */
-	if(FXOS_WriteReg(nullptr, CTRL_REG1, (HYB_DATA_RATE_200HZ | ACTIVE_MASK)) != kStatus_Success)
+	if(FXOS_WriteReg(nullptr, CTRL_REG1, (HYB_DATA_RATE_25HZ | ACTIVE_MASK)) != kStatus_Success)
 	{
 		APP_ERROR_CHECK(0x7);
 		return kStatus_Fail;
@@ -510,7 +517,8 @@ bool fxos_init(void) {
 			/* enable auto-sleep, low power in sleep, high res in wake */
 			{CTRL_REG2, SLPE_MASK | SMOD_LOW_POWER | MOD_HIGH_RES},
 #else
-			{CTRL_REG2, MOD_HIGH_RES},
+			/* Mode low noise low power */
+			{CTRL_REG2, MOD_LOW_NOISE},
 #endif
 			/* set up Mag OSR and Hybrid mode using M_CTRL_REG1, use default for Acc */
 			{M_CTRL_REG1, (M_RST_MASK | M_OSR_MASK | M_HMS_MASK)},
@@ -536,11 +544,14 @@ bool fxos_init(void) {
 			/* set auto-sleep wait period to 5s (=5/0.64=~8) */
 			{ASLP_COUNT_REG, 8},
 #endif
-			/* default set to 4g mode */
-			{XYZ_DATA_CFG_REG, FULL_SCALE_4G},
+			/* default set to 4g mode with HPF */
+			{XYZ_DATA_CFG_REG, FULL_SCALE_4G | HPF_OUT_MASK},
 
-			/* Setup the ODR for 50 Hz and activate the accelerometer */
-			{CTRL_REG1, (HYB_DATA_RATE_200HZ | ACTIVE_MASK)},
+			/* Use LPF, HPF bypassed */
+			{HP_FILTER_CUTOFF_REG, PULSE_HPF_BYP_MASK | PULSE_LPF_EN_MASK},
+
+			/* Setup the ODR for 25 Hz and activate the accelerometer */
+			{CTRL_REG1, (HYB_DATA_RATE_25HZ | ACTIVE_MASK)},
 	};
 
 	uint16_t cur_ind = 0;
@@ -582,7 +593,10 @@ bool fxos_init(void) {
 			/* default set to 4g mode */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
 
-			/* Setup the ODR for 50 Hz and activate the accelerometer */
+			/* Use LPF */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+
+			/* Setup the ODR and activate the accelerometer */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2)
 	};
 
