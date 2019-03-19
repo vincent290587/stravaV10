@@ -270,6 +270,8 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 	LOG_DEBUG("Written !");
 
+	APP_ERROR_CHECK(fds_gc());
+
 	return true;
 }
 

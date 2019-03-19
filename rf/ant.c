@@ -242,6 +242,8 @@ void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
 
 	if (!dev_id) return;
 
+	// TODO add the ANT sensor iD to the user settings
+
 	switch (search_type) {
 	case eAntPairingSensorTypeNone:
 	    break;
