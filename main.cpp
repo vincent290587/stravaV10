@@ -387,7 +387,7 @@ int main(void)
     err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
 
-	LOG_INFO("Init start");
+	LOG_WARNING("Init start");
 
 	// check for errors
 	if (m_app_error.hf_desc.crc == SYSTEM_DESCR_POS_CRC) {
@@ -430,6 +430,8 @@ int main(void)
 	buttons_leds_init();
 
 	notifications_init(NEO_PIN);
+
+	wdt_reload();
 
 	// init BLE + ANT
 #ifdef SOFTDEVICE_PRESENT

@@ -56,6 +56,7 @@ bool UserSettings::isConfigValid(void) {
 
 bool UserSettings::writeConfig(void) {
 
+	m_params.crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
 
 	bool res = fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
 
