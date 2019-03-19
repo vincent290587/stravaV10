@@ -195,6 +195,8 @@ static int set_cur_ftp(int var) {
 	sUserParameters *settings = user_settings_get();
 	settings->FTP = (uint16_t) var;
 
+	u_settings.writeConfig();
+
 	return 0;
 }
 
@@ -218,6 +220,8 @@ static int set_cur_weight(int var) {
 
 	sUserParameters *settings = user_settings_get();
 	settings->weight = (uint16_t) var;
+
+	u_settings.writeConfig();
 
 	return 0;
 }

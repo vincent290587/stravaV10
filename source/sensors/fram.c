@@ -179,6 +179,8 @@ void fram_init_sensor() {
 
 	LOG_WARNING("FRAM init done");
 
+	APP_ERROR_CHECK(fds_gc());
+
 }
 
 bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
@@ -269,6 +271,8 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 	}
 
 	LOG_DEBUG("Written !");
+
+	APP_ERROR_CHECK(fds_gc());
 
 	return true;
 }
