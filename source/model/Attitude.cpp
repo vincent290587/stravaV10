@@ -263,7 +263,7 @@ float Attitude::computePower(float speed_, float dt) {
 	}
 
 	// proceed to fusing measurements
-	if (m_baro.computeAlti(alti)) {
+	if (m_is_pw_init && m_baro.computeAlti(alti)) {
 
 		float yaw_rad;
 

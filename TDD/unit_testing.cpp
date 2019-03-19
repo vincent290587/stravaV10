@@ -21,6 +21,8 @@
 
 #define TEST_ROLLOF_NB    48759
 
+extern void simulator_simulate_altitude(float alti);
+
 bool test_fusion(void) {
 
 	AltiBaro baro_tdd;
@@ -36,19 +38,23 @@ bool test_fusion(void) {
 
 	fxos_set_yaw(yaw_rad + yaw0);
 
+	float alti = 0.;
+	simulator_simulate_altitude(alti);
+
 	baro_tdd.sensorRead();
 	baro_tdd.sensorRefresh();
+	baro_tdd.seaLevelForAltitude(alti);
 
-	baro_tdd.setPressure(1003.);
-	baro_tdd.seaLevelForAltitude(0.);
-
-	ASSERT(baro_tdd.hasSeaLevelRef() == true);
-
-	float alti = 0.;
 	for (int i=0; i< 240; i++) {
 
 		alti += SENSORS_REFRESH_PER_MS * speed * tanf(yaw_rad) / 3600.0f;
-		baro_tdd.setAlti(alti);
+
+		simulator_simulate_altitude(alti);
+
+		baro_tdd.sensorRead();
+		if (baro_tdd.isUpdated()) {
+			baro_tdd.sensorRefresh();
+		}
 
 		atti_tdd.computePower(speed, SENSORS_REFRESH_PER_MS / 1000.);
 
