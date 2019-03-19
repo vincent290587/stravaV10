@@ -8,6 +8,7 @@
 #include <string.h>
 #include "fram.h"
 #include "utils.h"
+#include "millis.h"
 #include "parameters.h"
 #include "nordic_common.h"
 #include "segger_wrapper.h"
@@ -98,8 +99,9 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 /* Flag to check fds initialization. */
 static bool volatile m_fds_initialized;
-static bool volatile m_fds_rd_pending;
+static bool volatile m_fds_dl_pending;
 static bool volatile m_fds_wr_pending;
+static bool volatile m_fds_gc_pending;
 
 
 static void fds_evt_handler(fds_evt_t const * p_evt)
@@ -112,6 +114,17 @@ static void fds_evt_handler(fds_evt_t const * p_evt)
 			m_fds_initialized = true;
 		}
 		break;
+
+	case FDS_EVT_GC:
+	{
+		if (p_evt->result == FDS_SUCCESS)
+		{
+			LOG_INFO("FDS GC success");
+		} else {
+			LOG_ERROR("FDS GC error");
+		}
+		m_fds_gc_pending = false;
+	} break;
 
 	case FDS_EVT_WRITE:
 	{
@@ -128,7 +141,18 @@ static void fds_evt_handler(fds_evt_t const * p_evt)
 		{
 			LOG_ERROR("Record update error");
 		}
+		m_fds_wr_pending = false;
 	} break;
+
+	case FDS_EVT_DEL_RECORD:
+	{
+		if (p_evt->result != FDS_SUCCESS)
+		{
+			LOG_ERROR("Record delete error");
+		}
+		m_fds_dl_pending = false;
+	} break;
+
 
 	default:
 		break;
@@ -197,11 +221,12 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 
 bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
+	ret_code_t rc = FDS_SUCCESS;
 	fds_record_desc_t desc = {0};
+	fds_find_token_t  tok  = {0};
 
 	ASSERT(m_fds_initialized);
 
-	/* System config not found; write a new one. */
 	LOG_DEBUG("Writing config file...");
 
 	fds_record_t _record =
@@ -213,14 +238,37 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 			.data.length_words = (length + 3) / sizeof(uint32_t),
 	};
 
-	ret_code_t rc = fds_record_write(&desc, &_record);
-	APP_ERROR_CHECK(rc);
+	rc = fds_record_find(CONFIG_FILE, CONFIG_REC_KEY, &desc, &tok);
+
+	if (rc == FDS_SUCCESS) {
+
+		rc = fds_record_update(&desc, &_record);
+		APP_ERROR_CHECK(rc);
+
+	} else {
+
+		rc = fds_record_write(&desc, &_record);
+		APP_ERROR_CHECK(rc);
+
+	}
+
+	// return if write failed
+	if (rc) return false;
 
 	m_fds_wr_pending = true;
 
+	uint32_t time_prev = millis();
 	while (m_fds_wr_pending) {
 		perform_system_tasks_light();
+
+		// timeout
+		if (millis() - time_prev > 50) {
+			APP_ERROR_CHECK(0x2);
+			return false;
+		}
 	}
+
+	LOG_DEBUG("Written !");
 
 	return true;
 }

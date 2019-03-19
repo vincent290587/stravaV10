@@ -37,6 +37,8 @@ public:
 	bool resetConfig(void);
 	bool writeConfig(void);
 
+	void dump(void);
+
 	void checkConfigVersion(void);
 
 	uint16_t getHRMdevID(void) const {

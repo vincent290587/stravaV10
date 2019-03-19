@@ -38,8 +38,6 @@ PowerZone     zPower;
 
 UserSettings   u_settings;
 
-Attitude      attitude;
-
 ListeSegments mes_segments;
 
 ListeParcours mes_parcours;
@@ -59,6 +57,8 @@ STC3100       stc;
 VEML6075      veml;
 
 AltiBaro      baro;
+
+Attitude      attitude(baro);
 
 GPS_MGMT      gps_mgmt;
 
@@ -308,10 +308,6 @@ void peripherals_task(void * p_context)
 		// check screen update & unlock task
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
 			vue.refresh();
-		}
-
-		if (baro.isDataReady()) {
-			baro.runFilter();
 		}
 
 		gps_mgmt.runWDT();
