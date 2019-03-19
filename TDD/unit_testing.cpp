@@ -175,9 +175,13 @@ bool test_functions(void) {
 
 	if (pi_str.length() != 4) return false;
 
-	pi_str = _fmkstr(-pi, 2);
+	pi_str = _imkstr(-20);
 
-	if (pi_str.length() != 5) return false;
+	if (pi_str.charAt(0) != '-') return false;
+
+	pi_str = _fmkstr(-0.02F, 2);
+
+	if (pi_str.charAt(0) != '-') return false;
 
 	pi_str = _fmkstr(pi, 4);
 
@@ -330,6 +334,7 @@ bool test_score(void) {
 
 	SufferScore test_score;
 	uint32_t timestamp = 0;
+
 
 	LOG_INFO("Testing suffer score...");
 

@@ -90,7 +90,10 @@ String _fmkstr(float value, unsigned int nb_digits) {
 	}
 
 	int ent_val = (int) value;
-	res = String(ent_val);
+
+	if (ent_val == 0 && value < 0.0F) res = "-";
+
+	res += String(ent_val);
 
 	if (nb_digits > 0) {
 		res += ".";
