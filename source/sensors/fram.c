@@ -8,6 +8,7 @@
 #include <string.h>
 #include "fram.h"
 #include "utils.h"
+#include "millis.h"
 #include "parameters.h"
 #include "nordic_common.h"
 #include "segger_wrapper.h"

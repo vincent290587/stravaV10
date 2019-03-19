@@ -345,7 +345,10 @@ bool test_power_zone(void) {
 	PowerZone p_zones;
 	uint32_t timestamp = 0;
 
-	LOG_INFO("Testing suffer score...");
+	sUserParameters *settings = user_settings_get();
+	settings->FTP = 256;
+
+	LOG_INFO("Testing power zone...");
 
 	for (int i=0; i < 116; i++) p_zones.addPowerData(110, (timestamp++)*1000);
 	for (int i=0; i < 158; i++) p_zones.addPowerData(175, (timestamp++)*1000);
