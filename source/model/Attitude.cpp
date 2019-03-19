@@ -72,6 +72,8 @@ float Attitude::filterElevation(SLoc& loc_) {
 		return 0.;
 	}
 
+	LOG_INFO("Filtering elevation");
+
 	// filter with a high time-constant the difference between
 	// GPS altitude and barometer altitude to remove drifts
 	float input = ele - loc_.alt;
@@ -210,10 +212,10 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 	static float cur_time_prev;
 
-	if (m_is_init) {
+	// small correction to allow time with millisecond precision
+	float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
 
-		// small correction to allow time with millisecond precision
-		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
+	if (m_is_init) {
 
 		// add this point to our historic
 		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
@@ -227,9 +229,9 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		att.pwr = this->computePower(loc_.speed, cur_time - cur_time_prev);
 
 		this->computeDistance(loc_, date_, source_);
-
-		cur_time_prev = cur_time;
 	}
+
+	cur_time_prev = cur_time;
 
 	m_is_init = true;
 
@@ -276,14 +278,17 @@ float Attitude::computePower(float speed_, float dt) {
 		alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
 
 		// work on alpha zero
-		if (speed_ms < 5.0f || dt < 0.01f) return power;
+		if (speed_ms < 1.5f || dt < 0.01f) {
+			LOG_DEBUG("Power skipped %f", speed_ms);
+			return power;
+		}
 
-		float new_alpha_z = yaw_rad - atanf((alti - alti_prev) / (speed_ms * dt));
+		float new_alpha_z = yaw_rad - atan2f((alti - alti_prev) , (speed_ms * dt));
 		order1_filter_writeInput(&m_lp_alpha, &new_alpha_z);
 		float alpha_zero = order1_filter_readOutput(&m_lp_alpha);
 
 		// update vertical speed
-		att.vit_asc = tan(alpha_bar - alpha_zero) * speed_ms;
+		att.vit_asc = tanf(alpha_bar - alpha_zero) * speed_ms;
 
 		LOG_INFO("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
 				180*(alpha_bar-alpha_zero)/3.1415,
