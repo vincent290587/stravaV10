@@ -56,9 +56,25 @@ bool UserSettings::isConfigValid(void) {
 
 bool UserSettings::writeConfig(void) {
 
+
+	bool res = fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
+
 	LOG_WARNING("User params written");
 
-	return fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
+	return res;
+}
+
+void UserSettings::dump(void) {
+
+	uint8_t *data = &m_params.flat_user_params;
+
+	LOG_INFO("Dumping config: ");
+	for (uint16_t i=0; i < sizeof(sUserParameters); i++) {
+
+		LOG_INFO("[%u]", data[i]);
+
+	}
+
 }
 
 bool UserSettings::resetConfig(void) {

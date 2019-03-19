@@ -246,9 +246,8 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
  */
 float Attitude::computePower(float speed_, float dt) {
 
-	float res;
 	float power = 0.0f;
-	float speed_ms = speed_ / 3.6f;
+	const float speed_ms = speed_ / 3.6f;
 
 	float alti = 0.0f;
 	static float alti_prev;
@@ -277,7 +276,7 @@ float Attitude::computePower(float speed_, float dt) {
 		alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
 
 		// work on alpha zero
-		if (speed_ms * dt == 0.0f) return power;
+		if (speed_ms < 5.0f || dt < 0.01f) return power;
 
 		float new_alpha_z = yaw_rad - atanf((alti - alti_prev) / (speed_ms * dt));
 		order1_filter_writeInput(&m_lp_alpha, &new_alpha_z);
@@ -286,14 +285,14 @@ float Attitude::computePower(float speed_, float dt) {
 		// update vertical speed
 		att.vit_asc = tan(alpha_bar - alpha_zero) * speed_ms;
 
-		LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
+		LOG_INFO("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
 				180*(alpha_bar-alpha_zero)/3.1415,
 				180*alpha_zero/3.1415);
 
 		const float weight = (float)u_settings.getWeight();
 
 		// STEP 2 : Calculate power
-		if (speed_ > 3.0f) power += 9.81f * weight * att.vit_asc; // gravity
+		power += 9.81f * weight * att.vit_asc; // gravity
 		power += 0.004f * 9.81f * weight * speed_ms; // sol + meca
 		power += 0.204f * speed_ms * speed_ms * speed_ms; // air
 		power *= 1.025f; // transmission (rendement velo)
@@ -301,9 +300,7 @@ float Attitude::computePower(float speed_, float dt) {
 		alti_prev = alti;
 	}
 
-	res = power;
-
-	return res;
+	return power;
 }
 
 

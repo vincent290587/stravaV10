@@ -272,6 +272,8 @@ static int Magnetometer_Calibrate_Task(void)
 			settings->mag_cal.calib[2] = g_Mz_Offset;
 			settings->mag_cal.is_present = 1;
 
+			LOG_WARNING("Saving Mag Cal. to flash...");
+
 			u_settings.writeConfig();
 
 			g_Calibration_Done = true;
@@ -443,7 +445,7 @@ bool fxos_init(void) {
 	}
 #endif
 	/* default set to 4g mode */
-	if(FXOS_WriteReg(nullptr, XYZ_DATA_CFG_REG, FULL_SCALE_4G | HPF_OUT_MASK) != kStatus_Success)
+	if(FXOS_WriteReg(nullptr, XYZ_DATA_CFG_REG, FULL_SCALE_4G) != kStatus_Success)
 	{
 		APP_ERROR_CHECK(0x7);
 		return kStatus_Fail;
@@ -545,7 +547,7 @@ bool fxos_init(void) {
 			{ASLP_COUNT_REG, 8},
 #endif
 			/* default set to 4g mode with HPF */
-			{XYZ_DATA_CFG_REG, FULL_SCALE_4G | HPF_OUT_MASK},
+			{XYZ_DATA_CFG_REG, FULL_SCALE_4G},
 
 			/* Use LPF, HPF bypassed */
 			{HP_FILTER_CUTOFF_REG, PULSE_HPF_BYP_MASK | PULSE_LPF_EN_MASK},
@@ -685,29 +687,46 @@ void fxos_tasks()
 		{
 		}
 
-		sMagCal &mag_cal = u_settings.getMagCal();
+		if (u_settings.isConfigValid()) {
 
-		// check if we have a previous calibration
-		if (mag_cal.is_present) {
+			sMagCal &mag_cal = u_settings.getMagCal();
+			// check if we have a previous calibration
+			if (mag_cal.is_present) {
 
-			sUserParameters *settings = user_settings_get();
+				g_Mx_Offset = mag_cal.calib[0];
+				g_My_Offset = mag_cal.calib[1];
+				g_Mz_Offset = mag_cal.calib[2];
 
-			g_Mx_Offset = settings->mag_cal.calib[0];
-			g_My_Offset = settings->mag_cal.calib[1];
-			g_Mz_Offset = settings->mag_cal.calib[2];
+				g_Calibration_Done = true;
 
-			g_Calibration_Done = true;
+				LOG_INFO("Magnetometer calibration found");
 
-			LOG_WARNING("Magnetometer calibration found");
+				//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
 
-			//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
+			}
 
 		}
 
+
+
 	}
 
+	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
+	g_Roll = atan2f(g_Ay, g_Az) * RadToDeg;
+	sinAngle = sinf(g_Roll * DegToRad);
+	cosAngle = cosf(g_Roll * DegToRad);
+
+	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
+
+	/* Calculate pitch angle g_Pitch (-90deg, 90deg) and sin, cos*/
+	g_Pitch = atan2f(-g_Ax , g_Az);
+	sinAngle = sinf(g_Pitch);
+	cosAngle = cosf(g_Pitch);
+
+	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10));
+
 	if (!g_Calibration_Done)
-		if (Magnetometer_Calibrate_Task()) return;
+		Magnetometer_Calibrate_Task();
 
 	if(g_FirstRun)
 	{
@@ -728,22 +747,9 @@ void fxos_tasks()
 
 	LOG_INFO("Mag: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
 
-	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
-	g_Roll = atan2(g_Ay, g_Az) * RadToDeg;
-	sinAngle = sin(g_Roll * DegToRad);
-	cosAngle = cos(g_Roll * DegToRad);
-
 	/* De-rotate by roll angle g_Roll */
 	By = g_My * cosAngle - g_Mz * sinAngle;
 	g_Mz = g_Mz * cosAngle + g_My * sinAngle;
-	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
-
-	/* Calculate pitch angle g_Pitch (-90deg, 90deg) and sin, cos*/
-	g_Pitch = atan2f(-g_Ax , g_Az) * RadToDeg;
-	sinAngle = sinf(g_Pitch * DegToRad);
-	cosAngle = cosf(g_Pitch * DegToRad);
-
-	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10));
 
 	/* De-rotate by pitch angle g_Pitch */
 	Bx = g_Mx * cosAngle + g_Mz * sinAngle;
