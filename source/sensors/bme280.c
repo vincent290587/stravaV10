@@ -5,15 +5,17 @@
  *      Author: Vincent
  */
 
-#include <stdbool.h>
 #include "i2c.h"
 #include "nrf_twi_mngr.h"
 #include "bme280.h"
-#include "nrf_delay.h"
+#include "millis.h"
 #include "segger_wrapper.h"
 #include "task_manager_wrapper.h"
 
 #define BME280_TWI_ADDRESS              0x76
+
+/**\name Macro to combine two 8 bit data's to form a 16 bit data */
+#define BME280_CONCAT_BYTES(msb, lsb)            (((uint16_t)msb << 8) | (uint16_t)lsb)
 
 #define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
@@ -155,6 +157,52 @@ static bool bme280_compensate_press(bme280_data *data, int32_t adc_press)
 	return true;
 }
 
+/*!
+ *  @brief This internal API is used to parse the temperature and
+ *  pressure calibration data and store it in device structure.
+ */
+static void parse_temp_press_calib_data(const uint8_t *reg_data)
+{
+	bme280_calib_data *calib_data = &m_calib;
+
+    calib_data->dig_T1 = BME280_CONCAT_BYTES(reg_data[1], reg_data[0]);
+    calib_data->dig_T2 = (int16_t)BME280_CONCAT_BYTES(reg_data[3], reg_data[2]);
+    calib_data->dig_T3 = (int16_t)BME280_CONCAT_BYTES(reg_data[5], reg_data[4]);
+    calib_data->dig_P1 = BME280_CONCAT_BYTES(reg_data[7], reg_data[6]);
+    calib_data->dig_P2 = (int16_t)BME280_CONCAT_BYTES(reg_data[9], reg_data[8]);
+    calib_data->dig_P3 = (int16_t)BME280_CONCAT_BYTES(reg_data[11], reg_data[10]);
+    calib_data->dig_P4 = (int16_t)BME280_CONCAT_BYTES(reg_data[13], reg_data[12]);
+    calib_data->dig_P5 = (int16_t)BME280_CONCAT_BYTES(reg_data[15], reg_data[14]);
+    calib_data->dig_P6 = (int16_t)BME280_CONCAT_BYTES(reg_data[17], reg_data[16]);
+    calib_data->dig_P7 = (int16_t)BME280_CONCAT_BYTES(reg_data[19], reg_data[18]);
+    calib_data->dig_P8 = (int16_t)BME280_CONCAT_BYTES(reg_data[21], reg_data[20]);
+    calib_data->dig_P9 = (int16_t)BME280_CONCAT_BYTES(reg_data[23], reg_data[22]);
+    calib_data->dig_H1 = reg_data[25];
+}
+
+/*!
+ *  @brief This internal API is used to parse the humidity calibration data
+ *  and store it in device structure.
+ */
+static void parse_humidity_calib_data(const uint8_t *reg_data)
+{
+	bme280_calib_data *calib_data = &m_calib;
+    int16_t dig_H4_lsb;
+    int16_t dig_H4_msb;
+    int16_t dig_H5_lsb;
+    int16_t dig_H5_msb;
+
+    calib_data->dig_H2 = (int16_t)BME280_CONCAT_BYTES(reg_data[1], reg_data[0]);
+    calib_data->dig_H3 = reg_data[2];
+    dig_H4_msb = (int16_t)(int8_t)reg_data[3] * 16;
+    dig_H4_lsb = (int16_t)(reg_data[4] & 0x0F);
+    calib_data->dig_H4 = dig_H4_msb | dig_H4_lsb;
+    dig_H5_msb = (int16_t)(int8_t)reg_data[5] * 16;
+    dig_H5_lsb = (int16_t)(reg_data[4] >> 4);
+    calib_data->dig_H5 = dig_H5_msb | dig_H5_lsb;
+    calib_data->dig_H6 = (int8_t)reg_data[6];
+}
+
 static void bme280_readout_cb(ret_code_t result, void * p_user_data) {
 
 	bme280_data *buf = p_user_data;
@@ -203,8 +251,6 @@ void bme280_init_sensor() {
 
 	static uint8_t p_ans_buffer[2] = {0};
 
-#ifndef _DEBUG_TWI
-
 	{
 		static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND cal_reg1[] = {BME280_CHIP_ID_REG};
 
@@ -225,44 +271,48 @@ void bme280_init_sensor() {
 		return;
 	}
 
-	delay_ms(500);
+	delay_ms(50);
 
 	{
-		static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND wai_reg1[] = {BME280_CHIP_ID_REG,
+		static uint8_t buffer1[BME280_TEMP_PRESS_CALIB_DATA_LEN + 2];
+		static uint8_t buffer2[BME280_HUMIDITY_CALIB_DATA_LEN + 2];
+
+		static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND wai_reg1[] = {
 				BME280_DIG_T1_LSB_REG,
-				BME280_DIG_P1_LSB_REG,
-				BME280_DIG_H1_REG,
 				BME280_DIG_H2_LSB_REG};
 
 		static nrf_twi_mngr_transfer_t const bme280_init_transfers1[] =
 		{
-				I2C_READ_REG(BME280_TWI_ADDRESS, wai_reg1, p_ans_buffer , 1),
-				I2C_READ_REG(BME280_TWI_ADDRESS, wai_reg1+1, &m_calib.dig_T1 , BME280_CALIB_T_SIZE),
-				I2C_READ_REG(BME280_TWI_ADDRESS, wai_reg1+2, &m_calib.dig_P1 , BME280_CALIB_P_SIZE),
-				I2C_READ_REG(BME280_TWI_ADDRESS, wai_reg1+3, &m_calib.dig_H1 , BME280_CALIB_H1_SIZE),
-				I2C_READ_REG(BME280_TWI_ADDRESS, wai_reg1+4, &m_calib.dig_H2 , BME280_CALIB_H2_SIZE)
+				I2C_READ_REG(BME280_TWI_ADDRESS, &wai_reg1[0], buffer1 , BME280_TEMP_PRESS_CALIB_DATA_LEN),
+				I2C_READ_REG(BME280_TWI_ADDRESS, &wai_reg1[1], buffer2 , BME280_HUMIDITY_CALIB_DATA_LEN)
 		};
 
 		i2c_perform(NULL, bme280_init_transfers1, sizeof(bme280_init_transfers1) / sizeof(bme280_init_transfers1[0]), NULL);
+
+		// process calibration
+		parse_temp_press_calib_data(buffer1);
+		parse_humidity_calib_data  (buffer2);
 	}
 
-#else
+	m_meas_config.osrs_p = SAMPLING_X16;
+	m_meas_config.osrs_t = SAMPLING_X1;
 
-	BME280FXOS_ReadReg(nullptr, BME280_CHIP_ID_REG, p_ans_buffer, 1);
+	// set to sleep
+	m_meas_config.mode = MODE_SLEEP;
+	bme280_meas_config();
 
-#endif
-
+	// configure
 	m_hum_config.osrs_h = SAMPLING_NONE;
+
+	bme280_hum_config();
 
 	m_cfg_config.filter = FILTER_X16;
 	m_cfg_config.t_sb = STANDBY_MS_250;
 
-	m_meas_config.mode = MODE_NORMAL;
-	m_meas_config.osrs_p = SAMPLING_X16;
-	m_meas_config.osrs_t = SAMPLING_X1;
-
-	bme280_hum_config();
 	bme280_cfg_config();
+
+	// go do measures !
+	m_meas_config.mode = MODE_NORMAL;
 	bme280_meas_config();
 
 	LOG_INFO("BME init done");
