@@ -145,19 +145,28 @@ bool test_fram(void) {
 
 	fram_init_sensor();
 
+	sUserParameters *params = user_settings_get();
+
 	if (!u_settings.isConfigValid())
 		return false;
 
-	if (u_settings.getFECdevID() == 0U)
+	if (u_settings.getFECdevID() != 2846U)
+		return false;
+
+	params->fec_devid = 1234u;
+
+	u_settings.writeConfig();
+
+	if (!u_settings.isConfigValid())
+		return false;
+
+	if (u_settings.getFECdevID() != 1234u)
 		return false;
 
 	if (!u_settings.resetConfig())
 		return false;
 
-	if (!u_settings.isConfigValid())
-		return false;
-
-	if (u_settings.getFECdevID() == 0U)
+	if (u_settings.getFECdevID() != 2846U)
 		return false;
 
 	LOG_INFO("FRAM OK");
@@ -367,7 +376,7 @@ bool test_power_zone(void) {
 	for (int i=0; i < 812; i++) p_zones.addPowerData(242, (timestamp++)*1000);
 	for (int i=0; i < 330; i++) p_zones.addPowerData(401, (timestamp++)*1000);
 
-	LOG_INFO("Time spent in PZ %u", p_zones.getTimeTotal());
+	LOG_INFO("Tot. time spent in PZ %u", p_zones.getTimeTotal());
 
 	if (p_zones.getTimeTotal() < 4) return false;
 
