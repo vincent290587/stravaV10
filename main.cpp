@@ -439,7 +439,7 @@ int main(void)
 #endif
 #ifdef FDS_PRESENT
 	fram_init_sensor();
-	u_settings.checkConfigVersion();
+	u_settings.enforceConfigVersion();
 #endif
 #if defined (BLE_STACK_SUPPORT_REQD)
 	ble_init();

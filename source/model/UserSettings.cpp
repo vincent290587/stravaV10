@@ -26,15 +26,20 @@ UserSettings::UserSettings() : m_params(s_m_params) {
 	m_is_init = false;
 }
 
-bool UserSettings::isConfigValid(void) {
+void UserSettings::sync() {
 
 	if (!m_is_init) {
 
 		if (!fram_read_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters)))
-			return false;
+			return;
 
 		m_is_init = true;
 	}
+}
+
+bool UserSettings::isConfigValid(void) {
+
+	this->sync();
 
 	uint8_t crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
 
@@ -45,8 +50,7 @@ bool UserSettings::isConfigValid(void) {
 
 	if (FRAM_SETTINGS_VERSION != m_params.version) {
 		LOG_ERROR("User parameters: wrong version, found %u", m_params.version);
-
-		this->resetConfig();
+		return false;
 	} else {
 		LOG_WARNING("User parameters V%u read correctly", m_params.version);
 	}
@@ -92,23 +96,17 @@ bool UserSettings::resetConfig(void) {
 	m_params.fec_devid = TACX_DEVICE_NUMBER;
 	m_params.gla_devid = GLASSES_DEVICE_NUMBER;
 
-	m_params.crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
-
 	LOG_WARNING("User params factory reset");
 
-	return fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
+	return this->writeConfig();
 }
 
-void UserSettings::checkConfigVersion(void) {
+void UserSettings::enforceConfigVersion(void) {
 
 	if (fram_read_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters))) {
 
-		uint8_t crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
-
-		if (crc != m_params.crc) {
+		if (!this->isConfigValid()) {
 			this->resetConfig();
-
-			LOG_WARNING("Basic user params set");
 		} else {
 			m_is_init = true;
 		}
