@@ -140,6 +140,10 @@ static void fds_evt_handler(fds_evt_t const * p_evt)
 		if (p_evt->result != FDS_SUCCESS)
 		{
 			LOG_ERROR("Record update error");
+		} else {
+
+			APP_ERROR_CHECK(fds_gc());
+
 		}
 		m_fds_wr_pending = false;
 	} break;
@@ -244,8 +248,6 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 		rc = fds_record_update(&desc, &_record);
 		APP_ERROR_CHECK(rc);
-
-		APP_ERROR_CHECK(fds_gc());
 
 	} else {
 
