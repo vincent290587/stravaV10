@@ -65,7 +65,7 @@
 
 ///// CODE FLAGS
 
-#define FDS_PRESENT
+#define FRAM_PRESENT
 
 #define BARO_TYPE                      bme280
 

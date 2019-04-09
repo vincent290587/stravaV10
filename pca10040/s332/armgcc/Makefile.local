@@ -1,3 +1,0 @@
-# local and personal definitions
-
-SDK_ROOT := $(DISKE)/Nordic/nRF5_SDK_15.0.0_a53641a

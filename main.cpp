@@ -437,7 +437,7 @@ int main(void)
 #ifdef SOFTDEVICE_PRESENT
 	sdh_init();
 #endif
-#ifdef FDS_PRESENT
+#if defined (FDS_PRESENT) || defined (FRAM_PRESENT)
 	fram_init_sensor();
 	u_settings.enforceConfigVersion();
 #endif
