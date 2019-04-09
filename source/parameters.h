@@ -65,7 +65,9 @@
 
 ///// CODE FLAGS
 
+#ifndef TDD
 #define FRAM_PRESENT
+#endif
 
 #define BARO_TYPE                      bme280
 
