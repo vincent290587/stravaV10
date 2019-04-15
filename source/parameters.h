@@ -66,10 +66,15 @@
 ///// CODE FLAGS
 
 #ifndef TDD
-#define FRAM_PRESENT
+#define FDS_PRESENT
 #endif
 
+#ifndef TDD
+#define BARO_TYPE                      ms5637
+#else
 #define BARO_TYPE                      bme280
+#endif
+
 
 //#define _DEBUG_TWI
 
