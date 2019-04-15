@@ -14,7 +14,7 @@
 #include "BinnedData.h"
 
 
-#define RR_ZONES_NB        5
+#define RR_ZONES_NB        6
 
 
 class RRZone : public BinnedData {
