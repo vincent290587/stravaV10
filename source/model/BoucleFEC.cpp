@@ -77,6 +77,7 @@ void BoucleFEC::run() {
 	}
 	m_pw_buffer.add(&fec_info.power);
 	zPower.addPowerData(fec_info.power, millis());
+	rrZones.addRRData(hrm_info, millis());
 #endif
 
 	vue.refresh();

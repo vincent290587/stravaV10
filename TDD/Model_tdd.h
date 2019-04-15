@@ -38,6 +38,7 @@ extern sTasksIDs m_tasks_id;
 #include "Attitude.h"
 #include "SufferScore.h"
 #include "PowerZone.h"
+#include "RRZone.h"
 #include "UserSettings.h"
 #include "mk64f_parser.h"
 #include "Vue.h"
@@ -77,6 +78,8 @@ extern AltiBaro      baro;
 extern SufferScore   suffer_score;
 
 extern PowerZone     zPower;
+
+extern RRZone        rrZones;
 
 extern UserSettings   u_settings;
 
