@@ -8,6 +8,7 @@
 #include <math.h>
 #include <Attitude.h>
 #include "utils.h"
+#include "fxos.h"
 #include "parameters.h"
 #include "Model.h"
 #include "sd_functions.h"
@@ -24,8 +25,10 @@ static float lp1_filter_coefficients[5] =
 
 static order1_filterType m_lp_filt;
 
+static order1_filterType m_lp_alpha;
 
-Attitude::Attitude() {
+
+Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
 	m_last_save_dist = 0.;
 	m_last_stored_ele = 0.;
 	m_cur_ele = 0.;
@@ -34,6 +37,7 @@ Attitude::Attitude() {
 	m_is_init = false;
 	m_is_acc_init = false;
 	m_is_alt_init = false;
+	m_is_pw_init = false;
 
 	m_st_buffer_nb_elem = 0;
 
@@ -55,7 +59,7 @@ float Attitude::filterElevation(SLoc& loc_) {
 	float ele = 0.;
 
 	// get current elevation
-	if (!baro.computeAlti(ele)) return 0.;
+	if (!m_baro.computeAlti(ele)) return 0.;
 
 	m_cur_ele = ele;
 
@@ -68,6 +72,8 @@ float Attitude::filterElevation(SLoc& loc_) {
 		return 0.;
 	}
 
+	LOG_INFO("Filtering elevation");
+
 	// filter with a high time-constant the difference between
 	// GPS altitude and barometer altitude to remove drifts
 	float input = ele - loc_.alt;
@@ -75,7 +81,7 @@ float Attitude::filterElevation(SLoc& loc_) {
 
 	float alt_div = order1_filter_readOutput(&m_lp_filt);
 	// set barometer correction
-	baro.setCorrection(alt_div);
+	m_baro.setCorrection(alt_div);
 
 	// compute accumulated climb on the corrected filtered barometer altitude
 	if (ele > m_last_stored_ele + 4.) {
@@ -100,12 +106,12 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 	// init the altitude model
 	if ((eLocationSourceGPS == source_ ||
 			eLocationSourceNRF == source_) &&
-			baro.isDataReady() &&
-			!baro.hasSeaLevelRef()) {
+			m_baro.isDataReady() &&
+			!m_baro.hasSeaLevelRef()) {
 
 		// init sea level pressure
 		LOG_WARNING("Init sea level pressure...");
-		baro.seaLevelForAltitude(loc_.alt);
+		m_baro.seaLevelForAltitude(loc_.alt);
 
 		// treat elevation
 		this->filterElevation(loc_);
@@ -135,7 +141,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
 	} else if ((eLocationSourceGPS == source_ ||
 			eLocationSourceNRF == source_) &&
-			baro.hasSeaLevelRef()) {
+			m_baro.hasSeaLevelRef()) {
 
 		res = att.climb = this->filterElevation(loc_);
 
@@ -204,10 +210,12 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
  */
 void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_) {
 
-	if (m_is_init) {
+	static float cur_time_prev;
 
-		// small correction to allow time with millisecond precision
-		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
+	// small correction to allow time with millisecond precision
+	float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
+
+	if (m_is_init) {
 
 		// add this point to our historic
 		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
@@ -218,11 +226,12 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		this->computeElevation(loc_, source_);
 
 		// update the computed power
-		att.pwr = this->computePower(loc_.speed);
+		att.pwr = this->computePower(loc_.speed, cur_time - cur_time_prev);
 
 		this->computeDistance(loc_, date_, source_);
-
 	}
+
+	cur_time_prev = cur_time;
 
 	m_is_init = true;
 
@@ -237,33 +246,66 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
  *
  * @param speed_
  */
-float Attitude::computePower(float speed_) {
+float Attitude::computePower(float speed_, float dt) {
 
-	float res;
 	float power = 0.0f;
-	float fSpeed = -1.0f;
+	const float speed_ms = speed_ / 3.6f;
 
-	if (baro.computeVA(att.vit_asc)) {
+	float alti = 0.0f;
+	static float alti_prev;
+	static float alpha_bar;
 
-		// horizontal speed (m/s)
-		fSpeed = speed_ / 3.6f;
+	// init alpha_0 filter
+	if (!m_is_pw_init) {
+		m_is_pw_init = true;
 
-		float weight = (float)u_settings.getWeight();
+		order1_filter_init(&m_lp_alpha, lp1_filter_coefficients);
 
-		// coefficient used to limit the calculated power at low speeds
-		float coeff = regFenLim(speed_, 0.0f, 5.0f, 0.0f, 1.0f);
-
-		// STEP 2 : Calcul
-		power = 9.81f * weight * att.vit_asc * coeff; // grav
-		power += 0.004f * 9.81f * weight * fSpeed; // sol + meca
-		power += 0.204f * fSpeed * fSpeed * fSpeed; // air
-		power *= 1.025f; // transmission (rendement velo)
-
+		return power;
 	}
 
-	res = power;
+	// proceed to fusing measurements
+	if (m_is_pw_init && m_baro.computeAlti(alti)) {
 
-	return res;
+		float yaw_rad;
+
+		fxos_get_yaw(yaw_rad);
+
+		// 3 seconds time constant with 1000ms measurement period
+		const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.);
+		float innov = yaw_rad;
+
+		alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
+
+		// work on alpha zero
+		if (speed_ms < 1.5f || dt < 0.01f) {
+			LOG_DEBUG("Power skipped %f", speed_ms);
+			return power;
+		}
+
+		float new_alpha_z = yaw_rad - atan2f((alti - alti_prev) , (speed_ms * dt));
+		order1_filter_writeInput(&m_lp_alpha, &new_alpha_z);
+		float alpha_zero = order1_filter_readOutput(&m_lp_alpha);
+
+		// update vertical speed
+		att.vit_asc = tanf(alpha_bar - alpha_zero) * speed_ms;
+
+		LOG_INFO("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
+				180*(alpha_bar-alpha_zero)/3.1415,
+				180*alpha_zero/3.1415);
+
+		const float weight = (float)u_settings.getWeight();
+
+		// STEP 2 : Calculate power
+		power += 9.81f * weight * att.vit_asc; // gravity
+		power += 0.004f * 9.81f * weight * speed_ms; // sol + meca
+		power += 0.204f * speed_ms * speed_ms * speed_ms; // air
+		power *= 1.025f; // transmission (rendement velo)
+
+		alti_prev = alti;
+	}
+
+	return power;
 }
 
 

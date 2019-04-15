@@ -229,7 +229,6 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 
 	const int len = affi.length();
 
-	int decal = 0;
 	if (len > 6) {
 		affi = "---";
 	}

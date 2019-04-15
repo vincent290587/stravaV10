@@ -8,6 +8,8 @@
 #ifndef TDD_UNIT_TESTING_HPP_
 #define TDD_UNIT_TESTING_HPP_
 
+bool test_fusion(void);
+
 bool test_power_zone(void);
 
 bool test_lsq(void);

@@ -21,23 +21,12 @@ public:
 
 	bool hasSeaLevelRef(void) {return m_is_init;}
 
-	void runFilter(void);
 
 	bool isUpdated(void);
 	bool isDataReady(void);
 	void sensorRefresh(void);
 	void sensorRead(void);
 	void sensorInit(void);
-
-#ifdef TDD
-	float getAlti() const {
-		return m_alti;
-	}
-
-	void setAlti(float alti) {
-		m_alti = alti;
-	}
-#endif
 
 private:
 	bool m_is_init;
@@ -47,10 +36,7 @@ private:
 	float m_va_f;
 	uint32_t nb_filtering;
 
-#ifdef TDD
-	float m_alti;
-#endif
-
+	void runFilter(void);
 	float pressureToAltitude(float atmospheric);
 };
 

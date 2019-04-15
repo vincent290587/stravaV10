@@ -37,7 +37,9 @@ public:
 	bool resetConfig(void);
 	bool writeConfig(void);
 
-	void checkConfigVersion(void);
+	void dump(void);
+
+	void enforceConfigVersion(void);
 
 	uint16_t getHRMdevID(void) const {
 		return m_params.hrm_devid;
@@ -66,6 +68,8 @@ public:
 private:
 	bool m_is_init = false;
 	sUserParameters &m_params;
+
+	void sync();
 };
 
 #endif // defined C++

@@ -17,8 +17,6 @@ SAtt att;
 
 sTasksIDs     m_tasks_id;
 
-Attitude      attitude;
-
 ListeSegments mes_segments;
 
 ListeParcours mes_parcours;
@@ -42,6 +40,8 @@ Vue           vue;
 STC3100       stc;
 
 AltiBaro      baro;
+
+Attitude      attitude(baro);
 
 sAppErrorDescr m_app_error;
 

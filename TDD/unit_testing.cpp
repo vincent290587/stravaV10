@@ -12,6 +12,7 @@
 #include "Model_tdd.h"
 #include "Screenutils.h"
 #include "fram.h"
+#include "bme280.h"
 #include "utils.h"
 
 #include "order1_filter.h"
@@ -19,6 +20,62 @@
 #define TEST_FILTRE_NB    15
 
 #define TEST_ROLLOF_NB    48759
+
+extern void simulator_simulate_altitude(float alti);
+
+bool test_fusion(void) {
+
+	AltiBaro baro_tdd;
+	Attitude atti_tdd(baro_tdd);
+
+	LOG_INFO("Testing fusion...");
+
+	const float speed = 20.0f;
+
+	const float yaw0 = 5 * 3.1415 / 180; // mounting offset
+
+	float yaw_rad = 2 * 3.1415 / 180;
+
+	fxos_set_yaw(yaw_rad + yaw0);
+
+	float alti = 0.;
+	simulator_simulate_altitude(alti);
+
+	baro_tdd.sensorRead();
+	baro_tdd.sensorRefresh();
+	baro_tdd.seaLevelForAltitude(alti);
+
+	for (int i=0; i< 240; i++) {
+
+		alti += SENSORS_REFRESH_PER_MS * speed * tanf(yaw_rad) / 3600.0f;
+
+		simulator_simulate_altitude(alti);
+
+		baro_tdd.sensorRead();
+		if (baro_tdd.isUpdated()) {
+			baro_tdd.sensorRefresh();
+		}
+
+		atti_tdd.computePower(speed, SENSORS_REFRESH_PER_MS / 1000.);
+
+		if (i== 120) {
+			LOG_INFO("Vert. speed should be %f", speed * tanf(yaw_rad) / 3.6f);
+
+			yaw_rad = -2 * 3.1415 / 180;
+
+			fxos_set_yaw(yaw_rad + yaw0);
+
+			LOG_INFO("Slope inversion");
+		}
+
+	}
+
+	LOG_INFO("Vert. speed should be %f", speed * tanf(yaw_rad) / 3.6f);
+
+	LOG_INFO("Fusion OK");
+
+	return true;
+}
 
 bool test_rollover(void) {
 
@@ -88,19 +145,28 @@ bool test_fram(void) {
 
 	fram_init_sensor();
 
+	sUserParameters *params = user_settings_get();
+
 	if (!u_settings.isConfigValid())
 		return false;
 
-	if (u_settings.getFECdevID() == 0U)
+	if (u_settings.getFECdevID() != 2846U)
+		return false;
+
+	params->fec_devid = 1234u;
+
+	u_settings.writeConfig();
+
+	if (!u_settings.isConfigValid())
+		return false;
+
+	if (u_settings.getFECdevID() != 1234u)
 		return false;
 
 	if (!u_settings.resetConfig())
 		return false;
 
-	if (!u_settings.isConfigValid())
-		return false;
-
-	if (u_settings.getFECdevID() == 0U)
+	if (u_settings.getFECdevID() != 2846U)
 		return false;
 
 	LOG_INFO("FRAM OK");
@@ -118,9 +184,13 @@ bool test_functions(void) {
 
 	if (pi_str.length() != 4) return false;
 
-	pi_str = _fmkstr(-pi, 2);
+	pi_str = _imkstr(-20);
 
-	if (pi_str.length() != 5) return false;
+	if (pi_str.charAt(0) != '-') return false;
+
+	pi_str = _fmkstr(-0.02F, 2);
+
+	if (pi_str.charAt(0) != '-') return false;
 
 	pi_str = _fmkstr(pi, 4);
 
@@ -274,6 +344,7 @@ bool test_score(void) {
 	SufferScore test_score;
 	uint32_t timestamp = 0;
 
+
 	LOG_INFO("Testing suffer score...");
 
 	for (int i=0; i < 116; i++) test_score.addHrmData(110, (timestamp++)*1000);
@@ -294,7 +365,10 @@ bool test_power_zone(void) {
 	PowerZone p_zones;
 	uint32_t timestamp = 0;
 
-	LOG_INFO("Testing suffer score...");
+	sUserParameters *settings = user_settings_get();
+	settings->FTP = 256;
+
+	LOG_INFO("Testing power zone...");
 
 	for (int i=0; i < 116; i++) p_zones.addPowerData(110, (timestamp++)*1000);
 	for (int i=0; i < 158; i++) p_zones.addPowerData(175, (timestamp++)*1000);
@@ -302,7 +376,7 @@ bool test_power_zone(void) {
 	for (int i=0; i < 812; i++) p_zones.addPowerData(242, (timestamp++)*1000);
 	for (int i=0; i < 330; i++) p_zones.addPowerData(401, (timestamp++)*1000);
 
-	LOG_INFO("Time spent in PZ %u", p_zones.getTimeTotal());
+	LOG_INFO("Tot. time spent in PZ %u", p_zones.getTimeTotal());
 
 	if (p_zones.getTimeTotal() < 4) return false;
 

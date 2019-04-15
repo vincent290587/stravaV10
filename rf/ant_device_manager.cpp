@@ -54,6 +54,30 @@ void ant_device_manager_search_validate(int var) {
 
 	ant_search_end(m_search_type, m_sensors_list.sensors[var].dev_id);
 
+	sUserParameters *settings = user_settings_get();
+
+	switch (m_search_type) {
+	case eAntPairingSensorTypeHRM:
+	{
+		// Set the new device ID.
+		settings->hrm_devid = m_sensors_list.sensors[var].dev_id;
+	} break;
+	case eAntPairingSensorTypeBSC:
+	{
+		// Set the new device ID.
+		settings->bsc_devid = m_sensors_list.sensors[var].dev_id;
+	} break;
+	case eAntPairingSensorTypeFEC:
+	{
+		// Set the new device ID.
+		settings->fec_devid = m_sensors_list.sensors[var].dev_id;
+	} break;
+	default:
+		break;
+	}
+
+	u_settings.writeConfig();
+
 	vue.addNotif("ANT", "New device added", 4, eNotificationTypeComplete);
 
 	m_search_type = eAntPairingSensorTypeNone;

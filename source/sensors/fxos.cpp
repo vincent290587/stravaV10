@@ -10,7 +10,6 @@
 #include "fsl_fxos.h"
 #include "gpio.h"
 #include "boards.h"
-//#include "parameters.h"
 #include "UserSettings.h"
 #include "segger_wrapper.h"
 #include "fxos.h"
@@ -60,7 +59,7 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
  * Definitions
  ******************************************************************************/
 
-#define MAX_ACCEL_AVG_COUNT 1U
+#define MAX_ACCEL_AVG_COUNT 5U
 
 /* multiplicative conversion constants */
 #define DegToRad 0.017453292
@@ -79,9 +78,9 @@ int16_t g_Ax_Raw = 0;
 int16_t g_Ay_Raw = 0;
 int16_t g_Az_Raw = 0;
 
-double g_Ax = 0;
-double g_Ay = 0;
-double g_Az = 0;
+float g_Ax = 0;
+float g_Ay = 0;
+float g_Az = 0;
 
 int16_t g_Ax_buff[MAX_ACCEL_AVG_COUNT] = {0};
 int16_t g_Ay_buff[MAX_ACCEL_AVG_COUNT] = {0};
@@ -95,18 +94,18 @@ int16_t g_Mx_Offset = 0;
 int16_t g_My_Offset = 0;
 int16_t g_Mz_Offset = 0;
 
-double g_Mx = 0;
-double g_My = 0;
-double g_Mz = 0;
+float g_Mx = 0;
+float g_My = 0;
+float g_Mz = 0;
 
-double g_Mx_LP = 0;
-double g_My_LP = 0;
-double g_Mz_LP = 0;
+float g_Mx_LP = 0;
+float g_My_LP = 0;
+float g_Mz_LP = 0;
 
-double g_Yaw = 0;
-double g_Yaw_LP = 0;
-double g_Pitch = 0;
-double g_Roll = 0;
+float g_Yaw = 0;
+float g_Yaw_LP = 0;
+float g_Pitch = 0;
+float g_Roll = 0;
 
 bool g_FirstRun = true;
 
@@ -273,6 +272,8 @@ static int Magnetometer_Calibrate_Task(void)
 			settings->mag_cal.calib[2] = g_Mz_Offset;
 			settings->mag_cal.is_present = 1;
 
+			LOG_WARNING("Saving Mag Cal. to flash...");
+
 			u_settings.writeConfig();
 
 			g_Calibration_Done = true;
@@ -385,8 +386,8 @@ bool fxos_init(void) {
 		return kStatus_Fail;
 	}
 #else
-	/* enable auto-sleep, low power in sleep, high res in wake */
-	if(FXOS_WriteReg(nullptr, CTRL_REG2, MOD_HIGH_RES) != kStatus_Success)
+	/* high res in wake */
+	if(FXOS_WriteReg(nullptr, CTRL_REG2, MOD_LOW_NOISE) != kStatus_Success)
 	{
 		APP_ERROR_CHECK(0x7);
 		return kStatus_Fail;
@@ -450,6 +451,13 @@ bool fxos_init(void) {
 		return kStatus_Fail;
 	}
 
+	/* Use LPF */
+	if(FXOS_WriteReg(nullptr, HP_FILTER_CUTOFF_REG, PULSE_LPF_EN_MASK) != kStatus_Success)
+	{
+		APP_ERROR_CHECK(0x7);
+		return kStatus_Fail;
+	}
+
 
 #ifdef EN_INTERRUPTS
 	/* enable data-ready, auto-sleep and motion detection interrupts */
@@ -479,7 +487,7 @@ bool fxos_init(void) {
 	}
 #else
 	/* Setup the ODR for 50 Hz and activate the accelerometer */
-	if(FXOS_WriteReg(nullptr, CTRL_REG1, (HYB_DATA_RATE_200HZ | ACTIVE_MASK)) != kStatus_Success)
+	if(FXOS_WriteReg(nullptr, CTRL_REG1, (HYB_DATA_RATE_25HZ | ACTIVE_MASK)) != kStatus_Success)
 	{
 		APP_ERROR_CHECK(0x7);
 		return kStatus_Fail;
@@ -511,7 +519,8 @@ bool fxos_init(void) {
 			/* enable auto-sleep, low power in sleep, high res in wake */
 			{CTRL_REG2, SLPE_MASK | SMOD_LOW_POWER | MOD_HIGH_RES},
 #else
-			{CTRL_REG2, MOD_HIGH_RES},
+			/* Mode low noise low power */
+			{CTRL_REG2, MOD_LOW_NOISE},
 #endif
 			/* set up Mag OSR and Hybrid mode using M_CTRL_REG1, use default for Acc */
 			{M_CTRL_REG1, (M_RST_MASK | M_OSR_MASK | M_HMS_MASK)},
@@ -537,11 +546,14 @@ bool fxos_init(void) {
 			/* set auto-sleep wait period to 5s (=5/0.64=~8) */
 			{ASLP_COUNT_REG, 8},
 #endif
-			/* default set to 4g mode */
+			/* default set to 4g mode with HPF */
 			{XYZ_DATA_CFG_REG, FULL_SCALE_4G},
 
-			/* Setup the ODR for 50 Hz and activate the accelerometer */
-			{CTRL_REG1, (HYB_DATA_RATE_200HZ | ACTIVE_MASK)},
+			/* Use LPF, HPF bypassed */
+			{HP_FILTER_CUTOFF_REG, PULSE_HPF_BYP_MASK | PULSE_LPF_EN_MASK},
+
+			/* Setup the ODR for 25 Hz and activate the accelerometer */
+			{CTRL_REG1, (HYB_DATA_RATE_25HZ | ACTIVE_MASK)},
 	};
 
 	uint16_t cur_ind = 0;
@@ -583,7 +595,10 @@ bool fxos_init(void) {
 			/* default set to 4g mode */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
 
-			/* Setup the ODR for 50 Hz and activate the accelerometer */
+			/* Use LPF */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+
+			/* Setup the ODR and activate the accelerometer */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2)
 	};
 
@@ -607,10 +622,10 @@ void fxos_tasks()
 	m_is_updated = false;
 
 	uint16_t i = 0;
-	double sinAngle = 0;
-	double cosAngle = 0;
-	double Bx = 0;
-	double By = 0;
+	float sinAngle = 0;
+	float cosAngle = 0;
+	float Bx = 0;
+	float By = 0;
 
 	SampleEventFlag = 0;
 	g_Ax_Raw = 0;
@@ -643,9 +658,9 @@ void fxos_tasks()
 
 	for (i = 0; i < MAX_ACCEL_AVG_COUNT; i++)
 	{
-		g_Ax += (double)g_Ax_buff[i];
-		g_Ay += (double)g_Ay_buff[i];
-		g_Az += (double)g_Az_buff[i];
+		g_Ax += (float)g_Ax_buff[i];
+		g_Ay += (float)g_Ay_buff[i];
+		g_Az += (float)g_Az_buff[i];
 	}
 
 	g_Ax /= MAX_ACCEL_AVG_COUNT;
@@ -672,29 +687,46 @@ void fxos_tasks()
 		{
 		}
 
-		sMagCal &mag_cal = u_settings.getMagCal();
+		if (u_settings.isConfigValid()) {
 
-		// check if we have a previous calibration
-		if (mag_cal.is_present) {
+			sMagCal &mag_cal = u_settings.getMagCal();
+			// check if we have a previous calibration
+			if (mag_cal.is_present) {
 
-			sUserParameters *settings = user_settings_get();
+				g_Mx_Offset = mag_cal.calib[0];
+				g_My_Offset = mag_cal.calib[1];
+				g_Mz_Offset = mag_cal.calib[2];
 
-			g_Mx_Offset = settings->mag_cal.calib[0];
-			g_My_Offset = settings->mag_cal.calib[1];
-			g_Mz_Offset = settings->mag_cal.calib[2];
+				g_Calibration_Done = true;
 
-			g_Calibration_Done = true;
+				LOG_INFO("Magnetometer calibration found");
 
-			LOG_WARNING("Magnetometer calibration found");
+				//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
 
-			//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
+			}
 
 		}
 
+
+
 	}
 
+	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
+	g_Roll = atan2f(g_Ay, g_Az) * RadToDeg;
+	sinAngle = sinf(g_Roll * DegToRad);
+	cosAngle = cosf(g_Roll * DegToRad);
+
+	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
+
+	/* Calculate pitch angle g_Pitch (-90deg, 90deg) and sin, cos*/
+	g_Pitch = atan2f(-g_Ax , g_Az);
+	sinAngle = sinf(g_Pitch);
+	cosAngle = cosf(g_Pitch);
+
+	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10));
+
 	if (!g_Calibration_Done)
-		if (Magnetometer_Calibrate_Task()) return;
+		Magnetometer_Calibrate_Task();
 
 	if(g_FirstRun)
 	{
@@ -704,9 +736,9 @@ void fxos_tasks()
 	}
 
 	// filtre ?
-	g_Mx_LP += ((double)g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
-	g_My_LP += ((double)g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
-	g_Mz_LP += ((double)g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
+	g_Mx_LP += ((float)g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
+	g_My_LP += ((float)g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
+	g_Mz_LP += ((float)g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
 
 	/* Calculate magnetometer values */
 	g_Mx = g_Mx_LP - g_Mx_Offset;
@@ -715,26 +747,15 @@ void fxos_tasks()
 
 	LOG_INFO("Mag: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
 
-	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
-	g_Roll = atan2(g_Ay, g_Az) * RadToDeg;
-	sinAngle = sin(g_Roll * DegToRad);
-	cosAngle = cos(g_Roll * DegToRad);
-
 	/* De-rotate by roll angle g_Roll */
 	By = g_My * cosAngle - g_Mz * sinAngle;
 	g_Mz = g_Mz * cosAngle + g_My * sinAngle;
-	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
-
-	/* Calculate pitch angle g_Pitch (-90deg, 90deg) and sin, cos*/
-	g_Pitch = atan2(-g_Ax , g_Az) * RadToDeg;
-	sinAngle = sin(g_Pitch * DegToRad);
-	cosAngle = cos(g_Pitch * DegToRad);
 
 	/* De-rotate by pitch angle g_Pitch */
 	Bx = g_Mx * cosAngle + g_Mz * sinAngle;
 
 	/* Calculate yaw = ecompass angle psi (-180deg, 180deg) */
-	g_Yaw = atan2(-By, Bx) * RadToDeg;
+	g_Yaw = atan2f(-By, Bx) * RadToDeg;
 	if(g_FirstRun)
 	{
 		g_Yaw_LP = g_Yaw;
@@ -746,4 +767,11 @@ void fxos_tasks()
 	LOG_INFO("Compass Angle raw   : %d", (int)g_Yaw);
 	LOG_INFO("Compass Angle filtered: %d", (int)g_Yaw_LP);
 
+}
+
+bool fxos_get_yaw(float &yaw_rad) {
+
+	yaw_rad = g_Pitch;
+
+	return true;
 }

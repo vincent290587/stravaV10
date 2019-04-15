@@ -95,6 +95,15 @@ static void simulator_modes(void) {
 
 }
 
+extern float m_press_sim;
+
+void simulator_simulate_altitude(float alti) {
+
+	const float sea_level_pressure = 1003.0f;
+
+	m_press_sim = sea_level_pressure * powf(1 - alti / 44330.0f, 1.0 / 0.1903f);
+}
+
 void simulator_init(void) {
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
@@ -167,15 +176,8 @@ void simulator_tasks(void) {
 		lon   = data[1];
 		alt   = data[2];
 
-//		static float alti_fake = 0.;
-		//alti_fake += 1. / 3.;
-//		int rnd_add;
-//		rnd_add = (rand() % 20) - 10;
-//		baro.setAlti(alti_fake + (float)rnd_add / 10.);
-//		baro.runFilter();
+		simulator_simulate_altitude(alt);
 
-		baro.setAlti(alt);
-		baro.runFilter();
 		LOG_INFO("Input alt.:  %f", alt);
 
 		if (pos == 4) {

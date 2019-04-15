@@ -37,9 +37,7 @@ JScope jscope;
 #define MOV_AV_NB_VAL               18
 
 AltiBaro::AltiBaro() {
-#ifdef TDD
-	m_alti = 0.;
-#endif
+
 	sea_level_pressure = 1015.;
 	correction = 0.;
 	nb_filtering = 0;
@@ -97,11 +95,6 @@ void AltiBaro::sensorInit() {
 bool AltiBaro::computeAlti(float& alti_) {
 
 	if (!m_is_init) return false;
-  
-#ifdef TDD
-	alti_ = m_alti;
-	return true;
-#endif
 
 	// m_temperature, m_pressure;
 	if (nb_filtering <= FILTRE_NB) {
@@ -141,12 +134,9 @@ void AltiBaro::runFilter(void) {
 
 	if (!m_is_init) return;
 
-#ifdef TDD
-	float input = this->getAlti();
-#else
 	BARO_WRAPPER(_clear_flags());
 	float input = this->pressureToAltitude(BARO_WRAPPER(_get_pressure()));
-#endif
+
 	xk1[ind++] = input;
 	ind = ind % MOV_AV_NB_VAL;
 	float input2 = 0.;
@@ -266,12 +256,15 @@ void AltiBaro::seaLevelForAltitude(float altitude)
 
 	ASSERT(atmospheric != 0.0f);
 
+	m_alti_f = altitude;
+
 	sea_level_pressure = atmospheric / powf(1.0f - (altitude/44330.0f), 5.255f);
 
 	ASSERT(sea_level_pressure != 0.0f);
 
 	m_is_init = true;
 
+	LOG_WARNING("Sea level set");
 
 #ifdef USE_JSCOPE
 	jscope.init();

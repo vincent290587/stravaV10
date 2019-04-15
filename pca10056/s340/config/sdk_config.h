@@ -5859,7 +5859,7 @@
 // <i> Increase this value if you frequently get synchronous FDS_ERR_NO_SPACE_IN_QUEUES errors.
 
 #ifndef FDS_OP_QUEUE_SIZE
-#define FDS_OP_QUEUE_SIZE 4
+#define FDS_OP_QUEUE_SIZE 8
 #endif
 
 // </h> 
@@ -6605,7 +6605,7 @@
 
 // <o> TASK_MANAGER_CONFIG_STACK_SIZE - Stack size for every task (power of 2) 
 #ifndef TASK_MANAGER_CONFIG_STACK_SIZE
-#define TASK_MANAGER_CONFIG_STACK_SIZE 1024
+#define TASK_MANAGER_CONFIG_STACK_SIZE 2048
 #endif
 
 // <q> TASK_MANAGER_CONFIG_STACK_PROFILER_ENABLED  - Enable stack profiling.

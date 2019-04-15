@@ -74,6 +74,7 @@ set(SRCS
 	timer/timer.c
     sensors/GPSMGMT.cpp
     sensors/STC3100.cpp
+    sensors/fxos.cpp
     sensors/bme280.c
 	drivers/uart_tdd.c
 	drivers/ant_tdd.c

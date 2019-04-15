@@ -15,6 +15,9 @@
 #include "parameters.h"
 #include "Locator.h"
 
+#if defined (BLE_STACK_SUPPORT_REQD)
+#include "ble_api_base.h"
+#endif
 
 static tHistoValue m_st_buffer[FEC_PW_BUFFER_NB_ELEM];
 

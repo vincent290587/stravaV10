@@ -9,13 +9,12 @@
 #define BME280_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
-#define BME280_DATA_T_SIZE              6
+#define BME280_DATA_T_SIZE                6u
 
-#define BME280_CALIB_T_SIZE             6
-#define BME280_CALIB_P_SIZE             18
-#define BME280_CALIB_H1_SIZE            1
-#define BME280_CALIB_H2_SIZE            8
+#define BME280_TEMP_PRESS_CALIB_DATA_LEN  26u
+#define BME280_HUMIDITY_CALIB_DATA_LEN    7u
 
 //Register names:
 #define BME280_DIG_T1_LSB_REG			0x88
@@ -136,6 +135,8 @@ typedef struct
 	int16_t  dig_H4; ///< humidity compensation value
 	int16_t  dig_H5; ///< humidity compensation value
 	int8_t   dig_H6; ///< humidity compensation value
+	int32_t  t_fine;
+
 } bme280_calib_data;
 
 // The config register
