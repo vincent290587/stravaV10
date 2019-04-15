@@ -51,6 +51,7 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 	// array is full
 	// calculate variance
 	float var_meas = 0.0F;
+	float mea_meas = 0.0F;
 	float sum = 0.0F;
 	float sum_sq = 0.0F;
 	for (int i= 0; i < VAR_NB_ELEM; i++) {
@@ -60,6 +61,7 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 
 	}
 
+	mea_meas = sum / VAR_NB_ELEM;
 	var_meas = (sum_sq - sum * sum / VAR_NB_ELEM) / (VAR_NB_ELEM - 1);
 
 	LOG_INFO("Measured RR variance: %d", (int)var_meas);
@@ -77,7 +79,7 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 		if (hrm_info.bpm >= rr_lims[i] &&
 				hrm_info.bpm < rr_lims[i+1]) {
 
-			m_rr_bins[i] += time_integ * var_meas / 1000;
+			m_rr_bins[i] += (time_integ * var_meas / 1000);
 			m_tm_bins[i] += time_integ / 1000;
 
 			m_last_bin = i;
@@ -110,6 +112,10 @@ uint32_t RRZone::getTimeTotal(void) {
 
 uint32_t RRZone::getTimeZX(uint16_t i) {
 	return (uint32_t)m_tm_bins[i];
+}
+
+uint32_t RRZone::getValZX(uint16_t i) {
+	return (uint32_t)m_rr_bins[i];
 }
 
 uint32_t RRZone::getNbBins(void) {

@@ -141,6 +141,7 @@ void simulator_tasks(void) {
 
 	// HRM simulation
 	hrm_info.bpm = 120 + (rand() % 65);
+	hrm_info.rr = 60 + (rand() % 30);
 
 	// FEC simulation
 	fec_info.power = rand() % 500;

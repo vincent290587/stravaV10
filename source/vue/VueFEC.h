@@ -11,6 +11,7 @@
 #include <Adafruit_GFX.h>
 #include <vue/VueCommon.h>
 #include "BinnedData.h"
+#include "RRZone.h"
 
 typedef enum {
 	eVueFECScreenInit,
@@ -28,6 +29,7 @@ public:
 	virtual void HistoH (uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_)=0;
 
 	void cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, BinnedData &data);
+	void cadranRR(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, RRZone &zone);
 
 protected:
 	eVueFECScreenModes m_fec_screen_mode;

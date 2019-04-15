@@ -28,6 +28,8 @@ public:
 
 	virtual uint32_t getTimeZX(uint16_t i);
 
+	uint32_t getValZX(uint16_t i);
+
 	virtual uint32_t getNbBins(void);
 	virtual uint32_t getCurBin(void);
 
