@@ -78,7 +78,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadranZones(3, VUE_FEC_NB_LINES, 2, "PZone", zPower);
 
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
-		this->cadranZones(4, VUE_FEC_NB_LINES, 2, "RR", rrZones);
+		this->cadranRR(4, VUE_FEC_NB_LINES, 2, "RR", rrZones);
 
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();
@@ -117,10 +117,13 @@ void VueFEC::cadranRR(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *
 		float val = zone.getValZX(i);
 		if (zone.getTimeZX(i) > 0)
 			val /= (float)zone.getTimeZX(i);
-		else
+		else {
 			val = 0;
+		}
 
-		int16_t width = regFenLim(val, 0, 140, 2, _width / 2 - 35);
+		LOG_DEBUG(">> RR val displayed: %f", val);
+
+		int16_t width = regFenLim(val, 0, 10000, 2, _width / 2 - 35);
 		this->fillRect(x - _width / 2 + 20, y + 20 + i*6, width, 4, 1);
 
 	}

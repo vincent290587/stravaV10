@@ -64,11 +64,10 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 	mea_meas = sum / VAR_NB_ELEM;
 	var_meas = (sum_sq - sum * sum / VAR_NB_ELEM) / (VAR_NB_ELEM - 1);
 
-	LOG_INFO("Measured RR variance: %d", (int)var_meas);
+	LOG_DEBUG("Measured RR variance: %d", (int)var_meas);
 
 	// reset index and timestamp
 	tab_meas_nb = 0;
-	m_last_timestamp = timestamp;
 
 	// calculate elapsed time
 	float time_integ = ((float)timestamp - (float)m_last_timestamp) / 1000.;
@@ -79,20 +78,20 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 		if (hrm_info.bpm >= rr_lims[i] &&
 				hrm_info.bpm < rr_lims[i+1]) {
 
-			m_rr_bins[i] += (time_integ * var_meas / 1000);
-			m_tm_bins[i] += time_integ / 1000;
+			m_rr_bins[i] += time_integ * var_meas;
+			m_tm_bins[i] += time_integ;
 
 			m_last_bin = i;
 
 			LOG_DEBUG("Logging RR in bin %d %f ms", i, time_integ);
 
-			// update state
-			m_last_timestamp = timestamp;
-
 			return;
 		}
 
 	}
+
+	// update state
+	m_last_timestamp = timestamp;
 
 	// should never be here
 	LOG_ERROR("Wrong bin RR: rr_var_meas: %u", var_meas);
