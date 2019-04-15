@@ -105,6 +105,7 @@ set(SRCS
 	source/model/BoucleFEC.cpp
 	source/model/Locator.cpp
 	source/model/PowerZone.cpp
+	source/model/RRZone.cpp
 	source/model/SufferScore.cpp
 	source/model/UserSettings.cpp
 	source/vue/Screenutils.cpp

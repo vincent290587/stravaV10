@@ -49,6 +49,8 @@ SufferScore   suffer_score;
 
 PowerZone     zPower;
 
+RRZone        rrZones;
+
 UserSettings   u_settings;
 
 sHrmInfo hrm_info;

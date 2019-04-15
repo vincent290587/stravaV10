@@ -19,7 +19,7 @@
 #include "i2c.h"
 #include "nrf_twi_mngr.h"
 
-#define FRAM_TWI_ADDRESS       0b10100000
+#define FRAM_TWI_ADDRESS       0b1010000
 
 #define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
@@ -44,14 +44,14 @@ void fram_init_sensor() {
 bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 
 	uint8_t twi_address = FRAM_TWI_ADDRESS;
-	twi_address |= (block_addr & 0x100) >> 7;
+	twi_address |= (block_addr & 0x700) >> 8;
 
 	uint8_t address = block_addr & 0x0FF;
 
 	{
 		nrf_twi_mngr_transfer_t const fram_xfer[] =
 		{
-				I2C_READ_REG_REP_STOP(twi_address, &address, readout, length)
+				I2C_READ_REG(twi_address, &address, readout, length)
 		};
 
 		i2c_perform(NULL, fram_xfer, sizeof(fram_xfer) / sizeof(fram_xfer[0]), NULL);
@@ -63,11 +63,11 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 	uint8_t twi_address = FRAM_TWI_ADDRESS;
-	twi_address |= (block_addr & 0x100) >> 7;
+	twi_address |= (block_addr & 0x700) >> 8;
 
-	if (length > 254) return false;
+	uint8_t p_data[128] = {0};
+	if (length > sizeof(p_data) - 1) return false;
 
-	uint8_t p_data[256] = {0};
 	p_data[0] = block_addr & 0x0FF;
 
 	memcpy(&p_data[1], writeout, length);

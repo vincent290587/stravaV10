@@ -130,14 +130,27 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     m_app_error.err_desc.pc = pc;
 	m_app_error.err_desc.crc = SYSTEM_DESCR_POS_CRC;
 
+	if (!info) {
+		snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
+				"info arg is 0 id %u pc %u",
+				id, pc);
+#if USE_SVIEW
+		SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
+#else
+		LOG_ERROR(m_app_error.err_desc._buffer);
+		LOG_INFO(m_app_error.err_desc._buffer);
+#endif
+		return;
+	}
+
     switch (id)
     {
 #if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
         case NRF_FAULT_ID_SD_ASSERT:
-            NRF_LOG_ERROR("SOFTDEVICE: ASSERTION FAILED");
+        	LOG_ERROR("SOFTDEVICE: ASSERTION FAILED");
             break;
         case NRF_FAULT_ID_APP_MEMACC:
-            NRF_LOG_ERROR("SOFTDEVICE: INVALID MEMORY ACCESS");
+        	LOG_ERROR("SOFTDEVICE: INVALID MEMORY ACCESS");
             break;
 #endif
         case NRF_FAULT_ID_SDK_ASSERT:
@@ -147,12 +160,6 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         			"ASSERTION FAILED at %s:%u",
                     p_info->p_file_name,
                     p_info->line_num);
-#if USE_SVIEW
-            SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
-#else
-            NRF_LOG_ERROR(m_app_error.err_desc._buffer);
-            LOG_ERROR(m_app_error.err_desc._buffer);
-#endif
             break;
         }
         case NRF_FAULT_ID_SDK_ERROR:
@@ -160,15 +167,10 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         	error_info_t * p_info = (error_info_t *)info;
         	snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
         			"ERROR %u [%s] at %s:%u",
-                    p_info->err_code,
-					  nrf_strerror_get(p_info->err_code),
-                    p_info->p_file_name,
-                    (uint16_t)p_info->line_num);
-#if USE_SVIEW
-            SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
-#else
-            LOG_ERROR(m_app_error.err_desc._buffer);
-#endif
+					p_info->err_code,
+					nrf_strerror_get(p_info->err_code),
+					p_info->p_file_name,
+					(uint16_t)p_info->line_num);
             break;
         }
         default:
@@ -177,6 +179,13 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         			"UNKNOWN FAULT at 0x%08X", pc);
             break;
     }
+
+#if USE_SVIEW
+            SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
+#else
+            LOG_ERROR(m_app_error.err_desc._buffer);
+            LOG_INFO(m_app_error.err_desc._buffer);
+#endif
 
     NRF_LOG_FLUSH();
 
@@ -405,7 +414,7 @@ int main(void)
 	spi_init();
 	i2c_init();
 
-	nrf_delay_ms(1000);
+	delay_ms(10);
 
 	// diskio + fatfs init
 	diskio_nor_init();
@@ -437,7 +446,7 @@ int main(void)
 #ifdef SOFTDEVICE_PRESENT
 	sdh_init();
 #endif
-#ifdef FDS_PRESENT
+#if defined (FDS_PRESENT) || defined (FRAM_PRESENT)
 	fram_init_sensor();
 	u_settings.enforceConfigVersion();
 #endif

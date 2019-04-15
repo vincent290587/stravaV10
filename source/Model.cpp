@@ -36,6 +36,8 @@ SufferScore   suffer_score;
 
 PowerZone     zPower;
 
+RRZone        rrZones;
+
 UserSettings   u_settings;
 
 ListeSegments mes_segments;
