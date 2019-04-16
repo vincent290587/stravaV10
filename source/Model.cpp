@@ -305,6 +305,7 @@ void peripherals_task(void * p_context)
 		ant_tasks();
 		roller_manager_tasks();
 		suffer_score.addHrmData(hrm_info.bpm, millis());
+		rrZones.addRRData(hrm_info, millis());
 #endif
 
 		// check screen update & unlock task

@@ -75,6 +75,9 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 	// calculate elapsed time
 	float time_integ = ((float)timestamp - (float)m_last_timestamp) / 1000.;
 
+	// update state
+	m_last_timestamp = timestamp;
+
 	// find the zone
 	for (int i=0; i < RR_ZONES_NB; i++) {
 
@@ -93,11 +96,8 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 
 	}
 
-	// update state
-	m_last_timestamp = timestamp;
-
 	// should never be here
-	LOG_ERROR("Wrong bin RR: rr_var_meas: %u", var_meas);
+	LOG_ERROR("Wrong bin RR: rr_var_meas: %d", (int)var_meas);
 }
 
 uint32_t RRZone::getTimeMax(void) {
