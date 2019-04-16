@@ -103,6 +103,12 @@ uint32_t RRZone::getTimeMax(void) {
 	return max_time;
 }
 
+uint32_t RRZone::getValMax(void) {
+	uint32_t max_val = getValZX(0);
+	for (int i=1; i< RR_ZONES_NB; i++) if (getValZX(i) > max_val) max_val = getValZX(i);
+	return max_val;
+}
+
 uint32_t RRZone::getTimeTotal(void) {
 	float tot_time = 0;
 	for (int i=0; i< RR_ZONES_NB; i++) tot_time += m_tm_bins[i];
@@ -114,7 +120,15 @@ uint32_t RRZone::getTimeZX(uint16_t i) {
 }
 
 uint32_t RRZone::getValZX(uint16_t i) {
-	return (uint32_t)m_rr_bins[i];
+
+	float val = m_rr_bins[i];
+	if (m_tm_bins[i] > 0)
+		val /= (float)m_tm_bins[i];
+	else {
+		val = 0;
+	}
+
+	return (uint32_t)val;
 }
 
 uint32_t RRZone::getNbBins(void) {

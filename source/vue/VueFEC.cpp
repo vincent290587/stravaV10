@@ -111,23 +111,23 @@ void VueFEC::cadranRR(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *
 	setCursor(x - 55 - 20, y - 10 + (_height / (nb_lig*2)));
 	setTextSize(3);
 
+	uint32_t val_max = zone.getValMax();
+
 	// loop over bins
 	for (uint32_t i=0; i< zone.getNbBins(); i++) {
 
 		float val = zone.getValZX(i);
-		if (zone.getTimeZX(i) > 0)
-			val /= (float)zone.getTimeZX(i);
-		else {
-			val = 0;
-		}
 
 		LOG_DEBUG(">> RR val displayed: %f", val);
 
-		int16_t width = regFenLim(val, 0, 10000, 2, _width / 2 - 35);
+		int16_t width = regFenLim(val, 0, val_max, 2, _width / 2 - 35);
 		this->fillRect(x - _width / 2 + 20, y + 20 + i*6, width, 4, 1);
 
 	}
 
+	setCursor(x - _width / 2 + 40, y + 19 + zone.getNbBins()*6);
+	setTextSize(2);
+	print((unsigned)val_max);
 
 	// print delimiters
 	drawFastVLine(_width / 2, _height / nb_lig * (p_lig - 1), _height / nb_lig, 1);
