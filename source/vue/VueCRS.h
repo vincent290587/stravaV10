@@ -9,6 +9,7 @@
 #define SOURCE_VUE_VUECRS_H_
 
 #include "parameters.h"
+#include "RRZone.h"
 #include <display/SegmentManager.h>
 #include <Adafruit_GFX.h>
 #include <vue/VueGPS.h>
@@ -35,6 +36,7 @@ public:
 
 	virtual void cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite)=0;
 	virtual void cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite)=0;
+	virtual void cadranRR(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, RRZone &zone)=0;
 
 	bool propagateEventsCRS(eButtonsEvent event);
 

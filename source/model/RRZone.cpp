@@ -15,9 +15,10 @@
 static float rr_lims[RR_ZONES_NB+1] = {
 		-1000.0f,
 		70.0f,
-		120.0f,
-		150.0f,
-		170.0f,
+		108.0f,
+		143.0f,
+		161.0f,
+		178.0f,
 		1000.0f
 };
 
@@ -49,28 +50,33 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 	if (tab_meas_nb < VAR_NB_ELEM) return;
 
 	// array is full
-	// calculate variance
+	// calculate RMSSD
 	float var_meas = 0.0F;
-	float mea_meas = 0.0F;
-	float sum = 0.0F;
+//	float mea_meas = 0.0F;
+	float sum = tab_meas[0];
 	float sum_sq = 0.0F;
-	for (int i= 0; i < VAR_NB_ELEM; i++) {
+	for (int i = 1; i < VAR_NB_ELEM; i++) {
 
 		sum += tab_meas[i];
-		sum_sq += tab_meas[i]*tab_meas[i];
+
+		float val = tab_meas[i] - tab_meas[i-1];
+		sum_sq += val * val;
 
 	}
 
-	mea_meas = sum / VAR_NB_ELEM;
-	var_meas = (sum_sq - sum * sum / VAR_NB_ELEM) / (VAR_NB_ELEM - 1);
+//	mea_meas = sum / VAR_NB_ELEM;
+	var_meas = my_sqrtf(sum_sq / (VAR_NB_ELEM - 1));
 
-	LOG_DEBUG("Measured RR variance: %d", (int)var_meas);
+	LOG_INFO("Measured RR RMSSD: %d", (int)var_meas);
 
 	// reset index and timestamp
 	tab_meas_nb = 0;
 
 	// calculate elapsed time
 	float time_integ = ((float)timestamp - (float)m_last_timestamp) / 1000.;
+
+	// update state
+	m_last_timestamp = timestamp;
 
 	// find the zone
 	for (int i=0; i < RR_ZONES_NB; i++) {
@@ -90,17 +96,20 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 
 	}
 
-	// update state
-	m_last_timestamp = timestamp;
-
 	// should never be here
-	LOG_ERROR("Wrong bin RR: rr_var_meas: %u", var_meas);
+	LOG_ERROR("Wrong bin RR: rr_var_meas: %d", (int)var_meas);
 }
 
 uint32_t RRZone::getTimeMax(void) {
 	uint32_t max_time = m_tm_bins[0];
 	for (int i=1; i< RR_ZONES_NB; i++) if (m_tm_bins[i] > max_time) max_time = m_tm_bins[i];
 	return max_time;
+}
+
+uint32_t RRZone::getValMax(void) {
+	uint32_t max_val = getValZX(0);
+	for (int i=1; i< RR_ZONES_NB; i++) if (getValZX(i) > max_val) max_val = getValZX(i);
+	return max_val;
 }
 
 uint32_t RRZone::getTimeTotal(void) {
@@ -114,7 +123,15 @@ uint32_t RRZone::getTimeZX(uint16_t i) {
 }
 
 uint32_t RRZone::getValZX(uint16_t i) {
-	return (uint32_t)m_rr_bins[i];
+
+	float val = m_rr_bins[i];
+	if (m_tm_bins[i] > 0)
+		val /= (float)m_tm_bins[i];
+	else {
+		val = 0;
+	}
+
+	return (uint32_t)val;
 }
 
 uint32_t RRZone::getNbBins(void) {

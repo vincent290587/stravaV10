@@ -14,7 +14,7 @@
 #include "BinnedData.h"
 
 
-#define RR_ZONES_NB        5
+#define RR_ZONES_NB        6
 
 
 class RRZone : public BinnedData {
@@ -29,6 +29,7 @@ public:
 	virtual uint32_t getTimeZX(uint16_t i);
 
 	uint32_t getValZX(uint16_t i);
+	uint32_t getValMax(void);
 
 	virtual uint32_t getNbBins(void);
 	virtual uint32_t getCurBin(void);

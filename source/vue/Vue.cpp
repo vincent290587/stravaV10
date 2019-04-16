@@ -334,3 +334,51 @@ void Vue::Histo(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, sVueHistoConfigura
 	if (p_lig > 1)      drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * (p_lig - 1), _width / 2, 1);
 	if (p_lig < nb_lig) drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * p_lig, _width / 2, 1);
 }
+
+void Vue::cadranRR(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, RRZone &zone) {
+
+	const int x = _width / 2 * p_col;
+	const int y = _height / nb_lig * (p_lig - 1);
+
+	if (champ) {
+		setCursor(x + 5 - _width / 2, y + 8);
+		setTextSize(1);
+		print(champ);
+	}
+
+	// Print the data
+	setCursor(x - 55 - 20, y - 10 + (_height / (nb_lig*2)));
+	setTextSize(3);
+
+	uint32_t cur_zone = zone.getCurBin();
+	uint32_t val_max = zone.getValMax();
+
+	// loop over bins
+	for (uint32_t i=0; i< zone.getNbBins(); i++) {
+
+		float val = zone.getValZX(i);
+
+		LOG_DEBUG(">> RR val displayed: %f", val);
+
+		int16_t width = regFenLim(val, 0, val_max, 2, _width / 2 - 35);
+		this->fillRect(x - _width / 2 + 20, y + 20 + i*6, width, 4, 1);
+
+		if (i == cur_zone) {
+			setCursor(x - _width / 2 + 7, y + 15 + i*6);
+			setTextSize(2);
+			print((char)('>'));
+		}
+
+	}
+
+	setCursor(x - _width / 2 + 40, y + 17 + zone.getNbBins()*6);
+	setTextSize(2);
+	print((unsigned)val_max);
+
+	// print delimiters
+	drawFastVLine(_width / 2, _height / nb_lig * (p_lig - 1), _height / nb_lig, 1);
+
+	if (p_lig > 1)      drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * (p_lig - 1), _width / 2, 1);
+	if (p_lig < nb_lig) drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * p_lig, _width / 2, 1);
+
+}

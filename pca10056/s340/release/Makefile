@@ -196,10 +196,10 @@ dfu_softdevice:
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb9 --application-version 1 --application $(OUTPUT_DIRECTORY)//nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
+	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
 
 dfu_send:
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
+	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
 
 jumper: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	mergehex -m $(SDK_ROOT)/$(SOFTDEVICE) $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex -o $(OUTPUT_DIRECTORY)/merged.hex
