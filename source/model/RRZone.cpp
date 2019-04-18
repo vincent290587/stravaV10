@@ -9,7 +9,7 @@
 #include "Model.h"
 #include "RRZone.h"
 
-#define VAR_NB_ELEM    6
+#define VAR_NB_ELEM    20
 
 
 static float rr_lims[RR_ZONES_NB+1] = {
@@ -32,11 +32,17 @@ RRZone::RRZone(void) : BinnedData() {
 	memset(m_tm_bins, 0, sizeof(m_tm_bins));
 }
 
-void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
+RRZone::~RRZone(void) {
+
+}
+
+void RRZone::addRRData(sHrmInfo &hrm_info) {
+
+	if (!hrm_info.timestamp) return;
 
 	// first call
 	if (m_last_timestamp == 0) {
-		m_last_timestamp = timestamp;
+		m_last_timestamp = hrm_info.timestamp;
 		return;
 	}
 
@@ -72,11 +78,9 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 	// reset index and timestamp
 	tab_meas_nb = 0;
 
-	// calculate elapsed time
-	float time_integ = ((float)timestamp - (float)m_last_timestamp) / 1000.;
-
 	// update state
-	m_last_timestamp = timestamp;
+	m_last_timestamp = hrm_info.timestamp;
+	hrm_info.timestamp = 0;
 
 	// find the zone
 	for (int i=0; i < RR_ZONES_NB; i++) {
@@ -84,12 +88,12 @@ void RRZone::addRRData(sHrmInfo &hrm_info, uint32_t timestamp) {
 		if (hrm_info.bpm >= rr_lims[i] &&
 				hrm_info.bpm < rr_lims[i+1]) {
 
-			m_rr_bins[i] += time_integ * var_meas;
-			m_tm_bins[i] += time_integ;
+			m_rr_bins[i] += var_meas;
+			m_tm_bins[i] += 1.;
 
 			m_last_bin = i;
 
-			LOG_DEBUG("Logging RR in bin %d %f ms", i, time_integ);
+			LOG_DEBUG("Logging RR in bin %d", i);
 
 			return;
 		}

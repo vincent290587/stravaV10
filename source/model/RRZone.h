@@ -20,8 +20,9 @@
 class RRZone : public BinnedData {
 public:
 	RRZone();
+	virtual ~RRZone();
 
-	void addRRData(sHrmInfo &hrm_info, uint32_t timestamp);
+	void addRRData(sHrmInfo &hrm_info);
 
 	virtual uint32_t getTimeMax(void);
 	virtual uint32_t getTimeTotal(void);
