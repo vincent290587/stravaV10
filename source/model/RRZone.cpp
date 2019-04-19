@@ -71,7 +71,7 @@ void RRZone::addRRData(sHrmInfo &hrm_info) {
 	}
 
 //	mea_meas = sum / VAR_NB_ELEM;
-	var_meas = my_sqrtf(sum_sq / (VAR_NB_ELEM - 1));
+	var_meas = my_sqrtf(sum_sq / VAR_NB_ELEM);
 
 	LOG_INFO("Measured RR RMSSD: %d", (int)var_meas);
 
