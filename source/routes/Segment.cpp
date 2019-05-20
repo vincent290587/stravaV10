@@ -287,8 +287,8 @@ int Segment::testActivation(ListePoints& liste) {
 	PC = Vecteur(PPp, PPc);
 	PS = Vecteur(P1, P2);
 
-	if (PC.getNorm() > 0.001 &&
-			PS.getNorm() > 0.001) {
+	if (PC.getNorm() > 0.001f &&
+			PS.getNorm() > 0.001f) {
 		PC.norm();
 		PS.norm();
 		p_scal = ScalarProduct(PC, PS);
@@ -417,7 +417,7 @@ void Segment::majPerformance(ListePoints& mes_points) {
 				m_p_data->_monElev0 = m_p_data->_lpts.getFirstPoint()->_alt;
 				m_p_data->_monPDist = (float)m_p_data->_lpts.ind_P1 / (float)m_p_data->_lpts.size();
 
-				if (m_p_data->_elevTot > 5.) {
+				if (m_p_data->_elevTot > 5.f) {
 					m_p_data->_monPElev = vect._z;
 					m_p_data->_monPElev -= pc._alt;
 					m_p_data->_monPElev /= m_p_data->_elevTot;

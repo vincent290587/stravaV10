@@ -67,7 +67,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 
 			LOG_INFO("Printing PRC\r\n");
 
-			this->cadran(1, VUE_PRC_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000., 1U), "km");
+			this->cadran(1, VUE_PRC_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000.f, 1U), "km");
 			this->cadran(1, VUE_PRC_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
 
 			this->cadran(2, VUE_PRC_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
@@ -95,7 +95,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 		}
 
 		this->cadran(7, VUE_PRC_NB_LINES, 1, "Avg", _imkstr((int)stc.getAverageCurrent()), "mA");
-		this->cadran(7, VUE_PRC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
+		this->cadran(7, VUE_PRC_NB_LINES, 2, "SOC", _imkstr((int)percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
 		break;
 	}
@@ -203,9 +203,9 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
-			drawLine(regFenLim(pCourant._lon, minLon, maxLon, 0, _width),
+			drawLine(regFenLim(pCourant._lon, minLon, maxLon, 0.f, _width),
 					regFenLim(pCourant._lat, minLat, maxLat, fin_cadran, debut_cadran),
-					regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
+					regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
 					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), LS027_PIXEL_BLACK);
 
 			printed_nb++;
@@ -337,9 +337,9 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
-			drawLine(regFenLim(pCourant._lon, minLon, maxLon, 0, _width),
+			drawLine(regFenLim(pCourant._lon, minLon, maxLon, 0.f, _width),
 					regFenLim(pCourant._lat, minLat, maxLat, fin_cadran, debut_cadran),
-					regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
+					regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
 					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), LS027_PIXEL_BLACK);
 		}
 
@@ -352,15 +352,15 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	if (p_seg->getStatus() != SEG_OFF) {
 		if (((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
 				(pSuivant._lat > minLat && pSuivant._lat < maxLat)))
-			drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0, _width),
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+			drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5.f, LS027_PIXEL_BLACK);
 	} else {
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
 		if (((maPos->_lon > minLon && maPos->_lon < maxLon) &&
 				(maPos->_lat > minLat && maPos->_lat < maxLat)))
-			drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0, _width),
-					regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+			drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0.f, _width),
+					regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5.f, LS027_PIXEL_BLACK);
 	}
 
 	// return before printing text
@@ -369,7 +369,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 
 	setTextSize(2);
-	setCursor(_width / 2 + 10, 0.5 * (debut_cadran + fin_cadran) + 10);
+	setCursor(_width / 2 + 10, 0.5f * (debut_cadran + fin_cadran) + 10.f);
 
 	print(_fmkstr(p_seg->getAvance(), 1U));
 

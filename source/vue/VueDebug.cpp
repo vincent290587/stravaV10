@@ -30,7 +30,7 @@ void VueDebug::displayDebug() {
 	this->cadranH(6, VUE_GPS_NB_LINES, "Time", _timemkstr(att.date, ':'), NULL);
 
 	this->cadran(7, VUE_GPS_NB_LINES, 1, "STC", _imkstr((int)stc.getCurrent()), "mA");
-	this->cadran(7, VUE_GPS_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
+	this->cadran(7, VUE_GPS_NB_LINES, 2, "SOC", _imkstr((int)percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
 
 }

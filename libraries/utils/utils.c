@@ -13,9 +13,9 @@
 #include "segger_wrapper.h"
 
 
-#define BATT_INT_RES                   0.155
+#define BATT_INT_RES                   0.155f
 
-#define FACTOR 100000.
+#define FACTOR 100000.0f
 
 static const float R1 = 6356752.;
 static const float R2 = 6378137.;
@@ -31,15 +31,15 @@ float max(float val1, float val2) {
   else return val1;
 }
 
-double radians(double value) {
-	return value * M_PI / 180.;
+float radians(float value) {
+	return value * M_PI / 180.f;
 }
 
-double degrees(double value) {
-	return value * 180. / M_PI;
+float degrees(float value) {
+	return value * 180.f / M_PI;
 }
 
-double sq(double value) {
+float sq(float value) {
 	return value * value;
 }
 
@@ -80,11 +80,11 @@ float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
  * @return
  */
 float distance_between2(float lat1, float long1, float lat2, float long2) {
-  float delta = 3.141592 * (long1 - long2) / 180.;
+  float delta = 3.141592f * (long1 - long2) / 180.f;
   float sdlong = sinf(delta);
   float cdlong = cosf(delta);
-  lat1 = 3.141592 * (lat1) / 180.;
-  lat2 = 3.141592 * (lat2) / 180.;
+  lat1 = 3.141592f * (lat1) / 180.f;
+  lat2 = 3.141592f * (lat2) / 180.f;
   float slat1 = sinf(lat1);
   float clat1 = cosf(lat1);
   float slat2 = sinf(lat2);
@@ -95,7 +95,7 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
   delta = sqrtf(delta);
   float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
   delta = atan2f(delta, denom);
-  return delta * 6369933.;
+  return delta * 6369933.f;
 }
 
 /**
@@ -107,11 +107,11 @@ float distance_between2(float lat1, float long1, float lat2, float long2) {
  * @return
  */
 float distance_between5(float lat1, float long1, float lat2, float long2) {
-  float delta = 3.141592 * (long1 - long2) / 180.;
+  float delta = 3.141592f * (long1 - long2) / 180.f;
   float sdlong = my_sin(delta);
   float cdlong = my_cos(delta);
-  lat1 = 3.141592 * (lat1) / 180.;
-  lat2 = 3.141592 * (lat2) / 180.;
+  lat1 = 3.141592f * (lat1) / 180.f;
+  lat2 = 3.141592f * (lat2) / 180.f;
   float slat1 = my_sin(lat1);
   float clat1 = my_cos(lat1);
   float slat2 = my_sin(lat2);
@@ -122,7 +122,7 @@ float distance_between5(float lat1, float long1, float lat2, float long2) {
   delta = my_sqrtf(delta);
   float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
   delta = atan2f(delta, denom);
-  return delta * 6369933.;
+  return delta * 6369933.f;
 }
 
 /**
@@ -139,19 +139,19 @@ float distance_between3(float lat1, float long1, float lat2, float long2) {
   static float Rm = 6356752.;
   static float latRm = 0.;
 
-  float lat1rad = M_PI * lat1 / 180.;
+  float lat1rad = M_PI * lat1 / 180.f;
 
   float cos2lat1 = my_cos(lat1rad);
   cos2lat1 *= cos2lat1;
 
-  if (fabsf(latRm - lat1rad) > 0.008) {
+  if (fabsf(latRm - lat1rad) > 0.008f) {
 	  latRm = lat1rad;
 	  Rm = my_sqrtf(R1*R1*(1-cos2lat1) + R2*R2*cos2lat1);
   }
 
   // petits angles: tan = Id
-  float deltalat = M_PI * (lat2 -lat1) / 180.;
-  float deltalon = M_PI * (long2-long1) / 180.;
+  float deltalat = M_PI * (lat2 -lat1) / 180.f;
+  float deltalon = M_PI * (long2-long1) / 180.f;
 
   float dhori  = deltalon * R2 * my_cos(lat1rad);
   float dverti = deltalat * Rm;
@@ -178,18 +178,18 @@ float distance_between4(float lat1, float long1, float lat2, float long2) {
   static float Rm = 6356752.;
   static float latRm = 0.;
 
-  float lat1rad = 3.141592 * lat1 / 180.;
+  float lat1rad = 3.141592f * lat1 / 180.f;
 
-  float cos2lat1 = powf(cosf(lat1rad), 2.);
+  float cos2lat1 = powf(cosf(lat1rad), 2.f);
 
-  if (fabsf(latRm - lat1rad) > 0.008) {
+  if (fabsf(latRm - lat1rad) > 0.008f) {
 	  latRm = lat1rad;
-	  Rm = sqrtf(powf(R1,2.)*(1-cos2lat1) + powf(R2,2.)*cos2lat1);
+	  Rm = sqrtf(powf(R1,2.f)*(1-cos2lat1) + powf(R2,2.f)*cos2lat1);
   }
 
   // petits angles: tan = Id
-  float deltalat = 3.141592 * (lat2 -lat1) / 180.;
-  float deltalon = 3.141592 * (long2-long1) / 180.;
+  float deltalat = 3.141592f * (lat2 -lat1) / 180.f;
+  float deltalon = 3.141592f * (long2-long1) / 180.f;
 
   float dhori  = deltalon * R2 * cosf(lat1rad);
   float dverti = deltalat * Rm;
@@ -212,7 +212,7 @@ void calculePos (const char *nom, float *lat, float *lon) {
     tab[5] = '\0';
     iLat = toBase10(tab);
     if (lat) {
-        *lat = (float) iLat / FACTOR - 90.;
+        *lat = (float) iLat / FACTOR - 90.f;
     }
 
     strncpy(tab, nom + 6, 2);
@@ -220,7 +220,7 @@ void calculePos (const char *nom, float *lat, float *lon) {
     tab[5] = '\0';
     iLon = toBase10(tab);
     if (lon) {
-        *lon = (float) iLon / FACTOR - 180.;
+        *lon = (float) iLon / FACTOR - 180.f;
     }
 
     return;
@@ -291,21 +291,21 @@ float percentageBatt(float tensionValue, float current) {
 
     float fp_ = 0.;
 
-    tensionValue += current * BATT_INT_RES / 1000.;
+    tensionValue += current * BATT_INT_RES / 1000.f;
 
-    if (tensionValue > 4.2) {
+    if (tensionValue > 4.2f) {
 			fp_ = 100.;
-    } else if (tensionValue > 3.78) {
-        fp_ = 536.24 * tensionValue * tensionValue * tensionValue;
-		fp_ -= 6723.8 * tensionValue * tensionValue;
-        fp_ += 28186 * tensionValue - 39402;
+    } else if (tensionValue > 3.78f) {
+        fp_ = 536.24f * tensionValue * tensionValue * tensionValue;
+		fp_ -= 6723.8f * tensionValue * tensionValue;
+        fp_ += 28186.f * tensionValue - 39402.f;
 
-		if (fp_ > 100.) fp_ = 100.;
+		if (fp_ > 100.f) fp_ = 100.f;
 
-    } else if (tensionValue > 3.2) {
-        fp_ = powf(10, -11.4) * powf(tensionValue, 22.315);
+    } else if (tensionValue > 3.2f) {
+        fp_ = powf(10.f, -11.4f) * powf(tensionValue, 22.315f);
     } else {
-        fp_ = -1;
+        fp_ = -1.f;
     }
 
     return fp_;

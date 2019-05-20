@@ -30,7 +30,7 @@ void rotate_point(float angle, int16_t cx, int16_t cy,
 
 	float tmp1, tmp2, tmp3, tmp4;
 
-	float angle_rad = angle * M_PI / 180.;
+	float angle_rad = angle * (float)M_PI / 180.f;
 
 	// coordonnees dans (cx, cy)
 	tmp1 = x1 - cx;
@@ -41,8 +41,8 @@ void rotate_point(float angle, int16_t cx, int16_t cy,
 	tmp4 = tmp1 * sinf(angle_rad) + tmp2 * cosf(angle_rad);
 
 	// coordonnees dans (0, 0)
-	x2 = tmp3 + cx;
-	y2 = tmp4 + cy;
+	x2 = (int16_t)(tmp3 + cx);
+	y2 = (int16_t)(tmp4 + cy);
 
 	//LOG_INFO("Nouveaux points: %u %u\r\n", x2, y2);
 }
@@ -64,18 +64,18 @@ float course_to (float lat1, float long1, float lat2, float long2)
   // Because Earth is no exact sphere, calculated course may be off by a tiny fraction.
   // Courtesy of Maarten Lamers
   float dlon = long2-long1;
-  dlon *= M_PI / 180.;
-  lat1 *= M_PI / 180.;
-  lat2 *= M_PI / 180.;
+  dlon *= (float)M_PI / 180.f;
+  lat1 *= (float)M_PI / 180.f;
+  lat2 *= (float)M_PI / 180.f;
   float a1 = sinf(dlon) * cosf(lat2);
   float a2 = sinf(lat1) * cosf(lat2) * cosf(dlon);
   a2 = cosf(lat1) * sinf(lat2) - a2;
   a2 = atan2f(a1, a2);
-  if (a2 < 0.0)
+  if (a2 < 0.0f)
   {
-    a2 += TWO_PI;
+    a2 += (float)TWO_PI;
   }
-  a2 *= 180 / M_PI;
+  a2 *= 180.f / (float)M_PI;
   return a2;
 }
 
@@ -141,7 +141,7 @@ String _secjmkstr(uint32_t value, char sep) {
 
 String _timemkstr(SDate& date_, char sep) {
 
-	uint32_t addition = ((millis() - date_.timestamp) / 1000.);
+	uint32_t addition = ((millis() - date_.timestamp) / 1000);
 	uint32_t value = date_.secj;
 
 	LOG_DEBUG("Addition to time: %lu", addition);

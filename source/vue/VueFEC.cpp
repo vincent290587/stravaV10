@@ -78,7 +78,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadranZones(3, VUE_FEC_NB_LINES, 2, "PZone", zPower);
 
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
-		this->cadran(4, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10., 1U), "km/h");
+		this->cadran(4, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10.f, 1U), "km/h");
 
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();
@@ -91,7 +91,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 	}
 
 	this->cadran(6, VUE_FEC_NB_LINES, 1, "Cur", _imkstr((int)stc.getCurrent()), "mA");
-	this->cadran(6, VUE_FEC_NB_LINES, 2, "SOC", _imkstr(percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
+	this->cadran(6, VUE_FEC_NB_LINES, 2, "SOC", _imkstr((int)percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
 
 	return res;
 }
@@ -118,7 +118,7 @@ void VueFEC::cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const cha
 	// loop over bins
 	for (uint32_t i=0; i< data.getNbBins(); i++) {
 
-		int16_t width = regFenLim((float)data.getTimeZX(i), 0, tot, 2, _width / 2 - 35);
+		int16_t width = regFenLim((float)data.getTimeZX(i), 0.f, tot, 2.f, _width / 2.f - 35.f);
 		this->fillRect(x - _width / 2 + 20, y + 20 + i*6, width, 4, 1);
 
 		if (i == cur_zone) {

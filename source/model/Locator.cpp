@@ -61,10 +61,10 @@ uint32_t locator_encode_char(char c) {
 void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 
 	// convert data
-	locator.nrf_loc.data.alt = (float)(lns_info->ele / 100.);
-	locator.nrf_loc.data.lat = (float)(lns_info->lat / 10000000.);
-	locator.nrf_loc.data.lon = (float)(lns_info->lon / 10000000.);
-	locator.nrf_loc.data.speed = (float)(lns_info->speed / 10.);
+	locator.nrf_loc.data.alt = (float)(lns_info->ele / 100.f);
+	locator.nrf_loc.data.lat = (float)(lns_info->lat / 10000000.f);
+	locator.nrf_loc.data.lon = (float)(lns_info->lon / 10000000.f);
+	locator.nrf_loc.data.speed = (float)(lns_info->speed / 10.f);
 
 	locator.nrf_loc.data.utc_time = lns_info->secj;
 	locator.nrf_loc.data.date = lns_info->date;
@@ -172,9 +172,9 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = sim_loc.data.lat;
 		loc_.lon = sim_loc.data.lon;
-		loc_.alt = sim_loc.data.alt / 100.;
-		loc_.speed = 20.;
-		loc_.course = -1;
+		loc_.alt = sim_loc.data.alt / 100.f;
+		loc_.speed = 20.f;
+		loc_.course = -1.f;
 		date_.secj = sim_loc.data.utc_time;
 		date_.date = 291217;
 		date_.timestamp = millis();
@@ -302,12 +302,12 @@ void Locator::tasks() {
 			// notify task
 		    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 
-			gps_loc.data.speed  = gps.speed.kmph();
-			gps_loc.data.alt    = gps.altitude.meters();
-			gps_loc.data.lat    = gps.location.lat();
-			gps_loc.data.lon    = gps.location.lng();
+			gps_loc.data.speed  = (float)gps.speed.kmph();
+			gps_loc.data.alt    = (float)gps.altitude.meters();
+			gps_loc.data.lat    = (float)gps.location.lat();
+			gps_loc.data.lon    = (float)gps.location.lng();
 
-			gps_loc.data.course = gps.course.deg();
+			gps_loc.data.course = (float)gps.course.deg();
 
 			LOG_INFO("GPS location set");
 
