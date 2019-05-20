@@ -111,7 +111,7 @@ void i2c_init(void) {
     nrf_drv_twi_config_t const config = {
        .scl                = SCL_PIN_NUMBER,
        .sda                = SDA_PIN_NUMBER,
-       .frequency          = NRF_DRV_TWI_FREQ_100K,
+       .frequency          = NRF_DRV_TWI_FREQ_400K,
        .interrupt_priority = APP_IRQ_PRIORITY_LOWEST,
        .clear_bus_init     = true,
 	   .hold_bus_uninit    = true
