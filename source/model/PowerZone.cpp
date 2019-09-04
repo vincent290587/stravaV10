@@ -45,7 +45,7 @@ void PowerZone::addPowerData(uint16_t pw_meas, uint32_t timestamp) {
 	}
 
 	// calculate elapsed time
-	float time_integ = ((float)timestamp - (float)m_last_timestamp) / 1000.;
+	float time_integ = ((float)timestamp - (float)m_last_timestamp) / 1000.f;
 
 	// retrieve FTP from settings
 	const uint16_t ftp = u_settings.getFTP();
@@ -75,8 +75,8 @@ void PowerZone::addPowerData(uint16_t pw_meas, uint32_t timestamp) {
 }
 
 uint32_t PowerZone::getTimeMax(void) {
-	uint32_t max_time = m_pw_bins[0];
-	for (int i=1; i< PW_ZONES_NB; i++) if (m_pw_bins[i] > max_time) max_time = m_pw_bins[i];
+	uint32_t max_time = (uint32_t)m_pw_bins[0];
+	for (int i=1; i< PW_ZONES_NB; i++) if (m_pw_bins[i] > max_time) max_time = (uint32_t)m_pw_bins[i];
 	return max_time;
 }
 

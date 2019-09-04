@@ -12,8 +12,6 @@
 #include "math_wrapper.h"
 
 
-#define M_TWOPI         (M_PI * 2.0)
-
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -25,7 +23,7 @@ float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) __at
 
 static volatile float toRadians(float angle) __attribute__ ((pure));
 static volatile float toRadians(float angle) {
-  return M_PI * angle / 180.0;
+  return ((float)M_PI * angle / 180.0f);
 }
 	
 /**
@@ -37,13 +35,13 @@ static volatile float toRadians(float angle) {
  */
 static inline float distance_between(float lat1, float lon1, float lat2, float lon2) __attribute__ ((pure));
 static inline float distance_between(float lat1, float lon1, float lat2, float lon2) {
-    const float two_r = 2. * 6371008.; // meters
+    const float two_r = 2.0f * 6371008.0f; // meters
 //    const float sdlat = my_sin(toRadians(lat2 - lat1) / 2);
 //    const float sdlon = my_sin(toRadians(lon2 - lon1) / 2);
     const float sdlat = (toRadians(lat2 - lat1) / 2);
     const float sdlon = (toRadians(lon2 - lon1) / 2);
 //    const float q = sdlat * sdlat + my_cos(toRadians(lat1)) * my_cos(toRadians(lat2)) * sdlon * sdlon;
-    const float q = sdlat * sdlat + 0.5 * (1 + my_cos(toRadians(lat1 + lat2))) * sdlon * sdlon;
+    const float q = sdlat * sdlat + 0.5f * (1.0f + my_cos(toRadians(lat1 + lat2))) * sdlon * sdlon;
     const float d = two_r * my_sqrtf(q);
 
     return d;
@@ -55,11 +53,11 @@ long unsigned int toBase10 (char *entree);
 
 extern void loggerMsg(const char *msg_);
 
-double radians(double value) __attribute__ ((pure));
+float radians(float value) __attribute__ ((pure));
 
-double degrees(double value) __attribute__ ((pure));
+float degrees(float value) __attribute__ ((pure));
 
-double sq(double value) __attribute__ ((pure));
+float sq(float value) __attribute__ ((pure));
 
 uint32_t get_sec_jour(uint8_t hour_, uint8_t min_, uint8_t sec_) __attribute__ ((pure));
 

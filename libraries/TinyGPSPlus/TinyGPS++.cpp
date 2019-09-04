@@ -326,7 +326,7 @@ double TinyGPSPlus::courseTo(double lat1, double long1, double lat2, double long
   a2 = atan2(a1, a2);
   if (a2 < 0.0)
   {
-    a2 += M_TWOPI;
+    a2 += 2. * M_PI;
   }
   return degrees(a2);
 }

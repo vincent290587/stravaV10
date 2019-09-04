@@ -63,7 +63,7 @@ void Vecteur::project(Vecteur const &vecteur_) {
 
 void Vecteur::norm(void) {
 	float _norm_sq = this->getNorm();
-	if (_norm_sq < 0.001) return;
+	if (_norm_sq < 0.001f) return;
 	_x /= my_sqrtf(_norm_sq);
 	_y /= my_sqrtf(_norm_sq);
 }
