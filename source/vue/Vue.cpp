@@ -186,7 +186,7 @@ void Vue::fillRoundRect(int16_t x, int16_t y, int16_t w,
 void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite) {
 
 	int decal = 0;
-	int x = _width / 2 * 0.5;
+	int x = _width / 4;
 	int y = _height / nb_lig * (p_lig - 1);
 
 	setCursor(5, y + 8);

@@ -113,7 +113,7 @@ CFLAGS += -DSWI_DISABLE0
 CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
 CFLAGS += -DS340
 CFLAGS += -DFLOAT_ABI_HARD
-CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
+CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4 -fsingle-precision-constant
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16

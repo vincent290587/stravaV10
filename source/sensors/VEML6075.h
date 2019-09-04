@@ -50,10 +50,10 @@
 // Seems pretty hand wavey, though not nearly as annoying as the dark current
 // not being subtracted out by default.
 
-#define VEML6075_UVI_UVA_VIS_COEFF (3.33)
-#define VEML6075_UVI_UVA_IR_COEFF  (2.5)
-#define VEML6075_UVI_UVB_VIS_COEFF (3.66)
-#define VEML6075_UVI_UVB_IR_COEFF  (2.75)
+#define VEML6075_UVI_UVA_VIS_COEFF (3.33f)
+#define VEML6075_UVI_UVA_IR_COEFF  (2.5f)
+#define VEML6075_UVI_UVB_VIS_COEFF (3.66f)
+#define VEML6075_UVI_UVB_IR_COEFF  (2.75f)
 
 // Once the above offsets and crunching is done, there's a last weighting
 // function to convert the ADC counts into the UV index values. This handles
@@ -61,8 +61,8 @@
 // by wavelength--UVB is way more dangerous than UVA, due to shorter
 // wavelengths and thus more energy per photon. These values convert the compensated values
 
-#define VEML6075_UVI_UVA_RESPONSE (1.0 / 909.0)
-#define VEML6075_UVI_UVB_RESPONSE (1.0 / 800.0)
+#define VEML6075_UVI_UVA_RESPONSE (1.0f / 909.0f)
+#define VEML6075_UVI_UVB_RESPONSE (1.0f / 800.0f)
 
 enum veml6075_int_time {
 	VEML6075_IT_50MS,

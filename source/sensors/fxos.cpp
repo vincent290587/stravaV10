@@ -62,8 +62,8 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
 #define MAX_ACCEL_AVG_COUNT 5U
 
 /* multiplicative conversion constants */
-#define DegToRad 0.017453292
-#define RadToDeg 57.295779
+#define DegToRad 0.017453292f
+#define RadToDeg 57.295779f
 
 
 /*******************************************************************************
@@ -723,7 +723,7 @@ void fxos_tasks()
 	sinAngle = sinf(g_Pitch);
 	cosAngle = cosf(g_Pitch);
 
-	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10));
+	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10.f));
 
 	if (!g_Calibration_Done)
 		Magnetometer_Calibrate_Task();

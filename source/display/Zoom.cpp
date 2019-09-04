@@ -12,7 +12,7 @@
 Zoom::Zoom() {
 	m_h_size = 80;
 	m_v_size = 30;
-	m_last_zoom = 0.;
+	m_last_zoom = 0.f;
 	m_zoom_level = BASE_ZOOM_LEVEL;
 }
 
@@ -23,7 +23,7 @@ void Zoom::decreaseZoom() {
 
 void Zoom::increaseZoom() {
 	if (m_zoom_level > 0) m_zoom_level -= 1;
-	else m_zoom_level = BASE_ZOOM_LEVEL * 2;
+	else m_zoom_level = BASE_ZOOM_LEVEL * 2.f;
 	LOG_INFO("Zoom++: %u\r\n", m_zoom_level);
 }
 
@@ -52,8 +52,8 @@ void Zoom::setSpan(uint16_t h_space, uint16_t v_space) {
 void Zoom::computeZoom(float lat, float distance, float& h_zoom, float& v_zoom) {
 
 	// compute convertion between mdeg and meters
-	float deglon_to_m = 1000. * distance_between(lat, 0., lat, 0.001);
-	float deglat_to_m = 1000. * distance_between(lat, 0., lat + 0.001, 0.);
+	float deglon_to_m = 1000.f * distance_between(lat, 0.f, lat, 0.001f);
+	float deglat_to_m = 1000.f * distance_between(lat, 0.f, lat + 0.001f, 0.f);
 
 	LOG_INFO("distance PRC: %d m\r\n", (int32_t)distance);
 

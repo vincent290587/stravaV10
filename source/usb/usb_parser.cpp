@@ -32,8 +32,8 @@ void usb_cdc_decoder(char c) {
 	switch (vparser.encode(c)) {
 	case _SENTENCE_LOC:
 
-		locator.sim_loc.data.lat = (float)vparser.getLat() / 10000000.;
-		locator.sim_loc.data.lon = (float)vparser.getLon() / 10000000.;
+		locator.sim_loc.data.lat = (float)vparser.getLat() / 10000000.f;
+		locator.sim_loc.data.lon = (float)vparser.getLon() / 10000000.f;
 		locator.sim_loc.data.alt = (float)vparser.getEle();
 		locator.sim_loc.data.utc_time = vparser.getSecJ();
 

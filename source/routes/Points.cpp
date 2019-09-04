@@ -35,7 +35,7 @@ Location::~Location() {
 }
 
 int Location::isValid() {
-	if (_lat == 0. || _lon == 0. || fabsf(_lat) > 89. || fabsf(_lon) > 189.) {
+	if (_lat == 0.f || _lon == 0.f || fabsf(_lat) > 89.f || fabsf(_lon) > 189.f) {
 		return 0;
 	} else {
 		return 1;

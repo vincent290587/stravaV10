@@ -104,8 +104,8 @@ void BoucleCRS::run() {
 			tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
 
 			// calculate distance to closest segment
-			if (tmp_dist > 0. &&
-					tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
+			if (tmp_dist > 0.f &&
+					tmp_dist < m_dist_next_seg) m_dist_next_seg = (uint16_t)tmp_dist;
 
 			// we don't possess enough points to continue calculating...
 			if (mes_points.size() < 2) continue;
@@ -122,7 +122,7 @@ void BoucleCRS::run() {
 					LOG_INFO("Segment FIN %s\r\n", seg.getName());
 
 					// show some light !
-					if (seg.getAvance() > 0.) {
+					if (seg.getAvance() > 0.f) {
 						SET_NEO_EVENT_BLUE(neopixel, eNeoEventWeakNotify, 2);
 					} else {
 						SET_NEO_EVENT_RED(neopixel, eNeoEventWeakNotify, 2);

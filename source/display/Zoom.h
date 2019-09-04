@@ -11,8 +11,8 @@
 
 #include <stdint.h>
 
-#define BASE_ZOOM_LEVEL    10
-#define BASE_ZOOM_METERS   250.
+#define BASE_ZOOM_LEVEL    10.f
+#define BASE_ZOOM_METERS   250.f
 
 class Zoom {
 public:

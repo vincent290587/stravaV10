@@ -20,7 +20,7 @@
 static float lp1_filter_coefficients[5] =
 {
 // Scaled for floating point: 0.008.fs
-    0.024521609249465722, 0.024521609249465722, 0, 0.9509567815010685, 0// b0, b1, b2, a1, a2
+    0.024521609249465722f, 0.024521609249465722f, 0.f, 0.9509567815010685f, 0.f// b0, b1, b2, a1, a2
 };
 
 static order1_filterType m_lp_filt;
@@ -84,12 +84,12 @@ float Attitude::filterElevation(SLoc& loc_) {
 	m_baro.setCorrection(alt_div);
 
 	// compute accumulated climb on the corrected filtered barometer altitude
-	if (ele > m_last_stored_ele + 4.) {
+	if (ele > m_last_stored_ele + 4.f) {
 		// mise a jour de la montee totale
 		m_climb += ele - m_last_stored_ele;
 		m_last_stored_ele = ele;
 	}
-	else if (ele + 4. < m_last_stored_ele) {
+	else if (ele + 4.f < m_last_stored_ele) {
 		// on descend, donc on garde la derniere alti
 		// la plus basse
 		m_last_stored_ele = ele;
@@ -160,13 +160,13 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 
 	char buffer[100];
 	snprintf(buffer, sizeof(buffer), "Weird pos: %f %f %f %f\r\n", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
-	if (tmp_dist > 400000) LOG_WARNING(buffer);
+	if (tmp_dist > 400000.f) LOG_WARNING(buffer);
 
 	att.dist += tmp_dist;
 
 	// save attitude to a buffer for later saving to memory
 	if (m_is_acc_init &&
-			att.dist > m_last_save_dist + 15.) {
+			att.dist > m_last_save_dist + 15.f) {
 
 		m_last_save_dist = att.dist;
 
@@ -194,7 +194,7 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 		m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
 
 
-	} else if (att.dist > m_last_save_dist + 25.) {
+	} else if (att.dist > m_last_save_dist + 25.f) {
 		// first position
 		att.dist = m_last_save_dist;
 		m_is_acc_init = true;
@@ -213,13 +213,13 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 	static float cur_time_prev;
 
 	// small correction to allow time with millisecond precision
-	float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000.);
+	float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000);
 
 	if (m_is_init) {
 
 		// add this point to our historic
 		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
-		if (loc_.speed > 7.) att.nbsec_act++;
+		if (loc_.speed > 7.f) att.nbsec_act++;
 		att.nbpts++;
 
 		// calculate elevation shifts
@@ -291,8 +291,8 @@ float Attitude::computePower(float speed_, float dt) {
 		att.vit_asc = tanf(alpha_bar - alpha_zero) * speed_ms;
 
 		LOG_INFO("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
-				180*(alpha_bar-alpha_zero)/3.1415,
-				180*alpha_zero/3.1415);
+				180.f*(alpha_bar-alpha_zero)/3.1415f,
+				180.f*alpha_zero/3.1415f);
 
 		const float weight = (float)u_settings.getWeight();
 
