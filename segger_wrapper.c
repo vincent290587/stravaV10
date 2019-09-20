@@ -68,9 +68,9 @@ extern sAppErrorDescr m_app_error;
 /*******************************************************************************
  * Functions
  ******************************************************************************/
-static void cbSendTaskList(void) {
 
 #if USE_SVIEW
+static void cbSendTaskList(void) {
 
 	for (int i = 0; i < nb_tasks; i++) {
 
@@ -78,9 +78,8 @@ static void cbSendTaskList(void) {
 
 	}
 
-#endif
-
 }
+#endif
 
 void sysview_task_block(uint32_t evt_mask) {
 	W_SYSVIEW_OnTaskStopReady(sysview_id_get(), evt_mask);
@@ -150,6 +149,9 @@ void segger_init(void) {
 
 	  pInfo[nb_tasks].TaskID = LCD_TASK;
 	  pInfo[nb_tasks++].sName  = "LCD_TASK";
+
+	  pInfo[nb_tasks].TaskID = UART_TASK;
+	  pInfo[nb_tasks++].sName  = "UART_TASK";
 
 	  SEGGER_SYSVIEW_Conf();
 

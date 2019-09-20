@@ -73,7 +73,7 @@ void BoucleCRS::run() {
 	if (m_needs_init) this->init();
 
 	// wait for location to be updated
-	(void)events_wait(TASK_EVENT_LOCATION);
+	(void)w_task_events_wait(TASK_EVENT_LOCATION);
 
 	LOG_INFO("Locator is updated (%u)\r\n", millis());
 

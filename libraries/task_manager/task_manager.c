@@ -116,6 +116,7 @@ typedef struct
     void              *p_stack;      /**< Pointer to task stack. NULL if task does not exist. */
     const char        *p_task_name;
     nrf_atomic_u32_t   flags;        /**< Task flags */
+    volatile uint32_t   timeout;        /**< Task timeout */
 } task_state_t;
 
 /* Allocate space for task stacks:
@@ -164,6 +165,9 @@ static task_state_t s_task_state[TOTAL_NUM_OF_TASKS];
 /**@brief Mask indicating which tasks are runnable */
 static nrf_atomic_u32_t s_runnable_tasks_mask;
 
+/**@brief Mask indicating which tasks are delayed */
+static nrf_atomic_u32_t s_delayed_tasks_mask;
+
 /**@brief ID of currently executed task */
 static task_id_t s_current_task_id;
 
@@ -182,6 +186,14 @@ static task_id_t s_current_task_id;
 #define TASK_STACK_GUARD_BASE(_task_id) ((void *)(&s_task_stacks[(_task_id)].guard[0]))
 
 #define TASK_ID_TO_MASK(_task_id)   (0x80000000 >> (_task_id))
+
+/**@brief Puts task in DELAYED state */
+#define TASK_STATE_DELAYED(_task_id) \
+    (void)nrf_atomic_u32_or(&s_delayed_tasks_mask, TASK_ID_TO_MASK(_task_id))
+
+/**@brief Takes task out of DELAYED state */
+#define TASK_STATE_READY(_task_id) \
+    (void)nrf_atomic_u32_and(&s_delayed_tasks_mask, ~TASK_ID_TO_MASK(_task_id))
 
 /**@brief Puts task in RUNNABLE state */
 #define TASK_STATE_RUNNABLE(_task_id) \
@@ -394,6 +406,57 @@ void task_yield(void)
     task_switch();
 }
 
+uint32_t task_delay(uint32_t del_)
+{
+	s_task_state[s_current_task_id].timeout = del_;
+
+    TASK_STATE_SUSPENDED(s_current_task_id);
+    TASK_STATE_DELAYED(s_current_task_id);
+
+    task_yield();
+
+    return s_task_state[s_current_task_id].timeout;
+}
+
+void task_delay_cancel(task_id_t task_id)
+{
+    ASSERT((task_id != TASK_ID_INVALID) && (task_id < TASK_MANAGER_CONFIG_MAX_TASKS));
+    ASSERT(s_task_state[task_id].p_stack != NULL);
+
+    s_task_state[task_id].timeout = 0;
+
+    TASK_STATE_READY(task_id);
+    TASK_STATE_RUNNABLE(task_id);
+}
+
+void task_tick_manage(uint32_t tick_dur_)
+{
+    uint32_t delayed_tasks_mask;
+    task_id_t task_id;
+
+    // Atomically fetch list of delayed tasks.
+    delayed_tasks_mask = s_delayed_tasks_mask;
+
+    // Check if there are any tasks to unblock.
+    for (task_id = 0; task_id < TASK_MANAGER_CONFIG_MAX_TASKS; task_id++)
+    {
+    	if (delayed_tasks_mask & TASK_ID_TO_MASK(task_id)) {
+    		// this task was blocked by a delay
+    		if (s_task_state[task_id].timeout <= tick_dur_) {
+    			// we need to unblock the task
+    			task_delay_cancel(task_id);
+
+    			s_task_state[task_id].timeout = 1;
+    		} else {
+    			// just decrement the counter
+    			s_task_state[task_id].timeout -= tick_dur_;
+    		}
+    	}
+    }
+
+    return;
+}
+
 uint32_t task_events_wait(uint32_t evt_mask)
 {
     uint32_t current_events;
@@ -428,7 +491,7 @@ void task_events_set(task_id_t task_id, uint32_t evt_mask)
 
 void task_exit(void)
 {
-    // Make sure that we are in privledged thread level using PSP stack.
+    // Make sure that we are in privileged thread level using PSP stack.
     ASSERT((__get_IPSR() & IPSR_ISR_Msk) == 0);
     ASSERT((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0);
     ASSERT((__get_CONTROL() & CONTROL_SPSEL_Msk) != 0);

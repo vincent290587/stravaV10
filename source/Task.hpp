@@ -33,7 +33,7 @@ public:
 	/**@brief Yield CPU to other tasks.
 	 */
 	void yield(void) {
-		task_yield();
+		yield();
 	}
 
 	/**@brief Complete current task.

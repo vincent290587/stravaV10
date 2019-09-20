@@ -24,8 +24,6 @@ void usb_cdc_close(void);
 
 void usb_flush(void);
 
-void usb_cdc_tasks(void);
-
 void usb_print(char c);
 
 void usb_printf(const char *format, ...);

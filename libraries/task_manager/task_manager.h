@@ -134,6 +134,24 @@ task_id_t task_id_get(void);
  */
 char const * task_name_get(task_id_t task_id);
 
+/**@brief Delays the current task
+ *
+ * @param del_ The amount to delay the task by
+ * @return 0 if the timeout was cancelled elsewhere
+ */
+uint32_t task_delay(uint32_t del_);
+
+/**
+ *
+ * @param task_id ID of the task for which to cancel delay
+ */
+void task_delay_cancel(task_id_t task_id);
+
+/**
+ *
+ * @param tick_dur_ The period at which the function runs
+ */
+void task_tick_manage(uint32_t tick_dur_);
 
 #ifdef __cplusplus
 }

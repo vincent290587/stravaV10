@@ -26,7 +26,7 @@
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
 #include "nrf_drv_clock.h"
-#include "task_manager.h"
+#include "task_manager_wrapper.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
@@ -72,12 +72,8 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
  */
 void timer_event_handler(void* p_context)
 {
-	ASSERT(p_context);
-
-	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
-
 	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-		events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
+		task_tick_manage(APP_TIMEOUT_DELAY_MS);
 	}
 }
 
@@ -372,6 +368,8 @@ int main(void)
 	m_tasks_id.system_id = TASK_ID_INVALID;
 	m_tasks_id.peripherals_id = TASK_ID_INVALID;
 	m_tasks_id.ls027_id = TASK_ID_INVALID;
+	m_tasks_id.uart_id  = TASK_ID_INVALID;
+	m_tasks_id.usb_id   = TASK_ID_INVALID;
 
 	// Initialize.
     //Configure WDT.
@@ -425,7 +423,6 @@ int main(void)
 	// Initialize timer module
 #ifdef USB_ENABLED
 	usb_cdc_init();
-	usb_cdc_tasks();
 #endif
 
 	nrf_pwr_mgmt_init();
@@ -481,9 +478,9 @@ int main(void)
 
 	LOG_INFO("App init done");
 
-	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
+	m_tasks_id.boucle_id      = task_create	(boucle_task, "boucle_tasks", NULL);
 	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
-	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
+	m_tasks_id.ls027_id       = task_create	(ls027_task, "ls027_task", NULL);
 
 	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
 	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);

@@ -26,7 +26,7 @@ static inline task_id_t id_get(void) {
 
 /**@brief Yield CPU to other tasks.
  */
-static inline void yield(void) {
+static inline void w_task_yield(void) {
 	task_yield();
 }
 
@@ -36,7 +36,7 @@ static inline void yield(void) {
  *
  * @return Mask with set events (can be a subset of evt_mask).
  */
-static inline uint32_t events_wait(uint32_t evt_mask) {
+static inline uint32_t w_task_events_wait(uint32_t evt_mask) {
 	task_wait_event(evt_mask);
 	return 0;
 }
@@ -47,8 +47,27 @@ static inline uint32_t events_wait(uint32_t evt_mask) {
  * @param[in]  evt_mask Events for the task.
  *
  */
-static inline void events_set(task_id_t task_id, uint32_t evt_mask) {
+static inline void w_task_events_set(task_id_t task_id, uint32_t evt_mask) {
 	task_feed_event(task_id, evt_mask);
+}
+
+/**
+ *
+ * @param del_ Delay to apply to the task
+ */
+static inline uint32_t w_task_delay(uint32_t del_) {
+
+	uint32_t ret = task_delay(del_);
+
+	return ret;
+}
+
+/**@brief Cancels the delay of a task
+ *
+ * @param task_id ID of the task for which to cancel delay
+ */
+static inline void w_task_delay_cancel(task_id_t task_id) {
+	task_delay_cancel(task_id);
 }
 
 #ifdef __cplusplus

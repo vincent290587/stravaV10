@@ -124,7 +124,7 @@ void model_input_virtual_uart(char c) {
 
 		// notify task
 		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
-			events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+			w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 		}
 
 		break;
@@ -162,26 +162,7 @@ void model_input_virtual_uart(char c) {
 /**
  *
  */
-void perform_system_tasks(void) {
-
-	uart_tasks();
-
-#ifdef USB_ENABLED
-	usb_cdc_tasks();
-#endif
-
-#if APP_SCHEDULER_ENABLED
-	app_sched_execute();
-#endif
-
-}
-
-/**
- *
- */
 void perform_system_tasks_light(void) {
-
-	uart_tasks();
 
 #if APP_SCHEDULER_ENABLED
 	app_sched_execute();
@@ -232,7 +213,6 @@ void idle_task(void * p_context)
 {
     for(;;)
     {
-		perform_system_tasks();
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 		ble_nus_tasks();
@@ -245,7 +225,7 @@ void idle_task(void * p_context)
 		sysview_task_idle();
     	pwr_mgmt_run();
 
-    	task_yield();
+    	w_task_yield();
     }
 }
 
@@ -277,7 +257,7 @@ void ls027_task(void * p_context)
 	{
 		wdt_reload();
 
-		events_wait(TASK_EVENT_LS027_TRIGGER);
+		w_task_events_wait(TASK_EVENT_LS027_TRIGGER);
 
 		// check screen update & unlock task
 		vue.writeWhole();
@@ -325,7 +305,8 @@ void peripherals_task(void * p_context)
 
 		backlighting_tasks();
 
-		events_wait(TASK_EVENT_PERIPH_TRIGGER);
+		w_task_delay(100);
+
 	}
 }
 
