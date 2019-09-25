@@ -84,23 +84,23 @@ static void cbSendTaskList(void) {
 #endif
 
 void sysview_task_block(uint32_t evt_mask) {
-	W_SYSVIEW_OnTaskStopReady(SYSVIEW_ID_GET(), evt_mask);
-	W_SYSVIEW_OnTaskStopExec(SYSVIEW_ID_GET());
+//	W_SYSVIEW_OnTaskStopReady(SYSVIEW_ID_GET(), evt_mask);
+//	W_SYSVIEW_OnTaskStopExec(SYSVIEW_ID_GET());
 }
 
 void sysview_task_unblock(uint32_t task_id) {
-	W_SYSVIEW_OnTaskStartReady(task_id);
+//	W_SYSVIEW_OnTaskStartReady(task_id);
 }
 
 void sysview_task_transfer(uint32_t task_id) {
-	if (task_id) W_SYSVIEW_OnTaskStartExec(task_id);
-	else W_SYSVIEW_OnIdle();
+//	if (task_id) W_SYSVIEW_OnTaskStartExec(task_id);
+//	else W_SYSVIEW_OnIdle();
 	m_cur_task_id = task_id;
 	m_app_error.task_id = task_id;
 }
 
 void sysview_task_event(uint32_t task_id, uint32_t event_mask) {
-	W_SYSVIEW_RecordU32x2(TASK_RECV_EVENT, task_id, event_mask);
+//	W_SYSVIEW_RecordU32x2(TASK_RECV_EVENT, task_id, event_mask);
 }
 
 void sysview_task_void_enter(uint32_t void_id) {

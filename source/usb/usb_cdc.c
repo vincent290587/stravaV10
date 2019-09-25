@@ -188,10 +188,10 @@ static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 	UNUSED_PARAMETER(p_inst);
 	UNUSED_PARAMETER(event);
 
-	// remove the delay on the task
-	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
-		w_task_delay_cancel(m_tasks_id.usb_id);
-	}
+//	// remove the delay on the task
+//	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+//		w_task_delay_cancel(m_tasks_id.usb_id);
+//	}
 }
 
 /**
@@ -342,6 +342,14 @@ static void usb_cdc_trigger_xfer(void) {
 	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
 
 	NRF_LOG_DEBUG("VCOM new index %u", m_tx_buffer_index);
+}
+
+static void _wait_for_usb(void ) {
+
+	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+//		w_task_yield();
+		w_task_delay(3);
+	}
 }
 
 /**

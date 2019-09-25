@@ -42,7 +42,40 @@
 #include "nrf_mpu_lib.h"
 #include "nrf_atomic.h"
 #include "app_util_platform.h"
-#include "task_manager.h"
+#include "task_manager_wrapper.h"
+
+#if USE_SVIEW
+#include "SEGGER_SYSVIEW.h"
+
+#define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
+
+#define W_SYSVIEW_OnTaskStartExec(X)     SEGGER_SYSVIEW_OnTaskStartExec(X)
+#define W_SYSVIEW_OnTaskStopExec(X)      SEGGER_SYSVIEW_OnTaskStopExec()
+#define W_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
+#define W_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
+
+#define W_SYSVIEW_RecordVoid(X)          SEGGER_SYSVIEW_RecordVoid(X)
+#define W_SYSVIEW_RecordEndCall(X)       SEGGER_SYSVIEW_RecordEndCall(X)
+
+#define W_SYSVIEW_RecordU32(...)         SEGGER_SYSVIEW_RecordU32(__VA_ARGS__)
+#define W_SYSVIEW_RecordU32x2(...)       SEGGER_SYSVIEW_RecordU32x2(__VA_ARGS__)
+
+#else
+
+#define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStartExec(X)     EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStopExec(X)      EMPTY_MACRO
+#define W_SYSVIEW_OnTaskCreate(X)        EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
+
+#define W_SYSVIEW_RecordVoid(X)          EMPTY_MACRO
+#define W_SYSVIEW_RecordEndCall(X)       EMPTY_MACRO
+
+#define W_SYSVIEW_RecordU32(...)         EMPTY_MACRO
+#define W_SYSVIEW_RecordU32x2(...)       EMPTY_MACRO
+
+#endif
 
 #if TASK_MANAGER_CLI_CMDS
 #include "nrf_cli.h"
@@ -171,6 +204,9 @@ static nrf_atomic_u32_t s_delayed_tasks_mask;
 /**@brief ID of currently executed task */
 static task_id_t s_current_task_id;
 
+/**@brief ID of currently executed task */
+static uint32_t m_is_started = 0;;
+
 /**@brief Guard page attributes: Normal memory, WBWA/WBWA, RO/RO, XN */
 #define TASK_GUARD_ATTRIBUTES ((0x05 << MPU_RASR_TEX_Pos) | (1 << MPU_RASR_B_Pos) | \
                                (0x07 << MPU_RASR_AP_Pos)  | (1 << MPU_RASR_XN_Pos))
@@ -226,6 +262,10 @@ static void task_stack_protect(task_id_t task_id)
 #endif
 }
 
+uint32_t task_manager_is_started(void) {
+	return m_is_started;
+}
+
 PRAGMA_OPTIMIZATION_FORCE_START
 void task_manager_start(task_main_t idle_task, void *p_idle_task_context)
 {
@@ -242,6 +282,8 @@ void task_manager_start(task_main_t idle_task, void *p_idle_task_context)
     // Prepare task state structure.
     s_current_task_id = IDLE_TASK_ID;
     s_task_state[s_current_task_id].p_task_name = "Idle Task";
+
+    m_is_started = 1;
 
     // Prepare stack instrumentation and protection.
     task_stack_poison(s_current_task_id);
@@ -305,7 +347,7 @@ task_id_t task_create(task_main_t task, char const * p_task_name, void *p_contex
     }
     CRITICAL_REGION_EXIT();
 
-    SEGGER_SYSVIEW_OnTaskCreate(36u + task_id);
+    SEGGER_SYSVIEW_OnTaskCreate(TASK_BASE_NRF + task_id);
 
     // Return invalid Task ID if new task cannot be created.
     if (p_state == NULL)
@@ -384,6 +426,8 @@ void *task_schedule(void *p_stack)
             // No more tasks in this round. Select first avaiable task:
             s_current_task_id = __CLZ(runnable_tasks_mask);
         }
+
+        W_SYSVIEW_OnTaskStartExec(TASK_BASE_NRF + s_current_task_id);
     }
     else
     {
@@ -404,6 +448,8 @@ void task_yield(void)
     ASSERT((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0);
     ASSERT((__get_CONTROL() & CONTROL_SPSEL_Msk) != 0);
 
+    W_SYSVIEW_OnTaskStopExec(TASK_BASE_NRF + s_current_task_id);
+
     // Perform task switch.
     task_switch();
 }
@@ -414,6 +460,8 @@ uint32_t task_delay(uint32_t del_)
 
     TASK_STATE_SUSPENDED(s_current_task_id);
     TASK_STATE_DELAYED(s_current_task_id);
+
+	W_SYSVIEW_OnTaskStopReady(TASK_BASE_NRF + s_current_task_id, TASK_EVENT_PERIPH_MS_WAIT);
 
     task_yield();
 
@@ -426,6 +474,8 @@ void task_delay_cancel(task_id_t task_id)
     ASSERT(s_task_state[task_id].p_stack != NULL);
 
 	nrf_atomic_u32_store(&s_task_state[task_id].timeout, 0);
+
+	W_SYSVIEW_OnTaskStartReady(TASK_BASE_NRF + task_id);
 
     TASK_STATE_READY(task_id);
     TASK_STATE_RUNNABLE(task_id);
@@ -468,6 +518,8 @@ uint32_t task_events_wait(uint32_t evt_mask)
 
     ASSERT((evt_mask & ~TASK_FLAG_SIGNAL_MASK) == 0);
 
+    W_SYSVIEW_OnTaskStopReady(TASK_BASE_NRF + s_current_task_id, evt_mask);
+
     for (;;)
     {
         current_events = s_task_state[s_current_task_id].flags & evt_mask;
@@ -489,6 +541,8 @@ void task_events_set(task_id_t task_id, uint32_t evt_mask)
     ASSERT((task_id != TASK_ID_INVALID) && (task_id < TASK_MANAGER_CONFIG_MAX_TASKS));
     ASSERT((evt_mask & ~TASK_FLAG_SIGNAL_MASK) == 0);
     ASSERT(s_task_state[task_id].p_stack != NULL);
+
+    W_SYSVIEW_RecordU32x2(TASK_RECV_EVENT, TASK_BASE_NRF + s_current_task_id, evt_mask);
 
     (void)nrf_atomic_u32_or(&s_task_state[task_id].flags, evt_mask);
     TASK_STATE_RUNNABLE(task_id);
@@ -565,7 +619,7 @@ void task_manager_get_tasks_desc(SEGGER_SYSVIEW_TASKINFO *p_info, uint32_t *nb_t
 		{
 			uint32_t stack_usage = task_stack_max_usage_get(task_id);
 
-			p_info[*nb_tasks].TaskID = 36u + task_id;
+			p_info[*nb_tasks].TaskID = TASK_BASE_NRF + task_id;
 			p_info[*nb_tasks].sName = p_task_name;
 			p_info[*nb_tasks].StackBase = (uint32_t)BOTTOM_OF_TASK_STACK(task_id);
 			p_info[*nb_tasks].StackSize = stack_usage;

@@ -72,6 +72,14 @@ NRF_BLOCK_DEV_QSPI_DEFINE(
      NFR_BLOCK_DEV_INFO_CONFIG("stravaV10", "QSPI", "0.01")
 );
 
+static void _wait_for_memory(void ) {
+
+	if (task_manager_is_started()) {
+//		w_task_yield();
+		w_task_delay(3);
+	}
+
+}
 
 /**
  *

@@ -154,7 +154,15 @@ void task_delay_cancel(task_id_t task_id);
  */
 void task_tick_manage(uint32_t tick_dur_);
 
+/**
+ *
+ */
 void task_manager_get_tasks_desc(SEGGER_SYSVIEW_TASKINFO *p_info, uint32_t *nb_tasks);
+
+/**
+ *
+ */
+uint32_t task_manager_is_started(void);
 
 #ifdef __cplusplus
 }
