@@ -23,7 +23,7 @@ void sysview_task_void_enter(uint32_t);
 void sysview_task_u32_enter(uint32_t, uint32_t);
 void sysview_task_void_exit(uint32_t);
 void sysview_task_idle(void);
-
+void sysview_task_unblock(uint32_t);
 
 #if defined(__cplusplus)
 }

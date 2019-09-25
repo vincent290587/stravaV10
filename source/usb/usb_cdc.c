@@ -202,6 +202,11 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 {
 	app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
 
+	// remove the delay on the task
+	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.usb_id);
+	}
+
 	switch (event)
 	{
 	case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
@@ -250,10 +255,6 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		break;
 	}
 
-	// remove the delay on the task
-	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
-		w_task_delay_cancel(m_tasks_id.usb_id);
-	}
 }
 
 static void usbd_user_ev_handler(app_usbd_event_type_t event)
@@ -365,7 +366,7 @@ void usb_cdc_diskio_init(void) {
 	// Initialize FATFS disk I/O interface by providing the block device.
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), perform_system_tasks_light)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), _wait_for_usb)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
@@ -378,6 +379,21 @@ void usb_cdc_diskio_init(void) {
 
 }
 
+void usb_new_event_isr_handler(app_usbd_internal_evt_t const * const p_event, bool queued)
+{
+	W_SYSVIEW_RecordEnterISR();
+
+    UNUSED_PARAMETER(p_event);
+    UNUSED_PARAMETER(queued);
+
+	// remove the delay on the task
+	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.usb_id);
+	}
+
+	W_SYSVIEW_RecordExitISR();
+}
+
 /**
  *
  */
@@ -385,6 +401,7 @@ void usb_cdc_init(void)
 {
 	ret_code_t ret;
 	static const app_usbd_config_t usbd_config = {
+	        .ev_isr_handler = usb_new_event_isr_handler,
 			.ev_state_proc = usbd_user_ev_handler
 	};
 
@@ -524,43 +541,50 @@ void usb_flush(void) {
 /**
  *
  */
+void usb_cdc_process(void) {
+
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
+
+	/* If ring buffer is not empty, parse data. */
+	while (m_is_port_open &&
+			m_is_xfer_done &&
+			RING_BUFF_IS_NOT_EMPTY(cdc_rb1) &&
+			m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE)
+	{
+		char c = RING_BUFF_GET_ELEM(cdc_rb1);
+
+		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
+		m_tx_buffer[m_tx_buffer_index][ind] = c;
+
+		// increase index
+		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
+
+		RING_BUFFER_POP(cdc_rb1);
+	}
+
+	// send if inactive and data is waiting in buffer or if the buffer is almost full
+	if ((m_tx_buffer_bytes_nb[m_tx_buffer_index] > (NRF_DRV_USBD_EPSIZE * 3 /4)) ||
+			(m_tx_buffer_bytes_nb[m_tx_buffer_index] && millis() - m_last_buffered > 1)) {
+
+		usb_cdc_trigger_xfer();
+
+	}
+
+}
+
+/**
+ *
+ */
 void usb_cdc_tasks(void *p_context) {
 
 	for (;;) {
 
-		/* If ring buffer is not empty, parse data. */
-		while (m_is_port_open &&
-				m_is_xfer_done &&
-				RING_BUFF_IS_NOT_EMPTY(cdc_rb1) &&
-				m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE)
-		{
-			char c = RING_BUFF_GET_ELEM(cdc_rb1);
+		usb_cdc_process();
 
-			uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-			m_tx_buffer[m_tx_buffer_index][ind] = c;
-
-			// increase index
-			m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
-
-			RING_BUFFER_POP(cdc_rb1);
-		}
-
-		// send if inactive and data is waiting in buffer or if the buffer is almost full
-		if ((m_tx_buffer_bytes_nb[m_tx_buffer_index] > (NRF_DRV_USBD_EPSIZE * 3 /4)) ||
-				(m_tx_buffer_bytes_nb[m_tx_buffer_index] && millis() - m_last_buffered > 1)) {
-
-			usb_cdc_trigger_xfer();
-
-		}
-
-		while (app_usbd_event_queue_process())
-		{
-			/* Nothing to do */
-		}
-
-		if (m_tasks_id.usb_id != TASK_ID_INVALID) {
-			w_task_delay(50);
-		}
+		w_task_delay(50);
 
 	}
 }

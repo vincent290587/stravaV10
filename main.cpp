@@ -72,7 +72,8 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
  */
 void timer_event_handler(void* p_context)
 {
-	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+	if (m_tasks_id.uart_id != TASK_ID_INVALID &&
+			m_tasks_id.usb_id != TASK_ID_INVALID) {
 		task_tick_manage(APP_TIMEOUT_DELAY_MS);
 	}
 }
@@ -219,7 +220,6 @@ static void log_init(void)
 
 	NRF_LOG_DEFAULT_BACKENDS_INIT();
 
-	SVIEW_INIT();
 }
 
 /**@brief Interrupt function for handling bsp events.
@@ -391,6 +391,10 @@ int main(void)
 
 	pins_init();
 
+#if APP_SCHEDULER_ENABLED
+	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+#endif
+
     err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
 
@@ -423,13 +427,10 @@ int main(void)
 	// Initialize timer module
 #ifdef USB_ENABLED
 	usb_cdc_init();
+	usb_cdc_process();
 #endif
 
 	nrf_pwr_mgmt_init();
-
-#if APP_SCHEDULER_ENABLED
-	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-#endif
 
 	backlighting_init();
 
@@ -478,13 +479,15 @@ int main(void)
 
 	LOG_INFO("App init done");
 
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
+#endif
+
 	m_tasks_id.boucle_id      = task_create	(boucle_task, "boucle_tasks", NULL);
 	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
 	m_tasks_id.ls027_id       = task_create	(ls027_task, "ls027_task", NULL);
 
-	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
-	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
-	W_SYSVIEW_OnTaskCreate(LCD_TASK);
+	SVIEW_INIT();
 
 	// does not return
 	task_manager_start(idle_task, &m_tasks_id);

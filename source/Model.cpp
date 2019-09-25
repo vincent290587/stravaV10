@@ -218,6 +218,10 @@ void idle_task(void * p_context)
 		ble_nus_tasks();
 #endif
 
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
+#endif
+
 		// BSP tasks
 		bsp_tasks();
 

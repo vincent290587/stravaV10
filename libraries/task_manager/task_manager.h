@@ -53,6 +53,7 @@
 
 #include "nrf.h"
 #include "sdk_errors.h"
+#include "SEGGER_SYSVIEW.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,6 +153,8 @@ void task_delay_cancel(task_id_t task_id);
  * @param tick_dur_ The period at which the function runs
  */
 void task_tick_manage(uint32_t tick_dur_);
+
+void task_manager_get_tasks_desc(SEGGER_SYSVIEW_TASKINFO *p_info, uint32_t *nb_tasks);
 
 #ifdef __cplusplus
 }

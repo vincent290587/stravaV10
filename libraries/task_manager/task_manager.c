@@ -116,7 +116,7 @@ typedef struct
     void              *p_stack;      /**< Pointer to task stack. NULL if task does not exist. */
     const char        *p_task_name;
     nrf_atomic_u32_t   flags;        /**< Task flags */
-    volatile uint32_t   timeout;        /**< Task timeout */
+    nrf_atomic_u32_t   timeout;        /**< Task timeout */
 } task_state_t;
 
 /* Allocate space for task stacks:
@@ -305,6 +305,8 @@ task_id_t task_create(task_main_t task, char const * p_task_name, void *p_contex
     }
     CRITICAL_REGION_EXIT();
 
+    SEGGER_SYSVIEW_OnTaskCreate(36u + task_id);
+
     // Return invalid Task ID if new task cannot be created.
     if (p_state == NULL)
     {
@@ -423,7 +425,7 @@ void task_delay_cancel(task_id_t task_id)
     ASSERT((task_id != TASK_ID_INVALID) && (task_id < TASK_MANAGER_CONFIG_MAX_TASKS));
     ASSERT(s_task_state[task_id].p_stack != NULL);
 
-    s_task_state[task_id].timeout = 0;
+	nrf_atomic_u32_store(&s_task_state[task_id].timeout, 0);
 
     TASK_STATE_READY(task_id);
     TASK_STATE_RUNNABLE(task_id);
@@ -440,16 +442,19 @@ void task_tick_manage(uint32_t tick_dur_)
     // Check if there are any tasks to unblock.
     for (task_id = 0; task_id < TASK_MANAGER_CONFIG_MAX_TASKS; task_id++)
     {
+    	uint32_t timeout = s_task_state[task_id].timeout;
+
     	if (delayed_tasks_mask & TASK_ID_TO_MASK(task_id)) {
     		// this task was blocked by a delay
-    		if (s_task_state[task_id].timeout <= tick_dur_) {
+    		if (timeout <= tick_dur_) {
     			// we need to unblock the task
     			task_delay_cancel(task_id);
 
-    			s_task_state[task_id].timeout = 1;
+    			nrf_atomic_u32_store(&s_task_state[task_id].timeout, 1);
+
     		} else {
     			// just decrement the counter
-    			s_task_state[task_id].timeout -= tick_dur_;
+    			nrf_atomic_u32_store(&s_task_state[task_id].timeout, timeout - tick_dur_);
     		}
     	}
     }
@@ -502,7 +507,7 @@ void task_exit(void)
 
 task_id_t task_id_get(void)
 {
-    // Make sure that we are in privledged thread level using PSP stack.
+    // Make sure that we are in privileged thread level using PSP stack.
     ASSERT((__get_IPSR() & IPSR_ISR_Msk) == 0);
     ASSERT((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0);
     ASSERT((__get_CONTROL() & CONTROL_SPSEL_Msk) != 0);
@@ -537,6 +542,37 @@ uint32_t task_stack_max_usage_get(task_id_t task_id)
 #else
     return 0;
 #endif
+}
+
+void task_manager_get_tasks_desc(SEGGER_SYSVIEW_TASKINFO *p_info, uint32_t *nb_tasks) {
+	task_id_t task_id;
+
+	*nb_tasks = 0;
+
+	for (task_id = 0; task_id < TOTAL_NUM_OF_TASKS; task_id++)
+	{
+		const char *p_task_name = NULL;
+
+		CRITICAL_REGION_ENTER();
+		if (s_task_state[task_id].p_stack != NULL)
+		{
+			p_task_name = (s_task_state[task_id].p_task_name) ? s_task_state[task_id].p_task_name
+					: "<NULL>";
+		}
+		CRITICAL_REGION_EXIT();
+
+		if (p_task_name)
+		{
+			uint32_t stack_usage = task_stack_max_usage_get(task_id);
+
+			p_info[*nb_tasks].TaskID = 36u + task_id;
+			p_info[*nb_tasks].sName = p_task_name;
+			p_info[*nb_tasks].StackBase = (uint32_t)BOTTOM_OF_TASK_STACK(task_id);
+			p_info[*nb_tasks].StackSize = stack_usage;
+
+			*nb_tasks = *nb_tasks + 1;
+		}
+	}
 }
 
 #if TASK_MANAGER_CLI_CMDS

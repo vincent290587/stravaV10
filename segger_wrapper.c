@@ -30,7 +30,7 @@ SEGGER_SYSVIEW_MODULE m_module = {
 
 #if USE_SVIEW
 
-#define W_SYSVIEW_OnIdle(...)            SEGGER_SYSVIEW_OnIdle()
+#define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
 
 #define W_SYSVIEW_OnTaskStartExec(X)     SEGGER_SYSVIEW_OnTaskStartExec(X)
 #define W_SYSVIEW_OnTaskStopExec(X)      SEGGER_SYSVIEW_OnTaskStopExec()
@@ -72,6 +72,8 @@ extern sAppErrorDescr m_app_error;
 #if USE_SVIEW
 static void cbSendTaskList(void) {
 
+	task_manager_get_tasks_desc(pInfo, &nb_tasks);
+
 	for (int i = 0; i < nb_tasks; i++) {
 
 		SEGGER_SYSVIEW_SendTaskInfo(&pInfo[i]);
@@ -82,12 +84,17 @@ static void cbSendTaskList(void) {
 #endif
 
 void sysview_task_block(uint32_t evt_mask) {
-	W_SYSVIEW_OnTaskStopReady(sysview_id_get(), evt_mask);
-	W_SYSVIEW_OnTaskStopExec(sysview_id_get());
+	W_SYSVIEW_OnTaskStopReady(SYSVIEW_ID_GET(), evt_mask);
+	W_SYSVIEW_OnTaskStopExec(SYSVIEW_ID_GET());
+}
+
+void sysview_task_unblock(uint32_t task_id) {
+	W_SYSVIEW_OnTaskStartReady(task_id);
 }
 
 void sysview_task_transfer(uint32_t task_id) {
-	W_SYSVIEW_OnTaskStartExec(task_id);
+	if (task_id) W_SYSVIEW_OnTaskStartExec(task_id);
+	else W_SYSVIEW_OnIdle();
 	m_cur_task_id = task_id;
 	m_app_error.task_id = task_id;
 }
@@ -141,27 +148,17 @@ void segger_init(void) {
 
 	  nb_tasks = 0;
 
-	  pInfo[nb_tasks].TaskID = BOUCLE_TASK;
-	  pInfo[nb_tasks++].sName  = "BOUCLE_TASK";
+	  task_manager_get_tasks_desc(pInfo, &nb_tasks);
 
-	  pInfo[nb_tasks].TaskID = PERIPH_TASK;
-	  pInfo[nb_tasks++].sName  = "PERIPH_TASK";
+	  for (int i = 0; i < nb_tasks; i++) {
 
-	  pInfo[nb_tasks].TaskID = LCD_TASK;
-	  pInfo[nb_tasks++].sName  = "LCD_TASK";
+		  SEGGER_SYSVIEW_SendTaskInfo(&pInfo[i]);
 
-	  pInfo[nb_tasks].TaskID = UART_TASK;
-	  pInfo[nb_tasks++].sName  = "UART_TASK";
+	  }
 
 	  SEGGER_SYSVIEW_Conf();
 
 	  SEGGER_SYSVIEW_Start();
-
-	  for (int i = 0; i < nb_tasks; i++) {
-
-		  SEGGER_SYSVIEW_OnTaskCreate(pInfo[i].TaskID);
-
-	  }
 
 	  SEGGER_SYSVIEW_RegisterModule(&m_module);
 

@@ -58,6 +58,7 @@ inline void w_task_events_set(task_id_t task_id, uint32_t evt_mask) {
  * @param del_ Delay to apply to the task
  */
 inline uint32_t w_task_delay(uint32_t del_) {
+	if (task_id_get() == TASK_ID_INVALID) return 0;
 
 	sysview_task_block(TASK_EVENT_PERIPH_MS_WAIT);
 	uint32_t ret = task_delay(del_);
@@ -71,7 +72,10 @@ inline uint32_t w_task_delay(uint32_t del_) {
  * @param task_id ID of the task for which to cancel delay
  */
 inline void w_task_delay_cancel(task_id_t task_id) {
-	sysview_task_event(task_id, TASK_EVENT_PERIPH_MS_WAIT);
+	if (task_id == TASK_ID_INVALID) return;
+
+	sysview_task_unblock(task_id + TASK_BASE_NRF);
+//	sysview_task_event(task_id, TASK_EVENT_PERIPH_MS_WAIT);
 	task_delay_cancel(task_id);
 }
 
