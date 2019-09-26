@@ -799,7 +799,7 @@ void ble_nus_tasks(void) {
 			break;
 
 		case NRF_SUCCESS:
-			NRF_LOG_INFO("Packet %u sent size %u", m_nus_packet_nb, length_);
+			NRF_LOG_INFO("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_array.length);
 			m_nus_packet_nb++;
 			break;
 

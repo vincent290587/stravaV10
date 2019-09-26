@@ -9,12 +9,13 @@
 #define SOURCE_G_STRUCTS_H_
 
 #include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
 
 
 typedef struct {
 	char*    str;
-	uint16_t length;
+	size_t length;
 } sCharArray;
 
 typedef struct {

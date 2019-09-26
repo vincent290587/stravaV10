@@ -72,9 +72,13 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
  */
 void timer_event_handler(void* p_context)
 {
+	W_SYSVIEW_RecordEnterISR();
+
 	if (task_manager_is_started()) {
 		task_tick_manage(APP_TIMEOUT_DELAY_MS);
 	}
+
+	W_SYSVIEW_RecordExitISR();
 }
 
 

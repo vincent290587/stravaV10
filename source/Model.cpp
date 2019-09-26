@@ -232,6 +232,14 @@ void idle_task(void * p_context)
  */
 void boucle_task(void * p_context)
 {
+
+	boucle.run(); // init
+	boucle.run(); // run once
+
+	// potentially change mode
+//	vue.setCurrentMode(eVueGlobalScreenFEC);
+//	boucle.changeMode(eBoucleGlobalModesFEC);
+
 	for (;;)
 	{
 		LOG_INFO("\r\nTask %u", millis());

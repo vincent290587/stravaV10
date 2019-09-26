@@ -518,7 +518,7 @@ void task_events_set(task_id_t task_id, uint32_t evt_mask)
     ASSERT((evt_mask & ~TASK_FLAG_SIGNAL_MASK) == 0);
     ASSERT(s_task_state[task_id].p_stack != NULL);
 
-    W_SYSVIEW_RecordU32x2(TASK_RECV_EVENT, TASK_BASE_NRF + s_current_task_id, evt_mask);
+    W_SYSVIEW_RecordU32x2(TASK_RECV_EVENT, TASK_BASE_NRF + task_id, evt_mask);
 
     (void)nrf_atomic_u32_or(&s_task_state[task_id].flags, evt_mask);
     TASK_STATE_RUNNABLE(task_id);
@@ -591,7 +591,8 @@ void task_manager_get_tasks_desc(SEGGER_SYSVIEW_TASKINFO *p_info, uint32_t *nb_t
 		}
 		CRITICAL_REGION_EXIT();
 
-		if (p_task_name)
+		if (p_task_name &&
+				task_id != IDLE_TASK_ID)
 		{
 			uint32_t stack_usage = task_stack_max_usage_get(task_id);
 

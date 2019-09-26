@@ -117,7 +117,7 @@ extern U32 SystemCoreClock;
 
 static SEGGER_SYSVIEW_OS_API os_api;
 
-static SEGGER_SYSVIEW_TASKINFO pInfo[TASK_MANAGER_CONFIG_MAX_TASKS];
+static SEGGER_SYSVIEW_TASKINFO pInfo[TASK_MANAGER_CONFIG_MAX_TASKS + 3];
 
 static uint32_t nb_tasks;
 
