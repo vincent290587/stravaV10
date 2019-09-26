@@ -44,38 +44,6 @@
 #include "app_util_platform.h"
 #include "task_manager_wrapper.h"
 
-#if USE_SVIEW
-#include "SEGGER_SYSVIEW.h"
-
-#define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
-
-#define W_SYSVIEW_OnTaskStartExec(X)     SEGGER_SYSVIEW_OnTaskStartExec(X)
-#define W_SYSVIEW_OnTaskStopExec(X)      SEGGER_SYSVIEW_OnTaskStopExec()
-#define W_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
-#define W_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
-
-#define W_SYSVIEW_RecordVoid(X)          SEGGER_SYSVIEW_RecordVoid(X)
-#define W_SYSVIEW_RecordEndCall(X)       SEGGER_SYSVIEW_RecordEndCall(X)
-
-#define W_SYSVIEW_RecordU32(...)         SEGGER_SYSVIEW_RecordU32(__VA_ARGS__)
-#define W_SYSVIEW_RecordU32x2(...)       SEGGER_SYSVIEW_RecordU32x2(__VA_ARGS__)
-
-#else
-
-#define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStartExec(X)     EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStopExec(X)      EMPTY_MACRO
-#define W_SYSVIEW_OnTaskCreate(X)        EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
-#define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
-
-#define W_SYSVIEW_RecordVoid(X)          EMPTY_MACRO
-#define W_SYSVIEW_RecordEndCall(X)       EMPTY_MACRO
-
-#define W_SYSVIEW_RecordU32(...)         EMPTY_MACRO
-#define W_SYSVIEW_RecordU32x2(...)       EMPTY_MACRO
-
-#endif
 
 #if TASK_MANAGER_CLI_CMDS
 #include "nrf_cli.h"
@@ -347,8 +315,6 @@ task_id_t task_create(task_main_t task, char const * p_task_name, void *p_contex
     }
     CRITICAL_REGION_EXIT();
 
-    SEGGER_SYSVIEW_OnTaskCreate(TASK_BASE_NRF + task_id);
-
     // Return invalid Task ID if new task cannot be created.
     if (p_state == NULL)
     {
@@ -377,6 +343,9 @@ task_id_t task_create(task_main_t task, char const * p_task_name, void *p_contex
                  (uint32_t)BOTTOM_OF_TASK_STACK(task_id),
                  (uint32_t)TOP_OF_TASK_STACK(task_id) - 1);
 
+    W_SEGGER_SYSVIEW_OnTaskCreate(TASK_BASE_NRF + task_id);
+    W_SEGGER_SYSVIEW_SendTaskInfo(TASK_BASE_NRF + task_id, p_task_name, 0, (uint32_t)BOTTOM_OF_TASK_STACK(task_id), TASK_MANAGER_CONFIG_STACK_SIZE);
+
     return task_id;
 }
 
@@ -388,6 +357,8 @@ task_id_t task_create(task_main_t task, char const * p_task_name, void *p_contex
 void *task_schedule(void *p_stack)
 {
     uint32_t runnable_tasks_mask;
+
+    W_SYSVIEW_OnTaskStopExec(TASK_BASE_NRF + s_current_task_id);
 
 #if TASK_MANAGER_CONFIG_STACK_GUARD
     // Destroy stack guard allocated for current task.
@@ -433,6 +404,8 @@ void *task_schedule(void *p_stack)
     {
         // Fall back to idle task if other tasks cannot be run.
         s_current_task_id = IDLE_TASK_ID;
+
+        W_SYSVIEW_OnIdle();
     }
 
     task_stack_protect(s_current_task_id);
@@ -443,12 +416,14 @@ void *task_schedule(void *p_stack)
 
 void task_yield(void)
 {
+	if (!m_is_started) {
+		return;
+	}
+
     // Make sure that we are in privledged thread level using PSP stack.
     ASSERT((__get_IPSR() & IPSR_ISR_Msk) == 0);
     ASSERT((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0);
     ASSERT((__get_CONTROL() & CONTROL_SPSEL_Msk) != 0);
-
-    W_SYSVIEW_OnTaskStopExec(TASK_BASE_NRF + s_current_task_id);
 
     // Perform task switch.
     task_switch();
@@ -497,6 +472,7 @@ void task_tick_manage(uint32_t tick_dur_)
     	if (delayed_tasks_mask & TASK_ID_TO_MASK(task_id)) {
     		// this task was blocked by a delay
     		if (timeout <= tick_dur_) {
+
     			// we need to unblock the task
     			task_delay_cancel(task_id);
 

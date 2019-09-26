@@ -11,6 +11,9 @@
 #include "nrf_log.h"
 #include <stddef.h>
 
+#ifndef EMPTY_MACRO
+#define EMPTY_MACRO                    do {} while (0)
+#endif
 
 /////////    PARAMETERS
 
@@ -89,17 +92,6 @@
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                EMPTY_MACRO
-#endif
-
-
-#if USE_SVIEW
-#define W_SYSVIEW_RecordEnterISR(...)  SEGGER_SYSVIEW_RecordEnterISR()
-#define W_SYSVIEW_RecordExitISR(...)   SEGGER_SYSVIEW_RecordExitISR()
-#define W_SYSVIEW_OnTaskCreate(X)      SEGGER_SYSVIEW_OnTaskCreate(X)
-#else
-#define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
-#define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
-#define W_SYSVIEW_OnTaskCreate(X)      EMPTY_MACRO
 #endif
 
 #include "nrf_log.h"

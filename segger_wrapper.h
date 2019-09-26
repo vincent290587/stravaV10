@@ -8,8 +8,6 @@
 #ifndef LIBRARIES_UTILS_SEGGER_WRAPPER_H_
 #define LIBRARIES_UTILS_SEGGER_WRAPPER_H_
 
-#define EMPTY_MACRO                    do {} while (0)
-
 #ifdef TDD
 #include "segger_wrapper_tdd.h"
 #else
