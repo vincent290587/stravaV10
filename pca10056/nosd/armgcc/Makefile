@@ -135,10 +135,10 @@ settings:
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p /dev/ttyS8
+	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
 
 dfu_send:
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
+	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
 
 jumper: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	jumper run -g --fw $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --gpio --platform nrf52840
