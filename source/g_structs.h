@@ -13,6 +13,11 @@
 
 
 typedef struct {
+	char*    str;
+	uint16_t length;
+} sCharArray;
+
+typedef struct {
 	bool isUpdated;
 	uint8_t direction;
 	uint32_t distance;

@@ -70,6 +70,23 @@
 #define I2cMgmtRead2                   (TASK_BASE + 17u)
 
 
+
+#if defined(__cplusplus)
+extern "C" {
+#endif /* _cplusplus */
+
+
+void segger_init(void);
+void segger_sendTaskInfo(uint32_t TaskID, const char* sName, unsigned Prio, uint32_t StackBase, unsigned StackSize);
+void sysview_task_void_enter(uint32_t);
+void sysview_task_u32_enter(uint32_t, uint32_t);
+void sysview_task_void_exit(uint32_t);
+
+
+#if defined(__cplusplus)
+}
+#endif /* _cplusplus */
+
 #ifdef TDD
 #include "task_manager_wrapper_tdd.h"
 #else

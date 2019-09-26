@@ -66,22 +66,6 @@ inline void w_task_delay_cancel(task_id_t task_id) {
 }
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif /* _cplusplus */
-
-
-void segger_init(void);
-void segger_sendTaskInfo(uint32_t TaskID, const char* sName, unsigned Prio, uint32_t StackBase, unsigned StackSize);
-void sysview_task_void_enter(uint32_t);
-void sysview_task_u32_enter(uint32_t, uint32_t);
-void sysview_task_void_exit(uint32_t);
-
-
-#if defined(__cplusplus)
-}
-#endif /* _cplusplus */
-
 
 #if USE_SVIEW
 #include "SEGGER_SYSVIEW.h"

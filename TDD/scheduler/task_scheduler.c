@@ -220,6 +220,8 @@ void task_delay_cancel(task_id_t task_id) {
 
 	task_t* p_task = s_running;
 
+	if (!p_task) return;
+
 	for (int i=0; i < MAX_TASKS_NB; i++) {
 		if (task_id == p_task->task_id) {
 			LOG_DEBUG("Task %s[%u] delay cancel",
@@ -242,6 +244,8 @@ void task_tick_manage(uint32_t tick_dur_) {
 
 	task_t* p_task = s_running;
 
+	if (!p_task) return;
+
 	for (int i=0; i < MAX_TASKS_NB; i++) {
 		if (p_task->timeout > 1) {
 			if (p_task->timeout <= tick_dur_) {
@@ -255,5 +259,4 @@ void task_tick_manage(uint32_t tick_dur_) {
 		p_task = p_task->next;
 	}
 
-	LOG_ERROR("Task not found");
 }

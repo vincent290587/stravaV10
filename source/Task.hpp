@@ -85,8 +85,4 @@ protected:
 	uint32_t m_task_id;
 };
 
-#endif /* SOURCE_MODEL_BOUCLE_H_ */
-
-
-
 #endif /* SOURCE_TASK_HPP_ */

@@ -84,7 +84,7 @@ void segger_init(void) {
 *  Function description
 *    Record task information.
 */
-void segger_sendTaskInfo(U32 TaskID, const char* sName, unsigned Prio, U32 StackBase, unsigned StackSize) {
+void segger_sendTaskInfo(uint32_t TaskID, const char* sName, unsigned Prio, uint32_t StackBase, unsigned StackSize) {
 #if USE_SVIEW
   SEGGER_SYSVIEW_TASKINFO TaskInfo;
 

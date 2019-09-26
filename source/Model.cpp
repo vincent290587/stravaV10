@@ -214,18 +214,10 @@ void idle_task(void * p_context)
     for(;;)
     {
 
-#if defined (BLE_STACK_SUPPORT_REQD)
-		ble_nus_tasks();
-#endif
-
 #if APP_SCHEDULER_ENABLED
 		app_sched_execute();
 #endif
 
-		// BSP tasks
-		bsp_tasks();
-
-    	//No more logs to process, go to sleep
 		// TODO sysview_task_idle();
     	pwr_mgmt_run();
 
@@ -278,6 +270,13 @@ void peripherals_task(void * p_context)
 	for(;;)
 	{
 		i2c_scheduling_tasks();
+
+#if defined (BLE_STACK_SUPPORT_REQD)
+		ble_nus_tasks();
+#endif
+
+		// BSP tasks
+		bsp_tasks();
 
 #ifndef BLE_STACK_SUPPORT_REQD
 		neopixel_radio_callback_handler(false);

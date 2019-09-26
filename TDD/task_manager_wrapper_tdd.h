@@ -74,4 +74,24 @@ static inline void w_task_delay_cancel(task_id_t task_id) {
 }
 #endif
 
+#define W_SEGGER_SYSVIEW_OnTaskCreate(X)     EMPTY_MACRO
+#define W_SEGGER_SYSVIEW_SendTaskInfo(...)   EMPTY_MACRO
+
+#define W_SYSVIEW_OnIdle(...)            EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStartExec(X)     EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStopExec(X)      EMPTY_MACRO
+#define W_SYSVIEW_OnTaskCreate(X)        EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStartReady(X)    EMPTY_MACRO
+#define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
+
+#define W_SYSVIEW_RecordVoid(X)          EMPTY_MACRO
+#define W_SYSVIEW_RecordEndCall(X)       EMPTY_MACRO
+
+#define W_SYSVIEW_RecordU32(...)         EMPTY_MACRO
+#define W_SYSVIEW_RecordU32x2(...)       EMPTY_MACRO
+
+#define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO
+#define W_SYSVIEW_RecordExitISR(...)   EMPTY_MACRO
+#define W_SYSVIEW_OnTaskCreate(X)      EMPTY_MACRO
+
 #endif /* TASK_MANAGER_WRAPPER_TDD_H_ */
