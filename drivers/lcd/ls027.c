@@ -148,23 +148,54 @@ static uint16_t getBufferPixel(uint16_t x, uint16_t y) {
 	return ret_color;
 }
 
+
+#define BIT_MASK(a, b)      (((unsigned) -1 >> (31 - (b))) & ~((1U << (a)) - 1))
+
+/**
+ *
+ * @param x Col number:  0..400
+ * @param y Line number: 0..240
+ * @param nb Number of pixels to target
+ * @param color Color to be printed
+ */
+static void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
+
+	uint8_t mask = BIT_MASK((x & 0b111) + nb - 1, x & 0b111) & 0xFF;
+
+	// we simply invert the pixel's color
+	if (color == 2) {
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] ^= mask;
+		return;
+	}
+
+	bool _is_color_inverted = m_is_color_inverted;
+
+	// set the good color
+	if ((color && !_is_color_inverted) || (!color && _is_color_inverted)) {
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] |= mask;
+	} else {
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] &= ~mask;
+	}
+
+}
+
 /**
  *
  * @param x Col number:  0..400
  * @param y Line number: 0..240
  * @param color Color to be printed
  */
-static void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
+static inline void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
+
+	// we simply invert the pixel's color
+	if (color == 2) {
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] ^= set[x & 7];
+		return;
+	}
 
 	bool _is_color_inverted = m_is_color_inverted;
 
-	//we simply invert the pixel's color
-	if (color == 2) {
-		_is_color_inverted = false;
-		color = getBufferPixel(x, y) ? 0:1;
-	}
-
-	// fill buffer
+	// set the good color
 	if ((color && !_is_color_inverted) ||
 			(!color && _is_color_inverted)) {
 		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] |= set[x & 7];
@@ -173,7 +204,6 @@ static void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
 	}
 
 }
-
 
 /*
  ** ===================================================================
@@ -236,6 +266,29 @@ void LS027_InvertColors(void)
  */
 void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
 	setBufferPixel(x, y, color);
+}
+
+/*!
+    @brief Draws a pixels with consecutive x in image buffer
+
+    @param[in]  x
+                The x position (0 based)
+    @param[in]  y
+                The y position (0 based)
+ */
+void LS027_drawPixelGroup(uint16_t x, uint16_t y, uint16_t nb, uint16_t color) {
+
+	// loop on group of remaining pixels
+	while (nb) {
+		uint8_t index = x & 0b111;
+		// handle this group of 8 pixels
+		setBufferPixelGroup(x, y, 8 - index, color);
+
+		// next group of pixels
+		nb -= index;
+		x  += index;
+	}
+
 }
 
 /*

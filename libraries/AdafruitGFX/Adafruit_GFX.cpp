@@ -632,7 +632,7 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 					if(size == 1) drawPixel(x+i, y+j, color);
 					else          fillRect(x+(i*size), y+(j*size), size, size, color);
 				} else if(bg != color) {
-#ifndef FAST_TEXT
+#ifdef TEXT_DRAW_BACK_RECTANGLE
 					// draws an unnecessary rectangle behind the text
 					if(size == 1) drawPixel(x+i, y+j, bg);
 					else          fillRect(x+i*size, y+j*size, size, size, bg);

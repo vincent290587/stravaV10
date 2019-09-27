@@ -86,15 +86,51 @@ uint16_t LS027_get_pixel(uint16_t x, uint16_t y) {
 	return ret_color;
 }
 
-void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
 
-	bool _is_color_inverted = m_is_color_inverted;
+#define BIT_MASK(a, b) (((unsigned) -1 >> (31 - (b))) & ~((1U << (a)) - 1))
+
+/**
+ *
+ * @param x Col number:  0..400
+ * @param y Line number: 0..240
+ * @param color Color to be printed
+ */
+static void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
+
+	uint8_t mask = BIT_MASK((x & 0b111) + nb, x & 0b111) & 0xFF;
 
 	//we simply invert the pixel's color
 	if (color == 2) {
-		_is_color_inverted = false;
-		color = LS027_get_pixel(x, y) ? 0:1;
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] ^= mask;
+		return;
 	}
+
+	bool _is_color_inverted = color == 2 ? false : m_is_color_inverted;
+
+	// fill buffer
+	if ((color && !_is_color_inverted) || (!color && _is_color_inverted)) {
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] |= mask;
+	} else {
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] &= ~mask;
+	}
+
+}
+
+/**
+ *
+ * @param x Col number:  0..400
+ * @param y Line number: 0..240
+ * @param color Color to be printed
+ */
+static void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
+
+	//we simply invert the pixel's color
+	if (color == 2) {
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] ^= set[x & 7];
+		return;
+	}
+
+	bool _is_color_inverted = m_is_color_inverted;
 
 	// fill buffer
 	if ((color && !_is_color_inverted) ||
@@ -103,5 +139,34 @@ void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
 	} else {
 		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] &= clr[x & 7];
 	}
+
+}
+
+/*!
+    @brief Draws a pixels with consecutive x in image buffer
+
+    @param[in]  x
+                The x position (0 based)
+    @param[in]  y
+                The y position (0 based)
+ */
+void LS027_drawPixelGroup(uint16_t x, uint16_t y, uint16_t nb, uint16_t color) {
+
+	// loop on group of remaining pixels
+	while (nb) {
+		uint8_t index = x & 0b111;
+		// handle this group of 8 pixels
+		setBufferPixelGroup(x, y, 8 - index, color);
+
+		// next group of pixels
+		nb -= index;
+		x  += index;
+	}
+
+}
+
+void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
+
+	setBufferPixel(x, y, color);
 
 }

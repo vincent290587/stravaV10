@@ -147,22 +147,48 @@ void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {
 
 	if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
 
-	switch(rotation) {
-	case 1:
-		adagfxswap(x, y);
-		x = WIDTH  - 1 - x;
-		break;
-	case 2:
-		x = WIDTH  - 1 - x;
-		y = HEIGHT - 1 - y;
-		break;
-	case 3:
-		adagfxswap(x, y);
-		y = HEIGHT - 1 - y;
-		break;
-	}
+//  always 3 here, comment for speedup
 
-	LS027_drawPixel(x, y, color);
+//	switch(rotation) {
+//	case 1:
+//		adagfxswap(x, y);
+//		x = WIDTH  - 1 - x;
+//		break;
+//	case 2:
+//		x = WIDTH  - 1 - x;
+//		y = HEIGHT - 1 - y;
+//		break;
+//	case 3:
+//		adagfxswap(x, y);
+//		y = HEIGHT - 1 - y;
+//		break;
+//	}
+
+	LS027_drawPixel(y, HEIGHT - 1 - x, color);
+}
+
+void Vue::drawPixelGroup(int16_t x, int16_t y, uint16_t nb, uint16_t color) {
+
+	if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
+
+//  always 3 here, comment for speedup
+
+//	switch(rotation) {
+//	case 1:
+//		adagfxswap(x, y);
+//		x = WIDTH  - 1 - x;
+//		break;
+//	case 2:
+//		x = WIDTH  - 1 - x;
+//		y = HEIGHT - 1 - y;
+//		break;
+//	case 3:
+//		adagfxswap(x, y);
+//		y = HEIGHT - 1 - y;
+//		break;
+//	}
+
+	LS027_drawPixelGroup(y, HEIGHT - 1 - x, nb, color);
 }
 
 // Fill a rounded rectangle
@@ -181,6 +207,22 @@ void Vue::fillRoundRect(int16_t x, int16_t y, int16_t w,
 
 	fillRect(x, y , w-2*r+1, h, color);
 
+}
+
+void Vue::drawFastVLine(int16_t x, int16_t y,
+		int16_t h, uint16_t color) {
+
+	// this method is here sped up greatly !
+	drawPixelGroup(x, y, h, color);
+
+}
+
+void Vue::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
+		uint16_t color) {
+	// we make sure to here use drawFastVLine which is way faster than drawFastHLine
+	for (int16_t i=x; i<x+w; i++) {
+		drawFastVLine(i, y, h, color);
+	}
 }
 
 void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite) {
