@@ -708,22 +708,34 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 			}
 		}
 #else
-		for(yy=0; yy<h; yy++) {
-			for(xx=0; xx<w; xx++) {
-				if(!(bit++ & 7)) {
-					bits = pgm_read_byte(&bitmap[bo++]);
-				}
-				if(bits & 0x80) {
-//					if(size == 1) drawPixel(x+xo+xx, y+yo+yy, color);
-//					else fillRect(x+(xo16+xx)*size, y+(yo16+yy)*size, size, size, color);
 
-					if(size == 1) {
-						drawPixel(x+xo16+xx, y+yo16+yy, color);
-					} else {
-						fillRect(x+(xo16+xx)*size, y+(yo16+yy)*size, size, size, color);
+		if(size == 1) {
+			for(yy=0; yy<h; yy++) {
+				for(xx=0; xx<w; xx++) {
+					if(!(bit++ & 7)) {
+						bits = pgm_read_byte(&bitmap[bo++]);
 					}
+					if(bits & 0x80) {
+						drawPixel(x+xo16+xx, y+yo16+yy, color);
+						//fillRect(x+(xo16+xx)*size, y+(yo16+yy)*size, size, size, color);
+
+					}
+					bits <<= 1;
 				}
-				bits <<= 1;
+			}
+		} else {
+			for(yy=0; yy<h; yy++) {
+				for(xx=0; xx<w; xx++) {
+					if(!(bit++ & 7)) {
+						bits = pgm_read_byte(&bitmap[bo++]);
+					}
+					if(bits & 0x80) {
+						//drawPixel(x+xo16+xx, y+yo16+yy, color);
+						fillRect(x+(xo16+xx)*size, y+(yo16+yy)*size, size, size, color);
+
+					}
+					bits <<= 1;
+				}
 			}
 		}
 #endif
