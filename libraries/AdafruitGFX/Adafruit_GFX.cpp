@@ -713,6 +713,7 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 			for(yy=0; yy<h; yy++) {
 				for(xx=0; xx<w; xx++) {
 					if(!(bit++ & 7)) {
+						// bit is aligned
 						bits = pgm_read_byte(&bitmap[bo++]);
 					}
 					if(bits & 0x80) {

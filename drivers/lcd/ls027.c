@@ -37,7 +37,6 @@ static uint8_t LS027_SpiBuf[LS027_HW_SPI_BUFFER_SIZE]; /* buffer for the display
 
 
 #define LS027_TOGGLE_VCOM    do { m_M1_bit = m_M1_bit ? 0x00 : LS027_BIT_VCOM; } while(0);
-#define adagfxswap(a, b) { int16_t t = a; a = b; b = t; }
 
 static const uint8_t set[] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
 static const uint8_t clr[] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F };
@@ -103,7 +102,7 @@ static int ls027_prepare_buffer(void)
 		LS027_SpiBuf[addr++] = i + 1;
 
 		// data bytes
-		addr += LS027_HW_WIDTH / 8;
+		addr += LS027_HW_WIDTH >> 3u;
 
 		// dummy data
 		LS027_SpiBuf[addr++] = 0x00;
@@ -139,7 +138,7 @@ static void ls027_hw_clear(void) {
  * @param x Col number:  0..400
  * @param y Line number: 0..240
  */
-static uint16_t getBufferPixel(uint16_t x, uint16_t y) {
+static inline uint16_t getBufferPixel(uint16_t x, uint16_t y) {
 
 	uint16_t ret_color = 0;
 
@@ -158,7 +157,7 @@ static uint16_t getBufferPixel(uint16_t x, uint16_t y) {
  * @param nb Number of pixels to target
  * @param color Color to be printed
  */
-static void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
+static inline void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
 
 	uint8_t mask = BIT_MASK((x & 0b111) + nb - 1, x & 0b111) & 0xFF;
 
@@ -168,10 +167,8 @@ static void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t col
 		return;
 	}
 
-	bool _is_color_inverted = m_is_color_inverted;
-
 	// set the good color
-	if ((color && !_is_color_inverted) || (!color && _is_color_inverted)) {
+	if (color ^ m_is_color_inverted) {
 		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] |= mask;
 	} else {
 		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] &= ~mask;
@@ -193,11 +190,8 @@ static inline void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
 		return;
 	}
 
-	bool _is_color_inverted = m_is_color_inverted;
-
 	// set the good color
-	if ((color && !_is_color_inverted) ||
-			(!color && _is_color_inverted)) {
+	if (color ^ m_is_color_inverted) {
 		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] |= set[x & 7];
 	} else {
 		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] &= clr[x & 7];
