@@ -148,7 +148,9 @@ static inline uint16_t getBufferPixel(uint16_t x, uint16_t y) {
 }
 
 
-#define BIT_MASK(a, b)      (((unsigned) -1 >> (31 - (b))) & ~((1U << (a)) - 1))
+#define BIT(nr)                 (1UL << (nr))
+#define U32_C(x)                x ## U
+#define BIT_MASK(h, l)          (((U32_C(1) << ((h) - (l) + 1)) - 1) << (l))
 
 /**
  *
@@ -159,19 +161,21 @@ static inline uint16_t getBufferPixel(uint16_t x, uint16_t y) {
  */
 static inline void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
 
-	uint8_t mask = BIT_MASK((x & 0b111) + nb - 1, x & 0b111) & 0xFF;
+	uint8_t mask = BIT_MASK((x & 0b111) + nb, x & 0b111) & 0xFF;
 
-	// we simply invert the pixel's color
+	LOG_DEBUG("setBufferPixelGroup %03u %03u %03u 0x%02X", x, y, nb, mask);
+
+	//we simply invert the pixel's color
 	if (color == 2) {
-		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] ^= mask;
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] ^= mask;
 		return;
 	}
 
-	// set the good color
+	// fill buffer
 	if (color ^ m_is_color_inverted) {
-		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] |= mask;
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] |= mask;
 	} else {
-		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] &= ~mask;
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] &= ~mask;
 	}
 
 }
@@ -272,16 +276,22 @@ void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
  */
 void LS027_drawPixelGroup(uint16_t x, uint16_t y, uint16_t nb, uint16_t color) {
 
-	// loop on group of remaining pixels
-	while (nb) {
-		uint8_t index = x & 0b111;
+	// loop pixels
+	uint8_t index;
+	while (nb >= 8) {
+		index = x & 0b111;
 		// handle this group of 8 pixels
 		setBufferPixelGroup(x, y, 8 - index, color);
 
+		LOG_DEBUG("setBufferPixelGroup %03u %03u %03u %d", x, y, nb, 8 - index);
+
 		// next group of pixels
-		nb -= index;
-		x  += index;
+		nb -= 8 - index;
+		x  += 8 - index;
 	}
+
+	// handle this group of < 8 pixels
+	if (nb) setBufferPixelGroup(x, y, nb, color);
 
 }
 
