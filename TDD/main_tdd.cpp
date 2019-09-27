@@ -79,7 +79,7 @@ void pipeHandler( int signum ) {
 void idle_task_test(void *p_context) {
 	for (;;) {
 		sleep(500);
-		yield();
+		w_task_yield();
 	}
 }
 
@@ -88,34 +88,34 @@ void task1(void *p_context) {
 		LOG_INFO("Task1");
 
 		sleep(500);
-		events_set(2, 1);
-		yield();
+		w_task_events_set(2, 1);
+		w_task_yield();
 	}
 }
 
 void task2(void *p_context) {
 	for (;;) {
-		events_wait(1);
+		w_task_events_wait(1);
 		LOG_INFO("Task2");
 
 		sleep(500);
-		events_set(3, 2);
+		w_task_events_set(3, 2);
 	}
 }
 
 void task3(void *p_context) {
 	for (;;) {
-		events_wait(2);
+		w_task_events_wait(2);
 		LOG_INFO("Task3");
 
 		sleep(500);
-		events_set(4, 4);
+		w_task_events_set(4, 4);
 	}
 }
 
 void task4(void *p_context) {
 	for (;;) {
-		events_wait(4);
+		w_task_events_wait(4);
 		LOG_INFO("Task4");
 
 		sleep(500);

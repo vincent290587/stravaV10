@@ -66,6 +66,9 @@ void task_feed_event(task_id_t task_id, uint32_t event);
  */
 size_t task_stack();
 
+uint32_t task_delay(uint32_t del_);
+
+void task_delay_cancel(task_id_t task_id);
 
 #ifdef __cplusplus
 }

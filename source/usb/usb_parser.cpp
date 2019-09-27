@@ -41,7 +41,7 @@ void usb_cdc_decoder(char c) {
 
 		// notify task
 		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
-		    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+		    w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 		}
 
 		break;

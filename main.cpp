@@ -26,7 +26,7 @@
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
 #include "nrf_drv_clock.h"
-#include "task_manager.h"
+#include "task_manager_wrapper.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
@@ -72,13 +72,13 @@ static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
  */
 void timer_event_handler(void* p_context)
 {
-	ASSERT(p_context);
+	W_SYSVIEW_RecordEnterISR();
 
-	sTasksIDs *_tasks_ids = (sTasksIDs *) p_context;
-
-	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-		events_set(_tasks_ids->peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
+	if (task_manager_is_started()) {
+		task_tick_manage(APP_TIMEOUT_DELAY_MS);
 	}
+
+	W_SYSVIEW_RecordExitISR();
 }
 
 
@@ -132,7 +132,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 	if (!info) {
 		snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
-				"info arg is 0 id %u pc %u",
+				"info arg is 0 id %lu pc %lu",
 				id, pc);
 #if USE_SVIEW
 		SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
@@ -166,17 +166,17 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
         {
         	error_info_t * p_info = (error_info_t *)info;
         	snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
-        			"ERROR %u [%s] at %s:%u",
+        			"ERROR %lu [%s] at %s:%lu",
 					p_info->err_code,
 					nrf_strerror_get(p_info->err_code),
 					p_info->p_file_name,
-					(uint16_t)p_info->line_num);
+					p_info->line_num);
             break;
         }
         default:
             NRF_LOG_ERROR("UNKNOWN FAULT at 0x%08X", pc);
         	snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
-        			"UNKNOWN FAULT at 0x%08X", pc);
+        			"UNKNOWN FAULT at 0x%08lX", pc);
             break;
     }
 
@@ -224,6 +224,7 @@ static void log_init(void)
 	NRF_LOG_DEFAULT_BACKENDS_INIT();
 
 	SVIEW_INIT();
+
 }
 
 /**@brief Interrupt function for handling bsp events.
@@ -231,6 +232,11 @@ static void log_init(void)
 static void bsp_evt_handler(bsp_event_t evt)
 {
 	m_bsp_evt = evt;
+
+	// unblock periph servicing task
+	if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.peripherals_id);
+	}
 }
 
 /**@brief Function for handling bsp events.
@@ -372,6 +378,8 @@ int main(void)
 	m_tasks_id.system_id = TASK_ID_INVALID;
 	m_tasks_id.peripherals_id = TASK_ID_INVALID;
 	m_tasks_id.ls027_id = TASK_ID_INVALID;
+	m_tasks_id.uart_id  = TASK_ID_INVALID;
+	m_tasks_id.usb_id   = TASK_ID_INVALID;
 
 	// Initialize.
     //Configure WDT.
@@ -392,6 +400,10 @@ int main(void)
 #endif
 
 	pins_init();
+
+#if APP_SCHEDULER_ENABLED
+	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+#endif
 
     err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
@@ -425,14 +437,10 @@ int main(void)
 	// Initialize timer module
 #ifdef USB_ENABLED
 	usb_cdc_init();
-	usb_cdc_tasks();
+	usb_cdc_process();
 #endif
 
 	nrf_pwr_mgmt_init();
-
-#if APP_SCHEDULER_ENABLED
-	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
-#endif
 
 	backlighting_init();
 
@@ -481,13 +489,13 @@ int main(void)
 
 	LOG_INFO("App init done");
 
-	m_tasks_id.boucle_id = task_create	(boucle_task, "boucle_tasks", NULL);
-	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
-	m_tasks_id.ls027_id = task_create	(ls027_task, "ls027_task", NULL);
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
+#endif
 
-	W_SYSVIEW_OnTaskCreate(BOUCLE_TASK);
-	W_SYSVIEW_OnTaskCreate(PERIPH_TASK);
-	W_SYSVIEW_OnTaskCreate(LCD_TASK);
+	m_tasks_id.boucle_id      = task_create	(boucle_task, "boucle_tasks", NULL);
+	m_tasks_id.peripherals_id = task_create	(peripherals_task, "peripherals_task", NULL);
+	m_tasks_id.ls027_id       = task_create	(ls027_task, "ls027_task", NULL);
 
 	// does not return
 	task_manager_start(idle_task, &m_tasks_id);

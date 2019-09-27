@@ -22,8 +22,6 @@ void uart_init_tx_only(nrf_uarte_baudrate_t baud);
 
 void uart_uninit(void);
 
-void uart_tasks(void);
-
 void uart_send(uint8_t * p_data, size_t length);
 
 #ifdef __cplusplus

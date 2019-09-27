@@ -21,6 +21,8 @@
 
 #define SPIM_INSTANCE  0
 
+#define SPIM_XFER_TIMEOUT  150
+
 static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPIM_INSTANCE);  /**< SPI instance. */
 
 static sSpimConfig const *p_spi_config[1];
@@ -50,7 +52,8 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
     sSpimConfig **spi_config = (sSpimConfig**)p_context;
 
     if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-    	events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_WAIT_SPI);
+//    	w_task_events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_WAIT_SPI);
+    	w_task_delay_cancel(m_tasks_id.ls027_id);
     }
 
     if (spi_config[0]) {
@@ -143,7 +146,8 @@ int spi_schedule (sSpimConfig const * spi_config,
 
 	if (!spi_xfer_done) {
 		if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-			events_wait(TASK_EVENT_LS027_WAIT_SPI);
+//			w_task_events_wait(TASK_EVENT_LS027_WAIT_SPI);
+			w_task_delay(SPIM_XFER_TIMEOUT);
 		} else {
 			while (!spi_xfer_done) {
 				perform_system_tasks_light();
@@ -167,7 +171,8 @@ int spi_schedule (sSpimConfig const * spi_config,
 		if (p_spi_config[0]->blocking) {
 
 			if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-				events_wait(TASK_EVENT_LS027_WAIT_SPI);
+//				w_task_events_wait(TASK_EVENT_LS027_WAIT_SPI);
+				w_task_delay(SPIM_XFER_TIMEOUT);
 			} else {
 				while (!spi_xfer_done) {
 					perform_system_tasks_light();

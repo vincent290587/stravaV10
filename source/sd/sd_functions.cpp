@@ -250,7 +250,7 @@ int load_parcours(Parcours& mon_parcours) {
 		if (check_memory_exception()) return -1;
 
 		// continue to perform the critical system tasks
-		yield();
+		w_task_yield();
 
 	} // fin du fichier
 
@@ -388,8 +388,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 			APP_ERROR_CHECK(0x2);
 		}
 
-		perform_system_tasks();
-		yield();
+		w_task_yield();
 	}
 
 	error = f_close(&g_fileObject);

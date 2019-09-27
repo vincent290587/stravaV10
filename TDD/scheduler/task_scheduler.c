@@ -15,6 +15,7 @@ typedef struct task_t {
 	jmp_buf context;		//!< Task context.
 	task_id_t task_id;
 	uint32_t events_mask;
+	uint32_t timeout;
 	const char *name;
 	tasked_func_t exec_func;
 	void *p_context;
@@ -191,4 +192,71 @@ size_t task_stack()
 	return (bytes);
 }
 
+/**@brief Delays the current task
+ *
+ * @param del_ The amount to delay the task by
+ * @return 0 if the timeout was cancelled elsewhere
+ */
+uint32_t task_delay(uint32_t del_) {
 
+	LOG_DEBUG("Task %s[%u] delay %u ms",
+			s_running->name, s_running->task_id, del_);
+
+	s_running->timeout = del_;
+
+	while (s_running->timeout > 1) task_yield();
+
+	uint32_t ret = s_running->timeout;
+	s_running->timeout = 0;
+
+	return ret;
+}
+
+/**
+ *
+ * @param task_id ID of the task for which to cancel delay
+ */
+void task_delay_cancel(task_id_t task_id) {
+
+	task_t* p_task = s_running;
+
+	if (!p_task) return;
+
+	for (int i=0; i < MAX_TASKS_NB; i++) {
+		if (task_id == p_task->task_id) {
+			LOG_DEBUG("Task %s[%u] delay cancel",
+					p_task->name,
+					p_task->task_id);
+			p_task->timeout = 0;
+			return;
+		}
+		p_task = p_task->next;
+	}
+
+	LOG_ERROR("Task not found");
+}
+
+/**
+ *
+ * @param tick_dur_ The period at which the function runs
+ */
+void task_tick_manage(uint32_t tick_dur_) {
+
+	task_t* p_task = s_running;
+
+	if (!p_task) return;
+
+	for (int i=0; i < MAX_TASKS_NB; i++) {
+		if (p_task->timeout > 1) {
+			if (p_task->timeout <= tick_dur_) {
+				// unblock the task
+				p_task->timeout = 1;
+			} else {
+				// decrement count
+				p_task->timeout -= tick_dur_;
+			}
+		}
+		p_task = p_task->next;
+	}
+
+}

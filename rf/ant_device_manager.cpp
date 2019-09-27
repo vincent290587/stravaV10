@@ -39,19 +39,20 @@ void ant_device_manager_search_start(eAntPairingSensorType dev_type) {
 	// prepare ANT+ search list
 	m_sensors_list.nb_sensors = 0;
 
+#if defined(ANT_STACK_SUPPORT_REQD)
 	// start search channel
 	ant_search_start(dev_type);
 	m_search_type = dev_type;
+#endif
 
 	LOG_WARNING("Starting ANT+ search...");
 }
 
 void ant_device_manager_search_validate(int var) {
-
+#if defined(ANT_STACK_SUPPORT_REQD)
 	if (eAntPairingSensorTypeNone == m_search_type) return;
 	if (var < 0 || var >= m_sensors_list.nb_sensors) return;
 	if (m_sensors_list.nb_sensors == 0) return;
-
 	ant_search_end(m_search_type, m_sensors_list.sensors[var].dev_id);
 
 	sUserParameters *settings = user_settings_get();
@@ -81,16 +82,18 @@ void ant_device_manager_search_validate(int var) {
 	vue.addNotif("ANT", "New device added", 4, eNotificationTypeComplete);
 
 	m_search_type = eAntPairingSensorTypeNone;
-
+#endif
 	LOG_WARNING("ANT+ search ended");
 }
 
 void ant_device_manager_search_cancel(void) {
 
+#if defined(ANT_STACK_SUPPORT_REQD)
 	// start normal channel
 	ant_search_end(m_search_type, 0x0000);
 
 	m_search_type = eAntPairingSensorTypeNone;
+#endif
 
 	LOG_WARNING("ANT+ search cancelled");
 }

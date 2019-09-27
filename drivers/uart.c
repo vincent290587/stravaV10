@@ -11,6 +11,7 @@
 #include "uart.h"
 #include "helper.h"
 #include "boards.h"
+#include "Model.h"
 #include "segger_wrapper.h"
 #include "nrf_soc.h"
 #include "nrf_pwr_mgmt.h"
@@ -36,6 +37,8 @@ typedef struct {
 	sUarteBuffer rx_buf2;
 	sUarteBuffer *p_readBuffer;
 } sUarteDBuffer;
+
+void uart_tasks(void *p_context);
 
 /*******************************************************************************
  * Variables
@@ -102,6 +105,10 @@ static void uart_event_handler(nrfx_uarte_event_t const * p_event,
 		_buffer->p_readBuffer->is_rx = true;
 		APP_ERROR_CHECK(err_code);
 
+		// remove the delay on the task
+		if (m_tasks_id.uart_id != TASK_ID_INVALID) {
+			w_task_delay_cancel(m_tasks_id.uart_id);
+		}
 	}
 	break;
 	case NRFX_UARTE_EVT_TX_DONE:
@@ -130,6 +137,10 @@ static void uart_trigger_rx(void) {
 	APP_ERROR_CHECK(err_code);
 
 	LOG_WARNING("UART RX restarted");
+
+	if (m_tasks_id.uart_id == TASK_ID_INVALID) {
+		m_tasks_id.uart_id = task_create(uart_tasks, "uart_tasks", NULL);
+	}
 }
 
 /**
@@ -204,40 +215,47 @@ void uart_send(uint8_t * p_data, size_t length) {
 /**
  *
  */
-void uart_tasks(void) {
+void uart_tasks(void *p_context) {
 
-	if (NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) {
+	for (;;) {
 
-		LOG_ERROR("UART framing error");
-		RING_BUFF_EMPTY(uart0_rb1);
+		if (NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) {
 
-	} else if(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask) {
+			LOG_ERROR("UART framing error");
+			RING_BUFF_EMPTY(uart0_rb1);
 
-		LOG_ERROR("UART parity error");
-		RING_BUFF_EMPTY(uart0_rb1);
+		} else if(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask) {
 
-	} else if (NRF_UARTE_ERROR_OVERRUN_MASK & m_error_mask) {
+			LOG_ERROR("UART parity error");
+			RING_BUFF_EMPTY(uart0_rb1);
 
-		LOG_ERROR("UART overrun: restarting RX");
-		uart_trigger_rx();
+		} else if (NRF_UARTE_ERROR_OVERRUN_MASK & m_error_mask) {
 
-	} else if (m_error_mask) {
+			LOG_ERROR("UART overrun: restarting RX");
+			uart_trigger_rx();
 
-		LOG_ERROR("UART error %u", m_error_mask);
+		} else if (m_error_mask) {
+
+			LOG_ERROR("UART error %u", m_error_mask);
+
+		}
+		m_error_mask = 0;
+
+		/* If ring buffer is not empty, parse data. */
+		while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
+		{
+			char c = RING_BUFF_GET_ELEM(uart0_rb1);
+			RING_BUFFER_POP(uart0_rb1);
+
+			gps_encode_char(c);
+
+			//LOG_RAW_INFO(c);
+
+		}
+
+		if (m_tasks_id.uart_id != TASK_ID_INVALID) {
+			w_task_delay(100);
+		}
 
 	}
-	m_error_mask = 0;
-
-	/* If ring buffer is not empty, parse data. */
-	while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
-	{
-		char c = RING_BUFF_GET_ELEM(uart0_rb1);
-		RING_BUFFER_POP(uart0_rb1);
-
-		gps_encode_char(c);
-
-		//LOG_RAW_INFO(c);
-
-	}
-
 }

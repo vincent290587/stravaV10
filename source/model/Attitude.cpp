@@ -175,7 +175,7 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 
 			// save on SD
 			sysview_task_void_enter(SaveUserPosition);
-			//sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
 			sysview_task_void_exit(SaveUserPosition);
 
 			m_st_buffer_nb_elem = 0;

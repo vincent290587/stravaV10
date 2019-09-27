@@ -621,6 +621,8 @@ static void _SendSyncInfo(void) {
 *    EventId      - Id of the event to send.
 *
 */
+static unsigned int m_last_EventId;
+
 static void _SendPacket(U8* pStartPacket, U8* pEndPacket, unsigned int EventId) {
   unsigned int  NumBytes;
   U32           TimeStamp;
@@ -665,6 +667,14 @@ Send:
       goto SendDone;
     }
   }
+
+  // prevent overflow of SYSVIEW_EVTID_IDLE events
+  if ((m_last_EventId == EventId) &&
+		  (EventId == SYSVIEW_EVTID_IDLE)) {
+	  goto SendDone;
+  }
+  m_last_EventId = EventId;
+
   //
   // Prepare actual packet.
   // If it is a known packet, prepend eventId only,

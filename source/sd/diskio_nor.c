@@ -72,6 +72,14 @@ NRF_BLOCK_DEV_QSPI_DEFINE(
      NFR_BLOCK_DEV_INFO_CONFIG("stravaV10", "QSPI", "0.01")
 );
 
+static void _wait_for_memory(void ) {
+
+	if (task_manager_is_started()) {
+//		w_task_yield();
+		w_task_delay(3);
+	}
+
+}
 
 /**
  *
@@ -94,7 +102,7 @@ void diskio_nor_init(void) {
 	// Initialize FATFS disk I/O interface by providing the block device.
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), perform_system_tasks_light)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), _wait_for_memory)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));

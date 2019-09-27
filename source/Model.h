@@ -20,6 +20,8 @@ typedef struct {
 	uint8_t boucle_id;
 	uint8_t system_id;
 	uint8_t ls027_id;
+	uint8_t uart_id;
+	uint8_t usb_id;
 } sTasksIDs;
 
 extern sTasksIDs m_tasks_id;
@@ -102,8 +104,6 @@ void model_dispatch_sensors_update(void);
 void model_dispatch_lns_update(sLnsInfo *lns_info);
 
 void model_get_navigation(sKomootNavigation *nav);
-
-void perform_system_tasks(void);
 
 void perform_system_tasks_light(void);
 
