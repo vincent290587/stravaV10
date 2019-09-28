@@ -291,26 +291,34 @@ void peripherals_task(void * p_context)
 #endif
 
 #ifdef ANT_STACK_SUPPORT_REQD
+		sysview_task_void_enter(AntRFTasks);
 		ant_tasks();
 		roller_manager_tasks();
 		suffer_score.addHrmData(hrm_info.bpm, millis());
+		sysview_task_void_exit(AntRFTasks);
 #endif
 
 		// check screen update & unlock task
 		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
+			sysview_task_void_enter(VueRefresh);
 			vue.refresh();
+			sysview_task_void_exit(VueRefresh);
 		}
 
+		sysview_task_void_enter(GPSTasks);
 		gps_mgmt.runWDT();
 
 		gps_mgmt.tasks();
+		sysview_task_void_exit(GPSTasks);
 
+		sysview_task_void_enter(LocatorTasks);
 		locator.tasks();
 
 		// update date
 		SDate dat;
 		locator.getDate(dat);
 		attitude.addNewDate(&dat);
+		sysview_task_void_exit(LocatorTasks);
 
 		notifications_tasks();
 

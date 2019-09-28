@@ -99,7 +99,7 @@ uint16_t LS027_get_pixel(uint16_t x, uint16_t y) {
  */
 static inline void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
 
-	uint8_t mask = BIT_MASK((x & 0b111) + nb, x & 0b111) & 0xFF;
+	uint8_t mask = BIT_MASK((x & 0b111) + nb - 1, x & 0b111) & 0xFF;
 
 	LOG_DEBUG("setBufferPixelGroup %03u %03u %03u 0x%02X", x, y, nb, mask);
 
@@ -151,22 +151,26 @@ static inline void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
  */
 void LS027_drawPixelGroup(uint16_t x, uint16_t y, uint16_t nb, uint16_t color) {
 
-	// loop pixels
 	uint8_t index;
-	while (nb >= 8) {
-		index = x & 0b111;
-		// handle this group of 8 pixels
-		setBufferPixelGroup(x, y, 8 - index, color);
 
-		LOG_DEBUG("setBufferPixelGroup %03u %03u %03u %d", x, y, nb, 8 - index);
+	// loop pixels
+	while (nb) {
+		index = x & 0b111;
+
+		if (nb < 8 - index) {
+			setBufferPixelGroup(x, y, nb, color);
+			index = 8 - nb;
+		} else {
+			setBufferPixelGroup(x, y, 8 - index, color);
+		}
+
+		LOG_DEBUG("setBufferPixelGroup %03u %03u %03u %d", x, y, nb, index);
 
 		// next group of pixels
 		nb -= 8 - index;
 		x  += 8 - index;
 	}
 
-	// handle this group of < 8 pixels
-	if (nb) setBufferPixelGroup(x, y, nb, color);
 
 }
 

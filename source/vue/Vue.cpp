@@ -75,7 +75,9 @@ void Vue::setCurrentMode(eVueGlobalScreenModes mode_) {
 
 void Vue::refresh(void) {
 
+	sysview_task_void_enter(Ls027Clear);
 	this->clearDisplay();
+	sysview_task_void_exit(Ls027Clear);
 
 	if (m_is_menu_selected) {
 		this->tasksMenu();
@@ -227,6 +229,8 @@ void Vue::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
 
 void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite) {
 
+	sysview_task_void_enter(Ls027Cadrans);
+
 	int decal = 0;
 	int x = _width / 4;
 	int y = _height / nb_lig * (p_lig - 1);
@@ -255,10 +259,14 @@ void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi
 	// print delimiters
 	if (p_lig > 1) drawFastHLine(0, _height / nb_lig * (p_lig - 1), _width, 1);
 	if (p_lig < nb_lig) drawFastHLine(0, _height / nb_lig * (p_lig), _width, 1);
+
+	sysview_task_void_exit(Ls027Cadrans);
 }
 
 
 void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite) {
+
+	sysview_task_void_enter(Ls027Cadrans);
 
 	const int x = _width / 2 * p_col;
 	const int y = _height / nb_lig * (p_lig - 1);
@@ -298,6 +306,8 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 
 	if (p_lig > 1)      drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * (p_lig - 1), _width / 2, 1);
 	if (p_lig < nb_lig) drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * p_lig, _width / 2, 1);
+
+	sysview_task_void_exit(Ls027Cadrans);
 }
 
 void Vue::HistoH(uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_) {
