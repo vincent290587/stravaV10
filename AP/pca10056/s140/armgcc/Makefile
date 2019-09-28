@@ -1,6 +1,6 @@
 PROJECT_NAME     := usbd_ble_uart_pca10056_s140
 TARGETS          := nrf52840_xxaa
-SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.1.0_softdevice.hex
+SOFTDEVICE       := components/softdevice/s140/hex/s140_nrf52_6.1.1_softdevice.hex
 
 include Makefile.local
 
@@ -306,15 +306,15 @@ settings:
 dfu_softdevice:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaAP_soft.zip
 	nrfutil pkg display stravaAP_soft.zip
-	nrfutil dfu usb_serial -pkg stravaAP_soft.zip -p $(COM_PORT)
+	nrfutil dfu usb-serial -pkg stravaAP_soft.zip -p $(COM_PORT)
 
 dfu:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xae --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaAP.zip
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb6 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaAP.zip
 	nrfutil pkg display stravaAP.zip
-	nrfutil dfu usb_serial -pkg stravaAP.zip -p $(COM_PORT)
+	nrfutil dfu usb-serial -pkg stravaAP.zip -p $(COM_PORT)
 
 dfu_send:
-	nrfutil dfu usb_serial -pkg stravaAP.zip -p $(COM_PORT)
+	nrfutil dfu usb-serial -pkg stravaAP.zip -p $(COM_PORT)
 
 # Flash the program
 flash: default
@@ -324,7 +324,7 @@ flash: default
 
 # Flash softdevice
 flash_softdevice:
-	@echo Flashing: s140_nrf52_6.1.0_softdevice.hex
+	@echo Flashing: $(SOFTDEVICE)
 	nrfjprog -f nrf52 --program $(SDK_ROOT)/$(SOFTDEVICE) --sectorerase
 	nrfjprog -f nrf52 --reset
 

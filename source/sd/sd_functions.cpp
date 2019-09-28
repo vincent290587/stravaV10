@@ -167,7 +167,7 @@ int load_segment(Segment& seg) {
 	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
-		NRF_LOG_ERROR("Open file failed. (error %u)", error);
+		LOG_ERROR("Open file failed. (error %u)", error);
 		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
@@ -193,7 +193,7 @@ int load_segment(Segment& seg) {
 	error = f_close (&g_fileObject);
 	if (error)
 	{
-		NRF_LOG_ERROR("Close file failed. (error %u)", error);
+		LOG_ERROR("Close file failed. (error %u)", error);
 		sysview_task_void_exit(SdAccess);
 		return -1;
 	}
@@ -583,12 +583,19 @@ char* log_file_read(size_t *r_length) {
 
 	if (!is_fat_init()) return NULL;
 
+	sysview_task_void_enter(SdAccess);
+
 	if (!f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_LogFileObject))
 	{
-		LOG_INFO("Read LOG file failed.");
+
+		LOG_INFO("Read LOG file EOF: %d ERR: %u", f_eof(&g_LogFileObject), f_error(&g_LogFileObject));
+		sysview_task_void_exit(SdAccess);
+
 		return NULL;
 	}
 	*r_length = strlen(g_bufferRead);
+
+	sysview_task_void_exit(SdAccess);
 
 	return g_bufferRead;
 }

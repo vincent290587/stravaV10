@@ -35,6 +35,7 @@
 #include "Model.h"
 #include "Locator.h"
 #include "neopixel.h"
+#include "ble_api_base.h"
 #include "segger_wrapper.h"
 #include "ring_buffer.h"
 #include "Model.h"
@@ -229,7 +230,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		break;
 
 	case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
-		LOG_INFO("GATTC WRITE_CMD_TX Complete");
+		LOG_DEBUG("GATTC WRITE_CMD_TX Complete %u", m_nus_cts);
 
 		// clear to send more packets
 		m_nus_cts = true;
@@ -398,10 +399,9 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		break;
 
 	case BLE_NUS_C_EVT_NUS_TX_EVT:
-		// TODO handle received chars
-		LOG_INFO("Received %u chars from BLE !", p_evt->data_len);
-//		m_nus_xfer_state = eNusTransferStateInit;
-		// ble_nus_chars_received_uart_print(p_ble_nus_evt->p_data, p_ble_nus_evt->data_len);
+		// handle received chars
+		LOG_DEBUG("Received %u chars from BLE !", p_evt->data_len);
+
 		{
 			for (uint16_t i=0; i < p_evt->data_len; i++) {
 
@@ -697,6 +697,22 @@ void ble_get_navigation(sKomootNavigation *nav) {
 
 }
 
+void ble_start_evt(eBleEventType evt) {
+
+	switch (evt) {
+	case eBleEventTypeStartXfer:
+	{
+#ifdef BLE_STACK_SUPPORT_REQD
+		m_nus_xfer_state = eNusTransferStateInit;
+#endif
+	} break;
+	default:
+		LOG_WARNING("Weird event");
+		break;
+	}
+
+}
+
 #ifdef BLE_STACK_SUPPORT_REQD
 /**
  * Init BLE stack
@@ -718,15 +734,19 @@ void ble_init(void)
 	scan_start();
 }
 
+
 /**
  * Send the log file to a remote computer
  */
 #include "sd_functions.h"
 void ble_nus_tasks(void) {
 
+	static bool _hold_data = false;
+	static sCharArray m_nus_xfer_array;
+
 	if (m_nus_xfer_state == eNusTransferStateIdle) {
 
-		if (RING_BUFF_IS_NOT_EMPTY(nus_rb1)) {
+		while (RING_BUFF_IS_NOT_EMPTY(nus_rb1)) {
 
 			char c = RING_BUFF_GET_ELEM(nus_rb1);
 			RING_BUFFER_POP(nus_rb1);
@@ -746,6 +766,7 @@ void ble_nus_tasks(void) {
 		} else {
 			m_nus_packet_nb = 0;
 			m_nus_cts = true;
+			_hold_data = false;
 			m_nus_xfer_state = eNusTransferStateRun;
 		}
 	}
@@ -759,11 +780,16 @@ void ble_nus_tasks(void) {
 		break;
 
 	case eNusTransferStateFinish:
-		if (!log_file_stop(false)) {
-			LOG_WARNING("Log file error stop");
+	{
+		int ret = log_file_stop(false);
+		if (ret != 0) {
+			LOG_WARNING("Log file error stop %d", ret);
+		} else {
+			LOG_WARNING("NUS transfer completed :-)");
 		}
 		m_nus_xfer_state = eNusTransferStateIdle;
-		break;
+		_hold_data = false;
+	} break;
 
 	default:
 		break;
@@ -773,38 +799,43 @@ void ble_nus_tasks(void) {
 			m_nus_xfer_state == eNusTransferStateRun &&
 			m_nus_cts) {
 
-		sCharArray m_nus_xfer_array;
-		m_nus_xfer_array.length = 0;
-		m_nus_xfer_array.str = log_file_read(&m_nus_xfer_array.length);
-		if (!m_nus_xfer_array.str || !m_nus_xfer_array.length) {
-			// problem or end of transfer
-			m_nus_xfer_state = eNusTransferStateFinish;
-			return;
+		if (!_hold_data) {
+			m_nus_xfer_array.length = 0;
+			m_nus_xfer_array.str = log_file_read(&m_nus_xfer_array.length);
+			if (!m_nus_xfer_array.str || !m_nus_xfer_array.length) {
+				LOG_INFO("Log file end, %u packets sent", m_nus_packet_nb);
+				// problem or end of transfer
+				m_nus_xfer_state = eNusTransferStateFinish;
+				return;
+			}
 		}
+
+		_hold_data = false;
 
 		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_array.str, m_nus_xfer_array.length);
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
-			NRF_LOG_INFO("NUS BUSY");
+			LOG_WARNING("NUS BUSY");
 			break;
 
 		case NRF_ERROR_RESOURCES:
-			NRF_LOG_INFO("NUS RESSSS %u", m_nus_packet_nb);
+			LOG_DEBUG("NUS RESSSS %u", m_nus_packet_nb);
 			m_nus_cts = false;
+			_hold_data = true;
 			break;
 
 		case NRF_ERROR_TIMEOUT:
-			NRF_LOG_ERROR("NUS timeout", err_code);
+			LOG_WARNING("NUS timeout", err_code);
 			break;
 
 		case NRF_SUCCESS:
-			NRF_LOG_INFO("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_array.length);
+			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_array.length);
 			m_nus_packet_nb++;
 			break;
 
 		default:
-			NRF_LOG_ERROR("NUS unknown error: 0x%X", err_code);
+			LOG_WARNING("NUS unknown error: 0x%X", err_code);
 			break;
 		}
 

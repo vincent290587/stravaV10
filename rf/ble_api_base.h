@@ -10,6 +10,10 @@
 
 #include "g_structs.h"
 
+typedef enum {
+	eBleEventTypeStartXfer,
+} eBleEventType;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,6 +22,8 @@ extern "C" {
 void ble_init(void);
 
 void ble_nus_tasks(void);
+
+void ble_start_evt(eBleEventType evt);
 
 void ble_get_navigation(sKomootNavigation *nav);
 

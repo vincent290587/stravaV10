@@ -187,11 +187,6 @@ static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 {
 	UNUSED_PARAMETER(p_inst);
 	UNUSED_PARAMETER(event);
-
-//	// remove the delay on the task
-//	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
-//		w_task_delay_cancel(m_tasks_id.usb_id);
-//	}
 }
 
 /**
