@@ -363,6 +363,8 @@ bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
 #ifndef TDD
 void Locator::displayGPS2(void) {
 
+	sysview_task_void_enter(Ls027Print);
+
 //	int totalMessages = atoi(totalGPGSVMessages.value());
 //	int currentMessage = atoi(messageNumber.value());
 
@@ -395,6 +397,8 @@ void Locator::displayGPS2(void) {
 	vue.println(line);
 
 	vue.println("  ------");
+
+	sysview_task_void_exit(Ls027Print);
 
 }
 

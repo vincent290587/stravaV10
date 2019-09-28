@@ -86,22 +86,96 @@ uint16_t LS027_get_pixel(uint16_t x, uint16_t y) {
 	return ret_color;
 }
 
-void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
+#define BIT(nr)                 (1UL << (nr))
+#define U32_C(x)                x ## U
+#define BIT_MASK(h, l)          (((U32_C(1) << ((h) - (l) + 1)) - 1) << (l))
 
-	bool _is_color_inverted = m_is_color_inverted;
+
+/**
+ *
+ * @param x Col number:  0..400
+ * @param y Line number: 0..240
+ * @param color Color to be printed
+ */
+static inline void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
+
+	uint8_t mask = BIT_MASK((x & 0b111) + nb - 1, x & 0b111) & 0xFF;
+
+	LOG_DEBUG("setBufferPixelGroup %03u %03u %03u 0x%02X", x, y, nb, mask);
 
 	//we simply invert the pixel's color
 	if (color == 2) {
-		_is_color_inverted = false;
-		color = LS027_get_pixel(x, y) ? 0:1;
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] ^= mask;
+		return;
 	}
 
 	// fill buffer
-	if ((color && !_is_color_inverted) ||
-			(!color && _is_color_inverted)) {
+	if (color ^ m_is_color_inverted) {
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] |= mask;
+	} else {
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] &= ~mask;
+	}
+
+}
+
+/**
+ *
+ * @param x Col number:  0..400
+ * @param y Line number: 0..240
+ * @param color Color to be printed
+ */
+static inline void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
+
+	//we simply invert the pixel's color
+	if (color == 2) {
+		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] ^= set[x & 7];
+		return;
+	}
+
+	// fill buffer
+	if (color ^ m_is_color_inverted) {
 		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] |= set[x & 7];
 	} else {
 		ls027_tdd_buffer[LS027_COORD_TO_INDEX(x,y)] &= clr[x & 7];
 	}
+
+}
+
+/*!
+    @brief Draws a pixels with consecutive x in image buffer
+
+    @param[in]  x
+                The x position (0 based)
+    @param[in]  y
+                The y position (0 based)
+ */
+void LS027_drawPixelGroup(uint16_t x, uint16_t y, uint16_t nb, uint16_t color) {
+
+	uint8_t index;
+
+	// loop pixels
+	while (nb) {
+		index = x & 0b111;
+
+		if (nb < 8 - index) {
+			setBufferPixelGroup(x, y, nb, color);
+			index = 8 - nb;
+		} else {
+			setBufferPixelGroup(x, y, 8 - index, color);
+		}
+
+		LOG_DEBUG("setBufferPixelGroup %03u %03u %03u %d", x, y, nb, index);
+
+		// next group of pixels
+		nb -= 8 - index;
+		x  += 8 - index;
+	}
+
+
+}
+
+void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
+
+	setBufferPixel(x, y, color);
 
 }

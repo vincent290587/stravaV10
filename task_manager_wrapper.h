@@ -68,6 +68,13 @@
 #define I2cMgmtReadMs                  (TASK_BASE + 15u)
 #define I2cMgmtRead1                   (TASK_BASE + 16u)
 #define I2cMgmtRead2                   (TASK_BASE + 17u)
+#define Ls027Clear                     (TASK_BASE + 18u)
+#define Ls027Cadrans                   (TASK_BASE + 19u)
+#define Ls027Print                     (TASK_BASE + 20u)
+#define LocatorTasks                   (TASK_BASE + 21u)
+#define AntRFTasks                     (TASK_BASE + 22u)
+#define GPSTasks                       (TASK_BASE + 23u)
+#define VueRefresh                     (TASK_BASE + 24u)
 
 
 

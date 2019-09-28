@@ -67,6 +67,8 @@ void LS027_ToggleVCOM(void);
 
 void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color);
 
+void LS027_drawPixelGroup(uint16_t x, uint16_t y, uint16_t nb, uint16_t color);
+
 #if defined(__cplusplus)
 }
 #endif /* _cplusplus */
