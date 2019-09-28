@@ -137,6 +137,9 @@ void model_input_virtual_uart(char c) {
 			hardfault_genhf_invalid_fp();
 
 		}
+		else if (vparser.getPC() == 17) {
+			ble_start_evt(eBleEventTypeStartXfer);
+		}
 		else if (vparser.getPC() == 16) {
 			LOG_WARNING("usb_cdc_start_msc start");
 			usb_cdc_start_msc();
@@ -278,6 +281,10 @@ void peripherals_task(void * p_context)
 	for(;;)
 	{
 		i2c_scheduling_tasks();
+
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
+#endif
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 		ble_nus_tasks();
