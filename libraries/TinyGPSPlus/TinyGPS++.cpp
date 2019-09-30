@@ -36,9 +36,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define _GNGGAterm   "GNGGA"
 
 TinyGPSPlus::TinyGPSPlus()
-  :  parity(0)
+  :  curSentenceType(GPS_SENTENCE_OTHER)
+  ,  parity(0)
   ,  isChecksumTerm(false)
-  ,  curSentenceType(GPS_SENTENCE_OTHER)
   ,  curTermNumber(0)
   ,  curTermOffset(0)
   ,  sentenceHasFix(false)

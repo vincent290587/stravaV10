@@ -138,7 +138,9 @@ void model_input_virtual_uart(char c) {
 
 		}
 		else if (vparser.getPC() == 17) {
+#if defined (BLE_STACK_SUPPORT_REQD)
 			ble_start_evt(eBleEventTypeStartXfer);
+#endif
 		}
 		else if (vparser.getPC() == 16) {
 			LOG_WARNING("usb_cdc_start_msc start");

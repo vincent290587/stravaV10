@@ -653,10 +653,10 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 
 		uint16_t bo = pgm_read_word(&glyph->bitmapOffset);
 		uint8_t  w  = pgm_read_byte(&glyph->width),
-				h  = pgm_read_byte(&glyph->height);
+				 h  = pgm_read_byte(&glyph->height);
 		//, xa = pgm_read_byte(&glyph->xAdvance)
-		int8_t   xo = pgm_read_byte(&glyph->xOffset),
-				 yo = pgm_read_byte(&glyph->yOffset);
+		int8_t   xo = 0;//pgm_read_byte(&glyph->xOffset);
+		int8_t   yo = pgm_read_byte(&glyph->yOffset);
 		uint8_t  xx, yy, bits = 0, bit = 0;
 		int16_t  xo16=0, yo16=0;
 
@@ -709,10 +709,12 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 		}
 #else
 
+		uint8_t offset;
 		if(size == 1) {
 			for(yy=0; yy<h; yy++) {
-				for(xx=0; xx<w; xx++) {
-					if(!(bit++ & 7)) {
+				xx=0;
+				while (xx < w) {
+					if(!(bit & 7)) {
 						// bit is aligned
 						bits = pgm_read_byte(&bitmap[bo++]);
 					}
@@ -720,8 +722,14 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 						drawPixel(x+xo16+xx, y+yo16+yy, color);
 						//fillRect(x+(xo16+xx)*size, y+(yo16+yy)*size, size, size, color);
 
+						// clear before next
+						bits &= 0x7F;
 					}
-					bits <<= 1;
+
+					offset = __builtin_clz(bits);
+					bits <<= offset;
+					bit   += offset;
+					xx    += offset;
 				}
 			}
 		} else {
