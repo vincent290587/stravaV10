@@ -19,6 +19,10 @@ inline void w_task_yield(void) {
 
 }
 
+inline task_id_t w_task_id_get(void) {
+	return task_id_get();
+}
+
 /**@brief Wait for events. Set events are cleared after this function returns.
  *
  * @param[in] evt_mask Mask of events to wait

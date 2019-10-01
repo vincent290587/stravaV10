@@ -54,7 +54,7 @@ int init_liste_segments(void)
 
 	if (!is_fat_init()) return -2;
 
-	sysview_task_void_enter(SdAccess);
+	sysview_task_void_enter(SdFunction);
 
 	mes_segments._segs.clear();
 
@@ -72,7 +72,7 @@ int init_liste_segments(void)
 	if (f_opendir(&directory, "/"))
 	{
 		LOG_INFO("Open directory failed.");
-		sysview_task_void_exit(SdAccess);
+		sysview_task_void_exit(SdFunction);
 		return -1;
 	}
 
@@ -125,7 +125,7 @@ int init_liste_segments(void)
 
 	NRF_LOG_FLUSH();
 
-	sysview_task_void_exit(SdAccess);
+	sysview_task_void_exit(SdFunction);
 
 	return 0;
 }
@@ -159,7 +159,7 @@ int load_segment(Segment& seg) {
 
 	time_start = 0.;
 
-	sysview_task_void_enter(SdAccess);
+	sysview_task_void_enter(SdFunction);
 
 	String fat_name = seg.getName();
 
@@ -168,7 +168,7 @@ int load_segment(Segment& seg) {
 	if (error)
 	{
 		LOG_ERROR("Open file failed. (error %u)", error);
-		sysview_task_void_exit(SdAccess);
+		sysview_task_void_exit(SdFunction);
 		return -1;
 	}
 
@@ -194,11 +194,11 @@ int load_segment(Segment& seg) {
 	if (error)
 	{
 		LOG_ERROR("Close file failed. (error %u)", error);
-		sysview_task_void_exit(SdAccess);
+		sysview_task_void_exit(SdFunction);
 		return -1;
 	}
 
-	sysview_task_void_exit(SdAccess);
+	sysview_task_void_exit(SdFunction);
 
 	LOG_INFO("%d points loaded", res);
 
@@ -222,7 +222,7 @@ int load_parcours(Parcours& mon_parcours) {
 
 	String fat_name = mon_parcours.getName();
 
-	sysview_task_void_enter(SdAccess);
+	sysview_task_void_enter(SdFunction);
 
 	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 
@@ -230,7 +230,7 @@ int load_parcours(Parcours& mon_parcours) {
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
-		sysview_task_void_exit(SdAccess);
+		sysview_task_void_exit(SdFunction);
 		return -1;
 	}
 
@@ -258,13 +258,13 @@ int load_parcours(Parcours& mon_parcours) {
 	if (error)
 	{
 		LOG_INFO("Close file failed.");
-		sysview_task_void_exit(SdAccess);
+		sysview_task_void_exit(SdFunction);
 		return -1;
 	} else {
 		LOG_INFO("%u points added to PRC", res);
 	}
 
-	sysview_task_void_exit(SdAccess);
+	sysview_task_void_exit(SdFunction);
 
 	return res;
 }
@@ -375,7 +375,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 		return;
 	}
 
-	for (size_t i=0; i< nb_pos; i++) {
+	for (uint16_t i=0; i< nb_pos; i++) {
 		// print histo
 		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
 				att[i].loc.lat, att[i].loc.lon,
@@ -388,7 +388,6 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 			APP_ERROR_CHECK(0x2);
 		}
 
-		w_task_yield();
 	}
 
 	error = f_close(&g_fileObject);
@@ -583,19 +582,19 @@ char* log_file_read(size_t *r_length) {
 
 	if (!is_fat_init()) return NULL;
 
-	sysview_task_void_enter(SdAccess);
+	sysview_task_void_enter(SdFunction);
 
 	if (!f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_LogFileObject))
 	{
 
 		LOG_INFO("Read LOG file EOF: %d ERR: %u", f_eof(&g_LogFileObject), f_error(&g_LogFileObject));
-		sysview_task_void_exit(SdAccess);
+		sysview_task_void_exit(SdFunction);
 
 		return NULL;
 	}
 	*r_length = strlen(g_bufferRead);
 
-	sysview_task_void_exit(SdAccess);
+	sysview_task_void_exit(SdFunction);
 
 	return g_bufferRead;
 }

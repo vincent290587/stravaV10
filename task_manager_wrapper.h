@@ -75,6 +75,8 @@
 #define AntRFTasks                     (TASK_BASE + 22u)
 #define GPSTasks                       (TASK_BASE + 23u)
 #define VueRefresh                     (TASK_BASE + 24u)
+#define SdFunction                     (TASK_BASE + 25u)
+#define HalQspi                        (TASK_BASE + 26u)
 
 
 

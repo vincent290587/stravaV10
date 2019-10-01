@@ -137,6 +137,7 @@ void _cbSendSystemDesc(void) {
   SEGGER_SYSVIEW_SendSysDesc("I#38=Radio_IRQn");
   SEGGER_SYSVIEW_SendSysDesc("I#54=FPU_IRQn");
   SEGGER_SYSVIEW_SendSysDesc("I#55=USB_IRQn");
+  SEGGER_SYSVIEW_SendSysDesc("I#57=QSPI_IRQn");
 }
 
 /*********************************************************************
