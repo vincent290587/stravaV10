@@ -145,8 +145,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 	ASSERT(m_is_started);
 
 	if (!spi_xfer_done) {
-		if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-//			w_task_events_wait(TASK_EVENT_LS027_WAIT_SPI);
+		if (task_manager_is_started()) {
 			w_task_delay(SPIM_XFER_TIMEOUT);
 		} else {
 			while (!spi_xfer_done) {
@@ -170,8 +169,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 	if (p_spi_config[0]) {
 		if (p_spi_config[0]->blocking) {
 
-			if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-//				w_task_events_wait(TASK_EVENT_LS027_WAIT_SPI);
+			if (task_manager_is_started()) {
 				w_task_delay(SPIM_XFER_TIMEOUT);
 			} else {
 				while (!spi_xfer_done) {

@@ -253,7 +253,7 @@ void uart_tasks(void *p_context) {
 
 		}
 
-		if (m_tasks_id.uart_id != TASK_ID_INVALID) {
+		if (task_manager_is_started()) {
 			w_task_delay(100);
 		}
 

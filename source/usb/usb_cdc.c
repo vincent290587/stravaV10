@@ -341,9 +341,11 @@ static void usb_cdc_trigger_xfer(void) {
 
 static void _wait_for_usb(void ) {
 
-	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
-//		w_task_yield();
-		w_task_delay(3);
+	if (m_tasks_id.usb_id != TASK_ID_INVALID &&
+			task_manager_is_started()) {
+		w_task_delay(110);
+	} else {
+		perform_system_tasks_light();
 	}
 }
 
@@ -587,7 +589,9 @@ void usb_cdc_tasks(void *p_context) {
 
 		usb_cdc_process();
 
-		w_task_delay(50);
+		if (task_manager_is_started()) {
+			w_task_delay(50);
+		}
 
 	}
 }

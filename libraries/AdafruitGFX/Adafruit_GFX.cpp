@@ -712,24 +712,16 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 		uint8_t offset;
 		if(size == 1) {
 			for(yy=0; yy<h; yy++) {
-				xx=0;
-				while (xx < w) {
-					if(!(bit & 7)) {
-						// bit is aligned
+				for(xx=0; xx<w; xx++) {
+					if(!(bit++ & 7)) {
 						bits = pgm_read_byte(&bitmap[bo++]);
 					}
 					if(bits & 0x80) {
 						drawPixel(x+xo16+xx, y+yo16+yy, color);
 						//fillRect(x+(xo16+xx)*size, y+(yo16+yy)*size, size, size, color);
 
-						// clear before next
-						bits &= 0x7F;
 					}
-
-					offset = __builtin_clz(bits);
-					bits <<= offset;
-					bit   += offset;
-					xx    += offset;
+					bits <<= 1;
 				}
 			}
 		} else {

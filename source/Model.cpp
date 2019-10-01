@@ -333,7 +333,9 @@ void peripherals_task(void * p_context)
 
 		backlighting_tasks();
 
-		w_task_delay(100);
+		if (task_manager_is_started()) {
+			w_task_delay(100);
+		}
 
 	}
 }

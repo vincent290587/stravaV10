@@ -612,7 +612,14 @@ static ret_code_t block_dev_qspi_write_start(nrf_block_dev_qspi_t const * p_qspi
     p_work->state = NRF_BLOCK_DEV_QSPI_STATE_WRITE_ERASE;
     p_work->erase_required = false;
 
-    return nrf_drv_qspi_erase(NRF_QSPI_ERASE_LEN_4KB, address);
+    ret_code_t err = nrf_drv_qspi_erase(NRF_QSPI_ERASE_LEN_4KB, address);
+
+    // artificial delay
+    if (task_manager_is_started()) {
+    	w_task_delay(50);
+    }
+
+    return err;
 }
 
 static ret_code_t block_dev_qspi_eunit_write(nrf_block_dev_qspi_t const * p_qspi_dev,

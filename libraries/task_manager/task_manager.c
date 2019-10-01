@@ -431,16 +431,27 @@ void task_yield(void)
 
 uint32_t task_delay(uint32_t del_)
 {
-	s_task_state[s_current_task_id].timeout = del_;
+    uint32_t current_timeout = 0;
+	s_task_state[s_current_task_id].timeout = del_ == 1 ? 2 : del_;
 
-    TASK_STATE_SUSPENDED(s_current_task_id);
-    TASK_STATE_DELAYED(s_current_task_id);
+    ASSERT(m_is_started);
 
 	W_SYSVIEW_OnTaskStopReady(TASK_BASE_NRF + s_current_task_id, TASK_EVENT_PERIPH_MS_WAIT);
 
-    task_yield();
+	for (;;) {
 
-    return s_task_state[s_current_task_id].timeout;
+		current_timeout = s_task_state[s_current_task_id].timeout;
+		if (current_timeout <= 1) {
+			return current_timeout;
+		}
+
+		TASK_STATE_SUSPENDED(s_current_task_id);
+		TASK_STATE_DELAYED(s_current_task_id);
+
+		task_yield();
+	}
+
+    return current_timeout;
 }
 
 void task_delay_cancel(task_id_t task_id)
