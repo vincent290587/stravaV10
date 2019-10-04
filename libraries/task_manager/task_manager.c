@@ -442,7 +442,7 @@ uint32_t task_delay(uint32_t del_)
 
 		current_timeout = s_task_state[s_current_task_id].timeout;
 		if (current_timeout <= 1) {
-			return current_timeout;
+			break;
 		}
 
 		TASK_STATE_SUSPENDED(s_current_task_id);
@@ -484,7 +484,7 @@ void task_tick_manage(uint32_t tick_dur_)
     		// this task was blocked by a delay
     		if (timeout <= tick_dur_) {
 
-    			// we need to unblock the task
+    			// timeout, we need to unblock the task
     			task_delay_cancel(task_id);
 
     			nrf_atomic_u32_store(&s_task_state[task_id].timeout, 1);

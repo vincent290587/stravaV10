@@ -19,7 +19,6 @@
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
 #include "nrf_drv_clock.h"
-#include "usb_parser.h"
 #include "usb_cdc.h"
 #include "ring_buffer.h"
 #include "sd_hal.h"
@@ -236,7 +235,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
 		size_t ind = 0;
 		while (bytes_read--) {
-			usb_cdc_decoder(m_rx_buffer[ind++]);
+			model_input_virtual_uart(m_rx_buffer[ind++]);
 		}
 
 		/* Fetch data until internal buffer is empty */
@@ -534,12 +533,7 @@ void usb_cdc_close(void) {
  */
 void usb_flush(void) {
 
-	/* If ring buffer is not empty, parse data. */
-	while (m_is_port_open &&
-			RING_BUFF_IS_NOT_EMPTY(cdc_rb1))
-	{
-		w_task_yield();
-	}
+	usb_cdc_process();
 
 }
 
@@ -576,6 +570,11 @@ void usb_cdc_process(void) {
 
 		usb_cdc_trigger_xfer();
 
+	}
+
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
 	}
 
 }

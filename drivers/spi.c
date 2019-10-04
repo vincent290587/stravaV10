@@ -51,7 +51,7 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
 
     sSpimConfig **spi_config = (sSpimConfig**)p_context;
 
-    if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+    if (p_spi_config[0]->blocking && m_tasks_id.ls027_id != TASK_ID_INVALID) {
 //    	w_task_events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_WAIT_SPI);
     	w_task_delay_cancel(m_tasks_id.ls027_id);
     }

@@ -72,6 +72,8 @@ sTasksIDs     m_tasks_id;
 
 sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
 
+uint8_t m_vparser_event = 0;
+
 
 // init counters
 int Point2D::objectCount2D = 0;
@@ -131,29 +133,8 @@ void model_input_virtual_uart(char c) {
 
 	case _SENTENCE_PC:
 
-		if (vparser.getPC() == 12) {
+		m_vparser_event = vparser.getPC();
 
-			LOG_WARNING("HardFault test start");
-			hardfault_genhf_invalid_fp();
-
-		}
-		else if (vparser.getPC() == 17) {
-#if defined (BLE_STACK_SUPPORT_REQD)
-			ble_start_evt(eBleEventTypeStartXfer);
-#endif
-		}
-		else if (vparser.getPC() == 16) {
-			LOG_WARNING("usb_cdc_start_msc start");
-			usb_cdc_start_msc();
-		}
-		else if (vparser.getPC() == 15) {
-			LOG_WARNING("format_memory start");
-			format_memory();
-		}
-		else if (vparser.getPC() == 14) {
-			LOG_WARNING("fmkfs_memory start");
-			fmkfs_memory();
-		}
 		break;
 
 	default:
@@ -162,6 +143,39 @@ void model_input_virtual_uart(char c) {
 	}
 
 
+}
+
+static void model_perform_virtual_tasks(void) {
+
+	if (!m_vparser_event) return;
+
+	if (m_vparser_event == 12) {
+
+		LOG_WARNING("HardFault test start");
+//			hardfault_genhf_invalid_fp();
+		hardfault_genhf_undefined_instr();
+//			APP_ERROR_CHECK(0x18);
+//			ASSERT(0);
+	}
+	else if (m_vparser_event == 17) {
+#if defined (BLE_STACK_SUPPORT_REQD)
+		ble_start_evt(eBleEventTypeStartXfer);
+#endif
+	}
+	else if (m_vparser_event == 16) {
+		LOG_WARNING("usb_cdc_start_msc start");
+		usb_cdc_start_msc();
+	}
+	else if (m_vparser_event == 15) {
+		LOG_WARNING("format_memory start");
+		format_memory();
+	}
+	else if (m_vparser_event == 14) {
+		LOG_WARNING("fmkfs_memory start");
+		fmkfs_memory();
+	}
+
+	m_vparser_event = 0;
 }
 
 /**
@@ -266,7 +280,12 @@ void ls027_task(void * p_context)
 	{
 		wdt_reload();
 
-		w_task_events_wait(TASK_EVENT_LS027_TRIGGER);
+		if (w_task_delay(LS027_TIMEOUT_DELAY_MS)) {
+			// timeout
+			sysview_task_void_enter(VueRefresh);
+			vue.refresh();
+			sysview_task_void_exit(VueRefresh);
+		}
 
 		// check screen update & unlock task
 		vue.writeWhole();
@@ -307,12 +326,7 @@ void peripherals_task(void * p_context)
 		sysview_task_void_exit(AntRFTasks);
 #endif
 
-		// check screen update & unlock task
-		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
-			sysview_task_void_enter(VueRefresh);
-			vue.refresh();
-			sysview_task_void_exit(VueRefresh);
-		}
+		model_perform_virtual_tasks();
 
 		sysview_task_void_enter(GPSTasks);
 		gps_mgmt.runWDT();

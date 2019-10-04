@@ -80,7 +80,7 @@ inline void w_task_delay_cancel(task_id_t task_id) {
 #define W_SYSVIEW_OnIdle(...)            SEGGER_SYSVIEW_OnIdle()
 
 #define W_SYSVIEW_OnTaskStartExec(X)     SEGGER_SYSVIEW_OnTaskStartExec(X)
-#define W_SYSVIEW_OnTaskStopExec(X)      SEGGER_SYSVIEW_OnTaskStopExec()
+#define W_SYSVIEW_OnTaskStopExec(X)      EMPTY_MACRO
 #define W_SYSVIEW_OnTaskStartReady(X)    SEGGER_SYSVIEW_OnTaskStartReady(X)
 #define W_SYSVIEW_OnTaskStopReady(X, M)  SEGGER_SYSVIEW_OnTaskStopReady(X, M)
 

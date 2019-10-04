@@ -300,7 +300,7 @@ static void wait_for_idle(nrf_block_dev_qspi_t const * p_qspi_dev)
     {
     	if (task_manager_is_started()) {
     		m_task_id = w_task_id_get();
-    		w_task_delay(100);
+    		w_task_delay(30);
     	} else {
     		__WFI();
     	}
@@ -614,10 +614,17 @@ static ret_code_t block_dev_qspi_write_start(nrf_block_dev_qspi_t const * p_qspi
 
     ret_code_t err = nrf_drv_qspi_erase(NRF_QSPI_ERASE_LEN_4KB, address);
 
-    // artificial delay
-    if (task_manager_is_started()) {
-    	w_task_delay(50);
-    }
+    // artificial delay for power saving
+//    uint16_t timeout = 0;
+//    if (task_manager_is_started()) {
+//    	do {
+//        	w_task_delay(5);
+//        	if (timeout++ > 10) {
+//        		// max duration as per datasheet: 0.4s
+//        		return NRFX_ERROR_TIMEOUT;
+//        	}
+//    	} while(nrfx_qspi_mem_busy_check() != NRF_SUCCESS);
+//    }
 
     return err;
 }
