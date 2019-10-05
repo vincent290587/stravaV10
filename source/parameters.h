@@ -44,6 +44,8 @@
 
 #define FEC_PW_BUFFER_NB_ELEM          (240/2)
 
+#define PITCH_BUFFER_SIZE              (240/4)
+
 #define BOUCLE_DEFAULT_MODE            eBoucleGlobalModesCRS
 #define VUE_DEFAULT_MODE               eVueGlobalScreenCRS
 

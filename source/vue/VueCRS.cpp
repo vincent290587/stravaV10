@@ -62,8 +62,10 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 	default:
 		if (m_screen_page == eVueCRSScreenPage1) {
 			this->afficheScreen1();
-		} else {
+		} else if (m_screen_page == eVueCRSScreenPage2) {
 			this->afficheScreen2();
+		} else {
+			this->afficheSensors();
 		}
 		break;
 
@@ -84,14 +86,16 @@ bool VueCRS::propagateEventsCRS(eButtonsEvent event) {
 	switch (event) {
 		case eButtonsEventLeft:
 		{
-			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
-			else m_screen_page = eVueCRSScreenPage1;
+			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage3;
+			else if (m_screen_page==eVueCRSScreenPage2) m_screen_page = eVueCRSScreenPage1;
+			else m_screen_page = eVueCRSScreenPage2;
 			break;
 		}
 
 		case eButtonsEventRight:
 		{
 			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
+			else if (m_screen_page==eVueCRSScreenPage2) m_screen_page = eVueCRSScreenPage3;
 			else m_screen_page = eVueCRSScreenPage1;
 			break;
 		}
@@ -258,6 +262,48 @@ void VueCRS::afficheScreen2(void) {
 				KOMOOT_ICON_SIZE_W, KOMOOT_ICON_SIZE_H, 0, 1);
 	}
 
+}
+
+void VueCRS::afficheSensors(void) {
+
+	// get values from FXOS
+	float yaw_rad;
+	float pitch_rad;
+	(void)fxos_get_yaw(yaw_rad);
+	(void)fxos_get_pitch(pitch_rad);
+
+	// mag heading
+	const uint16_t radius = 50;
+	this->drawCircle(this->width()/2, 300, radius, LS027_PIXEL_BLACK);
+
+	int16_t x2, y2;
+	rotate_point(yaw_rad * 180. / 3.1415, this->width()/2, 300,
+			this->width()/2, 300 - radius, x2, y2);
+	this->drawLine(this->width()/2, 300, x2, y2, LS027_PIXEL_BLACK);
+
+	// pitch
+	const uint16_t bar_len = 140;
+	float val = regFenLim(pitch_rad, -1.6, 1.6, -bar_len/2, bar_len/2);
+	if (val > 0.) {
+		this->fillRect(this->width()/2, 53, val, 8, LS027_PIXEL_BLACK);
+	} else {
+		this->fillRect(this->width()/2 + val, 53, -val, 8, LS027_PIXEL_BLACK);
+	}
+	this->drawRect(this->width()/2-bar_len/2, 50, bar_len, 14, LS027_PIXEL_BLACK);
+
+	this->setTextSize(2);
+	this->setCursor(this->width()/2-bar_len/2, 35);
+	this->print("Pitch");
+
+	// pitch #2
+	sVueHistoConfiguration h_config;
+	h_config.cur_elem_nb = fxos_histo_size();
+	h_config.ref_value   = (tHistoValue)157;
+	h_config.max_value   = (tHistoValue)314;
+	h_config.nb_elem_tot = PITCH_BUFFER_SIZE;
+	h_config.p_f_read    = fxos_histo_read;
+
+	this->HistoH(3, 6, h_config);
 }
 
 

@@ -10,6 +10,7 @@
 #include "fsl_fxos.h"
 #include "gpio.h"
 #include "boards.h"
+#include "RingBuffer.h"
 #include "UserSettings.h"
 #include "segger_wrapper.h"
 #include "fxos.h"
@@ -20,10 +21,13 @@
 #define kStatus_Fail    1
 #define kStatus_Success 0
 
-
 // Buffer for data read from sensors.
 static fxos_handle_t m_fxos_handle;
 static volatile bool m_is_updated = false;
+
+
+static tHistoValue _pi_buffer[PITCH_BUFFER_SIZE];
+RingBuffer<tHistoValue> m_pitch_buffer(PITCH_BUFFER_SIZE, _pi_buffer);
 
 
 ret_code_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber)
@@ -718,10 +722,18 @@ void fxos_tasks()
 
 	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
 
-	/* Calculate pitch angle g_Pitch (-90deg, 90deg) and sin, cos*/
+	/* Calculate pitch angle g_Pitch and sin, cos*/
 	g_Pitch = atan2f(-g_Ax , g_Az);
 	sinAngle = sinf(g_Pitch);
 	cosAngle = cosf(g_Pitch);
+
+	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57) * 100.);
+	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
+
+	if (m_pitch_buffer.isFull()) {
+		m_pitch_buffer.popLast();
+	}
+	m_pitch_buffer.add(&u_integ_pitch);
 
 	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10.f));
 
@@ -771,7 +783,30 @@ void fxos_tasks()
 
 bool fxos_get_yaw(float &yaw_rad) {
 
+	yaw_rad = g_Yaw;
+
+	return true;
+}
+
+bool fxos_get_pitch(float &yaw_rad) {
+
 	yaw_rad = g_Pitch;
 
 	return true;
+}
+
+tHistoValue fxos_histo_read(uint16_t ind_) {
+
+	tHistoValue *p_ret_val = m_pitch_buffer.get(ind_);
+
+	ASSERT(p_ret_val);
+
+	tHistoValue ret_val = p_ret_val[0];
+
+	return ret_val;
+}
+
+uint16_t fxos_histo_size(void) {
+
+	return m_pitch_buffer.size();
 }
