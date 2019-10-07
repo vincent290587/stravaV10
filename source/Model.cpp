@@ -167,10 +167,6 @@ static void model_perform_virtual_tasks(void) {
 		usb_cdc_start_msc();
 	}
 	else if (m_vparser_event == 15) {
-		LOG_WARNING("format_memory start");
-		format_memory();
-	}
-	else if (m_vparser_event == 14) {
 		LOG_WARNING("fmkfs_memory start");
 		fmkfs_memory();
 	}

@@ -576,27 +576,30 @@ bool log_file_start(void) {
  * @param size_
  * @return The pointer to read string, or NULL if problem
  */
-char* log_file_read(size_t *r_length) {
-
-	memset(g_bufferRead, 0U, sizeof(g_bufferRead));
+char* log_file_read(sCharArray *p_array, size_t max_size) {
 
 	if (!is_fat_init()) return NULL;
 
 	sysview_task_void_enter(SdFunction);
 
-	if (!f_gets(g_bufferRead, sizeof(g_bufferRead)-1, &g_LogFileObject))
-	{
+	FRESULT error = f_read (
+			&g_LogFileObject, 	/* Pointer to the file object */
+			p_array->str,	    /* Pointer to data buffer */
+			max_size,           /* Number of bytes to read */
+			&p_array->length	/* Pointer to number of bytes read */
+	);
+
+	if (error) {
 
 		LOG_INFO("Read LOG file EOF: %d ERR: %u", f_eof(&g_LogFileObject), f_error(&g_LogFileObject));
 		sysview_task_void_exit(SdFunction);
 
 		return NULL;
 	}
-	*r_length = strlen(g_bufferRead);
 
 	sysview_task_void_exit(SdFunction);
 
-	return g_bufferRead;
+	return p_array->str;
 }
 
 /**

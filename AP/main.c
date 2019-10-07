@@ -561,7 +561,7 @@ void gatt_init(void)
 	err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
 	APP_ERROR_CHECK(err_code);
 
-	err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, 64);
+	err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
 	APP_ERROR_CHECK(err_code);
 }
 

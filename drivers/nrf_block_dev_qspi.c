@@ -164,7 +164,7 @@ static void block_dev_qspi_read_from_eunit(nrf_block_dev_qspi_t const * p_qspi_d
  * */
 static nrf_block_dev_qspi_t const * m_active_qspi_dev;
 
-static task_id_t m_task_id = TASK_ID_INVALID;
+//static task_id_t m_task_id = TASK_ID_INVALID;
 
 static void qspi_handler(nrf_drv_qspi_evt_t event, void * p_context)
 {
@@ -285,12 +285,12 @@ static void qspi_handler(nrf_drv_qspi_evt_t event, void * p_context)
             break;
     }
 
-    if (m_task_id != TASK_ID_INVALID &&
-    		p_work->state == NRF_BLOCK_DEV_QSPI_STATE_IDLE &&
-    		task_manager_is_started()) {
-    	w_task_delay_cancel(m_task_id);
-    	m_task_id = TASK_ID_INVALID;
-    }
+//    if (m_task_id != TASK_ID_INVALID &&
+//    		p_work->state == NRF_BLOCK_DEV_QSPI_STATE_IDLE &&
+//    		task_manager_is_started()) {
+//    	w_task_delay_cancel(m_task_id);
+//    	m_task_id = TASK_ID_INVALID;
+//    }
 }
 
 static void wait_for_idle(nrf_block_dev_qspi_t const * p_qspi_dev)
@@ -298,12 +298,13 @@ static void wait_for_idle(nrf_block_dev_qspi_t const * p_qspi_dev)
     nrf_block_dev_qspi_work_t * p_work = p_qspi_dev->p_work;
     while (p_work->state != NRF_BLOCK_DEV_QSPI_STATE_IDLE)
     {
-    	if (task_manager_is_started()) {
-    		m_task_id = w_task_id_get();
-    		w_task_delay(30);
-    	} else {
-    		__WFI();
-    	}
+//    	if (task_manager_is_started()) {
+//    		m_task_id = w_task_id_get();
+//    		w_task_delay(10);
+//    	} else {
+//    		__WFE();
+//    	}
+    	__WFE();
     }
 }
 

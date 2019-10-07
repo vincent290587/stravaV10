@@ -34,22 +34,8 @@ extern bool configure_memory();
 
 void format_memory() {
 
-	LOG_WARNING("Formatting...");
-	uint32_t err_code;
-	nrf_qspi_cinstr_conf_t cinstr_cfg = {
-			.opcode    = 0xc7,
-			.length    = NRF_QSPI_CINSTR_LEN_1B,
-			.io2_level = true,
-			.io3_level = true,
-			.wipwait   = true,
-			.wren      = true
-	};
-
-	// Global format
-	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
-	APP_ERROR_CHECK(err_code);
-
-	LOG_WARNING("Memory formatted");
+	LOG_WARNING("Forbidden");
+	return;
 }
 
 void fmkfs_memory(void) {
@@ -203,7 +189,7 @@ int fatfs_init(void) {
 		if (ff_result == FR_NO_FILESYSTEM)
 		{
 			LOG_ERROR("Mount failed. Filesystem not found. Please format device.");
-			fatfs_mkfs();
+//			fatfs_mkfs();
 		}
 		else
 		{

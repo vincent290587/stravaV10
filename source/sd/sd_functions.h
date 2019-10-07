@@ -12,6 +12,7 @@
 
 #if defined(__cplusplus)
 
+#include "g_structs.h"
 #include "Attitude.h"
 
 class Segment;
@@ -38,7 +39,7 @@ bool epo_file_start(int current_gps_hour);
 int epo_file_stop(bool toBeDeleted);
 
 bool log_file_start(void);
-char* log_file_read(size_t *r_length);
+char* log_file_read(sCharArray *p_array, size_t max_size);
 int log_file_stop(bool toBeDeleted);
 
 bool sd_erase_pos(void);

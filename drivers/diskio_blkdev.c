@@ -93,7 +93,7 @@ static void default_wait_func(void)
 {
 	if (task_manager_is_started()) {
 		m_task_id = w_task_id_get();
-		w_task_delay(100);
+		w_task_delay(15);
 	} else {
 		__WFE();
 	}

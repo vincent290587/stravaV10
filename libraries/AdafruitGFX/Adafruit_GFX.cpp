@@ -709,7 +709,6 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c,
 		}
 #else
 
-		uint8_t offset;
 		if(size == 1) {
 			for(yy=0; yy<h; yy++) {
 				for(xx=0; xx<w; xx++) {
