@@ -167,7 +167,7 @@ void idle_task(void * p_context)
 
 		simulator_tasks();
 
-    	task_yield();
+		w_task_yield();
     }
 }
 
@@ -182,7 +182,7 @@ void system_task(void * p_context)
     {
 		perform_system_tasks();
 
-		task_yield();
+		w_task_yield();
     }
 }
 
@@ -219,7 +219,7 @@ void ls027_task(void * p_context)
 		vue.writeWhole();
 #endif
 
-		events_wait(TASK_EVENT_LS027_TRIGGER);
+		w_task_events_wait(TASK_EVENT_LS027_TRIGGER);
 	}
 }
 
@@ -256,7 +256,7 @@ void peripherals_task(void * p_context)
 
 		notifications_tasks();
 
-		events_wait(TASK_EVENT_PERIPH_TRIGGER);
+		w_task_delay(100);
 	}
 }
 

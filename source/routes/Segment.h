@@ -18,19 +18,19 @@
 
 using namespace std;
 
-#define MARGE_DESACT  2.
-#define MARGE_ACT     1.5
-#define DIST_ACT     50.
+#define MARGE_DESACT  2.f
+#define MARGE_ACT     1.5f
+#define DIST_ACT     50.f
 
-#define PSCAL_LIM    0.
+#define PSCAL_LIM    0.f
 
-#define DIST_ALLOC 300.
+#define DIST_ALLOC 300.f
 
 #define MIN_POINTS 12
 
-#define CAD_SPD_PW_LIM 4.
+#define CAD_SPD_PW_LIM 4.f
 
-#define FACTOR 100000.
+#define FACTOR 100000.f
 
 #define SEG_FIN    -5
 #define SEG_OFF     0

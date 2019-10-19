@@ -75,7 +75,9 @@ void Vue::setCurrentMode(eVueGlobalScreenModes mode_) {
 
 void Vue::refresh(void) {
 
+	sysview_task_void_enter(Ls027Clear);
 	this->clearDisplay();
+	sysview_task_void_exit(Ls027Clear);
 
 	if (m_is_menu_selected) {
 		this->tasksMenu();
@@ -135,7 +137,7 @@ void Vue::refresh(void) {
 	}
 
     if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-    	events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
+    	w_task_events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
     } else {
     	this->writeWhole();
     }
@@ -147,22 +149,48 @@ void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {
 
 	if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
 
-	switch(rotation) {
-	case 1:
-		adagfxswap(x, y);
-		x = WIDTH  - 1 - x;
-		break;
-	case 2:
-		x = WIDTH  - 1 - x;
-		y = HEIGHT - 1 - y;
-		break;
-	case 3:
-		adagfxswap(x, y);
-		y = HEIGHT - 1 - y;
-		break;
-	}
+//  always 3 here, comment for speedup
 
-	LS027_drawPixel(x, y, color);
+//	switch(rotation) {
+//	case 1:
+//		adagfxswap(x, y);
+//		x = WIDTH  - 1 - x;
+//		break;
+//	case 2:
+//		x = WIDTH  - 1 - x;
+//		y = HEIGHT - 1 - y;
+//		break;
+//	case 3:
+//		adagfxswap(x, y);
+//		y = HEIGHT - 1 - y;
+//		break;
+//	}
+
+	LS027_drawPixel(y, HEIGHT - 1 - x, color);
+}
+
+void Vue::drawPixelGroup(int16_t x, int16_t y, uint16_t nb, uint16_t color) {
+
+	if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
+
+//  always 3 here, comment for speedup
+
+//	switch(rotation) {
+//	case 1:
+//		adagfxswap(x, y);
+//		x = WIDTH  - 1 - x;
+//		break;
+//	case 2:
+//		x = WIDTH  - 1 - x;
+//		y = HEIGHT - 1 - y;
+//		break;
+//	case 3:
+//		adagfxswap(x, y);
+//		y = HEIGHT - 1 - y;
+//		break;
+//	}
+
+	LS027_drawPixelGroup(y, HEIGHT - 1 - x, nb, color);
 }
 
 // Fill a rounded rectangle
@@ -183,10 +211,28 @@ void Vue::fillRoundRect(int16_t x, int16_t y, int16_t w,
 
 }
 
+void Vue::drawFastVLine(int16_t x, int16_t y,
+		int16_t h, uint16_t color) {
+
+	// this method is here sped up greatly !
+	drawPixelGroup(x, y, h, color);
+
+}
+
+void Vue::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
+		uint16_t color) {
+	// we make sure to here use drawFastVLine which is way faster than drawFastHLine
+	for (int16_t i=x; i<x+w; i++) {
+		drawFastVLine(i, y, h, color);
+	}
+}
+
 void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite) {
 
+	sysview_task_void_enter(Ls027Cadrans);
+
 	int decal = 0;
-	int x = _width / 2 * 0.5;
+	int x = _width / 4;
 	int y = _height / nb_lig * (p_lig - 1);
 
 	setCursor(5, y + 8);
@@ -213,10 +259,14 @@ void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi
 	// print delimiters
 	if (p_lig > 1) drawFastHLine(0, _height / nb_lig * (p_lig - 1), _width, 1);
 	if (p_lig < nb_lig) drawFastHLine(0, _height / nb_lig * (p_lig), _width, 1);
+
+	sysview_task_void_exit(Ls027Cadrans);
 }
 
 
 void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite) {
+
+	sysview_task_void_enter(Ls027Cadrans);
 
 	const int x = _width / 2 * p_col;
 	const int y = _height / nb_lig * (p_lig - 1);
@@ -256,6 +306,8 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 
 	if (p_lig > 1)      drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * (p_lig - 1), _width / 2, 1);
 	if (p_lig < nb_lig) drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * p_lig, _width / 2, 1);
+
+	sysview_task_void_exit(Ls027Cadrans);
 }
 
 void Vue::HistoH(uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_) {

@@ -8,7 +8,7 @@
 #ifndef SOURCE_PARAMETERS_H_
 #define SOURCE_PARAMETERS_H_
 
-#define APP_TIMEOUT_DELAY_MS           100
+#define APP_TIMEOUT_DELAY_MS           5
 
 #define S_TO_MS(X)                     ((X)*1000)
 
@@ -30,11 +30,11 @@
 
 #define FXOS_MEAS_CAL_LIM_MS           60000
 
-#define FXOS_MAG_FILTER_COEFF          0.5
+#define FXOS_MAG_FILTER_COEFF          0.5f
 
 #define SEG_OFF_NB_POINTS              30
 
-#define VH_RATIO                       0.8
+#define VH_RATIO                       0.8f
 
 #define NB_SEG_ON_DISPLAY              2
 
@@ -43,6 +43,8 @@
 #define MIN_TIME_COMP_STOP_MS          5000
 
 #define FEC_PW_BUFFER_NB_ELEM          (240/2)
+
+#define PITCH_BUFFER_SIZE              (240/4)
 
 #define BOUCLE_DEFAULT_MODE            eBoucleGlobalModesCRS
 #define VUE_DEFAULT_MODE               eVueGlobalScreenCRS
@@ -55,7 +57,7 @@
 
 #define SENSORS_REFRESH_PER_MS         1000
 
-#define ATT_BUFFER_NB_ELEM             2
+#define ATT_BUFFER_NB_ELEM             5
 
 #define FILTRE_NB                      15
 

@@ -114,7 +114,7 @@ CFLAGS += -DSWI_DISABLE0
 CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
 CFLAGS += -DS340
 CFLAGS += -DFLOAT_ABI_HARD
-CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
+CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4 -fsingle-precision-constant
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -191,7 +191,7 @@ settings:
 dfu_softdevice:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
 	nrfutil pkg display stravaV10_soft.zip
-	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p $(COM_PORT)
+	nrfutil dfu usb-serial -pkg stravaV10_soft.zip -p $(COM_PORT)
 
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb9 --application-version 1 --application $(OUTPUT_DIRECTORY)//nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip

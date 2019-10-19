@@ -38,6 +38,7 @@ public:
 	void refresh(void);
 
 	void drawPixel(int16_t x, int16_t y, uint16_t color);
+	void drawPixelGroup(int16_t x, int16_t y, uint16_t nb, uint16_t color);
 
 	void cadran (uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite);
 	void cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite);
@@ -65,6 +66,10 @@ public:
 	// overrides of the GFX library
 	void fillRoundRect(int16_t x, int16_t y, int16_t w,
 			int16_t h, int16_t r, uint16_t color);
+	void drawFastVLine(int16_t x, int16_t y,
+			int16_t h, uint16_t color);
+	void fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
+			uint16_t color);
 
 private:
 	eVueGlobalScreenModes m_global_mode;

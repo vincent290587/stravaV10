@@ -9,7 +9,7 @@
 #include "timer.h"
 #include "Model_tdd.h"
 #include "segger_wrapper.h"
-#include "task_manager_wrapper_tdd.h"
+#include "task_manager_wrapper.h"
 
 #define MS_TIMER_GRANULOSITY       10
 
@@ -28,8 +28,10 @@ void timer_handler(void)
 	if (m_cur_time_ms > m_per_time_ms + SENSORS_READING_DELAY_MS) {
 		m_per_time_ms = m_cur_time_ms;
 		// notify task
-	    events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
+	    //events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
 	}
+
+	task_tick_manage(MS_TIMER_GRANULOSITY);
 }
 /**
  *

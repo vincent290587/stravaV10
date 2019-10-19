@@ -283,7 +283,7 @@ static bool ms5637_compute_t_p(int32_t d1, int32_t d2) {
 		t2 = 3 * (dt * dt) / (1LL << 33);
 	}
 
-	m_data.temp =  ((float)temp - (float)t2) / 100.;
+	m_data.temp =  ((float)temp - (float)t2) / 100.f;
 
 	int64_t off = c2 * (1LL << 17) + (c4 * dt) / (1LL << 6);
 	int64_t sens = c1 * (1LL << 16) + (c3 * dt) / (1LL << 7);
@@ -307,7 +307,7 @@ static bool ms5637_compute_t_p(int32_t d1, int32_t d2) {
 	}
 
 	int32_t p = ((int64_t) d1 * sens / (1LL << 21) - off) / (1LL << 15);
-	m_data.press =  (float)p / 100.;
+	m_data.press =  (float)p / 100.f;
 
 	LOG_INFO("Pressure: %d mbar", (int) (m_pressure));
 	LOG_INFO("Temperature: %d°", (int) (m_temperature));

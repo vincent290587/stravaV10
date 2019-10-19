@@ -22,7 +22,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm/app_usbd_cdc_acm.c \
   $(SDK_ROOT)/components/libraries/usbd/class/msc/app_usbd_msc.c \
   $(SDK_ROOT)/components/libraries/usbd/class/dummy/app_usbd_dummy.c \
-  $(SDK_ROOT)/components/drivers_nrf/usbd/nrf_drv_usbd.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_usbd.c \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/nrf_soc.c \
 
@@ -31,7 +31,7 @@ INC_FOLDERS += \
   ../config \
   $(SDK_ROOT)/components/softdevice/mbr/nrf52840/headers \
   $(PROJ_DIR)/source/usb \
-  $(SDK_ROOT)/components/drivers_nrf/usbd \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/ \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/ \
   $(SDK_ROOT)/components/libraries/usbd \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc \
@@ -72,7 +72,7 @@ CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=0
 CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
-CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
+CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
 # keep every function in separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin --short-enums -nostdlib -MMD -nostdlib
@@ -135,10 +135,10 @@ settings:
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p /dev/ttyS8
+	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
 
 dfu_send:
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p COM8
+	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
 
 jumper: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	jumper run -g --fw $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --gpio --platform nrf52840

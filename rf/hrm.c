@@ -88,7 +88,7 @@ static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t eve
 			uint16_t prev_beat = p_profile->page_4.prev_beat;
 			uint16_t rrInterval = (beat_time - prev_beat);
 
-			hrm_info.rr = rrInterval * 1000. / 1024.;
+			hrm_info.rr = (uint16_t)(rrInterval * 1000.f / 1024.f);
 
 			hrm_info.timestamp = millis();
 

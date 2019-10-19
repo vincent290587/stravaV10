@@ -10,7 +10,7 @@
 
 #include "Attitude.h"
 
-#define TWO_PI (2.*M_PI)
+#define TWO_PI (2.f*M_PI)
 
 #define CLIP(X,Y,Z) (MIN(MAX(X,Y),Z))
 

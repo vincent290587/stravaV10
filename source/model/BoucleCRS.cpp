@@ -73,9 +73,9 @@ void BoucleCRS::run() {
 	if (m_needs_init) this->init();
 
 	// wait for location to be updated
-	(void)events_wait(TASK_EVENT_LOCATION);
+	(void)w_task_events_wait(TASK_EVENT_LOCATION);
 
-	LOG_INFO("Locator is updated (%u)\r\n", millis());
+	LOG_INFO("\r\nLocator is updated (%u)", millis());
 
 	// reset the segment manager
 	segMngr.clearSegs();
@@ -104,11 +104,14 @@ void BoucleCRS::run() {
 			tmp_dist = segment_allocator(seg, att.loc.lat, att.loc.lon);
 
 			// calculate distance to closest segment
-			if (tmp_dist > 0. &&
-					tmp_dist < m_dist_next_seg) m_dist_next_seg = tmp_dist;
+			if (tmp_dist > 0.f &&
+					tmp_dist < m_dist_next_seg) m_dist_next_seg = (uint16_t)tmp_dist;
 
 			// we don't possess enough points to continue calculating...
-			if (mes_points.size() < 2) continue;
+			if (mes_points.size() < 2) {
+				LOG_INFO("Not enough points: %d", mes_points.size());
+				break;
+			}
 
 			if (seg.getStatus() != SEG_OFF) {
 
@@ -122,7 +125,7 @@ void BoucleCRS::run() {
 					LOG_INFO("Segment FIN %s\r\n", seg.getName());
 
 					// show some light !
-					if (seg.getAvance() > 0.) {
+					if (seg.getAvance() > 0.f) {
 						SET_NEO_EVENT_BLUE(neopixel, eNeoEventWeakNotify, 2);
 					} else {
 						SET_NEO_EVENT_RED(neopixel, eNeoEventWeakNotify, 2);
@@ -141,6 +144,9 @@ void BoucleCRS::run() {
 			segMngr.addSegment(seg);
 
 		} // fin isValid
+		else {
+			LOG_INFO("Segment not valid...");
+		}
 
 	} // fin for
 	sysview_task_void_exit(MainSegLoop);

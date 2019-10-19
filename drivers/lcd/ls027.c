@@ -37,7 +37,6 @@ static uint8_t LS027_SpiBuf[LS027_HW_SPI_BUFFER_SIZE]; /* buffer for the display
 
 
 #define LS027_TOGGLE_VCOM    do { m_M1_bit = m_M1_bit ? 0x00 : LS027_BIT_VCOM; } while(0);
-#define adagfxswap(a, b) { int16_t t = a; a = b; b = t; }
 
 static const uint8_t set[] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
 static const uint8_t clr[] = { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F };
@@ -103,7 +102,7 @@ static int ls027_prepare_buffer(void)
 		LS027_SpiBuf[addr++] = i + 1;
 
 		// data bytes
-		addr += LS027_HW_WIDTH / 8;
+		addr += LS027_HW_WIDTH >> 3u;
 
 		// dummy data
 		LS027_SpiBuf[addr++] = 0x00;
@@ -139,7 +138,7 @@ static void ls027_hw_clear(void) {
  * @param x Col number:  0..400
  * @param y Line number: 0..240
  */
-static uint16_t getBufferPixel(uint16_t x, uint16_t y) {
+static inline uint16_t getBufferPixel(uint16_t x, uint16_t y) {
 
 	uint16_t ret_color = 0;
 
@@ -148,32 +147,61 @@ static uint16_t getBufferPixel(uint16_t x, uint16_t y) {
 	return ret_color;
 }
 
+
+#define BIT(nr)                 (1UL << (nr))
+#define U32_C(x)                x ## U
+#define BIT_MASK(h, l)          (((U32_C(1) << ((h) - (l) + 1)) - 1) << (l))
+
+/**
+ *
+ * @param x Col number:  0..400
+ * @param y Line number: 0..240
+ * @param nb Number of pixels to target
+ * @param color Color to be printed
+ */
+static inline void setBufferPixelGroup(uint16_t x, uint16_t y, uint8_t nb, uint16_t color) {
+
+	uint8_t mask = BIT_MASK((x & 0b111) + nb - 1, x & 0b111) & 0xFF;
+
+	LOG_DEBUG("setBufferPixelGroup %03u %03u %03u 0x%02X", x, y, nb, mask);
+
+	//we simply invert the pixel's color
+	if (color == 2) {
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] ^= mask;
+		return;
+	}
+
+	// fill buffer
+	if (color ^ m_is_color_inverted) {
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] |= mask;
+	} else {
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] &= ~mask;
+	}
+
+}
+
 /**
  *
  * @param x Col number:  0..400
  * @param y Line number: 0..240
  * @param color Color to be printed
  */
-static void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
+static inline void setBufferPixel(uint16_t x, uint16_t y, uint16_t color) {
 
-	bool _is_color_inverted = m_is_color_inverted;
-
-	//we simply invert the pixel's color
+	// we simply invert the pixel's color
 	if (color == 2) {
-		_is_color_inverted = false;
-		color = getBufferPixel(x, y) ? 0:1;
+		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] ^= set[x & 7];
+		return;
 	}
 
-	// fill buffer
-	if ((color && !_is_color_inverted) ||
-			(!color && _is_color_inverted)) {
+	// set the good color
+	if (color ^ m_is_color_inverted) {
 		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] |= set[x & 7];
 	} else {
 		LS027_SpiBuf[2 + (y*LS027_HW_WIDTH + x) / 8 + 2 * y] &= clr[x & 7];
 	}
 
 }
-
 
 /*
  ** ===================================================================
@@ -236,6 +264,37 @@ void LS027_InvertColors(void)
  */
 void LS027_drawPixel(uint16_t x, uint16_t y, uint16_t color) {
 	setBufferPixel(x, y, color);
+}
+
+/*!
+    @brief Draws a pixels with consecutive x in image buffer
+
+    @param[in]  x
+                The x position (0 based)
+    @param[in]  y
+                The y position (0 based)
+ */
+void LS027_drawPixelGroup(uint16_t x, uint16_t y, uint16_t nb, uint16_t color) {
+
+	// loop pixels
+	uint8_t index;
+	while (nb) {
+		index = x & 0b111;
+
+		if (nb < 8 - index) {
+			setBufferPixelGroup(x, y, nb, color);
+			index = 8 - nb;
+		} else {
+			setBufferPixelGroup(x, y, 8 - index, color);
+		}
+
+		LOG_DEBUG("setBufferPixelGroup %03u %03u %03u %d", x, y, nb, index);
+
+		// next group of pixels
+		nb -= 8 - index;
+		x  += 8 - index;
+	}
+
 }
 
 /*

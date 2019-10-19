@@ -33,7 +33,7 @@ public:
 	/**@brief Yield CPU to other tasks.
 	 */
 	void yield(void) {
-		task_yield();
+		yield();
 	}
 
 	/**@brief Complete current task.
@@ -84,9 +84,5 @@ public:
 protected:
 	uint32_t m_task_id;
 };
-
-#endif /* SOURCE_MODEL_BOUCLE_H_ */
-
-
 
 #endif /* SOURCE_TASK_HPP_ */

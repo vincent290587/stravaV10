@@ -6600,7 +6600,7 @@
 
 // <o> TASK_MANAGER_CONFIG_MAX_TASKS - Maximum number of tasks which can be created 
 #ifndef TASK_MANAGER_CONFIG_MAX_TASKS
-#define TASK_MANAGER_CONFIG_MAX_TASKS 3
+#define TASK_MANAGER_CONFIG_MAX_TASKS 5
 #endif
 
 // <o> TASK_MANAGER_CONFIG_STACK_SIZE - Stack size for every task (power of 2) 
@@ -11427,7 +11427,7 @@
 // <0=> NRF_SDH_DISPATCH_MODEL_INTERRUPT 
 // <1=> NRF_SDH_DISPATCH_MODEL_APPSH 
 // <2=> NRF_SDH_DISPATCH_MODEL_POLLING 
-
+// TODO
 #ifndef NRF_SDH_DISPATCH_MODEL
 #define NRF_SDH_DISPATCH_MODEL 1
 #endif

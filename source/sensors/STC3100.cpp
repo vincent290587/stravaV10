@@ -220,7 +220,7 @@ void STC3100::computeVoltage()
 	t <<= 8;
 	val = (t & 0xFF00) | tl;
 	// LSB is 2.44mV
-	_voltage = (float)  val * 0.00244;
+	_voltage = (float)  val * 0.00244f;
 
 }
 
@@ -237,7 +237,7 @@ void STC3100::computeCharge()
 	// charge is in mA.h
 	//
 	// LSB = 6.7 uV.h
-	_charge = (val * 6.7 / _r_sens);
+	_charge = (val * 6.7f / _r_sens);
 
 }
 
@@ -250,7 +250,7 @@ void STC3100::computeCurrent()
 
 	val = compute2Complement(th, tl);
 	// LSB = 11.77uV
-	_current = (val * 11.77 / _r_sens);
+	_current = (val * 11.77f / _r_sens);
 
 }
 
@@ -265,14 +265,14 @@ void STC3100::computeTemp()
 	t <<= 8;
 	val = (t & 0xFF00) | tl;
 
-	_temperature = ((float) val * 0.125);
+	_temperature = ((float) val * 0.125f);
 
 }
 
 
 float STC3100::getCorrectedVoltage(float int_res) {
 
-	float res = _voltage + int_res * _current / 1000.;
+	float res = _voltage + int_res * _current / 1000.f;
 	return res;
 
 }

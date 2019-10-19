@@ -222,7 +222,7 @@ float VEML6075::getUVB() {
 float VEML6075::getUVIndex() {
 	float uva_weighted = this->getUVA() * VEML6075_UVI_UVA_RESPONSE;
 	float uvb_weighted = this->getUVB() * VEML6075_UVI_UVB_RESPONSE;
-	return (uva_weighted + uvb_weighted) / 2.0;
+	return (uva_weighted + uvb_weighted) / 2.0f;
 }
 
 /////// I2C functions  ////////

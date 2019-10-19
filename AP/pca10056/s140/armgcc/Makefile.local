@@ -2,13 +2,12 @@
 
 ifeq ($(OS),Windows_NT)
     #Windows stuff
-SDK_ROOT := e:/Nordic/nRF5_SDK_15.2.0_9412b96
+SDK_ROOT := e:/Nordic/nRF5_SDK_15.3.0_59ac345
 OUTPUT_DIRECTORY := _build_W
-COM_PORT := COM18
+COM_PORT := COM8
 else
     #Linux stuff
-#SDK_ROOT := /mnt/e/Nordic/nRF5_SDK_15.1.0_a8c0c4d
-SDK_ROOT := /mnt/e/Nordic/nRF5_SDK_15.2.0_9412b96
+SDK_ROOT := /mnt/e/Nordic/nRF5_SDK_15.3.0_59ac345
 OUTPUT_DIRECTORY := _build_L
-COM_PORT := /dev/ttyS18
+COM_PORT := /dev/ttyS8
 endif

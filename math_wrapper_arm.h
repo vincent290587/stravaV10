@@ -13,7 +13,7 @@
 #include "arm_math.h"
 
 #ifndef M_PI
-#define M_PI       (PI)
+#define M_PI       ((float)PI)
 #endif
 
 static inline float my_sqrtf(float val) {

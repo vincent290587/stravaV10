@@ -32,7 +32,7 @@
 JScope jscope;
 #endif
 
-#define ATT_VIT_ASC_COEFF0_MULT     0.
+#define ATT_VIT_ASC_COEFF0_MULT     0.f
 
 #define MOV_AV_NB_VAL               18
 
@@ -164,7 +164,7 @@ void AltiBaro::runFilter(void) {
 	uint16_t ind_tmp = ind2;
 	for (int i = 0; i < FILTRE_NB; i++) {
 
-		_x[i] = - i * BARO_REFRESH_PER_MS / 1000.;
+		_x[i] = - i * BARO_REFRESH_PER_MS / 1000.f;
 
 		ind_tmp += FILTRE_NB - 1;
 		ind_tmp = ind_tmp % FILTRE_NB;
@@ -195,7 +195,7 @@ void AltiBaro::runFilter(void) {
 #endif
 
 	// STEP 1 : on filtre altitude et vitesse
-	if (corrsq > 0.8) {
+	if (corrsq > 0.8f) {
 	}
 
 	LOG_INFO("Vit. vert.= %d cm/s %d cm (corr= %f)",
