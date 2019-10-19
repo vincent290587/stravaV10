@@ -42,8 +42,9 @@ void Boucle::init(void) {
 	    memset(&m_app_error.err_desc, 0, sizeof(m_app_error.err_desc));
 	}
 
-	if (init_liste_segments()) {
-		LOG_ERROR("Boucle init fail");
+	int ret;
+	if ((ret = init_liste_segments())) {
+		LOG_ERROR("Boucle init fail %d", ret);
 	}
 
 	m_global_mode = BOUCLE_DEFAULT_MODE;

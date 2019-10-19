@@ -32,9 +32,6 @@
 #define TASK_EVENT_PERIPH_TWI_WAIT     TASK_EVENT_6
 #define TASK_EVENT_PERIPH_MS_WAIT      TASK_EVENT_7
 
-#define TASK_EVENT_LS027_TRIGGER       TASK_EVENT_4
-#define TASK_EVENT_LS027_WAIT_SPI      TASK_EVENT_5
-
 
 
 #define SYSVIEW_MAX_NOF_TASKS          10
@@ -75,6 +72,8 @@
 #define AntRFTasks                     (TASK_BASE + 22u)
 #define GPSTasks                       (TASK_BASE + 23u)
 #define VueRefresh                     (TASK_BASE + 24u)
+#define SdFunction                     (TASK_BASE + 25u)
+#define HalQspi                        (TASK_BASE + 26u)
 
 
 

@@ -44,3 +44,5 @@ TaskState 0xFC 0=TASK_EVENT_LOCATION, 1=TASK_EVENT_FEC_INFO, 2=TASK_EVENT_FEC_PO
 22 AntRFTasks
 23 GPSTasks
 24 VueRefresh
+25 SdFunction
+26 HalQspi                      Task=%u

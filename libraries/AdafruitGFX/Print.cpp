@@ -34,7 +34,6 @@
 size_t Print::writeRev(const uint8_t *buffer, size_t size)
 {
 	size_t count = 0;
-	size_t ind = size;
 	for (int i=size-1; i >= 0; i--) count += writeRev(buffer[i]);
 	return count;
 }

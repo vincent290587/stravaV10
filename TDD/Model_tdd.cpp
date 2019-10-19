@@ -214,12 +214,16 @@ void ls027_task(void * p_context)
 {
 	for(;;)
 	{
+		if (w_task_delay(LS027_TIMEOUT_DELAY_MS)) {
+			// timeout
+			vue.refresh();
+		}
+
 #ifdef LS027_GUI
-		// check screen update & unlock task
-		vue.writeWhole();
+			// check screen update & unlock task
+			vue.writeWhole();
 #endif
 
-		w_task_events_wait(TASK_EVENT_LS027_TRIGGER);
 	}
 }
 
@@ -236,11 +240,6 @@ void peripherals_task(void * p_context)
 
 		suffer_score.addHrmData(hrm_info.bpm, millis());
 		rrZones.addRRData(hrm_info);
-
-		// check screen update & unlock task
-		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
-			vue.refresh();
-		}
 
 		baro.sensorRead();
 		if (baro.isUpdated()) {
