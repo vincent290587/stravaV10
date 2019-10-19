@@ -233,7 +233,7 @@ void bme280_refresh(void) {
 	adc_temp = (buf[3] << 12) | (buf[4] << 4) | (buf[5] >> 4);
 
 	bme280_compensate_temp(&m_data, adc_temp);
-	LOG_INFO("BME temp: %d", m_data.comp_temp);
+	LOG_DEBUG("BME temp: %d", m_data.comp_temp);
 
 	if (!bme280_compensate_press(&m_data, adc_press)) {
 		LOG_WARNING("BME press error");

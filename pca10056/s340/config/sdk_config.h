@@ -5638,7 +5638,6 @@
 // <0=> Normal queue 
 // <1=> Compress queue 
 // <2=> Interrupt 
-
 #ifndef APP_USBD_CONFIG_SOF_HANDLING_MODE
 #define APP_USBD_CONFIG_SOF_HANDLING_MODE 1
 #endif
