@@ -56,7 +56,7 @@ bool test_fusion(void) {
 			baro_tdd.sensorRefresh();
 		}
 
-		atti_tdd.computePower(speed, SENSORS_REFRESH_PER_MS / 1000.);
+		atti_tdd.computePower(speed);
 
 		if (i== 120) {
 			LOG_INFO("Vert. speed should be %f", speed * tanf(yaw_rad) / 3.6f);

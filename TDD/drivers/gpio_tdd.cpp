@@ -14,13 +14,18 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#ifdef WIN32
+# include <winsock2.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
+
 #endif
 
 #include "gpio.h"

@@ -59,6 +59,7 @@ void LS027_Init(void) {
 
 	LOG_INFO("LS027 Init");
 
+	GUI_connector_init();
 }
 
 void LS027_InvertColors(void) {

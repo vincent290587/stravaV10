@@ -18,13 +18,19 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+
+#ifdef WIN32
+# include <winsock2.h>
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
+
 #endif
 
 #include <stdio.h>
@@ -131,7 +137,7 @@ extern "C" void neopixel_update(uint8_t red, uint8_t green, uint8_t blue) {
 #ifdef LS027_GUI
 	if (!m_is_init) return;
 
-	if (millis() - m_last_updated < 5) return;
+	if (millis() - m_last_updated < 250) return;
 
 	m_last_updated = millis();
 

@@ -5,3 +5,4 @@ CMakeFiles/
 *.o
 *.d
 *.xml
+/TEST/

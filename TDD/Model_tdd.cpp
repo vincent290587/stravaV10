@@ -161,9 +161,10 @@ void idle_task(void * p_context)
 {
     for(;;)
     {
-    	sleep(5);
 
-		simulator_tasks();
+#ifndef LS027_GUI
+    	millis_increase_time(5);
+#endif
 
 		w_task_yield();
     }
@@ -180,7 +181,9 @@ void system_task(void * p_context)
     {
 		perform_system_tasks();
 
-		w_task_yield();
+		simulator_tasks();
+
+		w_task_delay(15);
     }
 }
 
@@ -191,6 +194,14 @@ void system_task(void * p_context)
  */
 void boucle_task(void * p_context)
 {
+
+	boucle.run(); // init
+	boucle.run(); // run once
+
+	// potentially change mode
+//	vue.setCurrentMode(eVueGlobalScreenFEC);
+//	boucle.changeMode(eBoucleGlobalModesFEC);
+
 	for (;;)
 	{
 		LOG_DEBUG("\r\nTask %u", millis());
@@ -238,9 +249,10 @@ void peripherals_task(void * p_context)
 
 		suffer_score.addHrmData(hrm_info.bpm, millis());
 
-		baro.sensorRead();
 		if (baro.isUpdated()) {
 			baro.sensorRefresh();
+
+			attitude.computeFusion();
 		}
 
 		neopixel_radio_callback_handler(false);
@@ -252,7 +264,7 @@ void peripherals_task(void * p_context)
 
 		notifications_tasks();
 
-		w_task_delay(100);
+		w_task_delay(10);
 	}
 }
 

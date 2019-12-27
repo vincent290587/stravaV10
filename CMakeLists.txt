@@ -1,14 +1,6 @@
 cmake_minimum_required (VERSION 3.5.1)
 
-project (stravaV10)
-
-# On inclut notre bibliothèque dans le processus de CMake
-# add_subdirectory(source/routes)
-add_subdirectory(TDD/sd/fatfs)
-
-# The version number.
-set (Tutorial_VERSION_MAJOR 1)
-set (Tutorial_VERSION_MINOR 0)
+project (stravaV10 LANGUAGES C CXX)
 
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
@@ -17,25 +9,34 @@ add_definitions(-D_USE_MATH_DEFINES)
 #add_definitions(-DTDD_RANDOMIZE)
 #add_definitions(-DLS027_GUI)
 
-set(CMAKE_C_FLAGS  "-fno-builtin --short-enums -nostdlib -MMD -nostdlib -fsingle-precision-constant -ffunction-sections -fdata-sections -fno-strict-aliasing")
-set(CMAKE_CXX_FLAGS  "-g -std=gnu++0x -rdynamic -felide-constructors -fno-exceptions -fno-rtti -fpermissive")
+if(CMAKE_HOST_UNIX)
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -rdynamic -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover")
+else()
+set(CMAKE_C_FLAGS    "${CMAKE_CXX_FLAGS} -msse2 -mno-ms-bitfields")
+add_definitions(-DWIN32)
+add_definitions(-D_WIN32_WINNT=0x0600)
+add_definitions(-DWINVER=0x600)
+include_directories(./TDDW)
+endif()
 
 
-# configure a header file to pass some of the CMake settings
-# to the source code
-configure_file (
-  "${PROJECT_SOURCE_DIR}/TDD/main_tdd.h.in"
-  "${PROJECT_BINARY_DIR}/main_tdd.h"
-  )
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing -fsingle-precision-constant -frounding-math -fsignaling-nans")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
+
+
+# On inclut notre bibliotheque dans le processus de CMake
+# add_subdirectory(source/routes)
+add_subdirectory(TDD/sd/fatfs)
+
  
 # add the binary tree to the search path for include files
-
 include_directories(
     ./
 	TDD
 	TDD/sd
 	TDD/sd/fatfs/src
 	TDD/drivers
+    TDD/logger
 	TDD/timer
 	TDD/sensors
 	TDD/scheduler
@@ -57,30 +58,31 @@ include_directories(
 	source/sensors
     )
 
-# Cree des variables avec les fichiers à compiler
+# Cree des variables avec les fichiers a compiler
 set(SRCS
-    main_tdd.cpp
+    TDD/main_tdd.cpp
+    TDD/GUI_connector.cpp
+    TDD/scheduler/task_scheduler.c
+    TDD/unit_testing.cpp
+	TDD/Model_tdd.cpp
+    TDD/Simulator.cpp
+	TDD/millis_tdd.c
+	TDD/order1_filter_tdd.c
+	TDD/sd/sd_functions.cpp
+	TDD/sd/sd_hal.c
+	TDD/timer/timer.c
+    TDD/sensors/GPSMGMT.cpp
+    TDD/sensors/STC3100.cpp
+    TDD/sensors/fxos.cpp
+    TDD/sensors/bme280.c
+	TDD/drivers/uart_tdd.c
+	TDD/drivers/ant_tdd.c
+	TDD/drivers/gpio_tdd.cpp
+	TDD/drivers/ls027_tdd.cpp
+	TDD/drivers/neopixel_tdd.c
+    TDD/logger/tdd_logger.c
     segger_wrapper.c
-    GUI_connector.cpp
-    scheduler/task_scheduler.c
-    unit_testing.cpp
-	Model_tdd.cpp
-    Simulator.cpp
-	millis_tdd.c
-	order1_filter_tdd.c
-	sd/sd_functions.cpp
-	sd/sd_hal.c
-	rf/ant_device_manager.cpp
-	timer/timer.c
-    sensors/GPSMGMT.cpp
-    sensors/STC3100.cpp
-    sensors/fxos.cpp
-    sensors/bme280.c
-	drivers/uart_tdd.c
-	drivers/ant_tdd.c
-	drivers/gpio_tdd.cpp
-	drivers/ls027_tdd.cpp
-	drivers/neopixel_tdd.c
+    rf/ant_device_manager.cpp
 	libraries/utils/WString.cpp
 	libraries/AdafruitGFX/Adafruit_GFX.cpp
 	libraries/AdafruitGFX/Print.cpp
@@ -124,8 +126,18 @@ set(HEADERS
     )
  
 # add the executable
-add_executable(StravaV10 ${SRCS} ${HEADERS})
+add_executable(StravaV10 ${SRCS})
 
-# Et pour que l'executable fonctionne, il faut lui indiquer la bibliothèque dont il dépend
+# Et pour que l'executable fonctionne, il faut lui indiquer la bibliotheque dont il depend
 target_link_libraries(StravaV10 fatfs)
-# target_link_libraries(StravaV10 routes)
+
+
+if(CMAKE_HOST_UNIX)
+
+target_link_libraries(StravaV10 ubsan)
+
+else()
+
+target_link_libraries(StravaV10 imagehlp)
+
+endif()

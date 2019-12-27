@@ -20,7 +20,7 @@
 #include "segger_wrapper.h"
 #include "GUI_connector.h"
 #include "unit_testing.hpp"
-#include "task_scheduler.h"
+#include "task_manager_wrapper.h"
 
 
 #include <fenv.h> // For feenableexcept
@@ -195,8 +195,6 @@ int main(void)
 		exit(-1);
 	}
 
-	GUI_connector_init();
-
 	LOG_INFO("Program init");
 
 	m_tasks_id.boucle_id = TASK_ID_INVALID;
@@ -208,7 +206,10 @@ int main(void)
 
 	simulator_init();
 
+#ifdef LS027_GUI
+	// start timer for real time simulation
 	millis_init();
+#endif
 
 	fatfs_init();
 
@@ -237,13 +238,6 @@ int main(void)
 	delay_ms(1);
 
 	task_begin(65536 * 5);
-
-//	m_tasks_id.boucle_id = task_create(task1, "task1", 2048, NULL);
-//	m_tasks_id.system_id = task_create(task2, "task2", 2048, NULL);
-//	m_tasks_id.peripherals_id = task_create(task3, "task3", 2048, NULL);
-//	m_tasks_id.ls027_id = task_create(task4, "task4", 2048, NULL);
-//
-//	task_start(idle_task_test, NULL);
 
 	m_tasks_id.boucle_id = task_create(boucle_task, "boucle_task", 65536, NULL);
 	m_tasks_id.system_id = task_create(system_task, "system_task", 65536, NULL);

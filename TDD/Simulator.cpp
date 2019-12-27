@@ -10,6 +10,8 @@
 #include <string.h>
 #include "ff.h"
 #include "millis.h"
+#include "bme280.h"
+#include "tdd_logger.h"
 #include "uart_tdd.h"
 #include "Model_tdd.h"
 #include "Simulator.h"
@@ -35,11 +37,13 @@ static FIL* g_fileObject;   /* File object */
 #ifdef LS027_GUI
 #define NEW_POINT_PERIOD_MS       400
 #else
-#define NEW_POINT_PERIOD_MS       50
+#define NEW_POINT_PERIOD_MS       1000
 #endif
 
-static uint32_t last_point_ms = 0;
 static uint32_t nb_gps_loc = 0;
+
+static float cur_speed = 20.0f;
+static float alt_sim = 100.0f;
 
 static void simulator_modes(void) {
 
@@ -99,12 +103,35 @@ extern float m_press_sim;
 
 void simulator_simulate_altitude(float alti) {
 
-	const float sea_level_pressure = 1003.0f;
+	const float sea_level_pressure = 1015.0f;
 
-	m_press_sim = sea_level_pressure * powf(1 - alti / 44330.0f, 1.0 / 0.1903f);
+	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
+
+	m_press_sim = sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f);
+
+	// sets the updated flag
+	bme280_read_sensor();
 }
 
 void simulator_init(void) {
+
+	tdd_logger_init("simu.txt");
+
+	tdd_logger_log_name(TDD_LOGGING_TIME, "time");
+	tdd_logger_log_name(TDD_LOGGING_P2D, "p2d");
+	tdd_logger_log_name(TDD_LOGGING_P3D, "p3d");
+	tdd_logger_log_name(TDD_LOGGING_SEG_DIST, "dist");
+	tdd_logger_log_name(TDD_LOGGING_NB_SEG_ACT, "nb_act");
+	tdd_logger_log_name(TDD_LOGGING_HP, "hp");
+	tdd_logger_log_name(TDD_LOGGING_ALPHA, "a");
+	tdd_logger_log_name(TDD_LOGGING_ALPHA0, "a_0");
+	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE, "sim_slope");
+	tdd_logger_log_name(TDD_LOGGING_EST_SLOPE, "est_slope");
+	tdd_logger_log_name(TDD_LOGGING_ALT_SIM, "alti_sim");
+	tdd_logger_log_name(TDD_LOGGING_ALT_EST, "alti_est");
+	tdd_logger_log_name(TDD_LOGGING_TOT_CLIMB, "climb");
+	tdd_logger_log_name(TDD_LOGGING_CUR_POWER, "power");
+	tdd_logger_log_name(TDD_LOGGING_CUR_SPEED, "speed");
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
 
@@ -126,18 +153,11 @@ void simulator_init(void) {
 	m_app_error.saved_data.att.date.date = 211218;
 }
 
-void simulator_tasks(void) {
+static void _fec_sim(void) {
 
-	if (!g_fileObject) {
-		LOG_ERROR("No simulation file found");
-		exit(-3);
-	}
-
-	if (millis() < 5000) {
-		return;
-	}
-
-	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < 250) return;
+	last_point_ms = millis();
 
 	// HRM simulation
 	hrm_info.bpm = 120 + (rand() % 65);
@@ -148,12 +168,49 @@ void simulator_tasks(void) {
 	fec_info.el_time++;
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
+}
 
-	print_mem_state();
+static void _sensors_sim(void) {
+
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < 100) return;
+
+	static float cur_a = toRadians(5.0f);
+	static const float cur_a0 = toRadians(3.4f);
+	static uint32_t sim_nb = 0;
+
+	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
+
+	if (++sim_nb > 2000) {
+
+		cur_a = -cur_a;
+
+		sim_nb = 0;
+	}
+
+	fxos_set_yaw(cur_a + cur_a0);
+	simulator_simulate_altitude(alt_sim);
 
 	last_point_ms = millis();
 
-	simulator_modes();
+	tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE, 100 * tanf(cur_a));
+	tdd_logger_log_float(TDD_LOGGING_ALT_SIM, alt_sim);
+
+	tdd_logger_flush();
+}
+
+static void _loc_sim(void) {
+
+	if (!g_fileObject) {
+		LOG_ERROR("No simulation file found");
+		exit(-3);
+	}
+
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+	last_point_ms = millis();
+
+	//simulator_modes();
 
 	if (fgets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
 
@@ -176,9 +233,7 @@ void simulator_tasks(void) {
 		lon   = data[1];
 		alt   = data[2];
 
-		simulator_simulate_altitude(alt);
-
-		LOG_INFO("Input alt.:  %f", alt);
+		LOG_DEBUG("Input alt.:  %f", alt);
 
 		if (pos == 4) {
 			// file contains the rtime
@@ -221,10 +276,10 @@ void simulator_tasks(void) {
 		sLnsInfo lns_info;
 		lns_info.lat = lat * 10000000.;
 		lns_info.lon = lon * 10000000.;
-		lns_info.ele = alt * 100.;
+		lns_info.ele = (alt_sim + 32.3f) * 100.;
 		lns_info.secj = (int)rtime;
 		lns_info.date = 11218;
-		lns_info.speed = 20. * 10.;
+		lns_info.speed = cur_speed * 10.;
 		locator_dispatch_lns_update(&lns_info);
 #endif
 
@@ -255,6 +310,24 @@ void simulator_tasks(void) {
 		exit(0);
 
 	}
+}
+
+void simulator_tasks(void) {
+
+	tdd_logger_log_int(TDD_LOGGING_TIME, millis());
+
+	if (millis() < 500) {
+
+		tdd_logger_start();
+		return;
+	}
+
+	_fec_sim();
+	_sensors_sim();
+	_loc_sim();
+
+	tdd_logger_log_int(TDD_LOGGING_P2D, Point2D::getObjectCount());
+	tdd_logger_log_int(TDD_LOGGING_P3D, Point::getObjectCount());
 
 }
 

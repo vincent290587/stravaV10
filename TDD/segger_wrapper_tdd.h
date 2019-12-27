@@ -39,5 +39,14 @@
 
 #include "task_manager_wrapper_tdd.h"
 
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
+void millis_increase_time(int dt);
+
+#ifdef	__cplusplus
+}
+#endif
 
 #endif /* SEGGER_WRAPPER_TDD_H_ */
