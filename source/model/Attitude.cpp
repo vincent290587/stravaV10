@@ -62,7 +62,7 @@ void Attitude::computeFusion(void) {
 	// get current elevation
 	float ele = 0.;
 	if (!m_baro.computeAlti(ele)) {
-		LOG_ERROR("Baro error");
+		LOG_WARNING("Altitude error or sea level missing");
 		return;
 	}
 
@@ -126,7 +126,7 @@ float Attitude::filterElevation(SLoc& loc_) {
 		return 0.;
 	}
 
-	LOG_INFO("Filtering climb");
+	LOG_INFO("Filtering GPS/Baro correction");
 
 	// filter with a high time-constant the difference between
 	// GPS altitude and barometer altitude to remove drifts
@@ -173,7 +173,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 		// get current elevation
 		m_baro.computeAlti(m_cur_ele);
 
-		LOG_WARNING("Init sea level pressure... gps: %f bme:%f", loc_.alt, m_cur_ele);
+		LOG_WARNING("Init sea level pressure... gps: %dm bme:%dm", (int)loc_.alt, (int)m_cur_ele);
 
 		// treat elevation
 		this->filterElevation(loc_);
@@ -220,9 +220,11 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 
 	float tmp_dist = distance_between(att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
 
-	char buffer[100];
-	snprintf(buffer, sizeof(buffer), "Weird pos: %f %f %f %f\r\n", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
-	if (tmp_dist > 400000.f) LOG_WARNING(buffer);
+	if (tmp_dist > 400000.f) {
+		char buffer[100];
+		snprintf(buffer, sizeof(buffer), "Weird pos: %f %f %f %f (%f)\r\n", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon, tmp_dist);
+		LOG_WARNING(buffer);
+	}
 
 	att.dist += tmp_dist;
 

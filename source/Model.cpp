@@ -226,18 +226,17 @@ bool check_memory_exception(void) {
  */
 void idle_task(void * p_context)
 {
-    for(;;)
-    {
+	for(;;) {
 
 #if APP_SCHEDULER_ENABLED
 		app_sched_execute();
 #endif
 
 		// TODO sysview_task_idle();
-    	pwr_mgmt_run();
+		pwr_mgmt_run();
 
-    	w_task_yield();
-    }
+		w_task_yield();
+	}
 }
 
 /**
@@ -276,12 +275,12 @@ void ls027_task(void * p_context)
 	{
 		wdt_reload();
 
-		if (w_task_delay(LS027_TIMEOUT_DELAY_MS)) {
-			// timeout
-			sysview_task_void_enter(VueRefresh);
-			vue.refresh();
-			sysview_task_void_exit(VueRefresh);
-		}
+		w_task_delay(LS027_TIMEOUT_DELAY_MS);
+
+		// timeout
+		sysview_task_void_enter(VueRefresh);
+		vue.refresh();
+		sysview_task_void_exit(VueRefresh);
 
 		// check screen update & unlock task
 		vue.writeWhole();

@@ -168,9 +168,10 @@ void BoucleCRS::run() {
 
 	notifications_setNotify(&neopixel);
 
-	vue.refresh();
-
-	m_last_refresh.setUpdateTime();
+	// ready for displaying
+	if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.ls027_id);
+	}
 
 }
 

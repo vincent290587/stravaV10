@@ -159,15 +159,15 @@ void print_mem_state(void) {
  */
 void idle_task(void * p_context)
 {
-    for(;;)
-    {
+	for(;;)
+	{
 
 #ifndef LS027_GUI
-    	millis_increase_time(5);
+		millis_increase_time(5);
 #endif
 
 		w_task_yield();
-    }
+	}
 }
 
 /**
@@ -177,14 +177,14 @@ void idle_task(void * p_context)
  */
 void system_task(void * p_context)
 {
-    for(;;)
-    {
+	for(;;)
+	{
 		perform_system_tasks();
 
 		simulator_tasks();
 
 		w_task_delay(15);
-    }
+	}
 }
 
 /**
@@ -223,14 +223,13 @@ void ls027_task(void * p_context)
 {
 	for(;;)
 	{
-		if (w_task_delay(LS027_TIMEOUT_DELAY_MS)) {
-			// timeout
-			vue.refresh();
-		}
+		w_task_delay(LS027_TIMEOUT_DELAY_MS);
+
+		vue.refresh();
 
 #ifdef LS027_GUI
-			// check screen update & unlock task
-			vue.writeWhole();
+		// check screen update & unlock task
+		vue.writeWhole();
 #endif
 
 	}

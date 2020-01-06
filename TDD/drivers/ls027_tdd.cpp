@@ -15,11 +15,8 @@
 #include "GUI_connector.h"
 #include "segger_wrapper.h"
 
-#define PORT 8080
 
 #define LS027_BUFFER_SIZE               ((LS027_DISPLAY_HW_NOF_ROWS * LS027_DISPLAY_HW_NOF_COLUMNS) / 8)
-
-#define adagfxswap(a, b) { int16_t t = a; a = b; b = t; }
 
 #define LS027_COORD_TO_INDEX(X,Y)       ((Y*LS027_HW_WIDTH + X) / 8)
 
@@ -46,13 +43,7 @@ static void ls027_spi_buffer_clear(void) {
 /////////  FUNCTIONS
 
 void LS027_Clear(void) {
-	LOG_DEBUG("LS027 buffers cleared");
-
-	if (!m_is_color_inverted) {
-		memset(ls027_tdd_buffer, LS027_PIXEL_GROUP_WHITE, sizeof(ls027_tdd_buffer));
-	} else {
-		memset(ls027_tdd_buffer, LS027_PIXEL_GROUP_BLACK, sizeof(ls027_tdd_buffer));
-	}
+	ls027_spi_buffer_clear();
 }
 
 void LS027_Init(void) {

@@ -62,7 +62,7 @@
 
 #define SVIEW_INIT(...)                      EMPTY_MACRO
 #define LOG_WARNING_SVIEW(...)               EMPTY_MACRO
-#define LOG_ERROR_SVIEW  (...)               EMPTY_MACRO
+#define LOG_ERROR_SVIEW(...)               EMPTY_MACRO
 
 #endif
 

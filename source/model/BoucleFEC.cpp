@@ -79,6 +79,8 @@ void BoucleFEC::run() {
 	zPower.addPowerData(fec_info.power, millis());
 #endif
 
-	vue.refresh();
-
+	// ready for displaying
+	if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.ls027_id);
+	}
 }

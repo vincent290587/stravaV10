@@ -9,6 +9,7 @@
 #include "timer.h"
 #include "Model_tdd.h"
 #include "segger_wrapper.h"
+#include "task_scheduler.h"
 #include "task_manager_wrapper.h"
 
 #define MS_TIMER_GRANULOSITY       10
