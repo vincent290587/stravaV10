@@ -52,7 +52,9 @@ static void simulator_modes(void) {
 		eSimulationStepMenu1,
 		eSimulationStepFEC,
 		eSimulationStepMenu2,
-		eSimulationStepCRS2
+		eSimulationStepCRS2,
+		eSimulationStepCRS3,
+		eSimulationStepEnd,
 	};
 
 	static eSimulationStep m_step = eSimulationStepCRS1;
@@ -80,6 +82,7 @@ static void simulator_modes(void) {
 		vue.tasks(eButtonsEventCenter);
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
 
 		m_step = eSimulationStepMenu2;
 	} break;
@@ -88,10 +91,36 @@ static void simulator_modes(void) {
 		vue.tasks(eButtonsEventCenter);
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
 
 		m_step = eSimulationStepCRS2;
 	} break;
 	case eSimulationStepCRS2:
+	{
+		vue.tasks(eButtonsEventCenter);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+
+		m_next_event_ms = 250000;
+
+		m_step = eSimulationStepCRS3;
+	}
+	case eSimulationStepCRS3:
+	if (millis() > m_next_event_ms) {
+
+		vue.tasks(eButtonsEventCenter);
+		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
+
+		vue.tasks(eButtonsEventCenter);
+
+		m_step = eSimulationStepEnd;
+	}
+	case eSimulationStepEnd:
 		// no break
 	default:
 		break;
@@ -210,7 +239,7 @@ static void _loc_sim(void) {
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
 	last_point_ms = millis();
 
-	//simulator_modes();
+	simulator_modes();
 
 	if (fgets(g_bufferRead, sizeof(g_bufferRead)-1, g_fileObject)) {
 
