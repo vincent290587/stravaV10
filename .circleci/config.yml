@@ -1,5 +1,7 @@
 version: 2
 
+orbs:
+  codecov: codecov/codecov@1.0.2
 jobs:
   build:
     docker:
@@ -14,4 +16,6 @@ jobs:
           command: 'cd TDD && make'
       - run:
           name: TDD APP test
-          command: 'cd TDD && ./StravaV10'
+          command: 'cd TDD && make cov_xml'
+      - codecov/upload:
+          file: {{ TDD/cov.xml }}

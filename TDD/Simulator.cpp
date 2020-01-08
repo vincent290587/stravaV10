@@ -67,6 +67,7 @@ static void simulator_modes(void) {
 		    LOG_INFO("Going to FEC mode");
 
 			vue.tasks(eButtonsEventCenter);
+			w_task_yield();
 			vue.tasks(eButtonsEventRight);
 
 			m_next_event_ms += 30000;

@@ -5,7 +5,7 @@ project (stravaV10 LANGUAGES C CXX)
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
-#add_definitions(-DLOC_SOURCE_GPS)
+add_definitions(-DLOC_SOURCE_GPS)
 #add_definitions(-DTDD_RANDOMIZE)
 #add_definitions(-DLS027_GUI)
 
@@ -155,6 +155,14 @@ if(CODE_COVERAGE)
 
 SETUP_TARGET_FOR_COVERAGE_LCOV(
    NAME cov						    # Name for custom target.
+   EXECUTABLE StravaV10				# Name of the test driver executable that runs the tests.
+   # NOTE! This should always have a ZERO as exit code
+   # otherwise the coverage generation will not complete.
+   DEPENDENCIES StravaV10			# Name of output directory.
+   )
+
+SETUP_TARGET_FOR_COVERAGE_GCOVR_XML(
+   NAME cov_xml						# Name for custom target.
    EXECUTABLE StravaV10				# Name of the test driver executable that runs the tests.
    # NOTE! This should always have a ZERO as exit code
    # otherwise the coverage generation will not complete.
