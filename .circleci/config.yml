@@ -1,7 +1,7 @@
-version: 2
+version: 2.1
 
 orbs:
-  codecov: codecov/codecov@1.0.2
+  codecov: codecov/codecov@1.0.5
 jobs:
   build:
     docker:
@@ -18,4 +18,4 @@ jobs:
           name: TDD APP test
           command: 'cd TDD && make cov_xml'
       - codecov/upload:
-          file: {{ TDD/cov.xml }}
+          file: TDD/cov.xml
