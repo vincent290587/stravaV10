@@ -54,6 +54,7 @@ static void simulator_modes(void) {
 		eSimulationStepMenu2,
 		eSimulationStepCRS2,
 		eSimulationStepCRS3,
+		eSimulationStepCRS4,
 		eSimulationStepEnd,
 	};
 
@@ -63,6 +64,8 @@ static void simulator_modes(void) {
 	switch (m_step) {
 	case eSimulationStepCRS1:
 		if (millis() > m_next_event_ms) {
+		    LOG_INFO("Going to FEC mode");
+
 			vue.tasks(eButtonsEventCenter);
 			vue.tasks(eButtonsEventRight);
 
@@ -74,52 +77,65 @@ static void simulator_modes(void) {
 	case eSimulationStepMenu1:
 	{
 		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
 
 		m_step = eSimulationStepFEC;
 	} break;
 	case eSimulationStepFEC:
 	if (millis() > m_next_event_ms) {
+		LOG_INFO("Going to PRC mode");
 		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventRight);
+		w_task_yield();
 
 		m_step = eSimulationStepMenu2;
 	} break;
 	case eSimulationStepMenu2:
 	{
 		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventRight);
-		vue.tasks(eButtonsEventRight);
+		w_task_yield();
 
 		m_step = eSimulationStepCRS2;
 	} break;
 	case eSimulationStepCRS2:
 	{
 		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
 		vue.tasks(eButtonsEventLeft);
 		vue.tasks(eButtonsEventLeft);
 		vue.tasks(eButtonsEventLeft);
 		vue.tasks(eButtonsEventLeft);
 		vue.tasks(eButtonsEventLeft);
 		vue.tasks(eButtonsEventLeft);
+		w_task_yield();
 
 		m_next_event_ms = 250000;
 
 		m_step = eSimulationStepCRS3;
-	}
+	} break;
 	case eSimulationStepCRS3:
 	if (millis() > m_next_event_ms) {
+		LOG_INFO("Going to CRS mode");
 
 		vue.tasks(eButtonsEventCenter);
-		vue.tasks(eButtonsEventRight);
-		vue.tasks(eButtonsEventRight);
 
+		m_step = eSimulationStepCRS4;
+	} break;
+	case eSimulationStepCRS4:
+	{
+		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventCenter);
 
 		m_step = eSimulationStepEnd;
-	}
+	} break;
+
 	case eSimulationStepEnd:
 		// no break
 	default:

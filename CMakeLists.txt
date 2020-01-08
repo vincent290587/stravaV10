@@ -9,6 +9,15 @@ add_definitions(-D_USE_MATH_DEFINES)
 #add_definitions(-DTDD_RANDOMIZE)
 #add_definitions(-DLS027_GUI)
 
+option(CODE_COVERAGE "Enable coverage reporting" OFF)
+if(CODE_COVERAGE)
+
+  include(CodeCoverage.cmake)
+
+  APPEND_COVERAGE_COMPILER_FLAGS()
+
+endif(CODE_COVERAGE)
+
 if(CMAKE_HOST_UNIX)
 set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -rdynamic -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover")
 else()
@@ -28,7 +37,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fe
 # add_subdirectory(source/routes)
 add_subdirectory(TDD/sd/fatfs)
 
- 
+
 # add the binary tree to the search path for include files
 include_directories(
     ./
@@ -119,12 +128,12 @@ set(SRCS
 	source/vue/VuePRC.cpp
 	source/vue/VueFEC.cpp
     )
-    
+
 set(HEADERS
     main_tdd.h
     Simulator.h
     )
- 
+
 # add the executable
 add_executable(StravaV10 ${SRCS})
 
@@ -134,10 +143,32 @@ target_link_libraries(StravaV10 fatfs)
 
 if(CMAKE_HOST_UNIX)
 
-target_link_libraries(StravaV10 ubsan)
+  target_link_libraries(StravaV10 ubsan)
 
 else()
 
-target_link_libraries(StravaV10 imagehlp)
+  target_link_libraries(StravaV10 imagehlp)
 
 endif()
+
+if(CODE_COVERAGE)
+
+SETUP_TARGET_FOR_COVERAGE_LCOV(
+   NAME cov						    # Name for custom target.
+   EXECUTABLE StravaV10				# Name of the test driver executable that runs the tests.
+   # NOTE! This should always have a ZERO as exit code
+   # otherwise the coverage generation will not complete.
+   DEPENDENCIES StravaV10			# Name of output directory.
+   )
+
+endif(CODE_COVERAGE)
+
+
+# Create the gcov-clean target. This cleans the build as well as generated
+# .gcda and .gcno files.
+add_custom_target(scrub
+	COMMAND ${CMAKE_MAKE_PROGRAM} clean
+	COMMAND rm -f ${OBJECT_DIR}/*.gcno
+	COMMAND rm -f ${OBJECT_DIR}/*.gcda
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	)
