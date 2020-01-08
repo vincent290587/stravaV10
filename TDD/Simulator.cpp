@@ -174,12 +174,13 @@ void simulator_init(void) {
 			sizeof(m_app_error.err_desc._buffer),
 			"Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
 
-	m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
 	m_app_error.saved_data.att.climb = 562.;
 	m_app_error.saved_data.att.dist = 17700;
 	m_app_error.saved_data.att.nbsec_act = 2780;
 	m_app_error.saved_data.att.pr = 3;
 	m_app_error.saved_data.att.date.date = 211218;
+
+	m_app_error.saved_data.crc = calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att));
 }
 
 static void _fec_sim(void) {

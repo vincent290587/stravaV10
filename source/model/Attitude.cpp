@@ -182,7 +182,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 		m_climb = 0.;
 		m_last_stored_ele = m_cur_ele;
 
-		if (m_app_error.saved_data.crc == SYSTEM_DESCR_POS_CRC) {
+		if (m_app_error.saved_data.crc == calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att))) {
 
 			// restoring position and accumulated climb
 			att.climb = m_app_error.saved_data.att.climb;
@@ -255,7 +255,7 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 
 		// save position and stuff in case of crash
 		memcpy(&m_app_error.saved_data.att, &att, sizeof(SAtt));
-		m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
+		m_app_error.saved_data.crc = calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att));
 
 
 	} else if (att.dist > m_last_save_dist + 25.f) {
