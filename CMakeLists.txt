@@ -9,7 +9,7 @@ add_definitions(-DLOC_SOURCE_GPS)
 #add_definitions(-DTDD_RANDOMIZE)
 #add_definitions(-DLS027_GUI)
 
-option(CODE_COVERAGE "Enable coverage reporting" OFF)
+option(CODE_COVERAGE "Enable coverage reporting" ON)
 if(CODE_COVERAGE)
 
   include(CodeCoverage.cmake)

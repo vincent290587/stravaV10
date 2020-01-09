@@ -134,11 +134,18 @@ static void simulator_modes(void) {
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventCenter);
 
+		m_next_event_ms = millis() + 15000;
+
 		m_step = eSimulationStepEnd;
 	} break;
 
 	case eSimulationStepEnd:
-		// no break
+	if (millis() > m_next_event_ms) {
+		// continue to cycle through screens
+		vue.tasks(eButtonsEventRight);
+
+		m_next_event_ms = millis() + 15000;
+	} break;
 	default:
 		break;
 	}
