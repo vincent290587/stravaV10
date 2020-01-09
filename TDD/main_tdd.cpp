@@ -17,7 +17,7 @@
 #include "sd_functions.h"
 #include "Simulator.h"
 #include "Model_tdd.h"
-#include "bme280.h"
+#include "i2c_scheduler.h"
 #include "segger_wrapper.h"
 #include "GUI_connector.h"
 #include "unit_testing.hpp"
@@ -129,6 +129,7 @@ void task4(void *p_context) {
  */
 void idle_task_tdd(void * p_context)
 {
+
 	for(;;)
 	{
 
@@ -220,7 +221,7 @@ int main(void)
 	m_tasks_id.peripherals_id = TASK_ID_INVALID;
 	m_tasks_id.ls027_id = TASK_ID_INVALID;
 
-	bme280_init_sensor();
+	i2c_scheduling_init();
 
 	simulator_init();
 

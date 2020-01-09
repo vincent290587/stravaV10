@@ -13,6 +13,7 @@
 #include "bme280.h"
 #include "tdd_logger.h"
 #include "uart_tdd.h"
+#include "usb_cdc.h"
 #include "Model_tdd.h"
 #include "Simulator.h"
 #include "segger_wrapper.h"
@@ -354,6 +355,9 @@ static void _loc_sim(void) {
 
 	} else {
 		fclose(g_fileObject);
+
+		// test msc mode
+		usb_cdc_start_msc();
 
 #ifdef TDD_RANDOMIZE
 		static int nb_tests = 0;
