@@ -22,6 +22,7 @@
 #include "fds.h"
 #include "nrf_fstorage.h"
 #include "ble_conn_state.h"
+#include "nrf_ble_gq.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_scan.h"
 #include "helper.h"
@@ -86,6 +87,9 @@ BLE_KOMOOT_C_DEF(m_ble_komoot_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
+NRF_BLE_GQ_DEF(m_ble_gatt_queue,                                /**< BLE GATT Queue instance. */
+        NRF_SDH_BLE_CENTRAL_LINK_COUNT,
+        NRF_BLE_GQ_QUEUE_SIZE);
 
 #define NUS_RB_SIZE      1024
 RING_BUFFER_DEF(nus_rb1, NUS_RB_SIZE);
@@ -483,6 +487,16 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 
 }
 
+
+/**@brief Function for handling the LED Button Service client errors.
+ *
+ * @param[in]   nrf_error   Error code containing information about what went wrong.
+ */
+static void _service_c_error_handler(uint32_t nrf_error)
+{
+	APP_ERROR_HANDLER(nrf_error);
+}
+
 /**
  * @brief Heart rate collector initialization.
  */
@@ -491,6 +505,8 @@ static void lns_c_init(void)
 	ble_lns_c_init_t lns_c_init_obj;
 
 	lns_c_init_obj.evt_handler = lns_c_evt_handler;
+	lns_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	lns_c_init_obj.error_handler = _service_c_error_handler;
 
 	uint32_t err_code = ble_lns_c_init(&m_ble_lns_c, &lns_c_init_obj);
 	APP_ERROR_CHECK(err_code);
@@ -505,6 +521,8 @@ static void komoot_c_init(void)
 	ble_komoot_c_init_t komoot_c_init_obj;
 
 	komoot_c_init_obj.evt_handler = komoot_c_evt_handler;
+	komoot_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	komoot_c_init_obj.error_handler = _service_c_error_handler;
 
 	uint32_t err_code = ble_komoot_c_init(&m_ble_komoot_c, &komoot_c_init_obj);
 	APP_ERROR_CHECK(err_code);
@@ -512,13 +530,15 @@ static void komoot_c_init(void)
 
 
 /**
- * @brief Battery level collector initialization.
+ * @brief NUS initialization.
  */
 static void nus_c_init(void)
 {
 	ble_nus_c_init_t nus_c_init_obj;
 
 	nus_c_init_obj.evt_handler = nus_c_evt_handler;
+	nus_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	nus_c_init_obj.error_handler = _service_c_error_handler;
 
 	uint32_t err_code = ble_nus_c_init(&m_ble_nus_c, &nus_c_init_obj);
 	APP_ERROR_CHECK(err_code);
@@ -530,7 +550,14 @@ static void nus_c_init(void)
  */
 static void db_discovery_init(void)
 {
-	ret_code_t err_code = ble_db_discovery_init(db_disc_handler);
+	ble_db_discovery_init_t db_init;
+
+	memset(&db_init, 0, sizeof(db_init));
+
+	db_init.evt_handler  = db_disc_handler;
+	db_init.p_gatt_queue = &m_ble_gatt_queue;
+
+	ret_code_t err_code = ble_db_discovery_init(&db_init);
 	APP_ERROR_CHECK(err_code);
 }
 
