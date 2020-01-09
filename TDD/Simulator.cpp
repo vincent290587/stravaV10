@@ -152,6 +152,21 @@ static void simulator_modes(void) {
 
 }
 
+void print_mem_state(void) {
+
+	static int max_mem_used = 0;
+	int tot_point_mem = 0;
+	tot_point_mem += Point::getObjectCount() * sizeof(Point);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
+
+	if (tot_point_mem > max_mem_used) max_mem_used = tot_point_mem;
+
+	LOG_INFO(">> Allocated pts: %d 2D %d 3D / mem %d o / %d o",
+			Point2D::getObjectCount(), Point::getObjectCount(),
+			tot_point_mem, max_mem_used);
+}
+
 extern float m_press_sim;
 
 void simulator_simulate_altitude(float alti) {
