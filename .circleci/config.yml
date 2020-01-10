@@ -19,4 +19,4 @@ jobs:
           name: TDD APP test
           command: 'cd TDD && make cov_xml'
       - codecov/upload:
-          file: TDD/cov.xml
+          file: TDD/cov_xml.xml
