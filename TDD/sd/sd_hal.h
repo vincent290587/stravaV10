@@ -22,6 +22,10 @@ int fatfs_uninit(void);
 
 void format_memory(void);
 
+void fmkfs_memory(void);
+
+void test_memory(void);
+
 #ifdef	__cplusplus
 }
 #endif

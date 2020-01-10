@@ -5,8 +5,10 @@ project (stravaV10 LANGUAGES C CXX)
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
-add_definitions(-DLOC_SOURCE_GPS)
+#add_definitions(-DLOC_SOURCE_GPS)
 #add_definitions(-DTDD_RANDOMIZE)
+add_definitions(-DUSB_ENABLED)
+add_definitions(-DBLE_STACK_SUPPORT_REQD)
 #add_definitions(-DLS027_GUI)
 
 option(CODE_COVERAGE "Enable coverage reporting" ON)
@@ -46,9 +48,11 @@ include_directories(
 	TDD/sd/fatfs/src
 	TDD/drivers
     TDD/logger
+	TDD/nordic
 	TDD/timer
 	TDD/sensors
 	TDD/scheduler
+	TDD/TDD
 	libraries/AdafruitGFX
     libraries/AdafruitGFX/Fonts
 	libraries/AltiBaro
@@ -57,15 +61,21 @@ include_directories(
     libraries/filters
     libraries/komoot
 	libraries/TinyGPSPlus
+	libraries/VParser
 	rf
     source
     source/routes
 	source/model
+	source/usb
+	source/scheduling
 	source/vue
 	source/parsers
 	source/display
 	source/sensors
     )
+
+
+aux_source_directory(TDD/nordic                   NORDIC)
 
 # Cree des variables avec les fichiers a compiler
 set(SRCS
@@ -84,12 +94,14 @@ set(SRCS
     TDD/sensors/STC3100.cpp
     TDD/sensors/fxos.cpp
     TDD/sensors/bme280.c
+	TDD/sensors/VEML6075.cpp
 	TDD/drivers/uart_tdd.c
 	TDD/drivers/ant_tdd.c
 	TDD/drivers/gpio_tdd.cpp
 	TDD/drivers/ls027_tdd.cpp
 	TDD/drivers/neopixel_tdd.c
     TDD/logger/tdd_logger.c
+    TDD/TDD/GUI_connector.cpp
     segger_wrapper.c
     rf/ant_device_manager.cpp
 	libraries/utils/WString.cpp
@@ -100,6 +112,7 @@ set(SRCS
     libraries/komoot/komoot_nav.c
 	libraries/GlobalTop/EPONmeaPacket.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
+	libraries/VParser/VParser.cpp
 	source/display/SegmentManager.cpp
 	source/display/Zoom.cpp
 	source/display/notifications.c
@@ -127,6 +140,8 @@ set(SRCS
 	source/vue/VueGPS.cpp
 	source/vue/VuePRC.cpp
 	source/vue/VueFEC.cpp
+	source/Model.cpp
+	source/g_structs.c
     )
 
 set(HEADERS
@@ -135,7 +150,7 @@ set(HEADERS
     )
 
 # add the executable
-add_executable(StravaV10 ${SRCS})
+add_executable(StravaV10 ${SRCS} ${NORDIC})
 
 # Et pour que l'executable fonctionne, il faut lui indiquer la bibliotheque dont il depend
 target_link_libraries(StravaV10 fatfs)
