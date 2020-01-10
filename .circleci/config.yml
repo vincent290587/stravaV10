@@ -8,7 +8,7 @@ jobs:
       - image: vincent290587/armubuntu:latest
     steps:
       - checkout
-      - run: sudo apt-get update ; sudo apt-get -qq -y install curl lcov python ; export CODECOV_TOKEN="7de30547-11e1-430e-a04c-278a99efad75"
+      - run: sudo apt-get update ; sudo apt-get -qq -y install curl lcov python
       - run:
           name: Creating Build Files
           command: 'cd TDD && cmake ..'
@@ -16,4 +16,5 @@ jobs:
           name: Creating Binary Files and running
           command: 'cd TDD && make && make cov_xml'
       - codecov/upload:
+          token: "7de30547-11e1-430e-a04c-278a99efad75"
           file: TDD/cov_xml.xml
