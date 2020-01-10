@@ -36,6 +36,8 @@ SufferScore   suffer_score;
 
 PowerZone     zPower;
 
+RRZone        rrZones;
+
 UserSettings   u_settings;
 
 ListeSegments mes_segments;
@@ -318,6 +320,7 @@ void peripherals_task(void * p_context)
 		ant_tasks();
 		roller_manager_tasks();
 		suffer_score.addHrmData(hrm_info.bpm, millis());
+		rrZones.addRRData(hrm_info);
 		sysview_task_void_exit(AntRFTasks);
 #endif
 

@@ -78,7 +78,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadranZones(3, VUE_FEC_NB_LINES, 2, "PZone", zPower);
 
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
-		this->cadran(4, VUE_FEC_NB_LINES, 2, "Speed", _fmkstr((float)fec_info.speed / 10.f, 1U), "km/h");
+		this->cadranRR(4, VUE_FEC_NB_LINES, 2, "RR", rrZones);
 
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();

@@ -253,7 +253,7 @@ void VueCRS::afficheScreen2(void) {
 	model_get_navigation(&navi);
 
 	this->cadran(5, VUE_CRS_NB_LINES, 1, "Next turn", _imkstr(navi.distance), "m");
-	this->cadran(5, VUE_CRS_NB_LINES, 2, "Direction", _imkstr(navi.direction), NULL);
+	this->cadranRR(5, VUE_CRS_NB_LINES, 2, "RR", rrZones);
 
 	const uint8_t* bitmap = komoot_nav_get_icon(navi.direction);
 	if (bitmap) {
