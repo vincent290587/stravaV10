@@ -34,22 +34,8 @@ extern bool configure_memory();
 
 void format_memory() {
 
-	LOG_WARNING("Formatting...");
-	uint32_t err_code;
-	nrf_qspi_cinstr_conf_t cinstr_cfg = {
-			.opcode    = 0xc7,
-			.length    = NRF_QSPI_CINSTR_LEN_1B,
-			.io2_level = true,
-			.io3_level = true,
-			.wipwait   = true,
-			.wren      = true
-	};
-
-	// Global format
-	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
-	APP_ERROR_CHECK(err_code);
-
-	LOG_WARNING("Memory formatted");
+	LOG_WARNING("Forbidden");
+	return;
 }
 
 void fmkfs_memory(void) {
@@ -160,10 +146,9 @@ int fatfs_init(void) {
 
 	LOG_INFO("Initializing disk 0 (QSPI)...");
 	LOG_FLUSH();
-	for (uint32_t retries = 5; retries && disk_state; --retries)
+	for (uint32_t retries = 5; retries; --retries)
 	{
 		disk_state = disk_initialize(0);
-		configure_memory();
 
 		if (!disk_state) break;
 
@@ -179,6 +164,24 @@ int fatfs_init(void) {
 		return -1;
 	}
 
+	bool stat;
+	for (uint32_t retries = 5; retries; --retries)
+	{
+		stat =  configure_memory();
+
+		if (stat) break;
+
+		LOG_INFO("Disk initialization failed %u", disk_state);
+
+		delay_ms(1000);
+	}
+
+	if (!stat)
+	{
+		return -2;
+	}
+
+
 	LOG_INFO("Mounting volume...");
 	ff_result = f_mount(&fs, "", 1);
 	if (ff_result)
@@ -186,13 +189,13 @@ int fatfs_init(void) {
 		if (ff_result == FR_NO_FILESYSTEM)
 		{
 			LOG_ERROR("Mount failed. Filesystem not found. Please format device.");
-			//fatfs_mkfs();
+//			fatfs_mkfs();
 		}
 		else
 		{
 			LOG_ERROR("Mount failed: %u", ff_result);
 		}
-	    return -2;
+	    return -3;
 	}
 	LOG_INFO("Volume mounted");
 
@@ -203,11 +206,11 @@ int fatfs_init(void) {
 
 /**
  *
- * @return always 0
+ * @return
  */
 int fatfs_uninit(void) {
 
-	if (!m_is_fat_mounted) return 0;
+	if (!m_is_fat_mounted) return 1;
 
 	LOG_INFO("Un-initializing disk 0...");
 	disk_state = disk_uninitialize(0);

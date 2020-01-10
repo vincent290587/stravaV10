@@ -75,6 +75,8 @@ void Vue::setCurrentMode(eVueGlobalScreenModes mode_) {
 
 void Vue::refresh(void) {
 
+	m_last_refreshed = millis();
+
 	sysview_task_void_enter(Ls027Clear);
 	this->clearDisplay();
 	sysview_task_void_exit(Ls027Clear);
@@ -136,13 +138,6 @@ void Vue::refresh(void) {
 		this->setTextWrap(false);
 	}
 
-    if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
-    	w_task_events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_TRIGGER);
-    } else {
-    	this->writeWhole();
-    }
-
-	m_last_refreshed = millis();
 }
 
 void Vue::drawPixel(int16_t x, int16_t y, uint16_t color) {
@@ -261,6 +256,8 @@ void Vue::cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi
 	if (p_lig < nb_lig) drawFastHLine(0, _height / nb_lig * (p_lig), _width, 1);
 
 	sysview_task_void_exit(Ls027Cadrans);
+
+	w_task_yield();
 }
 
 
@@ -308,6 +305,8 @@ void Vue::cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ
 	if (p_lig < nb_lig) drawFastHLine(_width * (p_col - 1) / 2, _height / nb_lig * p_lig, _width / 2, 1);
 
 	sysview_task_void_exit(Ls027Cadrans);
+
+	w_task_yield();
 }
 
 void Vue::HistoH(uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_) {

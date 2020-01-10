@@ -381,6 +381,11 @@ int main(void)
 	m_tasks_id.uart_id  = TASK_ID_INVALID;
 	m_tasks_id.usb_id   = TASK_ID_INVALID;
 
+#if CONFIG_JLINK_MONITOR_ENABLED
+	NVIC_SetPriority(DebugMonitor_IRQn, APP_IRQ_PRIORITY_LOW);
+#warning "!! MONITORING active !!"
+#endif
+
 	// Initialize.
     //Configure WDT.
     nrfx_wdt_config_t wdt_config = NRFX_WDT_DEAFULT_CONFIG;

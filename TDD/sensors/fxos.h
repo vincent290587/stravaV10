@@ -12,11 +12,19 @@
 #include "VueCommon.h"
 
 
+bool fxos_init(void);
+
 void fxos_calibration_start(void);
 
-bool fxos_get_yaw(float &);
+void fxos_readChip(void);
 
-void fxos_set_yaw(float );
+bool is_fxos_updated(void);
+
+void fxos_tasks(void);
+
+bool fxos_get_yaw(float &yaw_rad);
+
+void fxos_set_yaw(float yaw_rad);
 
 bool fxos_get_pitch(float &);
 

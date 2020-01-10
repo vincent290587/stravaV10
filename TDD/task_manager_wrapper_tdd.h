@@ -20,7 +20,7 @@ extern "C" {
  *
  * @return ID of active task.
  */
-static inline task_id_t id_get(void) {
+static inline task_id_t w_task_id_get(void) {
 	return 0;
 }
 

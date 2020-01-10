@@ -23,6 +23,7 @@
 #define I2C_SCHEDULING_PERIOD_MS      (BARO_REFRESH_PER_MS)
 
 static uint32_t m_last_polled_index = 0;
+static uint8_t m_fxos_updated = 0;
 
 APP_TIMER_DEF(m_timer);
 
@@ -116,10 +117,17 @@ void i2c_scheduling_tasks(void) {
 		sysview_task_void_enter(I2cMgmtReadMs);
 		baro.sensorRefresh();
 		sysview_task_void_exit(I2cMgmtReadMs);
+
+		if (m_fxos_updated) {
+			m_fxos_updated = 0;
+
+			attitude.computeFusion();
+		}
 	}
 	if (is_fxos_updated()) {
 		sysview_task_void_enter(I2cMgmtRead1);
 		fxos_tasks();
+		m_fxos_updated = 1;
 		sysview_task_void_exit(I2cMgmtRead1);
 	}
 	if (is_veml_updated()) {

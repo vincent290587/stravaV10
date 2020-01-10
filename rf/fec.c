@@ -164,7 +164,7 @@ static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t eve
 
 	default:
 		// never occurred
-		NRF_LOG_WARNING("Page %u was updated", event);
+		LOG_INFO("ANT_FEC Page %u was updated", event);
 		break;
 	}
 }

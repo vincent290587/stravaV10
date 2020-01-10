@@ -77,10 +77,12 @@ public:
 
 	void addNewFECPoint(sFecInfo& fec_);
 
-	float computePower(float speed_, float dt);
+	void  computeFusion(void);
+	float computePower(float speed_);
 
 private:
 	float m_climb;
+	float m_speed_ms;
 	float m_last_save_dist;
 	float m_last_stored_ele;
 	float m_cur_ele;

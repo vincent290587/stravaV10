@@ -1,7 +1,9 @@
 build/
 _build*/
+cov/
 CMakeFiles/
 *.local
 *.o
 *.d
 *.xml
+/TEST/

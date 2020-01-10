@@ -22,6 +22,7 @@
 #include "fds.h"
 #include "nrf_fstorage.h"
 #include "ble_conn_state.h"
+#include "nrf_ble_gq.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_scan.h"
 #include "helper.h"
@@ -86,6 +87,9 @@ BLE_KOMOOT_C_DEF(m_ble_komoot_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
+NRF_BLE_GQ_DEF(m_ble_gatt_queue,                                /**< BLE GATT Queue instance. */
+        NRF_SDH_BLE_CENTRAL_LINK_COUNT,
+        NRF_BLE_GQ_QUEUE_SIZE);
 
 #define NUS_RB_SIZE      1024
 RING_BUFFER_DEF(nus_rb1, NUS_RB_SIZE);
@@ -96,6 +100,7 @@ static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  
 static volatile bool m_nus_cts = false;
 static volatile bool m_connected = false;
 static uint16_t m_nus_packet_nb = 0;
+static uint16_t m_mtu_length = 20;
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
@@ -150,11 +155,12 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 			APP_ERROR_CHECK(err_code);
 		}
 
-		// TODO
-		//		if (ble_conn_state_n_centrals() < NRF_SDH_BLE_CENTRAL_LINK_COUNT)
-		//		{
-		//			scan_start();
-		//		}
+        const uint16_t mtu_desired = 200;
+
+        LOG_INFO("mtu of %d requested", mtu_desired);
+        err_code = nrf_ble_gatt_data_length_set(&m_gatt, p_ble_evt->evt.gap_evt.conn_handle, mtu_desired);      // UPDATE MTU HERE
+        APP_ERROR_CHECK(err_code);
+
 	} break;
 
 	case BLE_GAP_EVT_DISCONNECTED:
@@ -167,11 +173,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		// Reset DB discovery structure.
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
 
-		// TODO
-		//		if (ble_conn_state_n_centrals() < NRF_SDH_BLE_CENTRAL_LINK_COUNT)
-		{
-			scan_start();
-		}
+		scan_start();
+
 	} break;
 
 	case BLE_GAP_EVT_TIMEOUT:
@@ -484,6 +487,16 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 
 }
 
+
+/**@brief Function for handling the LED Button Service client errors.
+ *
+ * @param[in]   nrf_error   Error code containing information about what went wrong.
+ */
+static void _service_c_error_handler(uint32_t nrf_error)
+{
+	APP_ERROR_HANDLER(nrf_error);
+}
+
 /**
  * @brief Heart rate collector initialization.
  */
@@ -492,6 +505,8 @@ static void lns_c_init(void)
 	ble_lns_c_init_t lns_c_init_obj;
 
 	lns_c_init_obj.evt_handler = lns_c_evt_handler;
+	lns_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	lns_c_init_obj.error_handler = _service_c_error_handler;
 
 	uint32_t err_code = ble_lns_c_init(&m_ble_lns_c, &lns_c_init_obj);
 	APP_ERROR_CHECK(err_code);
@@ -506,6 +521,8 @@ static void komoot_c_init(void)
 	ble_komoot_c_init_t komoot_c_init_obj;
 
 	komoot_c_init_obj.evt_handler = komoot_c_evt_handler;
+	komoot_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	komoot_c_init_obj.error_handler = _service_c_error_handler;
 
 	uint32_t err_code = ble_komoot_c_init(&m_ble_komoot_c, &komoot_c_init_obj);
 	APP_ERROR_CHECK(err_code);
@@ -513,13 +530,15 @@ static void komoot_c_init(void)
 
 
 /**
- * @brief Battery level collector initialization.
+ * @brief NUS initialization.
  */
 static void nus_c_init(void)
 {
 	ble_nus_c_init_t nus_c_init_obj;
 
 	nus_c_init_obj.evt_handler = nus_c_evt_handler;
+	nus_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	nus_c_init_obj.error_handler = _service_c_error_handler;
 
 	uint32_t err_code = ble_nus_c_init(&m_ble_nus_c, &nus_c_init_obj);
 	APP_ERROR_CHECK(err_code);
@@ -531,7 +550,14 @@ static void nus_c_init(void)
  */
 static void db_discovery_init(void)
 {
-	ret_code_t err_code = ble_db_discovery_init(db_disc_handler);
+	ble_db_discovery_init_t db_init;
+
+	memset(&db_init, 0, sizeof(db_init));
+
+	db_init.evt_handler  = db_disc_handler;
+	db_init.p_gatt_queue = &m_ble_gatt_queue;
+
+	ret_code_t err_code = ble_db_discovery_init(&db_init);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -643,7 +669,15 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 	{
 	case NRF_BLE_GATT_EVT_ATT_MTU_UPDATED:
 	{
-		LOG_INFO("ATT MTU exchange completed.");
+
+		LOG_INFO("Desired MTU: central %u peripheral %u",
+				p_gatt->att_mtu_desired_central,
+				p_gatt->att_mtu_desired_periph);
+
+		LOG_INFO("ATT MTU exchange completed. MTU set to %u bytes.",
+				p_evt->params.att_mtu_effective);
+
+		m_mtu_length = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
 
 	} break;
 
@@ -686,6 +720,9 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 static void gatt_init(void)
 {
 	ret_code_t err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
+	APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -741,8 +778,11 @@ void ble_init(void)
 #include "sd_functions.h"
 void ble_nus_tasks(void) {
 
-	static bool _hold_data = false;
-	static sCharArray m_nus_xfer_array;
+	static char _buffer[BLE_NUS_MAX_DATA_LEN];
+	static sCharArray m_nus_xfer_array = {
+			.str = _buffer,
+			.length = 0,
+	};
 
 	if (m_nus_xfer_state == eNusTransferStateIdle) {
 
@@ -766,7 +806,7 @@ void ble_nus_tasks(void) {
 		} else {
 			m_nus_packet_nb = 0;
 			m_nus_cts = true;
-			_hold_data = false;
+			m_nus_xfer_array.length = 0;
 			m_nus_xfer_state = eNusTransferStateRun;
 		}
 	}
@@ -788,55 +828,59 @@ void ble_nus_tasks(void) {
 			LOG_WARNING("NUS transfer completed :-)");
 		}
 		m_nus_xfer_state = eNusTransferStateIdle;
-		_hold_data = false;
 	} break;
 
+	case eNusTransferStateIdle:
 	default:
 		break;
 	}
 
 	while (m_connected &&
-			m_nus_xfer_state == eNusTransferStateRun &&
+			(m_nus_xfer_state == eNusTransferStateRun || (m_nus_xfer_state == eNusTransferStateFinish && m_nus_xfer_array.length)) &&
 			m_nus_cts) {
 
-		if (!_hold_data) {
-			m_nus_xfer_array.length = 0;
-			m_nus_xfer_array.str = log_file_read(&m_nus_xfer_array.length);
-			if (!m_nus_xfer_array.str || !m_nus_xfer_array.length) {
-				LOG_INFO("Log file end, %u packets sent", m_nus_packet_nb);
-				// problem or end of transfer
-				m_nus_xfer_state = eNusTransferStateFinish;
-				return;
-			}
+		if (!m_nus_xfer_array.length) {
+			(void)log_file_read(&m_nus_xfer_array, m_mtu_length < sizeof(_buffer) ? m_mtu_length : sizeof(_buffer));
 		}
 
-		_hold_data = false;
+		if (!m_nus_xfer_array.str || !m_nus_xfer_array.length) {
+			LOG_INFO("Log file end, %u packets sent", m_nus_packet_nb);
+			// problem or end of transfer
+			m_nus_xfer_state = eNusTransferStateFinish;
+			return;
+		}
 
 		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_array.str, m_nus_xfer_array.length);
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
 			LOG_WARNING("NUS BUSY");
+			return;
 			break;
 
 		case NRF_ERROR_RESOURCES:
 			LOG_DEBUG("NUS RESSSS %u", m_nus_packet_nb);
 			m_nus_cts = false;
-			_hold_data = true;
 			break;
 
 		case NRF_ERROR_TIMEOUT:
 			LOG_WARNING("NUS timeout", err_code);
+			return;
 			break;
 
 		case NRF_SUCCESS:
+		{
 			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_array.length);
+
 			m_nus_packet_nb++;
-			break;
+			m_nus_xfer_array.length = 0;
+		} break;
 
 		default:
-			LOG_WARNING("NUS unknown error: 0x%X", err_code);
-			break;
+		{
+			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_array.length, BLE_NUS_MAX_DATA_LEN);
+			return;
+		} break;
 		}
 
 	}

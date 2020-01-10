@@ -148,7 +148,8 @@ void GPS_MGMT::runWDT(void) {
 
 	// check if GPS is in a good state
 	if (millis() - last_toggled > 3000 &&
-			gps.time.age() > 3000) {
+			gps.time.age() > 3000 &&
+			gps.time.age() != (-1)UL) {
 
 		last_toggled = millis();
 
