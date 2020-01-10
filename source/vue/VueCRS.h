@@ -42,6 +42,9 @@ public:
 	virtual void Histo(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, sVueHistoConfiguration& h_config_)=0;
 	virtual void HistoH (uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_)=0;
 
+	virtual void Histo(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, sVueHistoConfiguration& h_config_)=0;
+	virtual void HistoH (uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_)=0;
+
 	bool propagateEventsCRS(eButtonsEvent event);
 
 protected:
