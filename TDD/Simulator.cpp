@@ -254,7 +254,7 @@ static void _sensors_sim(void) {
 		sim_nb = 0;
 	}
 
-	fxos_set_yaw(cur_a + cur_a0);
+	fxos_set_pitch(cur_a + cur_a0);
 	simulator_simulate_altitude(alt_sim);
 
 	LOG_DEBUG("Simulating sensors");

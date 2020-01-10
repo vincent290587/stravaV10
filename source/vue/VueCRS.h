@@ -25,6 +25,7 @@ typedef enum {
 typedef enum {
 	eVueCRSScreenPage1,
 	eVueCRSScreenPage2,
+	eVueCRSScreenPage3,
 } eVueCRSScreenPage;
 
 class VueCRS: virtual public Adafruit_GFX, virtual public VueGPS {
@@ -35,6 +36,9 @@ public:
 
 	virtual void cadranH(uint8_t p_lig, uint8_t nb_lig, const char *champ, String  affi, const char *p_unite)=0;
 	virtual void cadran(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, String  affi, const char *p_unite)=0;
+
+	virtual void Histo(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, sVueHistoConfiguration& h_config_)=0;
+	virtual void HistoH (uint8_t p_lig, uint8_t nb_lig, sVueHistoConfiguration& h_config_)=0;
 
 	bool propagateEventsCRS(eButtonsEvent event);
 
@@ -47,6 +51,7 @@ private:
 	void afficheSegment(uint8_t ligne, Segment *p_seg);
 	void afficheScreen1(void);
 	void afficheScreen2(void);
+	void afficheSensors(void);
 
 	eVueCRSScreenPage m_screen_page;
 };
