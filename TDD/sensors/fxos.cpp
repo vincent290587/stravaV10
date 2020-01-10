@@ -32,6 +32,7 @@ bool fxos_get_yaw(float &yaw_rad) {
 
 void fxos_set_yaw(float yaw_rad) {
 	m_yaw = yaw_rad;
+	m_is_updated = true;
 }
 
 bool fxos_init(void) {
@@ -44,8 +45,10 @@ void fxos_tasks()
 	if (!m_is_updated) return;
 	m_is_updated = false;
 
+	LOG_DEBUG("FXOS Updated");
 
-	if (u_settings.isConfigValid()) {
+	static int is_init = 0;
+	if (!is_init && u_settings.isConfigValid()) {
 
 		sMagCal &mag_cal = u_settings.getMagCal();
 		// check if we have a previous calibration
@@ -54,8 +57,9 @@ void fxos_tasks()
 			LOG_INFO("Magnetometer calibration found");
 
 			//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
-
 		}
+
+		is_init = 1;
 
 	}
 

@@ -21,10 +21,6 @@
  */
 void perform_system_tasks(void) {
 
-	gps_mgmt.tasks();
-
-	locator.tasks();
-
 	uart_tasks();
 
 	btn_task();
@@ -44,6 +40,6 @@ void system_task(void * p_context)
 
 		simulator_tasks();
 
-		w_task_delay(15);
+		w_task_delay(25);
 	}
 }

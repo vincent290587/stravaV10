@@ -168,18 +168,14 @@ void print_mem_state(void) {
 			tot_point_mem, max_mem_used);
 }
 
-extern float m_press_sim;
-
 void simulator_simulate_altitude(float alti) {
 
 	const float sea_level_pressure = 1015.0f;
 
 	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
 
-	m_press_sim = sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f);
+	bme280_set_pressure(sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f));
 
-	// sets the updated flag
-	bme280_read_sensor();
 }
 
 void simulator_init(void) {
@@ -243,7 +239,7 @@ static void _fec_sim(void) {
 static void _sensors_sim(void) {
 
 	static uint32_t last_point_ms = 0;
-	if (millis() - last_point_ms < 100) return;
+	if (millis() - last_point_ms < SENSORS_READING_DELAY_MS) return;
 
 	static float cur_a = toRadians(5.0f);
 	static const float cur_a0 = toRadians(3.4f);
@@ -260,6 +256,8 @@ static void _sensors_sim(void) {
 
 	fxos_set_yaw(cur_a + cur_a0);
 	simulator_simulate_altitude(alt_sim);
+
+	LOG_DEBUG("Simulating sensors");
 
 	last_point_ms = millis();
 
@@ -289,6 +287,8 @@ static void _loc_sim(void) {
 		float data[4];
 		char *pch;
 		uint16_t pos = 0;
+
+		LOG_INFO("Simulating coordinate...");
 
 		lat = 0; lon = 0; alt = 0;// on se met au bon endroit
 		pch = strtok (g_bufferRead, " ");
@@ -395,12 +395,12 @@ void simulator_tasks(void) {
 		return;
 	}
 
-	_fec_sim();
-	_sensors_sim();
-	_loc_sim();
-
 	tdd_logger_log_int(TDD_LOGGING_P2D, Point2D::getObjectCount());
 	tdd_logger_log_int(TDD_LOGGING_P3D, Point::getObjectCount());
+
+	_fec_sim();
+	_loc_sim();
+	_sensors_sim();
 
 }
 
