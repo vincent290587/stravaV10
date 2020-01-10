@@ -21,7 +21,7 @@
 #include "ble_api_base.h"
 #endif
 
-#ifdef ANT_STACK_SUPPORT_REQD
+#if defined( ANT_STACK_SUPPORT_REQD ) || defined( TDD )
 #include "ant.h"
 #endif
 
@@ -315,7 +315,7 @@ void peripherals_task(void * p_context)
 		neopixel_radio_callback_handler(false);
 #endif
 
-#ifdef ANT_STACK_SUPPORT_REQD
+#if defined( ANT_STACK_SUPPORT_REQD ) || defined( TDD )
 		sysview_task_void_enter(AntRFTasks);
 		ant_tasks();
 		roller_manager_tasks();
