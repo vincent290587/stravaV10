@@ -8,8 +8,6 @@
 #ifndef SOURCE_MODEL_H_
 #define SOURCE_MODEL_H_
 
-#ifndef TDD
-
 #include <stdbool.h>
 #include "notifications.h"
 #include "parameters.h"
@@ -132,10 +130,5 @@ void ls027_task(void * p_context);
 }
 #endif // defined C++
 
-#else /* TDD */
-
-#include "Model_tdd.h"
-
-#endif /* TDD */
 
 #endif /* SOURCE_MODEL_H_ */

@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/vincent290587/stravaV10/tree/develop.svg?style=svg)](https://circleci.com/gh/vincent290587/stravaV10/tree/develop)
+[![codecov](https://codecov.io/gh/vincent290587/stravaV10/branch/develop/graph/badge.svg)](https://codecov.io/gh/vincent290587/stravaV10)
 
 # Project
 

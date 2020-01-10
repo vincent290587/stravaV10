@@ -16,6 +16,10 @@
 
 #include "order1_filter.h"
 
+#ifdef TDD
+#include "tdd_logger.h"
+#endif
+
 
 static float lp1_filter_coefficients[5] =
 {
@@ -25,14 +29,13 @@ static float lp1_filter_coefficients[5] =
 
 static order1_filterType m_lp_filt;
 
-static order1_filterType m_lp_alpha;
-
 
 Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
 	m_last_save_dist = 0.;
 	m_last_stored_ele = 0.;
 	m_cur_ele = 0.;
 	m_climb = 0.;
+	m_speed_ms = 0.;
 
 	m_is_init = false;
 	m_is_acc_init = false;
@@ -54,29 +57,76 @@ void Attitude::addNewDate(SDate *date_) {
 }
 
 
-float Attitude::filterElevation(SLoc& loc_) {
-
-	float ele = 0.;
+void Attitude::computeFusion(void) {
 
 	// get current elevation
-	if (!m_baro.computeAlti(ele)) return 0.;
+	float ele = 0.;
+	if (!m_baro.computeAlti(ele)) {
+		LOG_WARNING("Altitude error or sea level missing");
+		return;
+	}
 
-	m_cur_ele = ele;
+	// 2 seconds time constant
+	const float taub = 2 / (2 + BARO_REFRESH_PER_MS / 1000.f);
+	m_cur_ele = taub * m_cur_ele + (1 - taub) * (ele);
+
+	float alti = ele;
+	static float alti_prev = ele;
+
+	float pitch_rad;
+	fxos_get_pitch(pitch_rad);
+
+	// 3 seconds time constant
+	static float alpha_bar;
+	const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.f);
+	float innov = pitch_rad;
+	alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
+
+	// work on alpha zero
+	if (m_speed_ms < 1.5f) {
+		return;
+	}
+
+	// about 40 seconds time constant
+	float new_alpha_z = pitch_rad - atan2f((alti - alti_prev) * 1000.f , (m_speed_ms * SENSORS_REFRESH_PER_MS));
+	static float alpha_zero = 0;
+	alpha_zero = new_alpha_z * 0.003 + 0.997 * alpha_zero;
+
+	// update vertical speed
+	att.vit_asc = tanf(alpha_bar - alpha_zero) * m_speed_ms;
+
+	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
+			180.f*(alpha_bar-alpha_zero)/3.1415f,
+			180.f*alpha_zero/3.1415f);
+
+	alti_prev = alti;
+
+#ifdef TDD
+		tdd_logger_log_float(TDD_LOGGING_HP    , att.vit_asc);
+		tdd_logger_log_float(TDD_LOGGING_ALPHA , 180.f * (alpha_bar - alpha_zero)/3.1415f);
+		tdd_logger_log_float(TDD_LOGGING_ALPHA0, 180.f * alpha_zero / 3.1415f);
+		tdd_logger_log_float(TDD_LOGGING_EST_SLOPE, 100.0f * tanf(alpha_bar - alpha_zero));
+		tdd_logger_log_float(TDD_LOGGING_ALT_EST, m_cur_ele);
+#endif
+}
+
+
+float Attitude::filterElevation(SLoc& loc_) {
 
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;
-		m_last_stored_ele = ele;
+		m_last_stored_ele = m_cur_ele;
 
 		order1_filter_init(&m_lp_filt, lp1_filter_coefficients);
 
 		return 0.;
 	}
 
-	LOG_INFO("Filtering elevation");
+	LOG_INFO("Filtering GPS/Baro correction");
 
 	// filter with a high time-constant the difference between
 	// GPS altitude and barometer altitude to remove drifts
-	float input = ele - loc_.alt;
+	float input = m_cur_ele - loc_.alt;
 	order1_filter_writeInput(&m_lp_filt, &input);
 
 	float alt_div = order1_filter_readOutput(&m_lp_filt);
@@ -84,16 +134,20 @@ float Attitude::filterElevation(SLoc& loc_) {
 	m_baro.setCorrection(alt_div);
 
 	// compute accumulated climb on the corrected filtered barometer altitude
-	if (ele > m_last_stored_ele + 4.f) {
+	if (m_cur_ele > m_last_stored_ele + 2.f) {
 		// mise a jour de la montee totale
-		m_climb += ele - m_last_stored_ele;
-		m_last_stored_ele = ele;
+		m_climb += m_cur_ele - m_last_stored_ele;
+		m_last_stored_ele = m_cur_ele;
 	}
-	else if (ele + 4.f < m_last_stored_ele) {
+	else if (m_cur_ele + 2.f < m_last_stored_ele) {
 		// on descend, donc on garde la derniere alti
 		// la plus basse
-		m_last_stored_ele = ele;
+		m_last_stored_ele = m_cur_ele;
 	}
+
+#ifdef TDD
+	tdd_logger_log_float(TDD_LOGGING_TOT_CLIMB, m_climb);
+#endif
 
 	return m_climb;
 }
@@ -110,8 +164,12 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 			!m_baro.hasSeaLevelRef()) {
 
 		// init sea level pressure
-		LOG_WARNING("Init sea level pressure...");
 		m_baro.seaLevelForAltitude(loc_.alt);
+
+		// get current elevation
+		m_baro.computeAlti(m_cur_ele);
+
+		LOG_WARNING("Init sea level pressure... gps: %dm bme:%dm", (int)loc_.alt, (int)m_cur_ele);
 
 		// treat elevation
 		this->filterElevation(loc_);
@@ -120,7 +178,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 		m_climb = 0.;
 		m_last_stored_ele = m_cur_ele;
 
-		if (m_app_error.saved_data.crc == SYSTEM_DESCR_POS_CRC) {
+		if (m_app_error.saved_data.crc == calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att))) {
 
 			// restoring position and accumulated climb
 			att.climb = m_app_error.saved_data.att.climb;
@@ -158,9 +216,11 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 
 	float tmp_dist = distance_between(att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
 
-	char buffer[100];
-	snprintf(buffer, sizeof(buffer), "Weird pos: %f %f %f %f\r\n", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
-	if (tmp_dist > 400000.f) LOG_WARNING(buffer);
+	if (tmp_dist > 400000.f) {
+		char buffer[100];
+		snprintf(buffer, sizeof(buffer), "Weird pos: %f %f %f %f (%f)\r\n", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon, tmp_dist);
+		LOG_WARNING(buffer);
+	}
 
 	att.dist += tmp_dist;
 
@@ -191,7 +251,7 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
 
 		// save position and stuff in case of crash
 		memcpy(&m_app_error.saved_data.att, &att, sizeof(SAtt));
-		m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
+		m_app_error.saved_data.crc = calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att));
 
 
 	} else if (att.dist > m_last_save_dist + 25.f) {
@@ -210,12 +270,12 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_
  */
 void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_) {
 
-	static float cur_time_prev;
-
-	// small correction to allow time with millisecond precision
-	float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000);
-
 	if (m_is_init) {
+
+		// small correction to allow time with millisecond precision
+		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000);
+
+		LOG_INFO("Adding location: %f", cur_time);
 
 		// add this point to our historic
 		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
@@ -226,12 +286,16 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		this->computeElevation(loc_, source_);
 
 		// update the computed power
-		att.pwr = this->computePower(loc_.speed, cur_time - cur_time_prev);
+		att.pwr = this->computePower(loc_.speed);
 
 		this->computeDistance(loc_, date_, source_);
 	}
 
-	cur_time_prev = cur_time;
+	m_speed_ms = loc_.speed / 3.6f;
+
+#ifdef TDD
+	tdd_logger_log_float(TDD_LOGGING_CUR_SPEED, loc_.speed);
+#endif
 
 	m_is_init = true;
 
@@ -246,63 +310,32 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
  *
  * @param speed_
  */
-float Attitude::computePower(float speed_, float dt) {
+float Attitude::computePower(float speed_) {
 
 	float power = 0.0f;
-	const float speed_ms = speed_ / 3.6f;
-
-	float alti = 0.0f;
-	static float alti_prev;
-	static float alpha_bar;
 
 	// init alpha_0 filter
 	if (!m_is_pw_init) {
-		m_is_pw_init = true;
 
-		order1_filter_init(&m_lp_alpha, lp1_filter_coefficients);
+		m_is_pw_init = true;
 
 		return power;
 	}
 
 	// proceed to fusing measurements
-	if (m_is_pw_init && m_baro.computeAlti(alti)) {
-
-		float yaw_rad;
-
-		fxos_get_yaw(yaw_rad);
-
-		// 3 seconds time constant with 1000ms measurement period
-		const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.);
-		float innov = yaw_rad;
-
-		alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
-
-		// work on alpha zero
-		if (speed_ms < 1.5f || dt < 0.01f) {
-			LOG_DEBUG("Power skipped %f", speed_ms);
-			return power;
-		}
-
-		float new_alpha_z = yaw_rad - atan2f((alti - alti_prev) , (speed_ms * dt));
-		order1_filter_writeInput(&m_lp_alpha, &new_alpha_z);
-		float alpha_zero = order1_filter_readOutput(&m_lp_alpha);
-
-		// update vertical speed
-		att.vit_asc = tanf(alpha_bar - alpha_zero) * speed_ms;
-
-		LOG_INFO("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
-				180.f*(alpha_bar-alpha_zero)/3.1415f,
-				180.f*alpha_zero/3.1415f);
+	if (m_is_pw_init) {
 
 		const float weight = (float)u_settings.getWeight();
 
 		// STEP 2 : Calculate power
 		power += 9.81f * weight * att.vit_asc; // gravity
-		power += 0.004f * 9.81f * weight * speed_ms; // sol + meca
-		power += 0.204f * speed_ms * speed_ms * speed_ms; // air
+		power += 0.004f * 9.81f * weight * m_speed_ms; // sol + meca
+		power += 0.204f * m_speed_ms * m_speed_ms * m_speed_ms; // air
 		power *= 1.025f; // transmission (rendement velo)
 
-		alti_prev = alti;
+#ifdef TDD
+		tdd_logger_log_float(TDD_LOGGING_CUR_POWER, power);
+#endif
 	}
 
 	return power;

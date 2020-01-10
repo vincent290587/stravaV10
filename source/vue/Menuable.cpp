@@ -316,7 +316,10 @@ void Menuable::goToChildPage(MenuPage *page) {
 
 void Menuable::refreshMenu(void) {
 
-	this->refresh();
+	// ready for displaying
+	if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.ls027_id);
+	}
 
 }
 
@@ -335,8 +338,7 @@ void Menuable::propagateEvent(eButtonsEvent event) {
 
 	if (!m_is_menu_selected) return;
 
-	this->tasksMenu();
-
+	// trigger display task
 	this->refreshMenu();
 }
 
