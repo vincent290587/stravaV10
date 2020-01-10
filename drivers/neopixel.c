@@ -51,8 +51,6 @@
 #include "nrf_gpio.h"
 #include "ws2812B_commands.h"
 
-#define NRF_RADIO_NOTIFICATION_DISTANCE_NEOPIXEL_US
-
 neopixel_strip_t* m_p_strip = NULL;
 
 volatile bool m_neo_orders_ready = false;

@@ -37,3 +37,12 @@ TaskState 0xFC 0=TASK_EVENT_LOCATION, 1=TASK_EVENT_FEC_INFO, 2=TASK_EVENT_FEC_PO
 15 I2cMgmtRead1
 16 I2cMgmtRead2
 17 I2cMgmtRead3
+18 Ls027Clear
+19 Ls027Cadrans
+20 Ls027Print
+21 LocatorTasks
+22 AntRFTasks
+23 GPSTasks
+24 VueRefresh
+25 SdFunction
+26 HalQspi                      Task=%u

@@ -63,10 +63,13 @@ Revision: $Rev: 12706 $
 */
 #include "SEGGER_SYSVIEW.h"
 #include "SEGGER_SYSVIEW_Conf.h"
+#include "millis.h"
+#include "task_manager.h"
+#include "sdk_common.h"
 
 // SystemcoreClock can be used in most CMSIS compatible projects.
 // In non-CMSIS projects define SYSVIEW_CPU_FREQ.
-extern unsigned int SystemCoreClock;
+extern U32 SystemCoreClock;
 
 /*********************************************************************
 *
@@ -111,6 +114,13 @@ extern unsigned int SystemCoreClock;
 #define NOCYCCNT_BIT              (1uL << 25)                                   // Cycle counter support bit
 #define CYCCNTENA_BIT             (1uL << 0)                                    // Cycle counter enable bit
 
+
+static SEGGER_SYSVIEW_OS_API os_api;
+
+static SEGGER_SYSVIEW_TASKINFO pInfo[TASK_MANAGER_CONFIG_MAX_TASKS + 3];
+
+static uint32_t nb_tasks;
+
 /********************************************************************* 
 *
 *       _cbSendSystemDesc()
@@ -126,15 +136,50 @@ void _cbSendSystemDesc(void) {
   SEGGER_SYSVIEW_SendSysDesc("I#33=RTC1_IRQn");
   SEGGER_SYSVIEW_SendSysDesc("I#38=Radio_IRQn");
   SEGGER_SYSVIEW_SendSysDesc("I#54=FPU_IRQn");
+  SEGGER_SYSVIEW_SendSysDesc("I#55=USB_IRQn");
+  SEGGER_SYSVIEW_SendSysDesc("I#57=QSPI_IRQn");
 }
+
+/*********************************************************************
+*
+*       _cbSendTaskList()
+*
+*/
+static void _cbSendTaskList(void) {
+
+	task_manager_get_tasks_desc(pInfo, &nb_tasks);
+
+	for (int i = 0; i < nb_tasks; i++) {
+
+		SEGGER_SYSVIEW_SendTaskInfo(&pInfo[i]);
+
+	}
+
+}
+
+/*********************************************************************
+*
+*       _cbGetTime()
+*
+*  Function description
+*    This function is part of the link with SYSVIEW.
+*    Called from SystemView when asked by the host, returns the
+*    current system time in micro seconds.
+*/
+static U64 _cbGetTime(void) {
+  U64 Time;
+
+  Time = millis();
+  Time *= 1000;
+  return Time;
+}
+
 
 /*********************************************************************
 *
 *       Global functions
 *
-**********************************************************************
-*/
-extern SEGGER_SYSVIEW_OS_API os_api;
+**********************************************************************/
 
 void SEGGER_SYSVIEW_Conf(void) {
 #if USE_CYCCNT_TIMESTAMP
@@ -156,8 +201,16 @@ void SEGGER_SYSVIEW_Conf(void) {
     }
   }
 #endif
-  SEGGER_SYSVIEW_Init(SYSVIEW_TIMESTAMP_FREQ, SYSVIEW_CPU_FREQ, 
-		  &os_api, _cbSendSystemDesc);
+
+  // SYSVIEW
+  os_api.pfSendTaskList = _cbSendTaskList;
+  os_api.pfGetTime      = _cbGetTime;
+
+  SEGGER_SYSVIEW_Init(SYSVIEW_TIMESTAMP_FREQ,
+		  SYSVIEW_CPU_FREQ,
+		  &os_api,
+		  _cbSendSystemDesc);
+
   SEGGER_SYSVIEW_SetRAMBase(SYSVIEW_RAM_BASE);
 }
 

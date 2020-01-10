@@ -99,6 +99,8 @@ CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 #CFLAGS += -DUSE_SVIEW=0 -DUSE_JSCOPE -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
+CFLAGS += -DAPP_TIMER_V2
+CFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840
 CFLAGS += -DNRF52840_XXAA
@@ -109,7 +111,6 @@ CFLAGS += -D__HEAP_SIZE=150000
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DANT_STACK_SUPPORT_REQD
 CFLAGS += -DNRF_SD_BLE_API_VERSION=6
-CFLAGS += -DSWI_DISABLE0
 CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
 CFLAGS += -DS340
 CFLAGS += -DFLOAT_ABI_HARD
@@ -132,13 +133,14 @@ ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DARM_MATH_CM4
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DBOARD_CUSTOM
+ASMFLAGS += -DAPP_TIMER_V2
+ASMFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += -D__HEAP_SIZE=150000
 ASMFLAGS += -DBLE_STACK_SUPPORT_REQD
 ASMFLAGS += -DANT_STACK_SUPPORT_REQD
 ASMFLAGS += -DNRF_SD_BLE_API_VERSION=6
-ASMFLAGS += -DSWI_DISABLE0
 ASMFLAGS += -DS340
 
 # Linker flags
@@ -190,7 +192,7 @@ settings:
 dfu_softdevice:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
 	nrfutil pkg display stravaV10_soft.zip
-	nrfutil dfu usb_serial -pkg stravaV10_soft.zip -p $(COM_PORT)
+	nrfutil dfu usb-serial -pkg stravaV10_soft.zip -p $(COM_PORT)
 
 dfu:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb9 --application-version 1 --application $(OUTPUT_DIRECTORY)//nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip

@@ -1,7 +1,7 @@
 /*
  * GPS.h
  *
- *  Created on: 13 déc. 2017
+ *  Created on: 13 dÃ©c. 2017
  *      Author: Vincent
  */
 
@@ -12,9 +12,10 @@
 #include "Locator.h"
 
 typedef enum {
-	eGPSMgmtPowerOn,
-	eGPSMgmtPowerOff,
-} eGPSMgmtPowerState;
+	eGPSMgmtStateInit,
+	eGPSMgmtStateRunSlow,
+	eGPSMgmtStateRunFast,
+} eGPSMgmtState;
 
 typedef enum {
 	eGPSMgmtEPOIdle,
@@ -30,12 +31,6 @@ extern "C" {
 
 uint32_t gps_encode_char(char c);
 
-void gps_uart_start(void);
-
-void gps_uart_stop(void);
-
-void gps_uart_resume(void);
-
 #if defined(__cplusplus)
 }
 
@@ -45,12 +40,15 @@ public:
 
 	void init(void);
 	bool isFix(void);
+	bool isStandby(void);
 	bool isEPOUpdating(void);
+
+	void runWDT();
 
 	void standby(void);
 	void awake(void);
-
-	void getAckResult(const char *result);
+	void standby(bool is_standby);
+	void reset(void);
 
 	void setFixInterval(uint16_t interval);
 	void startHostAidingEPO(sLocationData& loc_data, uint32_t age_);
@@ -58,12 +56,14 @@ public:
 	void startEpoUpdate(void);
 	void tasks(void);
 
-	eGPSMgmtPowerState getPowerState() const {
+	eGPSMgmtState getPowerState() const {
 		return m_power_state;
 	}
 
 private:
-	eGPSMgmtPowerState m_power_state;
+	eGPSMgmtState m_power_state;
+
+	bool m_is_stdby;
 
 	uint16_t m_epo_packet_ind;
 	uint16_t m_epo_packet_nb;

@@ -42,8 +42,9 @@ void Boucle::init(void) {
 	    memset(&m_app_error.err_desc, 0, sizeof(m_app_error.err_desc));
 	}
 
-	if (init_liste_segments()) {
-		LOG_ERROR("Boucle init fail");
+	int ret;
+	if ((ret = init_liste_segments())) {
+		LOG_ERROR("Boucle init fail %d", ret);
 	}
 
 	m_global_mode = BOUCLE_DEFAULT_MODE;
@@ -121,7 +122,7 @@ void Boucle::run(void) {
 
 	default:
 	{
-		(void)events_wait(TASK_EVENT_LOCATION);
+		(void)w_task_events_wait(TASK_EVENT_LOCATION);
 	} break;
 	}
 
@@ -134,7 +135,7 @@ void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 
 	// Unblock task
 	if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
-		events_set(m_tasks_id.boucle_id, TASK_EVENT_BOUCLE_RELEASE);
+		w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_BOUCLE_RELEASE);
 	}
 
 	// finish old operations

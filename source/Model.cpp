@@ -74,6 +74,8 @@ sTasksIDs     m_tasks_id;
 
 sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
 
+uint8_t m_vparser_event = 0;
+
 
 // init counters
 int Point2D::objectCount2D = 0;
@@ -126,31 +128,15 @@ void model_input_virtual_uart(char c) {
 
 		// notify task
 		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
-			events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+			w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 		}
 
 		break;
 
 	case _SENTENCE_PC:
 
-		if (vparser.getPC() == 12) {
+		m_vparser_event = vparser.getPC();
 
-			LOG_WARNING("HardFault test start");
-			hardfault_genhf_invalid_fp();
-
-		}
-		else if (vparser.getPC() == 16) {
-			LOG_WARNING("usb_cdc_start_msc start");
-			usb_cdc_start_msc();
-		}
-		else if (vparser.getPC() == 15) {
-			LOG_WARNING("format_memory start");
-			format_memory();
-		}
-		else if (vparser.getPC() == 14) {
-			LOG_WARNING("fmkfs_memory start");
-			fmkfs_memory();
-		}
 		break;
 
 	default:
@@ -161,29 +147,39 @@ void model_input_virtual_uart(char c) {
 
 }
 
-/**
- *
- */
-void perform_system_tasks(void) {
+static void model_perform_virtual_tasks(void) {
 
-	uart_tasks();
+	if (!m_vparser_event) return;
 
-#ifdef USB_ENABLED
-	usb_cdc_tasks();
+	if (m_vparser_event == 12) {
+
+		LOG_WARNING("HardFault test start");
+//			hardfault_genhf_invalid_fp();
+		hardfault_genhf_undefined_instr();
+//			APP_ERROR_CHECK(0x18);
+//			ASSERT(0);
+	}
+	else if (m_vparser_event == 17) {
+#if defined (BLE_STACK_SUPPORT_REQD)
+		ble_start_evt(eBleEventTypeStartXfer);
 #endif
+	}
+	else if (m_vparser_event == 16) {
+		LOG_WARNING("usb_cdc_start_msc start");
+		usb_cdc_start_msc();
+	}
+	else if (m_vparser_event == 15) {
+		LOG_WARNING("fmkfs_memory start");
+		fmkfs_memory();
+	}
 
-#if APP_SCHEDULER_ENABLED
-	app_sched_execute();
-#endif
-
+	m_vparser_event = 0;
 }
 
 /**
  *
  */
 void perform_system_tasks_light(void) {
-
-	uart_tasks();
 
 #if APP_SCHEDULER_ENABLED
 	app_sched_execute();
@@ -232,23 +228,17 @@ bool check_memory_exception(void) {
  */
 void idle_task(void * p_context)
 {
-    for(;;)
-    {
-		perform_system_tasks();
+	for(;;) {
 
-#if defined (BLE_STACK_SUPPORT_REQD)
-		ble_nus_tasks();
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
 #endif
 
-		// BSP tasks
-		bsp_tasks();
+		// TODO sysview_task_idle();
+		pwr_mgmt_run();
 
-    	//No more logs to process, go to sleep
-		sysview_task_idle();
-    	pwr_mgmt_run();
-
-    	task_yield();
-    }
+		w_task_yield();
+	}
 }
 
 /**
@@ -258,6 +248,14 @@ void idle_task(void * p_context)
  */
 void boucle_task(void * p_context)
 {
+
+	boucle.run(); // init
+	boucle.run(); // run once
+
+	// potentially change mode
+//	vue.setCurrentMode(eVueGlobalScreenFEC);
+//	boucle.changeMode(eBoucleGlobalModesFEC);
+
 	for (;;)
 	{
 		LOG_INFO("\r\nTask %u", millis());
@@ -279,7 +277,12 @@ void ls027_task(void * p_context)
 	{
 		wdt_reload();
 
-		events_wait(TASK_EVENT_LS027_TRIGGER);
+		w_task_delay(LS027_TIMEOUT_DELAY_MS);
+
+		// timeout
+		sysview_task_void_enter(VueRefresh);
+		vue.refresh();
+		sysview_task_void_exit(VueRefresh);
 
 		// check screen update & unlock task
 		vue.writeWhole();
@@ -297,38 +300,53 @@ void peripherals_task(void * p_context)
 	{
 		i2c_scheduling_tasks();
 
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
+#endif
+
+#if defined (BLE_STACK_SUPPORT_REQD)
+		ble_nus_tasks();
+#endif
+
+		// BSP tasks
+		bsp_tasks();
+
 #ifndef BLE_STACK_SUPPORT_REQD
 		neopixel_radio_callback_handler(false);
 #endif
 
 #ifdef ANT_STACK_SUPPORT_REQD
+		sysview_task_void_enter(AntRFTasks);
 		ant_tasks();
 		roller_manager_tasks();
 		suffer_score.addHrmData(hrm_info.bpm, millis());
 		rrZones.addRRData(hrm_info);
+		sysview_task_void_exit(AntRFTasks);
 #endif
 
-		// check screen update & unlock task
-		if (millis() - vue.getLastRefreshed() > LS027_TIMEOUT_DELAY_MS) {
-			vue.refresh();
-		}
+		model_perform_virtual_tasks();
 
+		sysview_task_void_enter(GPSTasks);
 		gps_mgmt.runWDT();
 
 		gps_mgmt.tasks();
+		sysview_task_void_exit(GPSTasks);
 
+		sysview_task_void_enter(LocatorTasks);
 		locator.tasks();
 
 		// update date
 		SDate dat;
 		locator.getDate(dat);
 		attitude.addNewDate(&dat);
+		sysview_task_void_exit(LocatorTasks);
 
 		notifications_tasks();
 
 		backlighting_tasks();
 
-		events_wait(TASK_EVENT_PERIPH_TRIGGER);
+		w_task_delay(100);
+
 	}
 }
 

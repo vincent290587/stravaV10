@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2017 - 2019, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -46,33 +46,6 @@
 #ifdef USE_APP_CONFIG
 #include "app_config.h"
 #endif
-// <h> Application 
-
-//==========================================================
-// <h> Bootloader LEDs Configuration 
-
-//==========================================================
-// <o> DFU_LED_CONFIG_TRANSPORT_ACTIVE_BREATH_MS - Active and Inactive period (in milliseconds) of LED breathing when DFU transport is active (e.g. BLE connected). 
-#ifndef DFU_LED_CONFIG_TRANSPORT_ACTIVE_BREATH_MS
-#define DFU_LED_CONFIG_TRANSPORT_ACTIVE_BREATH_MS 300
-#endif
-
-// <o> DFU_LED_CONFIG_TRANSPORT_INACTIVE_BREATH_MS - Active and Inactive period (in milliseconds) of LED breathing when DFU transport is inactive (e.g. BLE disconnected). 
-#ifndef DFU_LED_CONFIG_TRANSPORT_INACTIVE_BREATH_MS
-#define DFU_LED_CONFIG_TRANSPORT_INACTIVE_BREATH_MS 600
-#endif
-
-// <o> DFU_LED_CONFIG_PROGRESS_BLINK_MS - Active and Inactive period of LED blinking when DFU progress is ongoing. 
-#ifndef DFU_LED_CONFIG_PROGRESS_BLINK_MS
-#define DFU_LED_CONFIG_PROGRESS_BLINK_MS 100
-#endif
-
-// </h> 
-//==========================================================
-
-// </h> 
-//==========================================================
-
 // <h> nRF_Bootloader 
 
 //==========================================================
@@ -82,8 +55,10 @@
 // <h> Application integrity checks 
 
 //==========================================================
-// <q> NRF_BL_APP_CRC_CHECK_SKIPPED_ON_GPREGRET2  - Skip integrity check of the application when bit 1 (0-indexed) is set in the GPREGRET2 register.
+// <q> NRF_BL_APP_CRC_CHECK_SKIPPED_ON_GPREGRET2  - Skip CRC integrity check of the application when bit 1 (0-indexed) is set in the GPREGRET2 register.
  
+
+// <i> Only CRC checks can be skipped. For other boot validation types, the GPREGRET2 register is ignored.
 
 #ifndef NRF_BL_APP_CRC_CHECK_SKIPPED_ON_GPREGRET2
 #define NRF_BL_APP_CRC_CHECK_SKIPPED_ON_GPREGRET2 1
@@ -92,8 +67,27 @@
 // <q> NRF_BL_APP_CRC_CHECK_SKIPPED_ON_SYSTEMOFF_RESET  - Skip integrity check of the application when waking up from the System Off state.
  
 
+// <i> Only CRC checks can be skipped. For other boot validation types, the reset state is ignored.
+
 #ifndef NRF_BL_APP_CRC_CHECK_SKIPPED_ON_SYSTEMOFF_RESET
 #define NRF_BL_APP_CRC_CHECK_SKIPPED_ON_SYSTEMOFF_RESET 1
+#endif
+
+// <q> NRF_BL_APP_SIGNATURE_CHECK_REQUIRED  - Perform signature check on the app. Requires the signature to be sent in the init packet.
+
+
+#ifndef NRF_BL_APP_SIGNATURE_CHECK_REQUIRED
+#define NRF_BL_APP_SIGNATURE_CHECK_REQUIRED 0
+#endif
+
+// <q> NRF_BL_DFU_ALLOW_UPDATE_FROM_APP  - Whether to allow the app to receive firmware updates for the bootloader to activate.
+
+
+// <i> Enable this to allow the app to instruct the bootloader to activate firmware.
+// <i> The bootloader will do its own postvalidation.
+
+#ifndef NRF_BL_DFU_ALLOW_UPDATE_FROM_APP
+#define NRF_BL_DFU_ALLOW_UPDATE_FROM_APP 0
 #endif
 
 // </h> 
@@ -324,6 +318,15 @@
 #define NRF_CRYPTO_BACKEND_CC310_BL_HASH_AUTOMATIC_RAM_BUFFER_SIZE 4096
 #endif
 
+// <q> NRF_CRYPTO_BACKEND_CC310_BL_INTERRUPTS_ENABLED  - Enable Interrupts while support using CC310 bl.
+
+
+// <i> Select a library version compatible with the configuration. When interrupts are disable, a version named _noint must be used
+
+#ifndef NRF_CRYPTO_BACKEND_CC310_BL_INTERRUPTS_ENABLED
+#define NRF_CRYPTO_BACKEND_CC310_BL_INTERRUPTS_ENABLED 1
+#endif
+
 // </e>
 
 // <e> NRF_CRYPTO_BACKEND_CC310_ENABLED - Enable the ARM Cryptocell CC310 backend.
@@ -521,6 +524,15 @@
 
 #ifndef NRF_CRYPTO_BACKEND_CC310_RNG_ENABLED
 #define NRF_CRYPTO_BACKEND_CC310_RNG_ENABLED 1
+#endif
+
+// <q> NRF_CRYPTO_BACKEND_CC310_INTERRUPTS_ENABLED  - Enable Interrupts while support using CC310.
+
+
+// <i> Select a library version compatible with the configuration. When interrupts are disable, a version named _noint must be used
+
+#ifndef NRF_CRYPTO_BACKEND_CC310_INTERRUPTS_ENABLED
+#define NRF_CRYPTO_BACKEND_CC310_INTERRUPTS_ENABLED 1
 #endif
 
 // </e>
@@ -904,6 +916,33 @@
 
 // </e>
 
+// <e> NRF_CRYPTO_BACKEND_OPTIGA_ENABLED - Enable the nrf_crypto Optiga Trust X backend.
+
+// <i> Enables the nrf_crypto backend for Optiga Trust X devices.
+//==========================================================
+#ifndef NRF_CRYPTO_BACKEND_OPTIGA_ENABLED
+#define NRF_CRYPTO_BACKEND_OPTIGA_ENABLED 0
+#endif
+// <q> NRF_CRYPTO_BACKEND_OPTIGA_RNG_ENABLED  - Optiga backend support for RNG
+
+
+// <i> The Optiga backend provide external chip RNG.
+
+#ifndef NRF_CRYPTO_BACKEND_OPTIGA_RNG_ENABLED
+#define NRF_CRYPTO_BACKEND_OPTIGA_RNG_ENABLED 0
+#endif
+
+// <q> NRF_CRYPTO_BACKEND_OPTIGA_ECC_SECP256R1_ENABLED  - Optiga backend support for ECC secp256r1
+
+
+// <i> The Optiga backend provide external chip ECC using secp256r1.
+
+#ifndef NRF_CRYPTO_BACKEND_OPTIGA_ECC_SECP256R1_ENABLED
+#define NRF_CRYPTO_BACKEND_OPTIGA_ECC_SECP256R1_ENABLED 1
+#endif
+
+// </e>
+
 // <q> NRF_CRYPTO_CURVE25519_BIG_ENDIAN_ENABLED  - Big-endian byte order in raw Curve25519 data
  
 
@@ -945,28 +984,187 @@
 // <h> nRF_DFU 
 
 //==========================================================
+// <h> DFU security - nrf_dfu_validation - DFU validation
+
+//==========================================================
+// <q> NRF_DFU_APP_ACCEPT_SAME_VERSION  - Whether to accept application upgrades with the same version as the current application.
+
+
+// <i> This applies to application updates, and possibly to SoftDevice updates.
+// <i> Bootloader upgrades always require higher versions. SoftDevice upgrades
+// <i> look at the sd_req field independently of this config.
+// <i> Disabling this protects against replay attacks wearing out the flash of the device.
+// <i> This config only has an effect when NRF_DFU_APP_DOWNGRADE_PREVENTION is enabled.
+
+#ifndef NRF_DFU_APP_ACCEPT_SAME_VERSION
+#define NRF_DFU_APP_ACCEPT_SAME_VERSION 1
+#endif
+
+// <q> NRF_DFU_APP_DOWNGRADE_PREVENTION  - Check the firmware version and SoftDevice requirements of application (and SoftDevice) updates.
+ 
+
+// <i> Whether to check the incoming version against the version of the existing app and/or
+// <i> the incoming SoftDevice requirements against the existing SoftDevice.
+// <i> This applies to application updates, and possibly to SoftDevice updates.
+// <i> Disabling this causes the checks to always ignore the incoming firmware version and
+// <i> to ignore the SoftDevice requirements if the first requirement is 0.
+// <i> This does not apply the bootloader updates. If the bootloader depends on the SoftDevice
+// <i> e.g. for BLE transport, this does not apply to SoftDevice updates.
+// <i> See @ref lib_bootloader_dfu_validation for more information.
+// <i> When signed updates are required, version checking should always be enabled.
+
+#ifndef NRF_DFU_APP_DOWNGRADE_PREVENTION
+#define NRF_DFU_APP_DOWNGRADE_PREVENTION 1
+#endif
+
+// <q> NRF_DFU_EXTERNAL_APP_VERSIONING  - Require versioning for external applications.
+
+
+// <i> This configuration is only used if NRF_DFU_SUPPORTS_EXTERNAL_APP is set to 1.
+// <i> Setting this will require that any FW images using the FW upgrade type
+// <i> DFU_FW_TYPE_EXTERNAL_APPLICATION must follow a monotonic versioning scheme
+// <i> where the FW version of an upgrade must always be larger than the previously stored
+// <i> FW version.
+
+#ifndef NRF_DFU_EXTERNAL_APP_VERSIONING
+#define NRF_DFU_EXTERNAL_APP_VERSIONING 1
+#endif
+
+// <q> NRF_DFU_FORCE_DUAL_BANK_APP_UPDATES  - Accept only dual-bank application updates.
+
+
+// <i> If not enabled then if there is not enough space to perform dual-bank update
+// <i> application is deleted and single-bank update is performed. In case it is considered
+// <i> security concern user can prefer to discard update request rather than overwrite
+// <i> current application.
+
+#ifndef NRF_DFU_FORCE_DUAL_BANK_APP_UPDATES
+#define NRF_DFU_FORCE_DUAL_BANK_APP_UPDATES 0
+#endif
+
+// <o> NRF_DFU_HW_VERSION - Device hardware version.
+// <i> This is used to determine if given update is targeting the device.
+// <i> It is checked against the hw_version value in the init packet
+
+#ifndef NRF_DFU_HW_VERSION
+#define NRF_DFU_HW_VERSION 52
+#endif
+
+// <q> NRF_DFU_REQUIRE_SIGNED_APP_UPDATE  - Require a valid signature to update the application or SoftDevice.
+
+
+#ifndef NRF_DFU_REQUIRE_SIGNED_APP_UPDATE
+#define NRF_DFU_REQUIRE_SIGNED_APP_UPDATE 1
+#endif
+
+// <q> NRF_DFU_SINGLE_BANK_APP_UPDATES  - Place the application and the SoftDevice directly where they are supposed to be.
+
+
+// <i> Note that this creates security concerns when signing and  version checks
+// <i> are enabled. An attacker will be able to delete (but not replace)
+// <i> the current app or SoftDevice without knowing the signature key.
+
+#ifndef NRF_DFU_SINGLE_BANK_APP_UPDATES
+#define NRF_DFU_SINGLE_BANK_APP_UPDATES 0
+#endif
+
+// </h>
+//==========================================================
+
+// <q> NRF_DFU_SETTINGS_COMPATIBILITY_MODE  - nrf_dfu_settings - DFU Settings
+
+
+#ifndef NRF_DFU_SETTINGS_COMPATIBILITY_MODE
+#define NRF_DFU_SETTINGS_COMPATIBILITY_MODE 1
+#endif
+
 // <h> nrf_dfu - Device Firmware Upgrade
 
 //==========================================================
-// <h> DFU transport 
+// <h> DFU transport
 
 //==========================================================
+// <e> NRF_DFU_TRANSPORT_ANT - ANT transport settings
+//==========================================================
+#ifndef NRF_DFU_TRANSPORT_ANT
+#define NRF_DFU_TRANSPORT_ANT 0
+#endif
+// <o> NRF_DFU_ANT_MTU - MTU size used for firmware bursts.
+// <i> Sets the maximum burst size used for DFU write commands.
+
+#ifndef NRF_DFU_ANT_MTU
+#define NRF_DFU_ANT_MTU 1024
+#endif
+
+// <h> ANT DFU buffers
+
+//==========================================================
+// <e> NRF_DFU_ANT_BUFFERS_OVERRIDE
+
+// <i> Check this option to override the default number of buffers.
+//==========================================================
+#ifndef NRF_DFU_ANT_BUFFERS_OVERRIDE
+#define NRF_DFU_ANT_BUFFERS_OVERRIDE 0
+#endif
+// <o> NRF_DFU_ANT_BUFFERS - Number of buffers in the ANT transport.
+// <i> Number of buffers to store incoming data while it is being written to flash.
+// <i> Reduce this value to save RAM. If this value is too low, the DFU process will fail.
+
+#ifndef NRF_DFU_ANT_BUFFERS
+#define NRF_DFU_ANT_BUFFERS 8
+#endif
+
+// </e>
+
+// </h> 
+//==========================================================
+
+// <h> ANT DFU Channel Configuration
+
+//==========================================================
+// <o> NRF_DFU_ANT_RF_FREQ - DFU RF channel.
+#ifndef NRF_DFU_ANT_RF_FREQ
+#define NRF_DFU_ANT_RF_FREQ 66
+#endif
+
+// <o> NRF_DFU_ANT_DEV_TYPE - Device type field to use for DFU channel id.
+#ifndef NRF_DFU_ANT_DEV_TYPE
+#define NRF_DFU_ANT_DEV_TYPE 10
+#endif
+
+// <o> NRF_DFU_ANT_CHANNEL_PERIOD - Channel period of DFU ANT channel.
+#ifndef NRF_DFU_ANT_CHANNEL_PERIOD
+#define NRF_DFU_ANT_CHANNEL_PERIOD 2048
+#endif
+
+// </h> 
+//==========================================================
+
+// </e>
+
 // <e> NRF_DFU_TRANSPORT_BLE - BLE transport settings
 //==========================================================
 #ifndef NRF_DFU_TRANSPORT_BLE
 #define NRF_DFU_TRANSPORT_BLE 0
 #endif
-// <s> NRF_DFU_BLE_ADV_NAME - Default advertising name.
-#ifndef NRF_DFU_BLE_ADV_NAME
-#define NRF_DFU_BLE_ADV_NAME "DfuTarg"
+// <q> NRF_DFU_BLE_SKIP_SD_INIT  - Skip the SoftDevice and interrupt vector table initialization.
+ 
+
+#ifndef NRF_DFU_BLE_SKIP_SD_INIT
+#define NRF_DFU_BLE_SKIP_SD_INIT 0
 #endif
 
-// <o> NRF_DFU_BLE_ADV_INTERVAL - Advertising interval (in units of 0.625 ms) 
+// <s> NRF_DFU_BLE_ADV_NAME - Default advertising name.
+#ifndef NRF_DFU_BLE_ADV_NAME
+#define NRF_DFU_BLE_ADV_NAME "DFU_SV10"
+#endif
+
+// <o> NRF_DFU_BLE_ADV_INTERVAL - Advertising interval (in units of 0.625 ms)
 #ifndef NRF_DFU_BLE_ADV_INTERVAL
 #define NRF_DFU_BLE_ADV_INTERVAL 40
 #endif
 
-// <h> BLE DFU security 
+// <h> BLE DFU security
 
 //==========================================================
 // <q> NRF_DFU_BLE_REQUIRES_BONDS  - Require bond with peer.
@@ -979,44 +1177,44 @@
 // </h> 
 //==========================================================
 
-// <h> BLE DFU connection 
+// <h> BLE DFU connection
 
 //==========================================================
-// <o> NRF_DFU_BLE_MIN_CONN_INTERVAL - Minimum connection interval (units). 
+// <o> NRF_DFU_BLE_MIN_CONN_INTERVAL - Minimum connection interval (units).
 // <i> Minimum GAP connection interval, in 1.25 ms units.
 
 #ifndef NRF_DFU_BLE_MIN_CONN_INTERVAL
 #define NRF_DFU_BLE_MIN_CONN_INTERVAL 12
 #endif
 
-// <o> NRF_DFU_BLE_MAX_CONN_INTERVAL - Maximum connection interval (units). 
+// <o> NRF_DFU_BLE_MAX_CONN_INTERVAL - Maximum connection interval (units).
 // <i> Maximum GAP connection interval, in 1.25 ms units.
 
 #ifndef NRF_DFU_BLE_MAX_CONN_INTERVAL
 #define NRF_DFU_BLE_MAX_CONN_INTERVAL 12
 #endif
 
-// <o> NRF_DFU_BLE_CONN_SUP_TIMEOUT_MS - Supervision timeout (ms). 
+// <o> NRF_DFU_BLE_CONN_SUP_TIMEOUT_MS - Supervision timeout (ms).
 // <i> GAP connection supervision timeout, in milliseconds.
 
 #ifndef NRF_DFU_BLE_CONN_SUP_TIMEOUT_MS
 #define NRF_DFU_BLE_CONN_SUP_TIMEOUT_MS 6000
 #endif
 
-// </h> 
+// </h>
 //==========================================================
 
-// <h> BLE DFU buffers 
+// <h> BLE DFU buffers
 
 //==========================================================
-// <e> NRF_DFU_BLE_BUFFERS_OVERRIDE 
+// <e> NRF_DFU_BLE_BUFFERS_OVERRIDE
 
 // <i> Check this option to override the default number of buffers.
 //==========================================================
 #ifndef NRF_DFU_BLE_BUFFERS_OVERRIDE
 #define NRF_DFU_BLE_BUFFERS_OVERRIDE 0
 #endif
-// <o> NRF_DFU_BLE_BUFFERS - Number of buffers in the BLE transport. 
+// <o> NRF_DFU_BLE_BUFFERS - Number of buffers in the BLE transport.
 // <i> Number of buffers to store incoming data while it is being written to flash.
 // <i> Reduce this value to save RAM. If this value is too low, the DFU process will fail.
 
@@ -1034,7 +1232,7 @@
 // </h> 
 //==========================================================
 
-// <h> DFU protocol 
+// <h> DFU protocol
 
 //==========================================================
 // <q> NRF_DFU_PROTOCOL_FW_VERSION_MSG  - Firmware version message support.
@@ -1047,6 +1245,19 @@
 #define NRF_DFU_PROTOCOL_FW_VERSION_MSG 1
 #endif
 
+// <q> NRF_DFU_PROTOCOL_REDUCED  - Reduced protocol opcode selection.
+
+
+// <i> Only support a minimal set of opcodes; return NRF_DFU_RES_CODE_OP_CODE_NOT_SUPPORTED
+// <i> for unsupported opcodes. The supported opcodes are:NRF_DFU_OP_OBJECT_CREATE,
+// <i> NRF_DFU_OP_OBJECT_EXECUTE, NRF_DFU_OP_OBJECT_SELECT, NRF_DFU_OP_OBJECT_WRITE,
+// <i> NRF_DFU_OP_CRC_GET, NRF_DFU_OP_RECEIPT_NOTIF_SET, and NRF_DFU_OP_ABORT.
+// <i> This reduced feature set is used by the BLE transport.
+
+#ifndef NRF_DFU_PROTOCOL_REDUCED
+#define NRF_DFU_PROTOCOL_REDUCED 0
+#endif
+
 // <q> NRF_DFU_PROTOCOL_VERSION_MSG  - Protocol version message support.
  
 
@@ -1057,80 +1268,32 @@
 #define NRF_DFU_PROTOCOL_VERSION_MSG 1
 #endif
 
-// </h> 
+// </h>
 //==========================================================
 
-// <h> DFU security 
+// <h> Misc DFU settings
 
 //==========================================================
-// <q> NRF_DFU_APP_DOWNGRADE_PREVENTION  - Check the firmware version and SoftDevice requirements of application (and SoftDevice) updates.
- 
-
-// <i> Whether to check the incoming version against the version of the existing app and/or
-// <i> the incoming SoftDevice requirements against the existing SoftDevice.
-// <i> This applies to application updates, and possibly to SoftDevice updates.
-// <i> Disabling this causes the checks to always ignore the incoming firmware version and
-// <i> to ignore the SoftDevice requirements if the first requirement is 0.
-// <i> This does not apply the bootloader updates. If the bootloader depends on the SoftDevice
-// <i> e.g. for BLE transport, this does not apply to SoftDevice updates.
-// <i> See @ref lib_bootloader_dfu_validation for more information.
-// <i> When signed updates are required, version checking should always be enabled.
-
-#ifndef NRF_DFU_APP_DOWNGRADE_PREVENTION
-#define NRF_DFU_APP_DOWNGRADE_PREVENTION 0
-#endif
-
-// <q> NRF_DFU_FORCE_DUAL_BANK_APP_UPDATES  - Accept only dual-bank application updates.
- 
-
-// <i> If not enabled then if there is not enough space to perform dual-bank update
-// <i> application is deleted and single-bank update is performed. In case it is considered
-// <i> security concern user can prefer to discard update request rather than overwrite
-// <i> current application.
-
-#ifndef NRF_DFU_FORCE_DUAL_BANK_APP_UPDATES
-#define NRF_DFU_FORCE_DUAL_BANK_APP_UPDATES 0
-#endif
-
-// <o> NRF_DFU_HW_VERSION - Device hardware version. 
-// <i> This is used to determine if given update is targeting the device.
-// <i> It is checked against the hw_version value in the init packet
-
-#ifndef NRF_DFU_HW_VERSION
-#define NRF_DFU_HW_VERSION 52
-#endif
-
-// <q> NRF_DFU_REQUIRE_SIGNED_APP_UPDATE  - Require a valid signature to update the application or SoftDevice.
- 
-
-#ifndef NRF_DFU_REQUIRE_SIGNED_APP_UPDATE
-#define NRF_DFU_REQUIRE_SIGNED_APP_UPDATE 0
-#endif
-
-// <q> NRF_DFU_SINGLE_BANK_APP_UPDATES  - Place the application and the SoftDevice directly where they are supposed to be.
- 
-
-// <i> Note that this creates security concerns when signing and  version checks
-// <i> are enabled. An attacker will be able to delete (but not replace)
-// <i> the current app or SoftDevice without knowing the signature key.
-
-#ifndef NRF_DFU_SINGLE_BANK_APP_UPDATES
-#define NRF_DFU_SINGLE_BANK_APP_UPDATES 1
-#endif
-
-// </h> 
-//==========================================================
-
-// <h> Misc DFU settings 
-
-//==========================================================
-// <o> NRF_DFU_APP_DATA_AREA_SIZE - The size (in bytes) of the flash area reserved for application data. 
+// <o> NRF_DFU_APP_DATA_AREA_SIZE - The size (in bytes) of the flash area reserved for application data.
 // <i> This area is found at the end of the application area, next to the start of
 // <i> the bootloader. This area will not be erased by the bootloader during a
 // <i> firmware upgrade. The size must be a multiple of the flash page size.
 
 #ifndef NRF_DFU_APP_DATA_AREA_SIZE
 #define NRF_DFU_APP_DATA_AREA_SIZE 12288
+#endif
+
+// <q> NRF_DFU_IN_APP  - Specifies that this code is in the app, not the bootloader, so some settings are off-limits.
+ 
+
+// <i> Enable this to disable writing to areas of the settings that are protected
+// <i> by the bootlader. If this is not enabled in the app, certain settings write
+// <i> operations will cause HardFaults or will be ignored. Enabling this option
+// <i> also causes postvalidation to be disabled since this is meant to be done
+// <i> in the bootloader. NRF_BL_DFU_ALLOW_UPDATE_FROM_APP must be enabled in the bootloader.
+
+#ifndef NRF_DFU_IN_APP
+#define NRF_DFU_IN_APP 0
 #endif
 
 // <q> NRF_DFU_SAVE_PROGRESS_IN_FLASH  - Save DFU progress in flash.
@@ -1144,37 +1307,30 @@
 #define NRF_DFU_SAVE_PROGRESS_IN_FLASH 0
 #endif
 
-// <q> NRF_DFU_SETTINGS_ALLOW_UPDATE_FROM_APP  - Whether to allow the app to receive firmware updates for the bootloader to activate.
+// <q> NRF_DFU_SUPPORTS_EXTERNAL_APP  - [Experimental] Support for external app.
  
 
-// <i> Enable this to allow the app to instruct the bootloader to activate firmware.
-// <i> The bootloader will perform only a cursory check on the firmware (CRC).
+// <i> External apps are apps that will not be activated. They can
+// <i> e.g. be apps to be sent to a third party. External app updates
+// <i> are verified upon reception, but will remain in bank 1, and
+// <i> will never be booted. An external app will be overwritten if
+// <i> a new DFU procedure is performed. Note: This functionality is
+// <i> experimental and not yet used in any examples.
 
-#ifndef NRF_DFU_SETTINGS_ALLOW_UPDATE_FROM_APP
-#define NRF_DFU_SETTINGS_ALLOW_UPDATE_FROM_APP 0
+#ifndef NRF_DFU_SUPPORTS_EXTERNAL_APP
+#define NRF_DFU_SUPPORTS_EXTERNAL_APP 0
 #endif
 
-// <q> NRF_DFU_SETTINGS_IN_APP  - Specifies that this code is in the app, not the bootloader, so some settings are off-limits.
- 
-
-// <i> Enable this to disable writing to areas of the settings that are protected
-// <i> by the bootlader. If this is not enabled in the app, certain settings write
-// <i> operations will cause HardFaults or will be ignored.
-
-#ifndef NRF_DFU_SETTINGS_IN_APP
-#define NRF_DFU_SETTINGS_IN_APP 0
-#endif
-
-// </h> 
+// </h>
 //==========================================================
 
-// </h> 
+// </h>
 //==========================================================
 
-// </h> 
+// </h>
 //==========================================================
 
-// <h> nRF_Drivers 
+// <h> nRF_Drivers
 
 //==========================================================
 // <e> NRFX_CLOCK_ENABLED - nrfx_clock - CLOCK peripheral driver
@@ -1183,12 +1339,12 @@
 #define NRFX_CLOCK_ENABLED 1
 #endif
 // <o> NRFX_CLOCK_CONFIG_LF_SRC  - LF Clock Source
- 
-// <0=> RC 
-// <1=> XTAL 
-// <2=> Synth 
-// <131073=> External Low Swing 
-// <196609=> External Full Swing 
+
+// <0=> RC
+// <1=> XTAL
+// <2=> Synth
+// <131073=> External Low Swing
+// <196609=> External Full Swing
 
 #ifndef NRFX_CLOCK_CONFIG_LF_SRC
 #define NRFX_CLOCK_CONFIG_LF_SRC 1
@@ -1216,11 +1372,11 @@
 #endif
 // <o> NRFX_CLOCK_CONFIG_LOG_LEVEL  - Default Severity level
  
-// <0=> Off 
-// <1=> Error 
-// <2=> Warning 
-// <3=> Info 
-// <4=> Debug 
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
 
 #ifndef NRFX_CLOCK_CONFIG_LOG_LEVEL
 #define NRFX_CLOCK_CONFIG_LOG_LEVEL 3
@@ -1228,15 +1384,15 @@
 
 // <o> NRFX_CLOCK_CONFIG_INFO_COLOR  - ANSI escape code prefix.
  
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
 
 #ifndef NRFX_CLOCK_CONFIG_INFO_COLOR
 #define NRFX_CLOCK_CONFIG_INFO_COLOR 0
@@ -1244,15 +1400,15 @@
 
 // <o> NRFX_CLOCK_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
  
-// <0=> Default 
-// <1=> Black 
-// <2=> Red 
-// <3=> Green 
-// <4=> Yellow 
-// <5=> Blue 
-// <6=> Magenta 
-// <7=> Cyan 
-// <8=> White 
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
 
 #ifndef NRFX_CLOCK_CONFIG_DEBUG_COLOR
 #define NRFX_CLOCK_CONFIG_DEBUG_COLOR 0
@@ -1302,27 +1458,20 @@
 
 // </e>
 
-// <e> NRF_CLOCK_ENABLED - nrf_drv_clock - CLOCK peripheral driver - legacy layer
+// <q> NRFX_SYSTICK_ENABLED  - nrfx_systick - ARM(R) SysTick driver
+
+
+#ifndef NRFX_SYSTICK_ENABLED
+#define NRFX_SYSTICK_ENABLED 1
+#endif
+
+// <e> NRFX_USBD_ENABLED - nrfx_usbd - USBD peripheral driver
 //==========================================================
-#ifndef NRF_CLOCK_ENABLED
-#define NRF_CLOCK_ENABLED 1
+#ifndef NRFX_USBD_ENABLED
+#define NRFX_USBD_ENABLED 1
 #endif
-// <o> CLOCK_CONFIG_LF_SRC  - LF Clock Source
+// <o> NRFX_USBD_CONFIG_IRQ_PRIORITY  - Interrupt priority
  
-// <0=> RC 
-// <1=> XTAL 
-// <2=> Synth 
-// <131073=> External Low Swing 
-// <196609=> External Full Swing 
-
-#ifndef CLOCK_CONFIG_LF_SRC
-#define CLOCK_CONFIG_LF_SRC 1
-#endif
-
-// <o> CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
 // <0=> 0 (highest) 
 // <1=> 1 
 // <2=> 2 
@@ -1331,6 +1480,81 @@
 // <5=> 5 
 // <6=> 6 
 // <7=> 7 
+
+#ifndef NRFX_USBD_CONFIG_IRQ_PRIORITY
+#define NRFX_USBD_CONFIG_IRQ_PRIORITY 6
+#endif
+
+// <o> NRFX_USBD_CONFIG_DMASCHEDULER_MODE  - USBD DMA scheduler working scheme
+ 
+// <0=> Prioritized access 
+// <1=> Round Robin 
+
+#ifndef NRFX_USBD_CONFIG_DMASCHEDULER_MODE
+#define NRFX_USBD_CONFIG_DMASCHEDULER_MODE 0
+#endif
+
+// <q> NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST  - Give priority to isochronous transfers
+ 
+
+// <i> This option gives priority to isochronous transfers.
+// <i> Enabling it assures that isochronous transfers are always processed,
+// <i> even if multiple other transfers are pending.
+// <i> Isochronous endpoints are prioritized before the usbd_dma_scheduler_algorithm
+// <i> function is called, so the option is independent of the algorithm chosen.
+
+#ifndef NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST
+#define NRFX_USBD_CONFIG_DMASCHEDULER_ISO_BOOST 1
+#endif
+
+// <q> NRFX_USBD_CONFIG_ISO_IN_ZLP  - Respond to an IN token on ISO IN endpoint with ZLP when no data is ready
+
+
+// <i> If set, ISO IN endpoint will respond to an IN token with ZLP when no data is ready to be sent.
+// <i> Else, there will be no response.
+
+#ifndef NRFX_USBD_CONFIG_ISO_IN_ZLP
+#define NRFX_USBD_CONFIG_ISO_IN_ZLP 0
+#endif
+
+// </e>
+
+// <e> NRF_CLOCK_ENABLED - nrf_drv_clock - CLOCK peripheral driver - legacy layer
+//==========================================================
+#ifndef NRF_CLOCK_ENABLED
+#define NRF_CLOCK_ENABLED 1
+#endif
+// <o> CLOCK_CONFIG_LF_SRC  - LF Clock Source
+
+// <0=> RC
+// <1=> XTAL
+// <2=> Synth
+// <131073=> External Low Swing
+// <196609=> External Full Swing
+
+#ifndef CLOCK_CONFIG_LF_SRC
+#define CLOCK_CONFIG_LF_SRC 1
+#endif
+
+// <q> CLOCK_CONFIG_LF_CAL_ENABLED  - Calibration enable for LF Clock Source
+
+
+#ifndef CLOCK_CONFIG_LF_CAL_ENABLED
+#define CLOCK_CONFIG_LF_CAL_ENABLED 0
+#endif
+
+// <o> CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
+
+
+// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
+// <0=> 0 (highest)
+// <1=> 1
+// <2=> 2
+// <3=> 3
+// <4=> 4
+// <5=> 5
+// <6=> 6
+// <7=> 7
 
 #ifndef CLOCK_CONFIG_IRQ_PRIORITY
 #define CLOCK_CONFIG_IRQ_PRIORITY 6
@@ -1344,17 +1568,17 @@
 #define POWER_ENABLED 1
 #endif
 // <o> POWER_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
+
 
 // <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
+// <0=> 0 (highest)
+// <1=> 1
+// <2=> 2
+// <3=> 3
+// <4=> 4
+// <5=> 5
+// <6=> 6
+// <7=> 7
 
 #ifndef POWER_CONFIG_IRQ_PRIORITY
 #define POWER_CONFIG_IRQ_PRIORITY 6
@@ -1380,7 +1604,14 @@
 
 // </e>
 
-// <e> USBD_ENABLED - nrf_drv_usbd - USB driver
+// <q> SYSTICK_ENABLED  - nrf_drv_systick - ARM(R) SysTick driver - legacy layer
+ 
+
+#ifndef SYSTICK_ENABLED
+#define SYSTICK_ENABLED 1
+#endif
+
+// <e> USBD_ENABLED - nrf_drv_usbd - Software Component
 //==========================================================
 #ifndef USBD_ENABLED
 #define USBD_ENABLED 1
@@ -1403,9 +1634,9 @@
 #endif
 
 // <o> USBD_CONFIG_DMASCHEDULER_MODE  - USBD SMA scheduler working scheme
- 
-// <0=> Prioritized access 
-// <1=> Round Robin 
+
+// <0=> Prioritized access
+// <1=> Round Robin
 
 #ifndef USBD_CONFIG_DMASCHEDULER_MODE
 #define USBD_CONFIG_DMASCHEDULER_MODE 0
@@ -1436,10 +1667,10 @@
 
 // </e>
 
-// </h> 
+// </h>
 //==========================================================
 
-// <h> nRF_Libraries 
+// <h> nRF_Libraries
 
 //==========================================================
 // <e> APP_SCHEDULER_ENABLED - app_scheduler - Events scheduler
@@ -1460,101 +1691,6 @@
 #ifndef APP_SCHEDULER_WITH_PROFILER
 #define APP_SCHEDULER_WITH_PROFILER 0
 #endif
-
-// </e>
-
-// <e> APP_TIMER_ENABLED - app_timer - Application timer functionality
-//==========================================================
-#ifndef APP_TIMER_ENABLED
-#define APP_TIMER_ENABLED 1
-#endif
-// <o> APP_TIMER_CONFIG_RTC_FREQUENCY  - Configure RTC prescaler.
- 
-// <0=> 32768 Hz 
-// <1=> 16384 Hz 
-// <3=> 8192 Hz 
-// <7=> 4096 Hz 
-// <15=> 2048 Hz 
-// <31=> 1024 Hz 
-
-#ifndef APP_TIMER_CONFIG_RTC_FREQUENCY
-#define APP_TIMER_CONFIG_RTC_FREQUENCY 1
-#endif
-
-// <o> APP_TIMER_CONFIG_IRQ_PRIORITY  - Interrupt priority
- 
-
-// <i> Priorities 0,2 (nRF51) and 0,1,4,5 (nRF52) are reserved for SoftDevice
-// <0=> 0 (highest) 
-// <1=> 1 
-// <2=> 2 
-// <3=> 3 
-// <4=> 4 
-// <5=> 5 
-// <6=> 6 
-// <7=> 7 
-
-#ifndef APP_TIMER_CONFIG_IRQ_PRIORITY
-#define APP_TIMER_CONFIG_IRQ_PRIORITY 6
-#endif
-
-// <o> APP_TIMER_CONFIG_OP_QUEUE_SIZE - Capacity of timer requests queue. 
-// <i> Size of the queue depends on how many timers are used
-// <i> in the system, how often timers are started and overall
-// <i> system latency. If queue size is too small app_timer calls
-// <i> will fail.
-
-#ifndef APP_TIMER_CONFIG_OP_QUEUE_SIZE
-#define APP_TIMER_CONFIG_OP_QUEUE_SIZE 10
-#endif
-
-// <q> APP_TIMER_CONFIG_USE_SCHEDULER  - Enable scheduling app_timer events to app_scheduler
- 
-
-#ifndef APP_TIMER_CONFIG_USE_SCHEDULER
-#define APP_TIMER_CONFIG_USE_SCHEDULER 0
-#endif
-
-// <q> APP_TIMER_KEEPS_RTC_ACTIVE  - Enable RTC always on
- 
-
-// <i> If option is enabled RTC is kept running even if there is no active timers.
-// <i> This option can be used when app_timer is used for timestamping.
-
-#ifndef APP_TIMER_KEEPS_RTC_ACTIVE
-#define APP_TIMER_KEEPS_RTC_ACTIVE 0
-#endif
-
-// <o> APP_TIMER_SAFE_WINDOW_MS - Maximum possible latency (in milliseconds) of handling app_timer event. 
-// <i> Maximum possible timeout that can be set is reduced by safe window.
-// <i> Example: RTC frequency 16384 Hz, maximum possible timeout 1024 seconds - APP_TIMER_SAFE_WINDOW_MS.
-// <i> Since RTC is not stopped when processor is halted in debugging session, this value
-// <i> must cover it if debugging is needed. It is possible to halt processor for APP_TIMER_SAFE_WINDOW_MS
-// <i> without corrupting app_timer behavior.
-
-#ifndef APP_TIMER_SAFE_WINDOW_MS
-#define APP_TIMER_SAFE_WINDOW_MS 300000
-#endif
-
-// <h> App Timer Legacy configuration - Legacy configuration.
-
-//==========================================================
-// <q> APP_TIMER_WITH_PROFILER  - Enable app_timer profiling
- 
-
-#ifndef APP_TIMER_WITH_PROFILER
-#define APP_TIMER_WITH_PROFILER 0
-#endif
-
-// <q> APP_TIMER_CONFIG_SWI_NUMBER  - Configure SWI instance used.
- 
-
-#ifndef APP_TIMER_CONFIG_SWI_NUMBER
-#define APP_TIMER_CONFIG_SWI_NUMBER 0
-#endif
-
-// </h> 
-//==========================================================
 
 // </e>
 
@@ -1608,7 +1744,7 @@
 
 
 #ifndef APP_USBD_CONFIG_MAX_POWER
-#define APP_USBD_CONFIG_MAX_POWER 500
+#define APP_USBD_CONFIG_MAX_POWER 100
 #endif
 
 // <q> APP_USBD_CONFIG_POWER_EVENTS_PROCESS  - Process power events.
@@ -1745,7 +1881,7 @@
 // <i> Note: This value is not editable in Configuration Wizard.
 // <i> List of product names that is defined the same way like in @ref APP_USBD_STRINGS_MANUFACTURER.
 #ifndef APP_USBD_STRINGS_PRODUCT
-#define APP_USBD_STRINGS_PRODUCT APP_USBD_STRING_DESC("Open DFU Bootloader")
+#define APP_USBD_STRINGS_PRODUCT APP_USBD_STRING_DESC("Secure DFU Bootloader")
 #endif
 
 // </e>
@@ -1824,20 +1960,6 @@
 
 #ifndef CRC32_ENABLED
 #define CRC32_ENABLED 1
-#endif
-
-// <q> LED_SOFTBLINK_ENABLED  - led_softblink - led_softblink module
- 
-
-#ifndef LED_SOFTBLINK_ENABLED
-#define LED_SOFTBLINK_ENABLED 1
-#endif
-
-// <q> LOW_POWER_PWM_ENABLED  - low_power_pwm - low_power_pwm module
- 
-
-#ifndef LOW_POWER_PWM_ENABLED
-#define LOW_POWER_PWM_ENABLED 1
 #endif
 
 // <e> MEM_MANAGER_ENABLED - mem_manager - Dynamic memory allocator
@@ -2059,13 +2181,6 @@
 
 // </e>
 
-// <q> NRF_FPRINTF_ENABLED  - nrf_fprintf - fprintf function.
- 
-
-#ifndef NRF_FPRINTF_ENABLED
-#define NRF_FPRINTF_ENABLED 1
-#endif
-
 // <e> NRF_FSTORAGE_ENABLED - nrf_fstorage - Flash abstraction library
 //==========================================================
 #ifndef NRF_FSTORAGE_ENABLED
@@ -2083,7 +2198,7 @@
 // <i> Recommended setting: OFF, only enable this setting if size is a major concern.
 
 #ifndef NRF_FSTORAGE_PARAM_CHECK_DISABLED
-#define NRF_FSTORAGE_PARAM_CHECK_DISABLED 0
+#define NRF_FSTORAGE_PARAM_CHECK_DISABLED 1
 #endif
 
 // </h> 
@@ -2097,7 +2212,7 @@
 // <i> Increase this value if API calls frequently return the error @ref NRF_ERROR_NO_MEM.
 
 #ifndef NRF_FSTORAGE_SD_QUEUE_SIZE
-#define NRF_FSTORAGE_SD_QUEUE_SIZE 4
+#define NRF_FSTORAGE_SD_QUEUE_SIZE 16
 #endif
 
 // <o> NRF_FSTORAGE_SD_MAX_RETRIES - Maximum number of attempts at executing an operation when the SoftDevice is busy 
@@ -2115,7 +2230,7 @@
 // <i> That is 1024 bytes for nRF51 ICs and 4096 bytes for nRF52 ICs.
 
 #ifndef NRF_FSTORAGE_SD_MAX_WRITE_SIZE
-#define NRF_FSTORAGE_SD_MAX_WRITE_SIZE 4096
+#define NRF_FSTORAGE_SD_MAX_WRITE_SIZE 20
 #endif
 
 // </h> 
@@ -2143,13 +2258,6 @@
 #endif
 
 // </e>
-
-// <q> NRF_SORTLIST_ENABLED  - nrf_sortlist - Sorted list
- 
-
-#ifndef NRF_SORTLIST_ENABLED
-#define NRF_SORTLIST_ENABLED 1
-#endif
 
 // <q> NRF_STRERROR_ENABLED  - nrf_strerror - Library for converting error code to string.
  
@@ -2186,6 +2294,26 @@
 #endif
 
 // </h> 
+//==========================================================
+
+// <h> nrf_fprintf - fprintf function.
+
+//==========================================================
+// <q> NRF_FPRINTF_ENABLED  - Enable/disable fprintf module.
+
+
+#ifndef NRF_FPRINTF_ENABLED
+#define NRF_FPRINTF_ENABLED 1
+#endif
+
+// <q> NRF_FPRINTF_FLAG_AUTOMATIC_CR_ON_LF_ENABLED  - For each printed LF, function will add CR.
+
+
+#ifndef NRF_FPRINTF_FLAG_AUTOMATIC_CR_ON_LF_ENABLED
+#define NRF_FPRINTF_FLAG_AUTOMATIC_CR_ON_LF_ENABLED 1
+#endif
+
+// </h>
 //==========================================================
 
 // </h> 
@@ -2391,12 +2519,12 @@
 // <h> nrf_log in nRF_Core 
 
 //==========================================================
-// <e> NRF_MPU_CONFIG_LOG_ENABLED - Enables logging in the module.
+// <e> NRF_MPU_LIB_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
-#ifndef NRF_MPU_CONFIG_LOG_ENABLED
-#define NRF_MPU_CONFIG_LOG_ENABLED 0
+#ifndef NRF_MPU_LIB_CONFIG_LOG_ENABLED
+#define NRF_MPU_LIB_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRF_MPU_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRF_MPU_LIB_CONFIG_LOG_LEVEL  - Default Severity level
  
 // <0=> Off 
 // <1=> Error 
@@ -2404,11 +2532,11 @@
 // <3=> Info 
 // <4=> Debug 
 
-#ifndef NRF_MPU_CONFIG_LOG_LEVEL
-#define NRF_MPU_CONFIG_LOG_LEVEL 3
+#ifndef NRF_MPU_LIB_CONFIG_LOG_LEVEL
+#define NRF_MPU_LIB_CONFIG_LOG_LEVEL 3
 #endif
 
-// <o> NRF_MPU_CONFIG_INFO_COLOR  - ANSI escape code prefix.
+// <o> NRF_MPU_LIB_CONFIG_INFO_COLOR  - ANSI escape code prefix.
  
 // <0=> Default 
 // <1=> Black 
@@ -2420,11 +2548,11 @@
 // <7=> Cyan 
 // <8=> White 
 
-#ifndef NRF_MPU_CONFIG_INFO_COLOR
-#define NRF_MPU_CONFIG_INFO_COLOR 0
+#ifndef NRF_MPU_LIB_CONFIG_INFO_COLOR
+#define NRF_MPU_LIB_CONFIG_INFO_COLOR 0
 #endif
 
-// <o> NRF_MPU_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
+// <o> NRF_MPU_LIB_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
  
 // <0=> Default 
 // <1=> Black 
@@ -2436,8 +2564,8 @@
 // <7=> Cyan 
 // <8=> White 
 
-#ifndef NRF_MPU_CONFIG_DEBUG_COLOR
-#define NRF_MPU_CONFIG_DEBUG_COLOR 0
+#ifndef NRF_MPU_LIB_CONFIG_DEBUG_COLOR
+#define NRF_MPU_LIB_CONFIG_DEBUG_COLOR 0
 #endif
 
 // </e>
@@ -2801,6 +2929,57 @@
 
 #ifndef MAX3421E_HOST_CONFIG_DEBUG_COLOR
 #define MAX3421E_HOST_CONFIG_DEBUG_COLOR 0
+#endif
+
+// </e>
+
+// <e> NRFX_USBD_CONFIG_LOG_ENABLED - Enable logging in the module
+//==========================================================
+#ifndef NRFX_USBD_CONFIG_LOG_ENABLED
+#define NRFX_USBD_CONFIG_LOG_ENABLED 0
+#endif
+// <o> NRFX_USBD_CONFIG_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef NRFX_USBD_CONFIG_LOG_LEVEL
+#define NRFX_USBD_CONFIG_LOG_LEVEL 3
+#endif
+
+// <o> NRFX_USBD_CONFIG_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef NRFX_USBD_CONFIG_INFO_COLOR
+#define NRFX_USBD_CONFIG_INFO_COLOR 0
+#endif
+
+// <o> NRFX_USBD_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef NRFX_USBD_CONFIG_DEBUG_COLOR
+#define NRFX_USBD_CONFIG_DEBUG_COLOR 0
 #endif
 
 // </e>

@@ -101,6 +101,10 @@ typedef struct {
 
 /*=========================================================================*/
 
+bool is_stc_updated(void);
+
+/*=========================================================================*/
+
 
 class STC3100 {
 public:
@@ -113,7 +117,7 @@ public:
 	void shutdown(void);
 	void reset(void);
 
-	bool refresh(tSTC31000Data *_data);
+	bool refresh(void);
 
 	float getCurrent() const { return _current;}
 	float getVoltage() const {return _voltage;}
@@ -127,6 +131,8 @@ public:
 	}
 	void resetCharge(void) {
 	}
+
+	void readChip(void);
 
 	uint8_t _stc3100Mode;
 
@@ -142,7 +148,7 @@ private:
 	float _voltage = 4.1;
 	/**Value of the current in mA*/
 	float _current = 15;
-	/**Value of the temperature in °C*/
+	/**Value of the temperature in ï¿½C*/
 	float _temperature = 21;
 	/**Value of the charge which went through the batt in mA.h */
 	float _charge = 17;
@@ -150,7 +156,6 @@ private:
 	float _counter = 0.7;
 
 	void writeCommand(uint8_t reg, uint8_t value);
-	void readChip();
 	void computeVoltage();
 	void computeCharge();
 	void computeCurrent();

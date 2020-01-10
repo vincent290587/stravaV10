@@ -7,9 +7,10 @@
 
 #include "millis.h"
 #include "timer.h"
-#include "Model_tdd.h"
+#include "Model.h"
 #include "segger_wrapper.h"
-#include "task_manager_wrapper_tdd.h"
+#include "task_scheduler.h"
+#include "task_manager_wrapper.h"
 
 #define MS_TIMER_GRANULOSITY       10
 
@@ -20,16 +21,15 @@
 static volatile uint32_t m_cur_time_ms = 0;
 static volatile uint32_t m_per_time_ms = 0;
 
+void millis_increase_time(int dt) {
+
+	m_cur_time_ms += dt;
+	task_tick_manage(dt);
+}
+
 void timer_handler(void)
 {
-	m_cur_time_ms += MS_TIMER_GRANULOSITY;
-
-	// set peripherals in action
-	if (m_cur_time_ms > m_per_time_ms + SENSORS_READING_DELAY_MS) {
-		m_per_time_ms = m_cur_time_ms;
-		// notify task
-	    events_set(m_tasks_id.peripherals_id, TASK_EVENT_PERIPH_TRIGGER);
-	}
+	millis_increase_time(MS_TIMER_GRANULOSITY);
 }
 /**
  *
@@ -59,6 +59,7 @@ void delay_ms(uint32_t delay_) {
 
 	while (millis() < cur_time + delay_) {
 
+		millis_increase_time(1);
 	}
 }
 

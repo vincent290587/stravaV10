@@ -9,7 +9,7 @@
 #include "segger_wrapper.h"
 #include "nrf_serial_flash_params.h"
 
-
+#define EXIT_ON_ERROR(x)                   do {if (x) {return false;}} while (0)
 
 static const nrf_serial_flash_params_t m_sflash_params[] = {
     {    /*MT25*/
@@ -69,23 +69,27 @@ bool configure_memory()
     cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_2B;
 	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, &stat_reg, NULL);
 	APP_ERROR_CHECK(err_code);
+	EXIT_ON_ERROR(err_code);
 
 	// Send reset enable
     cinstr_cfg.opcode = QSPI_STD_CMD_RSTEN;
     cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_1B;
 	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
 	APP_ERROR_CHECK(err_code);
+	EXIT_ON_ERROR(err_code);
 
 	// Send reset command
 	cinstr_cfg.opcode = QSPI_STD_CMD_RST;
 	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
 	APP_ERROR_CHECK(err_code);
+	EXIT_ON_ERROR(err_code);
 
 	// Get device ID
 	cinstr_cfg.opcode = 0xAF;
 	cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_4B;
 	err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, NULL, recv);
 	APP_ERROR_CHECK(err_code);
+	EXIT_ON_ERROR(err_code);
 	LOG_INFO("JEDEC ID: 0x%02X 0x%02X 0x%02X", recv[0], recv[1], recv[2]);
 
 	// write status register
@@ -94,6 +98,7 @@ bool configure_memory()
     cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_2B;
     err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, &stat_reg, NULL);
     APP_ERROR_CHECK(err_code);
+	EXIT_ON_ERROR(err_code);
 
 	// write conf register
     cinstr_cfg.opcode = 0xB1;
@@ -104,6 +109,7 @@ bool configure_memory()
     cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_3B;
     err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, &conf_reg, NULL);
     APP_ERROR_CHECK(err_code);
+	EXIT_ON_ERROR(err_code);
 
     LOG_INFO("Write conf register: 0x%02X%02X", conf_reg[1], conf_reg[0]);
 
@@ -113,6 +119,7 @@ bool configure_memory()
     cinstr_cfg.length = NRF_QSPI_CINSTR_LEN_2B;
     err_code = nrfx_qspi_cinstr_xfer(&cinstr_cfg, &stat_reg, NULL);
     APP_ERROR_CHECK(err_code);
+	EXIT_ON_ERROR(err_code);
 
     // Switch to 4-io-qspi mode
 //    cinstr_cfg.opcode = 0x35;

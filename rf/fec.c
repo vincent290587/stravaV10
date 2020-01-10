@@ -127,14 +127,14 @@ static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t eve
 	{
 		fec_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
 		fec_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
-		events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
+		w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	}
 	break;
 
 	case ANT_FEC_PAGE_25_UPDATED:
 	{
 		fec_info.power = p_profile->page_25.inst_power;
-		events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
+		w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
 	}
 	break;
 
@@ -164,7 +164,7 @@ static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t eve
 
 	default:
 		// never occurred
-		NRF_LOG_WARNING("Page %u was updated", event);
+		LOG_INFO("ANT_FEC Page %u was updated", event);
 		break;
 	}
 }

@@ -64,7 +64,7 @@ void BoucleFEC::run() {
 	if (m_needs_init) this->init();
 
 	// wait for location to be updated
-	(void)events_wait(TASK_EVENT_FEC_INFO | TASK_EVENT_FEC_POWER);
+	(void)w_task_events_wait(TASK_EVENT_FEC_INFO | TASK_EVENT_FEC_POWER);
 
 	LOG_INFO("Boucle FEC run\r\n");
 
@@ -79,6 +79,8 @@ void BoucleFEC::run() {
 	zPower.addPowerData(fec_info.power, millis());
 #endif
 
-	vue.refresh();
-
+	// ready for displaying
+	if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.ls027_id);
+	}
 }

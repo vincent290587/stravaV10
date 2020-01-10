@@ -79,8 +79,6 @@
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
 
-#include "ring_buffer.h"
-
 #include "app_error.h"
 #include "app_util.h"
 #include "app_usbd_core.h"
@@ -176,45 +174,15 @@ static ble_uuid_t m_adv_uuids[]          =                                      
 
 // BLE DEFINES END
 
+static char m_cdc_data_array[BLE_NUS_MAX_DATA_LEN];
 
-#define READ_SIZE 64
-
-static char m_rx_buffer[READ_SIZE];
-
-
-#define CDC_RB_SIZE             8192
-RING_BUFFER_DEF(cdc_rb1, CDC_RB_SIZE);
-
-#define CDC_X_BUFFERS           (0b1)
-
-static char m_tx_buffer[CDC_X_BUFFERS+1][NRF_DRV_USBD_EPSIZE];
-static uint16_t m_tx_buffer_bytes_nb[CDC_X_BUFFERS+1];
-static uint8_t m_tx_buffer_index = 0;
+static char m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
 
 static volatile bool m_is_xfer_done = true;
 
 static volatile bool m_is_port_open = false;
 
-// static uint32_t m_last_buffered = 0;
-
 static bool m_usb_connected = false;
-
-
-/**
- * Prints a single char to VCOM
- * @param c
- */
-static void usb_print(char c) {
-
-	if (RING_BUFF_IS_NOT_FULL(cdc_rb1)) {
-		RING_BUFFER_ADD_ATOMIC(cdc_rb1, c);
-
-		// TODO check m_last_buffered = millis();
-	} else {
-
-	}
-
-}
 
 /**
  * Prints a char* to VCOM printf style
@@ -225,7 +193,7 @@ void usb_printf(const char *format, ...) {
 	va_list args;
 	va_start(args, format);
 
-	static char m_usb_char_buffer[128];
+	static char m_usb_char_buffer[256];
 
 	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
 
@@ -233,19 +201,18 @@ void usb_printf(const char *format, ...) {
 			sizeof(m_usb_char_buffer),
 			format, args);
 
-	NRF_LOG_DEBUG("Printfing %d bytes to VCOM", length);
+	//NRF_LOG_DEBUG("Printfing %d bytes to VCOM", length);
 
-	for (int i=0; i < length; i++) {
+	if (length > 0 &&
+			length < sizeof(m_usb_char_buffer) - 5) {
+		m_usb_char_buffer[length++] = '\r';
+		m_usb_char_buffer[length++] = '\n';
 
-		usb_print(m_usb_char_buffer[i]);
-
+		// Send data through CDC ACM
+		(void)app_usbd_cdc_acm_write(&m_app_cdc_acm,
+				m_usb_char_buffer,
+				length);
 	}
-
-	// newline
-	usb_print('\r');
-	usb_print('\n');
-
-	// TODO check m_last_buffered = millis();
 
 }
 
@@ -325,11 +292,16 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
 		bsp_board_led_invert(LED_BLE_NUS_RX);
 		NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on CDC ACM.");
 		NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
+        memcpy(m_nus_data_array, p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
 
-		// send to USB TX RB
-		for (int i=0; i < p_evt->params.rx_data.length; i++) {
-			usb_print(p_evt->params.rx_data.p_data[i]);
-		}
+        // Send data through CDC ACM
+        ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
+                                                m_nus_data_array,
+												p_evt->params.rx_data.length);
+        if(ret != NRF_SUCCESS)
+        {
+            NRF_LOG_INFO("CDC ACM unavailable, data received: %s", m_nus_data_array);
+        }
 
 	}
 
@@ -379,26 +351,6 @@ static void conn_params_init(void)
 	cp_init.error_handler                  = conn_params_error_handler;
 
 	err_code = ble_conn_params_init(&cp_init);
-	APP_ERROR_CHECK(err_code);
-}
-
-
-/**
- * @brief Function for putting the chip into sleep mode.
- *
- * @note This function does not return.
- */
-static void sleep_mode_enter(void)
-{
-	uint32_t err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-	APP_ERROR_CHECK(err_code);
-
-	// Prepare wakeup buttons.
-	err_code = bsp_btn_ble_sleep_mode_prepare();
-	APP_ERROR_CHECK(err_code);
-
-	// Go to system-off mode (this function will not return; wakeup will cause a reset).
-	err_code = sd_power_system_off();
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -609,7 +561,7 @@ void gatt_init(void)
 	err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
 	APP_ERROR_CHECK(err_code);
 
-	err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, 64);
+	err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -621,35 +573,7 @@ void gatt_init(void)
  */
 void bsp_event_handler(bsp_event_t event)
 {
-	uint32_t err_code;
-	switch (event)
-	{
-	case BSP_EVENT_SLEEP:
-		sleep_mode_enter();
-		break;
 
-	case BSP_EVENT_DISCONNECT:
-		err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-		if (err_code != NRF_ERROR_INVALID_STATE)
-		{
-			APP_ERROR_CHECK(err_code);
-		}
-		break;
-
-	case BSP_EVENT_WHITELIST_OFF:
-		if (m_conn_handle == BLE_CONN_HANDLE_INVALID)
-		{
-			err_code = ble_advertising_restart_without_whitelist(&m_advertising);
-			if (err_code != NRF_ERROR_INVALID_STATE)
-			{
-				APP_ERROR_CHECK(err_code);
-			}
-		}
-		break;
-
-	default:
-		break;
-	}
 }
 
 /** @brief Function for initializing the Advertising functionality. */
@@ -722,6 +646,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		app_usbd_cdc_acm_user_event_t event)
 {
 	app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
+	static uint8_t index = 0;
 
 	switch (event)
 	{
@@ -729,9 +654,10 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 	{
     	m_is_port_open = true;
         /*Setup first transfer*/
-        ret_code_t ret = app_usbd_cdc_acm_read_any(p_cdc_acm,
-                m_rx_buffer,
-                READ_SIZE);
+    	index = 0;
+        ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
+        		&m_cdc_data_array[index],
+                1);
 		UNUSED_VARIABLE(ret);
 		ret = app_timer_stop(m_blink_cdc);
 		APP_ERROR_CHECK(ret);
@@ -762,21 +688,77 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
 	case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
 	{
-		// parse chars
-		uint16_t bytes_read = app_usbd_cdc_acm_rx_size(p_cdc_acm);
+		ret_code_t ret;
+		index++;
 
-		NRF_LOG_INFO("Bytes RCV: %u", bytes_read);
+		do
+		{
+			if ((m_cdc_data_array[index - 1] == '\n') ||
+					(m_cdc_data_array[index - 1] == '\r') ||
+					(index >= (m_ble_nus_max_data_len)))
+			{
+				if (index > 1)
+				{
+					NRF_LOG_DEBUG("Ready to send data over BLE NUS");
+					NRF_LOG_HEXDUMP_DEBUG(m_cdc_data_array, index);
 
-		uint32_t err_code = ble_nus_data_send(&m_nus,
-				(uint8_t*)m_rx_buffer,
-				&bytes_read,
-				m_conn_handle);
-		APP_ERROR_CHECK(err_code);
+					do
+					{
+						uint16_t length = (uint16_t)index;
+						if (length + sizeof(ENDLINE_STRING) < BLE_NUS_MAX_DATA_LEN)
+						{
+							memcpy(m_cdc_data_array + length, ENDLINE_STRING, sizeof(ENDLINE_STRING));
+							length += sizeof(ENDLINE_STRING);
+						}
 
-		/* Fetch data until internal buffer is empty */
-		(void)app_usbd_cdc_acm_read_any(p_cdc_acm,
-				m_rx_buffer,
-				READ_SIZE);
+						if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
+
+							usb_printf("ERROR: BLE not connected");
+						} else {
+
+							ret = ble_nus_data_send(&m_nus,
+									(uint8_t *) m_cdc_data_array,
+									&length,
+									m_conn_handle);
+						}
+
+						if (ret == NRF_ERROR_NOT_FOUND)
+						{
+							NRF_LOG_INFO("BLE NUS unavailable, data received: %s", m_cdc_data_array);
+							break;
+						}
+
+						if (ret == NRF_ERROR_RESOURCES)
+						{
+							NRF_LOG_ERROR("BLE NUS Too many notifications queued.");
+							break;
+						}
+
+						if ((ret != NRF_ERROR_INVALID_STATE) && (ret != NRF_ERROR_BUSY))
+						{
+							APP_ERROR_CHECK(ret);
+						}
+					}
+					while (ret == NRF_ERROR_BUSY);
+				}
+
+				index = 0;
+			}
+
+			/*Get amount of data transferred*/
+			size_t size = app_usbd_cdc_acm_rx_size(p_cdc_acm);
+			NRF_LOG_DEBUG("RX: size: %lu char: %c", size, m_cdc_data_array[index - 1]);
+
+			/* Fetch data until internal buffer is empty */
+			ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
+					&m_cdc_data_array[index],
+					1);
+			if (ret == NRF_SUCCESS)
+			{
+				index++;
+			}
+		}
+		while (ret == NRF_SUCCESS);
 
 		break;
 	}
@@ -789,72 +771,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 /**
  *
  */
-static void usb_cdc_trigger_xfer(void) {
-
-	NRF_LOG_DEBUG("VCOM Xfer triggered index %u with %u bytes",
-			m_tx_buffer_index,
-			m_tx_buffer_bytes_nb[m_tx_buffer_index]);
-
-	if (m_is_port_open && m_is_xfer_done)
-	{
-		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
-				m_tx_buffer[m_tx_buffer_index],
-				m_tx_buffer_bytes_nb[m_tx_buffer_index]);
-		APP_ERROR_CHECK(ret);
-
-		if (!ret) {
-			m_is_xfer_done = false;
-		}
-
-	} else if (!m_is_xfer_done) {
-		NRF_LOG_WARNING("VCOM bytes dropped");
-	} else {
-		NRF_LOG_DEBUG("Waiting for VCOM connection");
-	}
-
-	// reset old buffer
-	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
-
-	// switch buffers
-	m_tx_buffer_index++;
-	m_tx_buffer_index = m_tx_buffer_index & CDC_X_BUFFERS;
-
-	// reset new buffer
-	m_tx_buffer_bytes_nb[m_tx_buffer_index] = 0;
-
-	NRF_LOG_DEBUG("VCOM new index %u", m_tx_buffer_index);
-}
-
-
-/**
- *
- */
 void usb_cdc_tasks(void) {
-
-	/* If ring buffer is not empty, parse data. */
-	while (m_is_port_open &&
-			m_is_xfer_done &&
-			RING_BUFF_IS_NOT_EMPTY(cdc_rb1) &&
-			m_tx_buffer_bytes_nb[m_tx_buffer_index] < NRF_DRV_USBD_EPSIZE)
-	{
-		char c = RING_BUFF_GET_ELEM(cdc_rb1);
-
-		uint16_t ind = m_tx_buffer_bytes_nb[m_tx_buffer_index];
-		m_tx_buffer[m_tx_buffer_index][ind] = c;
-
-		// increase index
-		m_tx_buffer_bytes_nb[m_tx_buffer_index] += 1;
-
-		RING_BUFFER_POP(cdc_rb1);
-	}
-
-	// send if inactive and data is waiting in buffer or if the buffer is almost full
-	if ((m_tx_buffer_bytes_nb[m_tx_buffer_index] > (NRF_DRV_USBD_EPSIZE * 3 /4)) ||
-			(m_tx_buffer_bytes_nb[m_tx_buffer_index])) {
-
-		usb_cdc_trigger_xfer();
-
-	}
 
 	while (app_usbd_event_queue_process())
 	{

@@ -76,6 +76,39 @@
 #define NRF_BLE_GATT_ENABLED 1
 #endif
 
+// <e> NRF_BLE_GQ_ENABLED - nrf_ble_gq - BLE GATT Queue Module
+//==========================================================
+#ifndef NRF_BLE_GQ_ENABLED
+#define NRF_BLE_GQ_ENABLED 1
+#endif
+
+// <o> NRF_BLE_GQ_QUEUE_SIZE - Queue size for BLE GATT Queue module.
+#ifndef NRF_BLE_GQ_QUEUE_SIZE
+#define NRF_BLE_GQ_QUEUE_SIZE 8
+#endif
+
+// <o> NRF_BLE_GQ_DATAPOOL_ELEMENT_SIZE - Default size of a single element in the pool of memory objects.
+#ifndef NRF_BLE_GQ_DATAPOOL_ELEMENT_SIZE
+#define NRF_BLE_GQ_DATAPOOL_ELEMENT_SIZE 20
+#endif
+
+// <o> NRF_BLE_GQ_DATAPOOL_ELEMENT_COUNT - Default number of elements in the pool of memory objects.
+#ifndef NRF_BLE_GQ_DATAPOOL_ELEMENT_COUNT
+#define NRF_BLE_GQ_DATAPOOL_ELEMENT_COUNT 8
+#endif
+
+// <o> NRF_BLE_GQ_GATTC_WRITE_MAX_DATA_LEN - Maximal size of the data inside GATTC write request (in bytes).
+#ifndef NRF_BLE_GQ_GATTC_WRITE_MAX_DATA_LEN
+#define NRF_BLE_GQ_GATTC_WRITE_MAX_DATA_LEN 2
+#endif
+
+// <o> NRF_BLE_GQ_GATTS_HVX_MAX_DATA_LEN - Maximal size of the data inside GATTC notification or indication request (in bytes).
+#ifndef NRF_BLE_GQ_GATTS_HVX_MAX_DATA_LEN
+#define NRF_BLE_GQ_GATTS_HVX_MAX_DATA_LEN 16
+#endif
+
+// </e>
+
 // <q> BLE_DTM_ENABLED  - ble_dtm - Module for testing RF/PHY using DTM commands
  
 
@@ -95,6 +128,7 @@
 #ifndef NRF_BLE_QWR_ENABLED
 #define NRF_BLE_QWR_ENABLED 0
 #endif
+
 // <o> NRF_BLE_QWR_MAX_ATTR - Maximum number of attribute handles that can be registered. This number must be adjusted according to the number of attributes for which Queued Writes will be enabled. If it is zero, the module will reject all Queued Write requests. 
 #ifndef NRF_BLE_QWR_MAX_ATTR
 #define NRF_BLE_QWR_MAX_ATTR 0
@@ -5586,6 +5620,16 @@
 #define APP_USBD_DEVICE_VER_MINOR 0
 #endif
 
+// <o> APP_USBD_DEVICE_VER_SUB - Sub-minor device version  <0-9>
+
+
+// <i> Sub-minor device version, will be converted automatically to BCD notation. Use just decimal values.
+
+#ifndef APP_USBD_DEVICE_VER_SUB
+#define APP_USBD_DEVICE_VER_SUB 0
+#endif
+
+
 // <q> APP_USBD_CONFIG_SELF_POWERED  - Self-powered device, as opposed to bus-powered.
  
 
@@ -5638,7 +5682,6 @@
 // <0=> Normal queue 
 // <1=> Compress queue 
 // <2=> Interrupt 
-
 #ifndef APP_USBD_CONFIG_SOF_HANDLING_MODE
 #define APP_USBD_CONFIG_SOF_HANDLING_MODE 1
 #endif
@@ -6555,7 +6598,7 @@
  
 
 #ifndef NRF_SORTLIST_ENABLED
-#define NRF_SORTLIST_ENABLED 0
+#define NRF_SORTLIST_ENABLED 1
 #endif
 
 // <q> NRF_SPI_MNGR_ENABLED  - nrf_spi_mngr - SPI transaction manager
@@ -6600,7 +6643,7 @@
 
 // <o> TASK_MANAGER_CONFIG_MAX_TASKS - Maximum number of tasks which can be created 
 #ifndef TASK_MANAGER_CONFIG_MAX_TASKS
-#define TASK_MANAGER_CONFIG_MAX_TASKS 3
+#define TASK_MANAGER_CONFIG_MAX_TASKS 5
 #endif
 
 // <o> TASK_MANAGER_CONFIG_STACK_SIZE - Stack size for every task (power of 2) 
@@ -11045,14 +11088,14 @@
 
 // <o> NRF_SDH_BLE_CENTRAL_LINK_COUNT - Maximum number of central links. 
 #ifndef NRF_SDH_BLE_CENTRAL_LINK_COUNT
-#define NRF_SDH_BLE_CENTRAL_LINK_COUNT 2
+#define NRF_SDH_BLE_CENTRAL_LINK_COUNT 1
 #endif
 
 // <o> NRF_SDH_BLE_TOTAL_LINK_COUNT - Total link count. 
 // <i> Maximum number of total concurrent connections using the default configuration.
 
 #ifndef NRF_SDH_BLE_TOTAL_LINK_COUNT
-#define NRF_SDH_BLE_TOTAL_LINK_COUNT 2
+#define NRF_SDH_BLE_TOTAL_LINK_COUNT 1
 #endif
 
 // <o> NRF_SDH_BLE_GAP_EVENT_LENGTH - GAP event length. 
@@ -11388,6 +11431,13 @@
 #define NRF_BLE_GATT_BLE_OBSERVER_PRIO 1
 #endif
 
+// <o> NRF_BLE_GQ_BLE_OBSERVER_PRIO
+// <i> Priority with which BLE events are dispatched to the GATT Queue module.
+
+#ifndef NRF_BLE_GQ_BLE_OBSERVER_PRIO
+#define NRF_BLE_GQ_BLE_OBSERVER_PRIO 1
+#endif
+
 // <o> NRF_BLE_QWR_BLE_OBSERVER_PRIO  
 // <i> Priority with which BLE events are dispatched to the Queued writes module.
 
@@ -11427,9 +11477,12 @@
 // <0=> NRF_SDH_DISPATCH_MODEL_INTERRUPT 
 // <1=> NRF_SDH_DISPATCH_MODEL_APPSH 
 // <2=> NRF_SDH_DISPATCH_MODEL_POLLING 
-
 #ifndef NRF_SDH_DISPATCH_MODEL
+#if CONFIG_JLINK_MONITOR_ENABLED
+#define NRF_SDH_DISPATCH_MODEL 0
+#else
 #define NRF_SDH_DISPATCH_MODEL 1
+#endif // CONFIG_JLINK_MONITOR_ENABLED
 #endif
 
 // </h> 

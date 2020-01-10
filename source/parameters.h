@@ -8,7 +8,7 @@
 #ifndef SOURCE_PARAMETERS_H_
 #define SOURCE_PARAMETERS_H_
 
-#define APP_TIMEOUT_DELAY_MS           100
+#define APP_TIMEOUT_DELAY_MS           5
 
 #define S_TO_MS(X)                     ((X)*1000)
 
@@ -44,6 +44,8 @@
 
 #define FEC_PW_BUFFER_NB_ELEM          (240/2)
 
+#define PITCH_BUFFER_SIZE              (240/4)
+
 #define BOUCLE_DEFAULT_MODE            eBoucleGlobalModesCRS
 #define VUE_DEFAULT_MODE               eVueGlobalScreenCRS
 
@@ -51,11 +53,11 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define BARO_REFRESH_PER_MS            333
+#define BARO_REFRESH_PER_MS            250
 
-#define SENSORS_REFRESH_PER_MS         1000
+#define SENSORS_REFRESH_PER_MS         250
 
-#define ATT_BUFFER_NB_ELEM             2
+#define ATT_BUFFER_NB_ELEM             5
 
 #define FILTRE_NB                      15
 

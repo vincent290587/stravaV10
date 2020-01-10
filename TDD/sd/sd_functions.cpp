@@ -258,7 +258,7 @@ int load_parcours(Parcours& mon_parcours) {
 		if (check_memory_exception()) return -1;
 
 		// continue to perform the critical system tasks
-		yield();
+		w_task_yield();
 
 	} // fin du fichier
 

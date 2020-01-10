@@ -19,7 +19,6 @@
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
 #include "nrf_drv_clock.h"
-#include "usb_parser.h"
 #include "usb_cdc.h"
 #include "ring_buffer.h"
 #include "sd_hal.h"
@@ -50,6 +49,8 @@
 #ifndef USBD_POWER_DETECTION
 #define USBD_POWER_DETECTION true
 #endif
+
+void usb_cdc_tasks(void *p_context);
 
 static void msc_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		app_usbd_msc_user_event_t     event);
@@ -195,6 +196,11 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 {
 	app_usbd_cdc_acm_t const * p_cdc_acm = app_usbd_cdc_acm_class_get(p_inst);
 
+	// remove the delay on the task
+	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.usb_id);
+	}
+
 	switch (event)
 	{
 	case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
@@ -229,7 +235,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
 		size_t ind = 0;
 		while (bytes_read--) {
-			usb_cdc_decoder(m_rx_buffer[ind++]);
+			model_input_virtual_uart(m_rx_buffer[ind++]);
 		}
 
 		/* Fetch data until internal buffer is empty */
@@ -242,6 +248,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 	default:
 		break;
 	}
+
 }
 
 static void usbd_user_ev_handler(app_usbd_event_type_t event)
@@ -331,6 +338,16 @@ static void usb_cdc_trigger_xfer(void) {
 	NRF_LOG_DEBUG("VCOM new index %u", m_tx_buffer_index);
 }
 
+static void _wait_for_usb(void ) {
+
+	if (m_tasks_id.usb_id != TASK_ID_INVALID &&
+			task_manager_is_started()) {
+		w_task_delay(110);
+	} else {
+		perform_system_tasks_light();
+	}
+}
+
 /**
  *
  */
@@ -353,7 +370,7 @@ void usb_cdc_diskio_init(void) {
 	// Initialize FATFS disk I/O interface by providing the block device.
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), perform_system_tasks_light)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), _wait_for_usb)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
@@ -366,6 +383,21 @@ void usb_cdc_diskio_init(void) {
 
 }
 
+void usb_new_event_isr_handler(app_usbd_internal_evt_t const * const p_event, bool queued)
+{
+	W_SYSVIEW_RecordEnterISR();
+
+    UNUSED_PARAMETER(p_event);
+    UNUSED_PARAMETER(queued);
+
+	// remove the delay on the task
+	if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.usb_id);
+	}
+
+	W_SYSVIEW_RecordExitISR();
+}
+
 /**
  *
  */
@@ -373,6 +405,7 @@ void usb_cdc_init(void)
 {
 	ret_code_t ret;
 	static const app_usbd_config_t usbd_config = {
+	        .ev_isr_handler = usb_new_event_isr_handler,
 			.ev_state_proc = usbd_user_ev_handler
 	};
 
@@ -391,6 +424,10 @@ void usb_cdc_init(void)
 	app_usbd_class_inst_t const * class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&m_app_cdc_acm);
 	ret = app_usbd_class_append(class_cdc_acm);
 	APP_ERROR_CHECK(ret);
+
+	if (m_tasks_id.usb_id == TASK_ID_INVALID) {
+		m_tasks_id.usb_id = task_create(usb_cdc_tasks, "usb_cdc_tasks", NULL);
+	}
 
 	LOG_INFO("USBD CDC / MSC configured.");
 
@@ -496,19 +533,19 @@ void usb_cdc_close(void) {
  */
 void usb_flush(void) {
 
-	/* If ring buffer is not empty, parse data. */
-	while (m_is_port_open &&
-			RING_BUFF_IS_NOT_EMPTY(cdc_rb1))
-	{
-		perform_system_tasks();
-	}
+	usb_cdc_process();
 
 }
 
 /**
  *
  */
-void usb_cdc_tasks(void) {
+void usb_cdc_process(void) {
+
+	while (app_usbd_event_queue_process())
+	{
+		/* Nothing to do */
+	}
 
 	/* If ring buffer is not empty, parse data. */
 	while (m_is_port_open &&
@@ -538,6 +575,23 @@ void usb_cdc_tasks(void) {
 	while (app_usbd_event_queue_process())
 	{
 		/* Nothing to do */
+	}
+
+}
+
+/**
+ *
+ */
+void usb_cdc_tasks(void *p_context) {
+
+	for (;;) {
+
+		usb_cdc_process();
+
+		if (task_manager_is_started()) {
+			w_task_delay(50);
+		}
+
 	}
 }
 

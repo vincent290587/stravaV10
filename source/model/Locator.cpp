@@ -72,7 +72,7 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 	locator.nrf_loc.setIsUpdated();
 
 	// notify task
-    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 }
 
 
@@ -300,7 +300,7 @@ void Locator::tasks() {
 		if (gps.location.isValid()) {
 
 			// notify task
-		    events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
+			w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
 
 			gps_loc.data.speed  = (float)gps.speed.kmph();
 			gps_loc.data.alt    = (float)gps.altitude.meters();
@@ -363,6 +363,8 @@ bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
 #ifndef TDD
 void Locator::displayGPS2(void) {
 
+	sysview_task_void_enter(Ls027Print);
+
 //	int totalMessages = atoi(totalGPGSVMessages.value());
 //	int currentMessage = atoi(messageNumber.value());
 
@@ -395,6 +397,8 @@ void Locator::displayGPS2(void) {
 	vue.println(line);
 
 	vue.println("  ------");
+
+	sysview_task_void_exit(Ls027Print);
 
 }
 

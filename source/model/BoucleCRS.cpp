@@ -13,6 +13,10 @@
 #include "sd_functions.h"
 #include "segger_wrapper.h"
 
+#ifdef TDD
+#include "tdd_logger.h"
+#endif
+
 /**
  *
  */
@@ -68,14 +72,14 @@ void BoucleCRS::init() {
 void BoucleCRS::run() {
 
 	m_dist_next_seg = 9999;
-	float tmp_dist;
+	float tmp_dist = 0.0f;
 
 	if (m_needs_init) this->init();
 
 	// wait for location to be updated
-	(void)events_wait(TASK_EVENT_LOCATION);
+	(void)w_task_events_wait(TASK_EVENT_LOCATION);
 
-	LOG_INFO("Locator is updated (%u)\r\n", millis());
+	LOG_INFO("\r\nLocator is updated (%u)", millis());
 
 	// reset the segment manager
 	segMngr.clearSegs();
@@ -108,7 +112,10 @@ void BoucleCRS::run() {
 					tmp_dist < m_dist_next_seg) m_dist_next_seg = (uint16_t)tmp_dist;
 
 			// we don't possess enough points to continue calculating...
-			if (mes_points.size() < 2) continue;
+			if (mes_points.size() < 2) {
+				LOG_INFO("Not enough points: %d", mes_points.size());
+				break;
+			}
 
 			if (seg.getStatus() != SEG_OFF) {
 
@@ -141,6 +148,9 @@ void BoucleCRS::run() {
 			segMngr.addSegment(seg);
 
 		} // fin isValid
+		else {
+			LOG_INFO("Segment not valid...");
+		}
 
 	} // fin for
 	sysview_task_void_exit(MainSegLoop);
@@ -151,11 +161,17 @@ void BoucleCRS::run() {
 
 	LOG_INFO("Next segment: %u", att.next);
 
+#ifdef TDD
+	tdd_logger_log_int(TDD_LOGGING_SEG_DIST  , att.next);
+	tdd_logger_log_int(TDD_LOGGING_NB_SEG_ACT, att.nbact);
+#endif
+
 	notifications_setNotify(&neopixel);
 
-	vue.refresh();
-
-	m_last_refresh.setUpdateTime();
+	// ready for displaying
+	if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.ls027_id);
+	}
 
 }
 

@@ -36,7 +36,7 @@
 #define isnanf(X)      __isnanf(X)
 #define isinff(X)      __isinff(X)
 char * fcvtf(float, int, int *, int *);
-#else
+#elif !defined(WIN32)
 #define isnanf(X)      false
 #define isinff(X)      false
 #endif
