@@ -403,7 +403,11 @@ void Vue::cadranRR(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *cha
 	setTextSize(3);
 
 	uint32_t cur_zone = zone.getCurBin();
-	uint32_t val_max = zone.getValMax();
+	float val_max = zone.getValMax();
+
+	// force span to be in a window
+	val_max = MIN(val_max, 50);
+	val_max = MAX(val_max, 5);
 
 	// loop over bins
 	for (uint32_t i=0; i< zone.getNbBins(); i++) {
@@ -425,7 +429,7 @@ void Vue::cadranRR(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *cha
 
 	setCursor(x - _width / 2 + 40, y + 17 + zone.getNbBins()*6);
 	setTextSize(2);
-	print((unsigned)val_max);
+	print((unsigned)zone.getValMax());
 
 	// print delimiters
 	drawFastVLine(_width / 2, _height / nb_lig * (p_lig - 1), _height / nb_lig, 1);

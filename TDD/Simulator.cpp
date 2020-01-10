@@ -143,7 +143,9 @@ void simulator_tasks(void) {
 	static uint32_t hrm_timestamp = 0;
 	hrm_info.bpm = 120 + (rand() % 65);
 	if(millis() - hrm_timestamp > hrm_info.rr) {
-		hrm_info.rr = 900 + (rand() % 160);
+		hrm_info.rr = 900 + (rand() % 24);
+//		static int i=0;
+//		hrm_info.rr = i++ %2==0 ? 700 : 900;
 		hrm_info.timestamp = millis();
 
 		hrm_timestamp = millis();
