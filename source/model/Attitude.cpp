@@ -67,31 +67,28 @@ void Attitude::computeFusion(void) {
 	}
 
 	// 2 seconds time constant
-	const float taub = 2 / (2 + BARO_REFRESH_PER_MS / 1000.);
+	const float taub = 2 / (2 + BARO_REFRESH_PER_MS / 1000.f);
 	m_cur_ele = taub * m_cur_ele + (1 - taub) * (ele);
 
 	float alti = ele;
 	static float alti_prev = ele;
-
-	static float cur_time_prev;
-	float dt = ((float)millis() - cur_time_prev) / 1000.0f;
 
 	float pitch_rad;
 	fxos_get_pitch(pitch_rad);
 
 	// 3 seconds time constant
 	static float alpha_bar;
-	const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.);
+	const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.f);
 	float innov = pitch_rad;
 	alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
 
 	// work on alpha zero
-	if (m_speed_ms < 1.5f || dt < 0.01f || m_speed_ms * dt < 0.1) {
+	if (m_speed_ms < 1.5f) {
 		return;
 	}
 
 	// about 40 seconds time constant
-	float new_alpha_z = pitch_rad - atan2f((alti - alti_prev) , (m_speed_ms * dt));
+	float new_alpha_z = pitch_rad - atan2f((alti - alti_prev) * 1000.f , (m_speed_ms * SENSORS_REFRESH_PER_MS));
 	static float alpha_zero = 0;
 	alpha_zero = new_alpha_z * 0.003 + 0.997 * alpha_zero;
 
@@ -102,7 +99,6 @@ void Attitude::computeFusion(void) {
 			180.f*(alpha_bar-alpha_zero)/3.1415f,
 			180.f*alpha_zero/3.1415f);
 
-	cur_time_prev = millis();
 	alti_prev = alti;
 
 #ifdef TDD
