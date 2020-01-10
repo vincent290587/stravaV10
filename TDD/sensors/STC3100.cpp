@@ -12,7 +12,19 @@
 #include "STC3100.h"
 #include "utils.h"
 
+static uint32_t m_is_updated = 0;
 
+/***************************************************************************
+ C FUNCTIONS
+ ***************************************************************************/
+
+void set_stc_updated(void) {
+	m_is_updated = 1;
+}
+
+bool is_stc_updated(void) {
+	return m_is_updated;
+}
 
 
 /***************************************************************************
@@ -83,7 +95,7 @@ void STC3100::shutdown(void) {
     @brief  Reads the sensor
  */
 /**************************************************************************/
-bool STC3100::refresh(tSTC31000Data *_data)
+bool STC3100::refresh(void)
 {
 	return true;
 }

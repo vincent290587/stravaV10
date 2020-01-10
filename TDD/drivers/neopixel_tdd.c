@@ -101,7 +101,7 @@ static void _neopixel_show(neopixel_strip_t *strip)
 {
 	neopixel_update(strip->leds[0].simple.r, strip->leds[0].simple.g, strip->leds[0].simple.b);
 
-	LOG_INFO("NeoPixel updated");
+	LOG_DEBUG("NeoPixel updated");
 }
 
 void neopixel_show(neopixel_strip_t *strip)

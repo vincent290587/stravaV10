@@ -10,8 +10,11 @@
 #include <string.h>
 #include "ff.h"
 #include "millis.h"
+#include "bme280.h"
+#include "tdd_logger.h"
 #include "uart_tdd.h"
-#include "Model_tdd.h"
+#include "usb_cdc.h"
+#include "Model.h"
 #include "Simulator.h"
 #include "segger_wrapper.h"
 #include "assert_wrapper.h"
@@ -35,11 +38,13 @@ static FIL* g_fileObject;   /* File object */
 #ifdef LS027_GUI
 #define NEW_POINT_PERIOD_MS       400
 #else
-#define NEW_POINT_PERIOD_MS       50
+#define NEW_POINT_PERIOD_MS       1000
 #endif
 
-static uint32_t last_point_ms = 0;
 static uint32_t nb_gps_loc = 0;
+
+static float cur_speed = 20.0f;
+static float alt_sim = 100.0f;
 
 static void simulator_modes(void) {
 
@@ -48,7 +53,10 @@ static void simulator_modes(void) {
 		eSimulationStepMenu1,
 		eSimulationStepFEC,
 		eSimulationStepMenu2,
-		eSimulationStepCRS2
+		eSimulationStepCRS2,
+		eSimulationStepCRS3,
+		eSimulationStepCRS4,
+		eSimulationStepEnd,
 	};
 
 	static eSimulationStep m_step = eSimulationStepCRS1;
@@ -57,7 +65,10 @@ static void simulator_modes(void) {
 	switch (m_step) {
 	case eSimulationStepCRS1:
 		if (millis() > m_next_event_ms) {
+		    LOG_INFO("Going to FEC mode");
+
 			vue.tasks(eButtonsEventCenter);
+			w_task_yield();
 			vue.tasks(eButtonsEventRight);
 
 			m_next_event_ms += 30000;
@@ -68,43 +79,124 @@ static void simulator_modes(void) {
 	case eSimulationStepMenu1:
 	{
 		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
 
 		m_step = eSimulationStepFEC;
 	} break;
 	case eSimulationStepFEC:
 	if (millis() > m_next_event_ms) {
+		LOG_INFO("Going to PRC mode");
 		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
+		w_task_yield();
 
 		m_step = eSimulationStepMenu2;
 	} break;
 	case eSimulationStepMenu2:
 	{
 		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
 		vue.tasks(eButtonsEventRight);
 		vue.tasks(eButtonsEventRight);
+		w_task_yield();
 
 		m_step = eSimulationStepCRS2;
 	} break;
 	case eSimulationStepCRS2:
-		// no break
+	{
+		vue.tasks(eButtonsEventCenter);
+		w_task_yield();
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		vue.tasks(eButtonsEventLeft);
+		w_task_yield();
+
+		m_next_event_ms = 250000;
+
+		m_step = eSimulationStepCRS3;
+	} break;
+	case eSimulationStepCRS3:
+	if (millis() > m_next_event_ms) {
+		LOG_INFO("Going to CRS mode");
+
+		vue.tasks(eButtonsEventCenter);
+
+		m_step = eSimulationStepCRS4;
+	} break;
+	case eSimulationStepCRS4:
+	{
+		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventRight);
+		vue.tasks(eButtonsEventCenter);
+
+		m_next_event_ms = millis() + 15000;
+
+		m_step = eSimulationStepEnd;
+	} break;
+
+	case eSimulationStepEnd:
+	if (millis() > m_next_event_ms) {
+		// continue to cycle through screens
+		vue.tasks(eButtonsEventRight);
+
+		m_next_event_ms = millis() + 15000;
+	} break;
 	default:
 		break;
 	}
 
 }
 
-extern float m_press_sim;
+void print_mem_state(void) {
+
+	static int max_mem_used = 0;
+	int tot_point_mem = 0;
+	tot_point_mem += Point::getObjectCount() * sizeof(Point);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
+
+	if (tot_point_mem > max_mem_used) max_mem_used = tot_point_mem;
+
+	LOG_INFO(">> Allocated pts: %d 2D %d 3D / mem %d o / %d o",
+			Point2D::getObjectCount(), Point::getObjectCount(),
+			tot_point_mem, max_mem_used);
+}
 
 void simulator_simulate_altitude(float alti) {
 
-	const float sea_level_pressure = 1003.0f;
+	const float sea_level_pressure = 1015.0f;
 
-	m_press_sim = sea_level_pressure * powf(1 - alti / 44330.0f, 1.0 / 0.1903f);
+	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
+
+	bme280_set_pressure(sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f));
+
 }
 
 void simulator_init(void) {
+
+	tdd_logger_init("simu.txt");
+
+	tdd_logger_log_name(TDD_LOGGING_TIME, "time");
+	tdd_logger_log_name(TDD_LOGGING_P2D, "p2d");
+	tdd_logger_log_name(TDD_LOGGING_P3D, "p3d");
+	tdd_logger_log_name(TDD_LOGGING_SEG_DIST, "dist");
+	tdd_logger_log_name(TDD_LOGGING_NB_SEG_ACT, "nb_act");
+	tdd_logger_log_name(TDD_LOGGING_HP, "hp");
+	tdd_logger_log_name(TDD_LOGGING_ALPHA, "a");
+	tdd_logger_log_name(TDD_LOGGING_ALPHA0, "a_0");
+	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE, "sim_slope");
+	tdd_logger_log_name(TDD_LOGGING_EST_SLOPE, "est_slope");
+	tdd_logger_log_name(TDD_LOGGING_ALT_SIM, "alti_sim");
+	tdd_logger_log_name(TDD_LOGGING_ALT_EST, "alti_est");
+	tdd_logger_log_name(TDD_LOGGING_TOT_CLIMB, "climb");
+	tdd_logger_log_name(TDD_LOGGING_CUR_POWER, "power");
+	tdd_logger_log_name(TDD_LOGGING_CUR_SPEED, "speed");
 
 	g_fileObject = fopen("GPX_simu.csv", "r");
 
@@ -118,26 +210,20 @@ void simulator_init(void) {
 			sizeof(m_app_error.err_desc._buffer),
 			"Error 0x123456 in file /mnt/e/Nordic/Projects/Perso/stravaV10/TDD/Simulator.cpp:48");
 
-	m_app_error.saved_data.crc = SYSTEM_DESCR_POS_CRC;
 	m_app_error.saved_data.att.climb = 562.;
 	m_app_error.saved_data.att.dist = 17700;
 	m_app_error.saved_data.att.nbsec_act = 2780;
 	m_app_error.saved_data.att.pr = 3;
 	m_app_error.saved_data.att.date.date = 211218;
+
+	m_app_error.saved_data.crc = calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att));
 }
 
-void simulator_tasks(void) {
+static void _fec_sim(void) {
 
-	if (!g_fileObject) {
-		LOG_ERROR("No simulation file found");
-		exit(-3);
-	}
-
-	if (millis() < 5000) {
-		return;
-	}
-
-	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < 250) return;
+	last_point_ms = millis();
 
 	// HRM simulation
 	hrm_info.bpm = 120 + (rand() % 65);
@@ -148,9 +234,48 @@ void simulator_tasks(void) {
 	fec_info.el_time++;
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
+}
 
-	print_mem_state();
+static void _sensors_sim(void) {
 
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < SENSORS_READING_DELAY_MS) return;
+
+	static float cur_a = toRadians(5.0f);
+	static const float cur_a0 = toRadians(3.4f);
+	static uint32_t sim_nb = 0;
+
+	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
+
+	if (++sim_nb > 2000) {
+
+		cur_a = -cur_a;
+
+		sim_nb = 0;
+	}
+
+	fxos_set_yaw(cur_a + cur_a0);
+	simulator_simulate_altitude(alt_sim);
+
+	LOG_DEBUG("Simulating sensors");
+
+	last_point_ms = millis();
+
+	tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE, 100 * tanf(cur_a));
+	tdd_logger_log_float(TDD_LOGGING_ALT_SIM, alt_sim);
+
+	tdd_logger_flush();
+}
+
+static void _loc_sim(void) {
+
+	if (!g_fileObject) {
+		LOG_ERROR("No simulation file found");
+		exit(-3);
+	}
+
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
 	last_point_ms = millis();
 
 	simulator_modes();
@@ -162,6 +287,8 @@ void simulator_tasks(void) {
 		float data[4];
 		char *pch;
 		uint16_t pos = 0;
+
+		LOG_INFO("Simulating coordinate...");
 
 		lat = 0; lon = 0; alt = 0;// on se met au bon endroit
 		pch = strtok (g_bufferRead, " ");
@@ -176,9 +303,7 @@ void simulator_tasks(void) {
 		lon   = data[1];
 		alt   = data[2];
 
-		simulator_simulate_altitude(alt);
-
-		LOG_INFO("Input alt.:  %f", alt);
+		LOG_DEBUG("Input alt.:  %f", alt);
 
 		if (pos == 4) {
 			// file contains the rtime
@@ -221,15 +346,18 @@ void simulator_tasks(void) {
 		sLnsInfo lns_info;
 		lns_info.lat = lat * 10000000.;
 		lns_info.lon = lon * 10000000.;
-		lns_info.ele = alt * 100.;
+		lns_info.ele = (alt_sim + 32.3f) * 100.;
 		lns_info.secj = (int)rtime;
 		lns_info.date = 11218;
-		lns_info.speed = 20. * 10.;
+		lns_info.speed = cur_speed * 10.;
 		locator_dispatch_lns_update(&lns_info);
 #endif
 
 	} else {
 		fclose(g_fileObject);
+
+		// test msc mode
+		usb_cdc_start_msc();
 
 #ifdef TDD_RANDOMIZE
 		static int nb_tests = 0;
@@ -255,6 +383,24 @@ void simulator_tasks(void) {
 		exit(0);
 
 	}
+}
+
+void simulator_tasks(void) {
+
+	tdd_logger_log_int(TDD_LOGGING_TIME, millis());
+
+	if (millis() < 500) {
+
+		tdd_logger_start();
+		return;
+	}
+
+	tdd_logger_log_int(TDD_LOGGING_P2D, Point2D::getObjectCount());
+	tdd_logger_log_int(TDD_LOGGING_P3D, Point::getObjectCount());
+
+	_fec_sim();
+	_loc_sim();
+	_sensors_sim();
 
 }
 

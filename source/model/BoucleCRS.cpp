@@ -13,6 +13,10 @@
 #include "sd_functions.h"
 #include "segger_wrapper.h"
 
+#ifdef TDD
+#include "tdd_logger.h"
+#endif
+
 /**
  *
  */
@@ -68,7 +72,7 @@ void BoucleCRS::init() {
 void BoucleCRS::run() {
 
 	m_dist_next_seg = 9999;
-	float tmp_dist;
+	float tmp_dist = 0.0f;
 
 	if (m_needs_init) this->init();
 
@@ -157,11 +161,17 @@ void BoucleCRS::run() {
 
 	LOG_INFO("Next segment: %u", att.next);
 
+#ifdef TDD
+	tdd_logger_log_int(TDD_LOGGING_SEG_DIST  , att.next);
+	tdd_logger_log_int(TDD_LOGGING_NB_SEG_ACT, att.nbact);
+#endif
+
 	notifications_setNotify(&neopixel);
 
-	vue.refresh();
-
-	m_last_refresh.setUpdateTime();
+	// ready for displaying
+	if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_tasks_id.ls027_id);
+	}
 
 }
 
