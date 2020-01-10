@@ -16,7 +16,7 @@
 #include "millis.h"
 #include "sd_functions.h"
 #include "Simulator.h"
-#include "Model_tdd.h"
+#include "Model.h"
 #include "i2c_scheduler.h"
 #include "segger_wrapper.h"
 #include "GUI_connector.h"

@@ -52,6 +52,7 @@ include_directories(
 	TDD/timer
 	TDD/sensors
 	TDD/scheduler
+	TDD/TDD
 	libraries/AdafruitGFX
     libraries/AdafruitGFX/Fonts
 	libraries/AltiBaro
@@ -100,6 +101,7 @@ set(SRCS
 	TDD/drivers/ls027_tdd.cpp
 	TDD/drivers/neopixel_tdd.c
     TDD/logger/tdd_logger.c
+    TDD/TDD/GUI_connector.cpp
     segger_wrapper.c
     rf/ant_device_manager.cpp
 	libraries/utils/WString.cpp

@@ -29,7 +29,7 @@
 #endif
 
 #include "gpio.h"
-#include "Model_tdd.h"
+#include "Model.h"
 #include "segger_wrapper.h"
 
 extern int sockfd;

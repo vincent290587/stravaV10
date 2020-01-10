@@ -14,7 +14,7 @@
 #include "tdd_logger.h"
 #include "uart_tdd.h"
 #include "usb_cdc.h"
-#include "Model_tdd.h"
+#include "Model.h"
 #include "Simulator.h"
 #include "segger_wrapper.h"
 #include "assert_wrapper.h"
