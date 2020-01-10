@@ -29,3 +29,11 @@ void ble_nus_tasks(void) {
 
 
 }
+
+void ant_tasks(void) {
+
+}
+
+void roller_manager_tasks(void) {
+
+}

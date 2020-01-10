@@ -28,6 +28,9 @@ void ble_start_evt(eBleEventType evt);
 
 void ble_get_navigation(sKomootNavigation *nav);
 
+void fec_init(void);
+
+void roller_manager_tasks(void);
 
 #ifdef __cplusplus
 }
