@@ -27,10 +27,38 @@ static bool m_is_color_inverted = false;
 
 uint8_t ls027_tdd_buffer[LS027_BUFFER_SIZE];
 
+/*******************************************************************************
+ * Mutex
+ ******************************************************************************/
+
+static volatile uint8_t m_ls27_mutex_taken = 0;
+
+static void _ls027_mutex_take(void) {
+
+	while (m_ls27_mutex_taken) {
+
+		w_task_delay(25);
+
+		// mutex timeout
+		m_ls27_mutex_taken -= 1;
+	}
+
+	m_ls27_mutex_taken = 10;
+
+}
+
+static void _ls027_mutex_give(void) {
+
+	m_ls27_mutex_taken = 0;
+}
+
 
 /////////  STATIC FUNCTIONS
 
 static void ls027_spi_buffer_clear(void) {
+
+	_ls027_mutex_take();
+
 	LOG_DEBUG("LS027 buffers cleared");
 
 	if (!m_is_color_inverted) {
@@ -38,6 +66,8 @@ static void ls027_spi_buffer_clear(void) {
 	} else {
 		memset(ls027_tdd_buffer, LS027_PIXEL_GROUP_BLACK, sizeof(ls027_tdd_buffer));
 	}
+
+	_ls027_mutex_give();
 }
 
 /////////  FUNCTIONS
@@ -59,9 +89,13 @@ void LS027_InvertColors(void) {
 
 void LS027_UpdateFull(void) {
 
+	_ls027_mutex_take();
+
 	GUI_UpdateLS027();
 
 	LOG_INFO("LS027 Updated");
+
+	_ls027_mutex_give();
 
 }
 
