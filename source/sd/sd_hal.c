@@ -14,6 +14,7 @@
 #include "nor_defines.h"
 #include "sd_hal.h"
 #include "segger_wrapper.h"
+#include "task_manager_wrapper.h"
 
 #include "ff.h"
 #include "diskio_blkdev.h"
@@ -24,7 +25,7 @@ static FATFS fs;
 
 static bool m_is_fat_mounted = false;
 
-#define QSPI_TEST_DATA_SIZE 32
+#define QSPI_TEST_DATA_SIZE 512
 static uint8_t m_buffer_tx[QSPI_TEST_DATA_SIZE];
 static uint8_t m_buffer_rx[QSPI_TEST_DATA_SIZE];
 
@@ -34,7 +35,18 @@ extern bool configure_memory();
 
 void format_memory() {
 
-	LOG_WARNING("Forbidden");
+	LOG_WARNING("Process of erasing first block start");
+
+	for (uint16_t i = 0; i < 512; i++) {
+
+		uint32_t err_code = nrfx_qspi_erase(QSPI_ERASE_LEN_LEN_4KB, i * 4096U);
+		APP_ERROR_CHECK(err_code);
+
+		LOG_WARNING("Block %d erased...", i);
+
+		w_task_delay(25);
+	}
+
 	return;
 }
 
@@ -52,49 +64,52 @@ void test_memory(void)
     uint32_t i;
     uint32_t err_code;
 
-    NRF_LOG_INFO("QSPI write and read example");
+    LOG_WARNING("Test memory start...");
 
     for (i = 0; i < QSPI_TEST_DATA_SIZE; ++i) {
       m_buffer_tx[i] = (uint8_t)i;
     }
     m_buffer_tx[0] = 0xDB;
 
-    configure_memory();
+    // put memory in given state
+    //configure_memory();
 
-    NRF_LOG_INFO("Process of erasing first block start");
+    LOG_WARNING("Process of erasing first block start");
     err_code = nrfx_qspi_erase(QSPI_ERASE_LEN_LEN_4KB, 0);
     APP_ERROR_CHECK(err_code);
 
-    delay_ms(1000);
-
-    NRF_LOG_INFO("Process of writing data start");
-    err_code = nrfx_qspi_write(m_buffer_tx, QSPI_TEST_DATA_SIZE, 0);
+    w_task_delay(25);
+    LOG_WARNING("Process of writing data start");
+    err_code = disk_write(0, m_buffer_tx, 0, 1);
     APP_ERROR_CHECK(err_code);
 
-    delay_ms(30);
+    w_task_delay(20);
+    disk_ioctl(0, CTRL_SYNC, 0);
 
-    NRF_LOG_INFO("Process of reading data start");
-    err_code = nrfx_qspi_read(m_buffer_rx, QSPI_TEST_DATA_SIZE, 0);
+    LOG_WARNING("Process of reading data start");
 
-    delay_ms(30);
-    NRF_LOG_INFO("Data read");
+    err_code = disk_read(0, m_buffer_rx, 0, 1);
+    APP_ERROR_CHECK(err_code);
+
+    w_task_delay(20);
+    LOG_WARNING("Data read");
 
     int cnt = 0;
-    for (int i = 0; i < QSPI_TEST_DATA_SIZE; i++) {
+    for (i = 0; i < QSPI_TEST_DATA_SIZE; i++) {
       if (m_buffer_rx[i] != m_buffer_tx[i]) {
         cnt++;
       }
     }
-    NRF_LOG_INFO("--> %u different bytes", cnt);
+    LOG_WARNING("--> %u different bytes", cnt);
 
-    NRF_LOG_INFO("Compare...");
+    LOG_WARNING("Compare...");
     if (memcmp(m_buffer_tx, m_buffer_rx, QSPI_TEST_DATA_SIZE) == 0)
     {
-        NRF_LOG_INFO("Data consistent");
+    	LOG_WARNING("Data consistent");
     }
     else
     {
-        NRF_LOG_INFO("Data inconsistent");
+    	LOG_WARNING("Data inconsistent");
     }
 
 }
@@ -120,6 +135,8 @@ static void fatfs_mkfs(void)
         LOG_ERROR("Mkfs failed.");
         return;
     }
+
+    w_task_yield();
 
     LOG_INFO("Mounting volume...");
     ff_result = f_mount(&fs, "", 1);
@@ -156,8 +173,6 @@ int fatfs_init(void) {
 
 		delay_ms(1000);
 	}
-
-	//test_memory();
 
 	if (disk_state)
 	{

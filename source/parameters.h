@@ -20,8 +20,6 @@
 
 #define LNS_OVER_GPS_DTIME_S           6
 
-#define SENSORS_READING_DELAY_MS       250
-
 #define BOUCLE_FEC_UPDATE_RATE_MS      1000
 
 #define BACKLIGHT_AUTO_START_RAW_VIS   5
@@ -55,7 +53,7 @@
 
 #define BARO_REFRESH_PER_MS            250
 
-#define SENSORS_REFRESH_PER_MS         250
+#define SENSORS_REFRESH_PER_MS         BARO_REFRESH_PER_MS
 
 #define ATT_BUFFER_NB_ELEM             5
 

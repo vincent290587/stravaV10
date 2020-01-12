@@ -41,7 +41,6 @@
 #if NRF_MODULE_ENABLED(NRF_BLOCK_DEV_QSPI)
 #include "nrf_serial_flash_params.h"
 #include "nrf_block_dev_qspi.h"
-#include "task_manager_wrapper.h"
 #include <inttypes.h>
 
 /**@file
@@ -60,6 +59,8 @@
 #define NRF_LOG_LEVEL       0
 #endif
 #include "nrf_log.h"
+
+#include "segger_wrapper.h"
 
 #define QSPI_STD_CMD_WRSR    0x01   /**< Write status register command*/
 #define QSPI_STD_CMD_RSTEN   0x66   /**< Reset enable command*/
@@ -163,8 +164,6 @@ static void block_dev_qspi_read_from_eunit(nrf_block_dev_qspi_t const * p_qspi_d
  * @brief Active QSPI block device handle. Only one instance.
  * */
 static nrf_block_dev_qspi_t const * m_active_qspi_dev;
-
-//static task_id_t m_task_id = TASK_ID_INVALID;
 
 static void qspi_handler(nrf_drv_qspi_evt_t event, void * p_context)
 {
@@ -280,17 +279,17 @@ static void qspi_handler(nrf_drv_qspi_evt_t event, void * p_context)
             UNUSED_VARIABLE(ret);
             break;
         }
+        case NRF_BLOCK_DEV_QSPI_STATE_IDLE:
+        {
+        	LOG_WARNING("Work incorrect IDLE state");
+        } break;
         default:
-            ASSERT(0);
+        {
+            LOG_ERROR("Work invalid state: %u", p_work->state);
+        	APP_ERROR_CHECK(5);
+        }
             break;
     }
-
-//    if (m_task_id != TASK_ID_INVALID &&
-//    		p_work->state == NRF_BLOCK_DEV_QSPI_STATE_IDLE &&
-//    		task_manager_is_started()) {
-//    	w_task_delay_cancel(m_task_id);
-//    	m_task_id = TASK_ID_INVALID;
-//    }
 }
 
 static void wait_for_idle(nrf_block_dev_qspi_t const * p_qspi_dev)
@@ -298,13 +297,9 @@ static void wait_for_idle(nrf_block_dev_qspi_t const * p_qspi_dev)
     nrf_block_dev_qspi_work_t * p_work = p_qspi_dev->p_work;
     while (p_work->state != NRF_BLOCK_DEV_QSPI_STATE_IDLE)
     {
-//    	if (task_manager_is_started()) {
-//    		m_task_id = w_task_id_get();
-//    		w_task_delay(10);
-//    	} else {
-//    		__WFE();
-//    	}
-    	__WFE();
+        w_task_yield();
+
+        __WFI();
     }
 }
 
@@ -320,35 +315,35 @@ static ret_code_t block_dev_qspi_init(nrf_block_dev_t const * p_blk_dev,
 
     ret_code_t ret = NRF_SUCCESS;
 
-    NRF_LOG_INST_DEBUG(p_qspi_dev->p_log, "Init");
+    LOG_WARNING("QSPI BLK DEV Init");
 
     if (p_qspi_dev->qspi_bdev_config.block_size % BD_PAGE_PROGRAM_SIZE)
     {
         /*Unsupported block size*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Unsupported block size because of program page size");
+    	LOG_ERROR("Unsupported block size because of program page size");
         return NRF_ERROR_NOT_SUPPORTED;
     }
 
     if (NRF_BLOCK_DEV_QSPI_ERASE_UNIT_SIZE % p_qspi_dev->qspi_bdev_config.block_size)
     {
         /*Unsupported block size*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Unsupported block size because of erase unit size");
+    	LOG_ERROR("Unsupported block size because of erase unit size");
         return NRF_ERROR_NOT_SUPPORTED;
     }
 
     if (m_active_qspi_dev)
     {
         /* QSPI instance is BUSY*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Cannot init because QSPI is busy");
+    	LOG_ERROR("Cannot init because QSPI is busy");
         return NRF_ERROR_BUSY;
     }
 
-    ret = nrf_drv_qspi_init(p_qspi_cfg, qspi_handler, (void *)p_blk_dev);
-    if (ret != NRF_SUCCESS)
-    {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI init error: %"PRIu32"", ret);
-        return ret;
-    }
+	ret = nrf_drv_qspi_init(p_qspi_cfg, qspi_handler, (void *)p_blk_dev);
+	if (ret != NRF_SUCCESS)
+	{
+		LOG_ERROR("QSPI init error: %"PRIu32"", ret);
+		return ret;
+	}
 
     nrf_qspi_cinstr_conf_t cinstr_cfg = {
         .opcode    = QSPI_STD_CMD_RSTEN,
@@ -363,7 +358,7 @@ static ret_code_t block_dev_qspi_init(nrf_block_dev_t const * p_blk_dev,
     ret = nrf_drv_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI reset enable command error: %"PRIu32"", ret);
+    	LOG_ERROR("QSPI reset enable command error: %"PRIu32"", ret);
         return ret;
     }
 
@@ -372,7 +367,7 @@ static ret_code_t block_dev_qspi_init(nrf_block_dev_t const * p_blk_dev,
     ret = nrf_drv_qspi_cinstr_xfer(&cinstr_cfg, NULL, NULL);
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI reset command error: %"PRIu32"", ret);
+    	LOG_ERROR("QSPI reset command error: %"PRIu32"", ret);
         return ret;
     }
 
@@ -383,7 +378,7 @@ static ret_code_t block_dev_qspi_init(nrf_block_dev_t const * p_blk_dev,
     ret = nrf_drv_qspi_cinstr_xfer(&cinstr_cfg, NULL, rdid_buf);
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI get 3 byte id error: %"PRIu32"", ret);
+    	LOG_ERROR("QSPI get 3 byte id error: %"PRIu32"", ret);
         return ret;
     }
 
@@ -391,13 +386,13 @@ static ret_code_t block_dev_qspi_init(nrf_block_dev_t const * p_blk_dev,
 
     if (!serial_flash_id)
     {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI FLASH not supported");
+    	LOG_ERROR("QSPI FLASH not supported");
         return NRF_ERROR_NOT_SUPPORTED;
     }
 
     if (serial_flash_id->erase_size != NRF_BLOCK_DEV_QSPI_ERASE_UNIT_SIZE)
     {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI FLASH erase unit size not supported");
+    	LOG_ERROR("QSPI FLASH erase unit size not supported");
         return NRF_ERROR_NOT_SUPPORTED;
     }
 
@@ -447,16 +442,23 @@ static ret_code_t block_dev_qspi_uninit(nrf_block_dev_t const * p_blk_dev)
 
     NRF_LOG_INST_DEBUG(p_qspi_dev->p_log, "Uninit");
 
+    if (!m_active_qspi_dev) {
+
+    	LOG_ERROR("Cannot uninit because already uninit");
+    	return NRF_SUCCESS;
+    }
+
     if (m_active_qspi_dev != p_qspi_dev)
     {
         /* QSPI instance is BUSY*/
+    	LOG_ERROR("Cannot uninit because QSPI is busy1");
         return NRF_ERROR_BUSY;
     }
 
     if (p_work->state != NRF_BLOCK_DEV_QSPI_STATE_IDLE)
     {
         /* Previous asynchronous operation in progress*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Cannot uninit because QSPI is busy");
+    	LOG_ERROR("Cannot uninit because QSPI is busy2");
         return NRF_ERROR_BUSY;
     }
 
@@ -492,18 +494,17 @@ static ret_code_t block_dev_qspi_read_req(nrf_block_dev_t const * p_blk_dev,
 
     ret_code_t ret = NRF_SUCCESS;
 
-    NRF_LOG_INST_DEBUG(
-        p_qspi_dev->p_log,
-        "Read req from block %"PRIu32" size %"PRIu32"(x%"PRIu32") to %"PRIXPTR,
+    LOG_DEBUG(
+        "Read req from block %"PRIu32" size %"PRIu32"(x%"PRIu32") to %"PRIXPTR" (%d)",
         p_blk->blk_id,
         p_blk->blk_count,
         p_blk_dev->p_ops->geometry(p_blk_dev)->blk_size,
-        p_blk->p_buff);
+        p_blk->p_buff,
+		(__get_IPSR() & IPSR_ISR_Msk) == 0);
 
     if ((p_blk->blk_id + p_blk->blk_count) > p_work->geometry.blk_count)
     {
-       NRF_LOG_INST_ERROR(
-           p_qspi_dev->p_log,
+    	LOG_ERROR(
            "Out of range read req block %"PRIu32" count %"PRIu32" while max is %"PRIu32,
            p_blk->blk_id,
            p_blk->blk_count,
@@ -514,14 +515,14 @@ static ret_code_t block_dev_qspi_read_req(nrf_block_dev_t const * p_blk_dev,
     if (m_active_qspi_dev != p_qspi_dev)
     {
         /* QSPI instance is BUSY*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Cannot read because QSPI is busy");
+    	LOG_ERROR("Cannot read because QSPI is busy");
         return NRF_ERROR_BUSY;
     }
 
     if (p_work->state != NRF_BLOCK_DEV_QSPI_STATE_IDLE)
     {
         /* Previous asynchronous operation in progress*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Cannot read because of ongoing previous operation");
+    	LOG_ERROR("Cannot read because of ongoing previous operation");
         return NRF_ERROR_BUSY;
     }
 
@@ -536,7 +537,7 @@ static ret_code_t block_dev_qspi_read_req(nrf_block_dev_t const * p_blk_dev,
 
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI read error: %"PRIu32"", ret);
+    	LOG_ERROR("QSPI read error: %"PRIu32"", ret);
         p_work->state = NRF_BLOCK_DEV_QSPI_STATE_IDLE;
         return ret;
     }
@@ -615,18 +616,6 @@ static ret_code_t block_dev_qspi_write_start(nrf_block_dev_qspi_t const * p_qspi
 
     ret_code_t err = nrf_drv_qspi_erase(NRF_QSPI_ERASE_LEN_4KB, address);
 
-    // artificial delay for power saving
-//    uint16_t timeout = 0;
-//    if (task_manager_is_started()) {
-//    	do {
-//        	w_task_delay(5);
-//        	if (timeout++ > 10) {
-//        		// max duration as per datasheet: 0.4s
-//        		return NRFX_ERROR_TIMEOUT;
-//        	}
-//    	} while(nrfx_qspi_mem_busy_check() != NRF_SUCCESS);
-//    }
-
     return err;
 }
 
@@ -697,18 +686,17 @@ static ret_code_t block_dev_qspi_write_req(nrf_block_dev_t const * p_blk_dev,
 
     ret_code_t ret = NRF_SUCCESS;
 
-    NRF_LOG_INST_DEBUG(
-        p_qspi_dev->p_log,
-        "Write req to block %"PRIu32" size %"PRIu32"(x%"PRIu32") from %"PRIXPTR,
+    LOG_DEBUG(
+        "Write req to block %"PRIu32" size %"PRIu32"(x%"PRIu32") from %"PRIXPTR" (%d)",
         p_blk->blk_id,
         p_blk->blk_count,
         p_blk_dev->p_ops->geometry(p_blk_dev)->blk_size,
-        p_blk->p_buff);
+        p_blk->p_buff,
+		(__get_IPSR() & IPSR_ISR_Msk) == 0);
 
     if ((p_blk->blk_id + p_blk->blk_count) > p_work->geometry.blk_count)
     {
-       NRF_LOG_INST_ERROR(
-           p_qspi_dev->p_log,
+    	LOG_ERROR(
            "Out of range write req block %"PRIu32" count %"PRIu32" while max is %"PRIu32,
            p_blk->blk_id,
            p_blk->blk_count,
@@ -719,14 +707,14 @@ static ret_code_t block_dev_qspi_write_req(nrf_block_dev_t const * p_blk_dev,
     if (m_active_qspi_dev != p_qspi_dev)
     {
         /* QSPI instance is BUSY*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Cannot write because QSPI is busy");
+    	LOG_ERROR("Cannot write because QSPI is busy");
         return NRF_ERROR_BUSY;
     }
 
     if (p_work->state != NRF_BLOCK_DEV_QSPI_STATE_IDLE)
     {
         /* Previous asynchronous operation in progress*/
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "Cannot write because of ongoing previous operation");
+    	LOG_ERROR("Cannot write because of ongoing previous operation");
         return NRF_ERROR_BUSY;
     }
 
@@ -762,7 +750,7 @@ static ret_code_t block_dev_qspi_write_req(nrf_block_dev_t const * p_blk_dev,
 
     if (ret != NRF_SUCCESS)
     {
-        NRF_LOG_INST_ERROR(p_qspi_dev->p_log, "QSPI write error: %"PRIu32"", ret);
+    	LOG_ERROR("QSPI write error: %"PRIu32"", ret);
         p_work->state = NRF_BLOCK_DEV_QSPI_STATE_IDLE;
         return ret;
     }
