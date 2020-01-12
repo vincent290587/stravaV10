@@ -2962,7 +2962,7 @@
 // <e> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================
 #ifndef NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED
-#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED 1
+#define NRF_BLOCK_DEV_QSPI_CONFIG_LOG_ENABLED 0
 #endif
 // <o> NRF_BLOCK_DEV_QSPI_CONFIG_LOG_LEVEL  - Default Severity level
 
@@ -5321,7 +5321,7 @@
 // <7=> 7 
 
 #ifndef NRFX_USBD_CONFIG_IRQ_PRIORITY
-#define NRFX_USBD_CONFIG_IRQ_PRIORITY 6
+#define NRFX_USBD_CONFIG_IRQ_PRIORITY 5
 #endif
 
 // <o> NRFX_USBD_CONFIG_DMASCHEDULER_MODE  - USBD DMA scheduler working scheme
@@ -5669,7 +5669,7 @@
 // <i> The size of the queue for the events that would be processed in the main loop.
 
 #ifndef APP_USBD_CONFIG_EVENT_QUEUE_SIZE
-#define APP_USBD_CONFIG_EVENT_QUEUE_SIZE 32
+#define APP_USBD_CONFIG_EVENT_QUEUE_SIZE 64
 #endif
 
 // <o> APP_USBD_CONFIG_SOF_HANDLING_MODE  - Change SOF events handling mode.

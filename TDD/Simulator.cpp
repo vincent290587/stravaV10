@@ -248,7 +248,7 @@ static void _fec_sim(void) {
 static void _sensors_sim(void) {
 
 	static uint32_t last_point_ms = 0;
-	if (millis() - last_point_ms < SENSORS_READING_DELAY_MS) return;
+	if (millis() - last_point_ms < SENSORS_REFRESH_PER_MS) return;
 
 	static float cur_a = toRadians(5.0f);
 	static const float cur_a0 = toRadians(3.4f);

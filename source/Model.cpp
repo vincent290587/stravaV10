@@ -172,6 +172,14 @@ static void model_perform_virtual_tasks(void) {
 		LOG_WARNING("fmkfs_memory start");
 		fmkfs_memory();
 	}
+	else if (m_vparser_event == 14) {
+
+		test_memory();
+	}
+	else if (m_vparser_event == 13) {
+
+		format_memory();
+	}
 
 	m_vparser_event = 0;
 }
@@ -234,7 +242,6 @@ void idle_task(void * p_context)
 		app_sched_execute();
 #endif
 
-		// TODO sysview_task_idle();
 		pwr_mgmt_run();
 
 		w_task_yield();

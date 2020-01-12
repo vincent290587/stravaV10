@@ -52,6 +52,32 @@ static bool m_is_color_inverted = true;
 static sSpimConfig m_spi_ls027_cfg;
 
 /*******************************************************************************
+ * Mutex
+ ******************************************************************************/
+
+static volatile uint8_t m_ls27_mutex_taken = 0;
+
+static void _ls027_mutex_take(void) {
+
+	while (m_ls27_mutex_taken) {
+
+		w_task_delay(25);
+
+		// mutex timeout
+		m_ls27_mutex_taken -= 1;
+	}
+
+	m_ls27_mutex_taken = 10;
+
+}
+
+static void _ls027_mutex_give(void) {
+
+	m_ls27_mutex_taken = 0;
+}
+
+
+/*******************************************************************************
  * Functions
  ******************************************************************************/
 
@@ -69,6 +95,9 @@ static void ls027_cs_off(nrfx_spim_evt_t const * p_event,
 }
 
 static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data) {
+
+	_ls027_mutex_take();
+
 	NRF_LOG_DEBUG("LS027 buffers cleared");
 
 	if (!m_is_color_inverted) {
@@ -76,6 +105,8 @@ static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data) {
 	} else {
 		memset(LS027_SpiBuf, LS027_PIXEL_GROUP_BLACK, sizeof(LS027_SpiBuf));
 	}
+
+	_ls027_mutex_give();
 }
 
 static void ls027_spi_init() {
@@ -84,7 +115,7 @@ static void ls027_spi_init() {
 	nrf_gpio_cfg_output(LS027_CS_PIN);
 
 	m_spi_ls027_cfg.handler        = ls027_cs_off;
-	m_spi_ls027_cfg.blocking       = false;
+	m_spi_ls027_cfg.blocking       = true;
 }
 
 static int ls027_prepare_buffer(void)
@@ -322,7 +353,7 @@ void LS027_ToggleVCOM(void)
 	/* Start master transfer */
 	spi_schedule(&m_spi_ls027_cfg, ls027_vcom_buffer, 2, NULL, 0);
 
-	ls027_cs_off(NULL, NULL);
+	ls027_cs_off(0, NULL);
 
 	return;
 }
@@ -339,6 +370,8 @@ void LS027_ToggleVCOM(void)
 
 void LS027_UpdateFull(void)
 {
+	_ls027_mutex_take();
+
 	// prepare the SPI commands
 	ls027_prepare_buffer();
 
@@ -346,4 +379,6 @@ void LS027_UpdateFull(void)
 
 	/* Start master transfer */
 	spi_schedule(&m_spi_ls027_cfg, LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
+
+	_ls027_mutex_give();
 }

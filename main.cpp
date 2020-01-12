@@ -190,7 +190,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     NRF_LOG_FLUSH();
 
 #ifdef DEBUG_NRF
-    NRF_BREAKPOINT_COND;
+    if (id != NRF_FAULT_ID_SDK_ERROR) NRF_BREAKPOINT_COND;
     // On assert, the system can only recover with a reset.
 #endif
 
@@ -382,7 +382,7 @@ int main(void)
 	m_tasks_id.usb_id   = TASK_ID_INVALID;
 
 #if CONFIG_JLINK_MONITOR_ENABLED
-	NVIC_SetPriority(DebugMonitor_IRQn, APP_IRQ_PRIORITY_LOW);
+	NVIC_SetPriority(DebugMonitor_IRQn, _PRIO_SD_LOW);
 #warning "!! MONITORING active !!"
 #endif
 

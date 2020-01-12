@@ -33,6 +33,8 @@ static nrfx_spim_config_t m_spi_config = NRFX_SPIM_DEFAULT_CONFIG;
 
 static bool m_is_started = false;
 
+static uint8_t m_task_id = TASK_ID_INVALID;
+
 /**
  *
  * @param p_event
@@ -51,9 +53,8 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
 
     sSpimConfig **spi_config = (sSpimConfig**)p_context;
 
-    if (p_spi_config[0]->blocking && m_tasks_id.ls027_id != TASK_ID_INVALID) {
-//    	w_task_events_set(m_tasks_id.ls027_id, TASK_EVENT_LS027_WAIT_SPI);
-    	w_task_delay_cancel(m_tasks_id.ls027_id);
+    if (m_task_id != TASK_ID_INVALID) {
+    	w_task_delay_cancel(m_task_id);
     }
 
     if (spi_config[0]) {
@@ -144,16 +145,6 @@ int spi_schedule (sSpimConfig const * spi_config,
 
 	ASSERT(m_is_started);
 
-	if (!spi_xfer_done) {
-		if (task_manager_is_started()) {
-			w_task_delay(SPIM_XFER_TIMEOUT);
-		} else {
-			while (!spi_xfer_done) {
-				perform_system_tasks_light();
-			}
-		}
-	}
-
 	p_spi_config[0] = spi_config;
 
 	ret_code_t err = nrfx_spim_xfer(&spi, &xfer_desc, 0);
@@ -170,14 +161,18 @@ int spi_schedule (sSpimConfig const * spi_config,
 		if (p_spi_config[0]->blocking) {
 
 			if (task_manager_is_started()) {
+
+				m_task_id = w_task_id_get();
+
 				w_task_delay(SPIM_XFER_TIMEOUT);
+
+				m_task_id = TASK_ID_INVALID;
 			} else {
 				while (!spi_xfer_done) {
 					perform_system_tasks_light();
 				}
 			}
 
-			LOG_DEBUG("Xfer took %ums", millis() - millis_);
 		}
 
 	}
