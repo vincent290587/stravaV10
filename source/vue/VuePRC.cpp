@@ -29,22 +29,17 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 
 	LOG_DEBUG("Last update age: %lu\r\n", locator.getLastUpdateAge());
 
-	LOG_INFO("Points2D allocated: %d\r\n",Point2D::getObjectCount()-Point::getObjectCount());
-	LOG_INFO("Points   allocated: %d\r\n",Point::getObjectCount());
+	eVuePRCScreenModes tmp_mode = m_prc_screen_mode;
 
 	// switch back and forth to GPS information page
 	if (eVuePRCScreenInit != m_prc_screen_mode &&
 			locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS) {
-		m_prc_screen_mode = eVuePRCScreenGps;
-	}
-	else if (m_prc_screen_mode == eVuePRCScreenGps &&
-			locator.getLastUpdateAge() <= LOCATOR_MAX_DATA_AGE_MS) {
-		m_prc_screen_mode = eVuePRCScreenDataFull;
+		tmp_mode = eVuePRCScreenGps;
 	}
 
 	Parcours *p_parcours = boucle_crs.m_s_parcours;
 
-	switch (m_prc_screen_mode) {
+	switch (tmp_mode) {
 	case eVuePRCScreenInit:
 	{
 		this->displayLoading();

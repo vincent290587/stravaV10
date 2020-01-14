@@ -25,12 +25,11 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 
 	LOG_DEBUG("Last update age: %lu\r\n", locator.getLastUpdateAge());
 
+	eVueCRSScreenModes tmp_mode = m_crs_screen_mode;
+
 	if (locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS ||
 			!gps_mgmt.isEPOUpdating()) {
-		m_crs_screen_mode = eVueCRSScreenInit;
-	}
-	else if (m_crs_screen_mode == eVueCRSScreenInit) {
-		m_crs_screen_mode = eVueCRSScreenDataFull;
+		tmp_mode = eVueCRSScreenInit;
 	}
 
 	if (m_crs_screen_mode != eVueCRSScreenInit) {
@@ -48,7 +47,7 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		}
 	}
 
-	switch (m_crs_screen_mode) {
+	switch (tmp_mode) {
 	case eVueCRSScreenInit:
 	{
 		// boot in screen #1
