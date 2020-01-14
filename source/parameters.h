@@ -36,7 +36,7 @@
 
 #define NB_SEG_ON_DISPLAY              2
 
-#define LOCATOR_MAX_DATA_AGE_MS        4000
+#define LOCATOR_MAX_DATA_AGE_MS        6000
 
 #define MIN_TIME_COMP_STOP_MS          5000
 

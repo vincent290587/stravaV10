@@ -15,7 +15,7 @@
 #include <Locator.h>
 
 
-static bool m_is_updated = false;
+static bool m_is_gps_updated = false;
 
 TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
@@ -47,7 +47,7 @@ uint32_t locator_encode_char(char c) {
 	if (gps.encode(c)) {
 
 		if (GPS_SENTENCE_GPRMC == gps.curSentenceType) {
-			m_is_updated = true;
+			m_is_gps_updated = true;
 		}
 
 	}
@@ -77,7 +77,7 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 
 
 Locator::Locator() {
-	m_is_updated = false;
+	m_is_gps_updated = false;
 
 	anyChanges   = false;
 
@@ -283,8 +283,8 @@ eLocationSource Locator::getDate(SDate& date_) {
  */
 void Locator::tasks() {
 
-	if (m_is_updated) {
-		m_is_updated = false;
+	if (m_is_gps_updated) {
+		m_is_gps_updated = false;
 
 		if (gps.time.isValid()) {
 			gps_loc.data.utc_time = get_sec_jour(gps.time.hour(), gps.time.minute(), gps.time.second());
