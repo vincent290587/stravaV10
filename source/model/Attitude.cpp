@@ -101,8 +101,10 @@ void Attitude::computeFusion(void) {
 	static float alpha_zero = 0;
 	alpha_zero = new_alpha_z * 0.003 + 0.997 * alpha_zero;
 
-	// update vertical speed
-	att.vit_asc = tanf(alpha_bar - alpha_zero) * m_speed_ms;
+	// update vertical speed after 3 mins
+	if (att.nbsec_act > 3.f * 60.f) {
+		att.vit_asc = tanf(alpha_bar - alpha_zero) * m_speed_ms;
+	}
 
 	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
 			180.f*(alpha_bar-alpha_zero)/3.1415f,
@@ -179,8 +181,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 	float res = 0.;
 
 	// init the altitude model
-	if ((eLocationSourceGPS == source_ ||
-			eLocationSourceNRF == source_) &&
+	if ((eLocationSourceNone != source_) &&
 			m_baro.isDataReady() &&
 			!m_baro.hasSeaLevelRef()) {
 
@@ -218,8 +219,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
 		m_app_error.saved_data.crc = 0x00;
 
-	} else if ((eLocationSourceGPS == source_ ||
-			eLocationSourceNRF == source_) &&
+	} else if ((eLocationSourceNone != source_) &&
 			m_baro.hasSeaLevelRef()) {
 
 		res = att.climb = this->filterElevation(loc_);
