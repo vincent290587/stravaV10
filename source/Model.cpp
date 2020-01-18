@@ -159,6 +159,9 @@ static void model_perform_virtual_tasks(void) {
 //			APP_ERROR_CHECK(0x18);
 //			ASSERT(0);
 	}
+	else if (m_vparser_event == 18) {
+		fxos_calibration_start();
+	}
 	else if (m_vparser_event == 17) {
 #if defined (BLE_STACK_SUPPORT_REQD)
 		ble_start_evt(eBleEventTypeStartXfer);
