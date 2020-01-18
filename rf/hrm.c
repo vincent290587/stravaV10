@@ -10,6 +10,7 @@
 #include "app_scheduler.h"
 #include "nrf_soc.h"
 #include "nrf_sdh.h"
+#include "millis.h"
 #include "app_timer.h"
 #include "ant_device_manager.h"
 

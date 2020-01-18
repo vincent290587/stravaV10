@@ -20,6 +20,11 @@
 #include "tdd_logger.h"
 #endif
 
+#ifdef USE_JSCOPE
+#include "JScope.h"
+JScope jscope;
+#endif
+
 
 static float lp1_filter_coefficients[5] =
 {
@@ -44,6 +49,10 @@ Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
 
 	m_st_buffer_nb_elem = 0;
 
+
+#ifdef USE_JSCOPE
+	jscope.init();
+#endif
 }
 
 /**
@@ -107,6 +116,18 @@ void Attitude::computeFusion(void) {
 		tdd_logger_log_float(TDD_LOGGING_ALPHA0, 180.f * alpha_zero / 3.1415f);
 		tdd_logger_log_float(TDD_LOGGING_EST_SLOPE, 100.0f * tanf(alpha_bar - alpha_zero));
 		tdd_logger_log_float(TDD_LOGGING_ALT_EST, m_cur_ele);
+#endif
+
+#ifdef USE_JSCOPE
+	{
+		// output some results to Segger JSCOPE
+		jscope.inputData(att.vit_asc, 								0);
+		jscope.inputData(180.f * (alpha_bar - alpha_zero)/3.1415f,	4);
+		jscope.inputData(180.f * alpha_zero / 3.1415f, 				8);
+		jscope.inputData(100.0f * tanf(alpha_bar - alpha_zero),		12);
+	}
+
+	jscope.flush();
 #endif
 }
 

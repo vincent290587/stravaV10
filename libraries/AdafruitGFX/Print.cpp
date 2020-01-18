@@ -264,7 +264,7 @@ size_t Print::printNumber(unsigned long n, uint8_t base, uint8_t sign)
 
 #endif
 
-size_t Print::printFloat(double number, uint8_t digits) 
+size_t Print::printFloat(float number, uint8_t digits)
 {
 	uint8_t sign=0;
 	size_t count=0;
@@ -275,21 +275,21 @@ size_t Print::printFloat(double number, uint8_t digits)
     	if (number <-4294967040.0f) return print("ovf");  // constant determined empirically
 	
 	// Handle negative numbers
-	if (number < 0.0) {
+	if (number < 0.0f) {
 		sign = 1;
 		number = -number;
 	}
 
 	// Round correctly so that print(1.999, 2) prints as "2.00"
-	double rounding = 0.5;
+	float rounding = 0.5f;
 	for (uint8_t i=0; i<digits; ++i) {
-		rounding *= 0.1;
+		rounding *= 0.1f;
 	}
 	number += rounding;
 
 	// Extract the integer part of the number and print it
 	unsigned long int_part = (unsigned long)number;
-	double remainder = number - (double)int_part;
+	float remainder = number - (float)int_part;
 	count += printNumber(int_part, 10, sign);
 
 	// Print the decimal point, but only if there are digits beyond
@@ -302,7 +302,7 @@ size_t Print::printFloat(double number, uint8_t digits)
 		if (digits > sizeof(buf) - 1) digits = sizeof(buf) - 1;
 
 		while (digits-- > 0) {
-			remainder *= 10.0;
+			remainder *= 10.0f;
 			n = (uint8_t)(remainder);
 			buf[count++] = '0' + n;
 			remainder -= n; 

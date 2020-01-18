@@ -27,11 +27,6 @@
 #define BARO_WRAPPER(X)           CONCAT_2(BARO_TYPE, X)
 #define BARO_WRAPPER3(X, Y)       CONCAT_3(X, BARO_TYPE, Y)
 
-#ifdef USE_JSCOPE
-#include "JScope.h"
-JScope jscope;
-#endif
-
 #define ATT_VIT_ASC_COEFF0_MULT     0.f
 
 #define MOV_AV_NB_VAL               18
@@ -182,24 +177,12 @@ void AltiBaro::runFilter(void) {
 	m_va_f = _lrCoef[0] - ATT_VIT_ASC_COEFF0_MULT;
 	m_alti_f = _lrCoef[1];
 
-#ifdef USE_JSCOPE
-	{
-		// output some results to Segger JSCOPE
-		jscope.inputData(input, 0);
-		jscope.inputData(m_alti_f, 4);
-		jscope.inputData(input2, 8);
-		jscope.inputData(m_va_f, 12);
-	}
-
-	jscope.flush();
-#endif
-
 	// STEP 1 : on filtre altitude et vitesse
 	if (corrsq > 0.8f) {
 	}
 
 	LOG_INFO("Vit. vert.= %d cm/s %d cm (corr= %f)",
-			(int)(m_va_f*100), (int)(m_alti_f*100), corrsq);
+			(int)(m_va_f*100.f), (int)(m_alti_f*100.f), corrsq);
 
 
 	nb_filtering++;
@@ -265,10 +248,6 @@ void AltiBaro::seaLevelForAltitude(float altitude)
 	m_is_init = true;
 
 	LOG_WARNING("Sea level set");
-
-#ifdef USE_JSCOPE
-	jscope.init();
-#endif
 
 	return;
 }
