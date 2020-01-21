@@ -52,7 +52,7 @@ include_directories(
 	TDD/timer
 	TDD/sensors
 	TDD/scheduler
-	TDD/TDD
+	TDD/sys
 	libraries/AdafruitGFX
     libraries/AdafruitGFX/Fonts
 	libraries/AltiBaro
@@ -80,7 +80,6 @@ aux_source_directory(TDD/nordic                   NORDIC)
 # Cree des variables avec les fichiers a compiler
 set(SRCS
     TDD/main_tdd.cpp
-    TDD/GUI_connector.cpp
     TDD/scheduler/task_scheduler.c
     TDD/unit_testing.cpp
 	TDD/Model_tdd.cpp
@@ -101,7 +100,7 @@ set(SRCS
 	TDD/drivers/ls027_tdd.cpp
 	TDD/drivers/neopixel_tdd.c
     TDD/logger/tdd_logger.c
-    TDD/TDD/GUI_connector.cpp
+    TDD/sys/GUI_connector.cpp
     segger_wrapper.c
     rf/ant_device_manager.cpp
 	libraries/utils/WString.cpp

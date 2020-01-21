@@ -109,7 +109,7 @@ int Print::printf(const char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-#ifdef __STRICT_ANSI__
+#ifdef WIN32
 	return 0;  // TODO: make this work with -std=c++0x
 #else
 	return vdprintf((int)this, format, ap);
@@ -120,7 +120,7 @@ int Print::printf(const __FlashStringHelper *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-#ifdef __STRICT_ANSI__
+#ifdef WIN32
 	return 0;
 #else
 	return vdprintf((int)this, (const char *)format, ap);
