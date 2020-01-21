@@ -81,8 +81,8 @@ bool test_rollover(void) {
 
 	LOG_INFO("Testing overflow...");
 
-	uint8_t el_time_prev;
-	uint8_t fec_info_el_time;
+	uint8_t el_time_prev = 0;
+	uint8_t fec_info_el_time = 0;
 	uint32_t m_el_time = 0;
 	uint32_t m_el_time_ref = 0;
 
