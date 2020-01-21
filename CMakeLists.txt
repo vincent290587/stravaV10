@@ -21,18 +21,20 @@ if(CODE_COVERAGE)
 endif(CODE_COVERAGE)
 
 if(CMAKE_HOST_UNIX)
-set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -rdynamic -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover")
+add_compile_options(-Og -rdynamic -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover)
+#set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -rdynamic -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover")
 else()
-set(CMAKE_C_FLAGS    "${CMAKE_CXX_FLAGS} -msse2 -mno-ms-bitfields")
+add_compile_options(-msse2 -mno-ms-bitfields)
 add_definitions(-DWIN32)
 add_definitions(-D_WIN32_WINNT=0x0600)
 add_definitions(-DWINVER=0x600)
 include_directories(./TDDW)
 endif()
 
-
-set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing -fsingle-precision-constant -frounding-math -fsignaling-nans")
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
+add_compile_options(-ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing -fsingle-precision-constant -frounding-math -fsignaling-nans)
+add_compile_options(-std=gnu++0x -fno-rtti -fpermissive -fexceptions)
+#set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} ")
+#set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
 
 
 # On inclut notre bibliotheque dans le processus de CMake
