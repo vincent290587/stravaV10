@@ -19,10 +19,13 @@ SegmentManager::SegmentManager() {
 
 void SegmentManager::addSegment(Segment &seg) {
 
-	if (seg.getScore() >= 0) {
+	int score = seg.getScore();
+	if (score >= 0) {
 		sVueCRSPSeg p_seg;
-		p_seg.score = seg.getScore();
+		p_seg.score = score;
 		p_seg.p_seg = &seg;
+
+		LOG_INFO("Adding seg %s with score %u",seg.getName() , score);
 
 		seg_list.push_back(p_seg);
 	}
