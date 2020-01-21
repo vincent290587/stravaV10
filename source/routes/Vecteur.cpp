@@ -62,10 +62,10 @@ void Vecteur::project(Vecteur const &vecteur_) {
 }
 
 void Vecteur::norm(void) {
-	float _norm_sq = this->getNorm();
-	if (_norm_sq < 0.001f) return;
-	_x /= my_sqrtf(_norm_sq);
-	_y /= my_sqrtf(_norm_sq);
+	float _norm = this->getNorm();
+	if (_norm < 0.001f) return;
+	_x /= _norm;
+	_y /= _norm;
 }
 
 Vecteur Vecteur::operator=(const Point *point) {
