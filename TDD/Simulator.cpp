@@ -284,7 +284,7 @@ static void _loc_sim(void) {
 	}
 
 	static uint32_t last_point_ms = 0;
-	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+	if (millis() < 8000 || millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
 	last_point_ms = millis();
 
 	simulator_modes();
@@ -330,37 +330,38 @@ static void _loc_sim(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
-#ifdef LOC_SOURCE_GPS
-		// build make NMEA sentence
-		GPRMC gprmc_(lat, lon, 0., (int)rtime);
-		int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
+		if (millis() < 15000) {
+			// build make NMEA sentence
+			GPRMC gprmc_(lat, lon, 0., (int)rtime);
+			int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
 
-		LOG_WARNING("Sentence: %s", g_bufferWrite);
+			LOG_WARNING("Sentence: %s", g_bufferWrite);
 
-		// send to uart_tdd
-		for (int i=0; i < nmea_length; i++)
-			uart_rx_handler(g_bufferWrite[i]);
+			// send to uart_tdd
+			for (int i=0; i < nmea_length; i++)
+				uart_rx_handler(g_bufferWrite[i]);
 
-		if (++nb_gps_loc == 1) {
-			sLocationData loc_data;
-			loc_data.alt = 9.5;
-			loc_data.lat = lat;
-			loc_data.lon = lon;
-			loc_data.utc_time = 15 * 3600 + 5 * 60 + 39;
-			loc_data.date = 11218;
+			if (++nb_gps_loc == 1) {
+				sLocationData loc_data;
+				loc_data.alt = 9.5;
+				loc_data.lat = lat;
+				loc_data.lon = lon;
+				loc_data.utc_time = 15 * 3600 + 5 * 60 + 39;
+				loc_data.date = 11218;
 
-			gps_mgmt.startHostAidingEPO(loc_data, 350);
+				gps_mgmt.startHostAidingEPO(loc_data, 350);
+			}
+		} else {
+			sLnsInfo lns_info;
+			lns_info.lat = lat * 10000000.;
+			lns_info.lon = lon * 10000000.;
+			lns_info.ele = (alt_sim + 32.3f) * 100.;
+			lns_info.secj = (int)rtime;
+			lns_info.date = 11218;
+			lns_info.heading = 5;
+			lns_info.speed = cur_speed * 10.;
+			locator_dispatch_lns_update(&lns_info);
 		}
-#else
-		sLnsInfo lns_info;
-		lns_info.lat = lat * 10000000.;
-		lns_info.lon = lon * 10000000.;
-		lns_info.ele = (alt_sim + 32.3f) * 100.;
-		lns_info.secj = (int)rtime;
-		lns_info.date = 11218;
-		lns_info.speed = cur_speed * 10.;
-		locator_dispatch_lns_update(&lns_info);
-#endif
 
 	} else {
 		fclose(g_fileObject);
