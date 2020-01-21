@@ -66,6 +66,7 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 	locator.nrf_loc.data.lon = (float)(lns_info->lon / 10000000.f);
 	locator.nrf_loc.data.speed = (float)(lns_info->speed / 10.f);
 
+	locator.nrf_loc.data.course = (float)(lns_info->heading);
 	locator.nrf_loc.data.utc_time = lns_info->secj;
 	locator.nrf_loc.data.date = lns_info->date;
 
@@ -187,7 +188,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 		loc_.lon = nrf_loc.data.lon;
 		loc_.alt = nrf_loc.data.alt;
 		loc_.speed = nrf_loc.data.speed;
-		loc_.course = -1;
+		loc_.course = nrf_loc.data.course;
 		date_.secj = nrf_loc.data.utc_time;
 		date_.date = nrf_loc.data.date;
 		date_.timestamp = nrf_loc.data.utc_timestamp;
