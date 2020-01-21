@@ -25,7 +25,7 @@ void SegmentManager::addSegment(Segment &seg) {
 		p_seg.score = score;
 		p_seg.p_seg = &seg;
 
-		LOG_INFO("Adding seg %s with score %u",seg.getName() , score);
+		LOG_DEBUG("Adding seg %s with score %u",seg.getName() , score);
 
 		seg_list.push_back(p_seg);
 	}
@@ -33,6 +33,6 @@ void SegmentManager::addSegment(Segment &seg) {
 
 void SegmentManager::computeOrder(void) {
 
-	if (seg_list.size() > 1) sort(seg_list.begin(), seg_list.end(), _compareScores);
+	if (seg_list.size() > 1) std::sort(seg_list.begin(), seg_list.end(), _compareScores);
 
 }

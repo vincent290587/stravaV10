@@ -23,7 +23,15 @@ VueCRS::VueCRS() : Adafruit_GFX(0, 0) {
 
 eVueCRSScreenModes VueCRS::tasksCRS() {
 
-	LOG_DEBUG("Last update age: %lu\r\n", locator.getLastUpdateAge());
+	LOG_DEBUG("Last update age: %lu", locator.getLastUpdateAge());
+
+	if (locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS) {
+
+		m_crs_screen_mode =  eVueCRSScreenInit;
+	} else {
+
+		m_crs_screen_mode =  eVueCRSScreenDataFull;
+	}
 
 	if (m_crs_screen_mode != eVueCRSScreenInit) {
 		switch (segMngr.getNbSegs()) {
@@ -38,14 +46,6 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 			m_crs_screen_mode = eVueCRSScreenDataDS;
 			break;
 		}
-	}
-
-	if (locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS) {
-
-		m_crs_screen_mode =  eVueCRSScreenInit;
-	} else {
-
-		m_crs_screen_mode = eVueCRSScreenDataFull;
 	}
 
 	switch (m_crs_screen_mode) {
