@@ -8,13 +8,23 @@
 #ifndef SEGGER_WRAPPER_TDD_H_
 #define SEGGER_WRAPPER_TDD_H_
 
-#include <stdio.h>
 
-#define LOG_INFO(...)                  printf(__VA_ARGS__);printf("\n")
+#ifdef	__cplusplus
+#include <cstdio>
+#define WPRINTF            std::printf
+#else
+#include <stdio.h>
+#define WPRINTF            printf
+#endif
+
+
+
+
+#define LOG_INFO(...)                  WPRINTF(__VA_ARGS__);WPRINTF("\n")
 #define LOG_RAW_INFO(X)                EMPTY_MACRO
-#define LOG_WARNING(...)               printf(__VA_ARGS__);printf("\n")
+#define LOG_WARNING(...)               WPRINTF(__VA_ARGS__);WPRINTF("\n")
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 printf("\n");printf(__VA_ARGS__);printf("\n");printf("\n")
+#define LOG_ERROR(...)                 WPRINTF("\n");WPRINTF(__VA_ARGS__);WPRINTF("\n");WPRINTF("\n")
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
