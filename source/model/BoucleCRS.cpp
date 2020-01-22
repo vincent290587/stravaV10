@@ -145,6 +145,12 @@ void BoucleCRS::run() {
 
 			}
 
+			if (seg.getStatus() == SEG_OFF && tmp_dist > DIST_ALLOC) {
+				// we don't want to save this, it will be deallocated in the next loop,
+				// and is of no further interest
+				continue;
+			}
+
 			segMngr.addSegment(seg);
 
 		} // fin isValid
