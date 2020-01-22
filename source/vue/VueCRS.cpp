@@ -33,21 +33,6 @@ eVueCRSScreenModes VueCRS::tasksCRS() {
 		m_crs_screen_mode =  eVueCRSScreenDataFull;
 	}
 
-	if (m_crs_screen_mode != eVueCRSScreenInit) {
-		switch (segMngr.getNbSegs()) {
-		case 0:
-			m_crs_screen_mode = eVueCRSScreenDataFull;
-			break;
-		case 1:
-			m_crs_screen_mode = eVueCRSScreenDataSS;
-			break;
-		case 2:
-		default:
-			m_crs_screen_mode = eVueCRSScreenDataDS;
-			break;
-		}
-	}
-
 	switch (m_crs_screen_mode) {
 	case eVueCRSScreenInit:
 	{
@@ -108,6 +93,24 @@ bool VueCRS::propagateEventsCRS(eButtonsEvent event) {
 
 
 void VueCRS::afficheScreen1(void) {
+
+	if (m_crs_screen_mode != eVueCRSScreenInit) {
+		switch (segMngr.getNbSegs()) {
+		case 0:
+			m_crs_screen_mode = eVueCRSScreenDataFull;
+			break;
+		case 1:
+			m_crs_screen_mode = eVueCRSScreenDataSS;
+			break;
+		case 2:
+			// no break
+		default:
+			m_crs_screen_mode = eVueCRSScreenDataDS;
+			break;
+		}
+	}
+
+	LOG_INFO("Displaying %u segments", segMngr.getNbSegs());
 
 	switch (m_crs_screen_mode) {
 	case eVueCRSScreenDataFull:
@@ -440,20 +443,32 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 	LOG_DEBUG("VueCRS %u points printed\r\n", points_nb);
 
-	// draw a circle at the end of the segment
 	if (p_seg->getStatus() < SEG_OFF) {
-		drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
-				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
-	} else if (p_seg->getStatus() > SEG_OFF) {
+
+		// draw a rect at the end of the segment (done)
+		drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
+
+	} else if (p_seg->getStatus() != SEG_OFF) {
+
+		drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
+		fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 5, 5, LS027_PIXEL_BLACK);
+		fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, 5, LS027_PIXEL_BLACK);
+
+	} else {
+
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
 		drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0.f, _width),
-				regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+				regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5.f, LS027_PIXEL_BLACK);
 	}
 
-	// limit position when segment is finished
 	float _lat, _lon;
 	if (p_seg->getStatus() < SEG_OFF) {
+		// limit position when segment is finished
 		_lon = pCourant._lon;
 		_lat = pCourant._lat;
 	} else {
