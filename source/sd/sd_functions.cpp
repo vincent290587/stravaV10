@@ -325,7 +325,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 				}
 
 				int res = load_segment(mon_seg);
-				LOG_INFO("-->> Loading segment %s", mon_seg.getName(), res);
+				LOG_INFO("-->> Loading segment %s %d", mon_seg.getName(), res);
 
 				if (res <= 0) return res;
 

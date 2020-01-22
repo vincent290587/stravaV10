@@ -370,7 +370,9 @@ void Segment::majPerformance(ListePoints& mes_points) {
 		return;
 	}
 
-	ASSERT(m_p_data);
+	if (!m_p_data) {
+		return;
+	}
 
 	m_p_data->_lpts.updateDelta();
 	Vecteur& delta = m_p_data->_lpts.getDeltaListe();

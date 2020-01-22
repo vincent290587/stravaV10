@@ -11,6 +11,7 @@ add_definitions(-DUSB_ENABLED)
 add_definitions(-DBLE_STACK_SUPPORT_REQD)
 #add_definitions(-DLS027_GUI)
 
+if(CMAKE_HOST_UNIX)
 option(CODE_COVERAGE "Enable coverage reporting" ON)
 if(CODE_COVERAGE)
 
@@ -19,6 +20,7 @@ if(CODE_COVERAGE)
   APPEND_COVERAGE_COMPILER_FLAGS()
 
 endif(CODE_COVERAGE)
+endif(CMAKE_HOST_UNIX)
 
 if(CMAKE_HOST_UNIX)
 set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -rdynamic -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover")
@@ -27,7 +29,8 @@ set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ggdb -fno-omit-frame-pointer --short-enu
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
 else()
 add_compile_options(-msse2 -mno-ms-bitfields)
-add_compile_options(-std=gnu++0x -fno-rtti -fpermissive -fexceptions)
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -msse2 -mno-ms-bitfields")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
 add_definitions(-DWIN32)
 add_definitions(-D_WIN32_WINNT=0x0600)
 add_definitions(-DWINVER=0x600)
@@ -166,6 +169,8 @@ else()
 
 endif()
 
+
+if(CMAKE_HOST_UNIX)
 if(CODE_COVERAGE)
 
 SETUP_TARGET_FOR_COVERAGE_LCOV(
@@ -185,6 +190,7 @@ SETUP_TARGET_FOR_COVERAGE_GCOVR_XML(
    )
 
 endif(CODE_COVERAGE)
+endif(CMAKE_HOST_UNIX)
 
 
 # Create the gcov-clean target. This cleans the build as well as generated

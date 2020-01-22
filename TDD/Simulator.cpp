@@ -198,7 +198,7 @@ void simulator_init(void) {
 	tdd_logger_log_name(TDD_LOGGING_CUR_POWER, "power");
 	tdd_logger_log_name(TDD_LOGGING_CUR_SPEED, "speed");
 
-	g_fileObject = fopen("GPX_simu.csv", "r");
+	g_fileObject = fopen("./../TDD/GPX_simu.csv", "r");
 
 	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
 	m_app_error.hf_desc.stck.pc = 0x567896;
@@ -371,7 +371,7 @@ static void _loc_sim(void) {
 
 #ifdef TDD_RANDOMIZE
 		static int nb_tests = 0;
-		g_fileObject = fopen("GPX_simu.csv", "r");
+		g_fileObject = fopen("./../TDD/GPX_simu.csv", "r");
 		if (++nb_tests < 750) {
 			LOG_WARNING("Starting next simulation");
 			return;
