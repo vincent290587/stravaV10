@@ -60,14 +60,14 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 
 		LOG_INFO("VueFEC update full data");
 
-		// treat rollover at 256
-		uint8_t rollof = fec_info.el_time;
-		rollof -= el_time_prev;
-		rollof &= 0x3F;
-		if (rollof) {
-			m_el_time += rollof;
-			el_time_prev = fec_info.el_time;
+		// treat rollover
+		int16_t rollof = (int16_t)fec_info.el_time - el_time_prev;
+		m_el_time += rollof;
+		if (el_time_prev > fec_info.el_time) {
+			m_el_time += 0xFF + 1;
+			LOG_DEBUG("Rollover %u %u %lu %lu", el_time_prev, fec_info_el_time, m_el_time, m_el_time_ref);
 		}
+		el_time_prev = fec_info.el_time;
 
 		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(m_el_time, ':'), NULL);
 
