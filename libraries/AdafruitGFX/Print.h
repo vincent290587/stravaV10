@@ -102,6 +102,9 @@ class Print
 	void setWriteError(int err = 1) { write_error = err; }
   private:
 	char write_error;
+#if 1
+	char m_str_buffer[128];
+#endif
 	size_t printFloat(float n, uint8_t digits);
 	size_t printNumber(unsigned long n, uint8_t base, uint8_t sign);
 };
