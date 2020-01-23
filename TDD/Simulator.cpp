@@ -286,7 +286,7 @@ static void _loc_sim(void) {
 
 	static uint32_t last_point_ms = 0;
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
-	if (millis() < 60000) {
+	if (millis() < 8000) {
 
 		const char *e_gprmc = "$GPRMC,,V,,,,,,,,,,N*53\r\n"
 				"$GNGGA,,,,,,0,6,1.93,34.9,M,17.8,M,,*5B\r\n"
@@ -358,6 +358,12 @@ static void _loc_sim(void) {
 			for (int i=0; i < nmea_length; i++)
 				uart_rx_handler(g_bufferWrite[i]);
 
+			const char *e_gpgsv = "$GNVTG,286.99,T,,M,0.62,N,1.15,K,A*2E\r\n";
+
+			// send to uart_tdd
+			for (int i=0; i < strlen(e_gpgsv); i++)
+				uart_rx_handler(e_gpgsv[i]);
+
 			if (++nb_gps_loc == 1) {
 				sLocationData loc_data;
 				loc_data.alt = 9.5;
@@ -379,18 +385,12 @@ static void _loc_sim(void) {
 			lns_info.speed = cur_speed * 10.;
 			locator_dispatch_lns_update(&lns_info);
 
-			const char *e_gprmc = "$GPRMC,,V,,,,,,,,,,N*53\r\n";
+			const char *e_gpgsv = "$GNVTG,286.99,T,,M,0.62,N,1.15,K,A*2E\r\n";
 
 			// send to uart_tdd
-			for (int i=0; i < strlen(e_gprmc); i++)
-				uart_rx_handler(e_gprmc[i]);
+			for (int i=0; i < strlen(e_gpgsv); i++)
+				uart_rx_handler(e_gpgsv[i]);
 		}
-
-		const char *e_gpgsv = "$GNVTG,286.99,T,,M,0.62,N,1.15,K,A*2E\r\n";
-
-		// send to uart_tdd
-		for (int i=0; i < strlen(e_gpgsv); i++)
-			uart_rx_handler(e_gpgsv[i]);
 
 	} else {
 		fclose(g_fileObject);
