@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <Locator.h>
 
+#define NB_SATS_TO_DETAIL           4
 
 static bool m_is_gps_updated = false;
 
@@ -28,10 +29,10 @@ TinyGPSCustom satsInView(gps, "GPGSV", 3);  // $GPGSV sentence, third element
 
 TinyGPSCustom satsInUse(gps, "GNGGA", 7);   // $GNGGA sentence, 7th element
 
-TinyGPSCustom satNumber[4]; // to be initialized later
-TinyGPSCustom elevation[4];
-TinyGPSCustom azimuth[4];
-TinyGPSCustom snr[4];
+TinyGPSCustom satNumber[NB_SATS_TO_DETAIL]; // to be initialized later
+TinyGPSCustom elevation[NB_SATS_TO_DETAIL];
+TinyGPSCustom azimuth[NB_SATS_TO_DETAIL];
+TinyGPSCustom snr[NB_SATS_TO_DETAIL];
 
 sSatellite sats[MAX_SATELLITES];
 
@@ -83,9 +84,10 @@ Locator::Locator() {
 	anyChanges   = false;
 
 	m_nb_nrf_pos = 0;
+	m_nb_sats    = 0;
 
 	// Initialize all the uninitialized TinyGPSCustom objects
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < NB_SATS_TO_DETAIL; ++i)
 	{
 	    satNumber[i].begin(gps, "GPGSV", 4 + 4 * i); // offsets 4, 8, 12, 16
 	    elevation[i].begin(gps, "GPGSV", 5 + 4 * i); // offsets 5, 9, 13, 17
@@ -322,10 +324,10 @@ void Locator::tasks() {
 
 		if (totalGPGSVMessages.isUpdated()) {
 
-			for (int i=0; i<4; ++i) {
+			for (int i=0; i < NB_SATS_TO_DETAIL; ++i) {
 
 				int no = atoi(satNumber[i].value());
-				// Serial.print(F("SatNumber is ")); Serial.println(no);
+
 				if (no >= 1 && no <= MAX_SATELLITES)
 				{
 					sats[no-1].elevation = atoi(elevation[i].value());
@@ -373,7 +375,7 @@ void Locator::displayGPS2(void) {
 
 	vue.print(" ");
 	vue.print(satsInUse.value());
-	vue.print(F(" used of "));
+	vue.print(F(" used out of "));
 	vue.println(satsInView.value());
 	vue.println("");
 
@@ -397,7 +399,24 @@ void Locator::displayGPS2(void) {
 	line += String((int)gps.time.age());
 	vue.println(line);
 
-	vue.println("  ------");
+	vue.println("  ----- SAT -----");
+
+	uint16_t nb_printed = 0;
+	for (int i=0; i < MAX_SATELLITES; ++i) {
+
+		if (sats[i].active && ++nb_printed < 8)
+		{
+			line = " ID ";
+			line += i;
+			vue.print(line);
+			vue.setCursorX(160);
+			line = "";
+			line += sats[i].snr;
+			vue.println(line);
+		}
+	}
+
+	vue.println("  ----- MEM -----");
 
 	sysview_task_void_exit(Ls027Print);
 

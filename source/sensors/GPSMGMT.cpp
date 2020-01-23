@@ -217,7 +217,7 @@ bool GPS_MGMT::isStandby(void) {
 }
 
 bool GPS_MGMT::isEPOUpdating(void) {
-	return m_epo_state == eGPSMgmtEPOIdle;
+	return m_epo_state != eGPSMgmtEPOIdle;
 }
 
 void GPS_MGMT::startEpoUpdate(void) {

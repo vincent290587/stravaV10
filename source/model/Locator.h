@@ -101,6 +101,7 @@ private:
 	bool anyChanges;
 
 	uint16_t m_nb_nrf_pos;
+	uint16_t m_nb_sats;
 };
 
 #endif /* _cplusplus */
