@@ -26,7 +26,7 @@ TinyGPSCustom messageNumber(gps, "GPGSV", 2);      // $GPGSV sentence, second el
 
 TinyGPSCustom satsInView(gps, "GPGSV", 3);  // $GPGSV sentence, third element
 
-TinyGPSCustom satsInUse(gps, "GNGGA", 7);  // $GPGSV sentence, 7th element
+TinyGPSCustom satsInUse(gps, "GNGGA", 7);   // $GNGGA sentence, 7th element
 
 TinyGPSCustom satNumber[4]; // to be initialized later
 TinyGPSCustom elevation[4];
