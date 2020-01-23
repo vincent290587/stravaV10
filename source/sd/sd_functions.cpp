@@ -367,7 +367,11 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  */
 void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
-	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
+	String fname = "rec";
+	fname += att->date.date;
+	fname += ".txt";
+
+	FRESULT error = f_open(&g_fileObject, fname.c_str(), FA_OPEN_APPEND | FA_WRITE);
 	APP_ERROR_CHECK(error);
 	if (error)
 	{

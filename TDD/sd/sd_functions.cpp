@@ -378,9 +378,10 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 	uint32_t millis_ = millis();
 
-//	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-//	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-	g_fileObject = fopen("histo.txt", "a+");
+	String fname = "rec";
+	fname += att->date.date;
+	fname += ".txt";
+	g_fileObject = fopen(fname.c_str(), "a+");
 
 	if (!g_fileObject)
 	{
