@@ -12,14 +12,15 @@
 #include "notifications.h"
 #include "parameters.h"
 #include "g_structs.h"
+#include "task_manager_wrapper.h"
 
 typedef struct {
-	uint8_t peripherals_id;
-	uint8_t boucle_id;
-	uint8_t system_id;
-	uint8_t ls027_id;
-	uint8_t uart_id;
-	uint8_t usb_id;
+	task_id_t peripherals_id;
+	task_id_t boucle_id;
+	task_id_t system_id;
+	task_id_t ls027_id;
+	task_id_t uart_id;
+	task_id_t usb_id;
 } sTasksIDs;
 
 extern sTasksIDs m_tasks_id;

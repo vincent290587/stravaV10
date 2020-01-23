@@ -9,9 +9,11 @@ add_definitions(-D_USE_MATH_DEFINES)
 #add_definitions(-DTDD_RANDOMIZE)
 add_definitions(-DUSB_ENABLED)
 add_definitions(-DBLE_STACK_SUPPORT_REQD)
-#add_definitions(-DLS027_GUI)
 
 if(CMAKE_HOST_UNIX)
+
+#add_definitions(-DLS027_GUI)
+
 option(CODE_COVERAGE "Enable coverage reporting" ON)
 if(CODE_COVERAGE)
 
@@ -28,9 +30,9 @@ set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -rdynamic -fsanitize=undefined -fsani
 set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing -fsingle-precision-constant -frounding-math -fsignaling-nans")
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
 else()
-add_compile_options(-msse2 -mno-ms-bitfields)
-set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -msse2 -mno-ms-bitfields")
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing -fsingle-precision-constant -frounding-math -fsignaling-nans")
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
+add_compile_options(-msse2 -mno-ms-bitfields)
 add_definitions(-DWIN32)
 add_definitions(-D_WIN32_WINNT=0x0600)
 add_definitions(-DWINVER=0x600)

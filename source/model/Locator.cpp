@@ -361,7 +361,6 @@ bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
 /**
  *
  */
-#ifndef TDD
 void Locator::displayGPS2(void) {
 
 	sysview_task_void_enter(Ls027Print);
@@ -403,9 +402,3 @@ void Locator::displayGPS2(void) {
 
 }
 
-#else
-void Locator::displayGPS2(void) {
-	vue.setCursor(20,20);
-	vue.setTextSize(2);
-}
-#endif

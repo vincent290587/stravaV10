@@ -240,7 +240,8 @@ static void _fec_sim(void) {
 	// FEC simulation
 	fec_info.power = rand() % 500;
 	fec_info.speed = 20.;
-	fec_info.el_time++;
+	uint32_t millis_ = millis() / 1000;
+	fec_info.el_time = (uint8_t)(millis_ & 0xFF);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
 }
@@ -284,7 +285,21 @@ static void _loc_sim(void) {
 	}
 
 	static uint32_t last_point_ms = 0;
-	if (millis() < 8000 || millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+	if (millis() < 60000) {
+
+		const char *e_gprmc = "$GPRMC,,V,,,,,,,,,,N*53\r\n"
+				"$GPGSV,2,1,08,07,49.9,43.6,28.2,28,49.9,158.9,29.2,02,3.5,239.1,,05,49.9,286.9,E\r\n"
+				"$GPGSV,2,2,08,06,,,,08,9.8,68.9,,09,31.6,104.1,,13,20.4,299.5,,1*5E\r\n";
+
+		// send to uart_tdd
+		for (int i=0; i < strlen(e_gprmc); i++)
+			uart_rx_handler(e_gprmc[i]);
+
+		last_point_ms = millis();
+		return;
+	}
+
 	last_point_ms = millis();
 
 	simulator_modes();
@@ -361,7 +376,21 @@ static void _loc_sim(void) {
 			lns_info.heading = 5;
 			lns_info.speed = cur_speed * 10.;
 			locator_dispatch_lns_update(&lns_info);
+
+			const char *e_gprmc = "$GPRMC,,V,,,,,,,,,,N*53\r\n";
+
+			// send to uart_tdd
+			for (int i=0; i < strlen(e_gprmc); i++)
+				uart_rx_handler(e_gprmc[i]);
 		}
+
+		const char *e_gpgsv = ""
+				"$GPGSV,2,1,08,07,49.9,43.6,28.2,28,49.9,158.9,29.2,02,3.5,239.1,,05,49.9,286.9,E\r\n"
+				"$GPGSV,2,2,08,06,,,,08,9.8,68.9,,09,31.6,104.1,,13,20.4,299.5,,1*5E\r\n";
+
+		// send to uart_tdd
+		for (int i=0; i < strlen(e_gpgsv); i++)
+			uart_rx_handler(e_gpgsv[i]);
 
 	} else {
 		fclose(g_fileObject);

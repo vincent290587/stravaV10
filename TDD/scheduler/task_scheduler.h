@@ -2,6 +2,7 @@
 #ifndef TDD_SCHEDULER_TASK_SCHEDULER_H_
 #define TDD_SCHEDULER_TASK_SCHEDULER_H_
 
+#include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -9,10 +10,12 @@
 extern "C" {
 #endif
 
-#define TASK_ID_INVALID                -1
 
 /**@brief Task ID */
 typedef uint8_t task_id_t;
+
+/**@brief Invalid task ID */
+#define TASK_ID_INVALID ((task_id_t)(-1))
 
 /**
  * Function prototype (task setup and loop functions).
@@ -25,6 +28,12 @@ typedef void (*tasked_func_t)(void *p_context);
  * @return
  */
 bool task_begin(size_t stackSize);
+
+/**
+ *
+ * @return 0 if task manager is not started
+ */
+uint32_t task_manager_is_started(void);
 
 /**
  *

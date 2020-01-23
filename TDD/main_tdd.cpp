@@ -216,10 +216,14 @@ int main(void)
 
 	LOG_INFO("Program init");
 
-	m_tasks_id.boucle_id = TASK_ID_INVALID;
-	m_tasks_id.system_id = TASK_ID_INVALID;
-	m_tasks_id.peripherals_id = TASK_ID_INVALID;
-	m_tasks_id.ls027_id = TASK_ID_INVALID;
+	m_tasks_id.boucle_id		= TASK_ID_INVALID;
+	m_tasks_id.system_id		= TASK_ID_INVALID;
+	m_tasks_id.peripherals_id	= TASK_ID_INVALID;
+	m_tasks_id.ls027_id			= TASK_ID_INVALID;
+	m_tasks_id.uart_id			= TASK_ID_INVALID;
+	m_tasks_id.usb_id			= TASK_ID_INVALID;
+
+	task_begin(65536 * 5);
 
 	i2c_scheduling_init();
 
@@ -232,7 +236,9 @@ int main(void)
 
 	fatfs_init();
 
-	boucle.init();
+	gps_mgmt.init();
+
+	//boucle.init();
 
 	vue.init();
 
@@ -255,8 +261,6 @@ int main(void)
 	notifications_setNotify(&neo_order);
 
 	delay_ms(1);
-
-	task_begin(65536 * 5);
 
 	m_tasks_id.boucle_id = task_create(boucle_task, "boucle_task", 65536, NULL);
 	m_tasks_id.system_id = task_create(system_task, "system_task", 65536, NULL);

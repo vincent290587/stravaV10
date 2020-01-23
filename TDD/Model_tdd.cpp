@@ -21,7 +21,7 @@
  */
 void perform_system_tasks(void) {
 
-	uart_tasks();
+	tdd_uart_process();
 
 	btn_task();
 
