@@ -159,6 +159,15 @@ uint32_t Locator::getLastUpdateAge() {
 
 /**
  *
+ * @return The last GPGSV sentence age
+ */
+uint32_t Locator::getUsedSatsAge() {
+
+	return satsInUse.age();
+}
+
+/**
+ *
  * @param lat
  * @param lon
  * @param sec_
@@ -394,6 +403,10 @@ void Locator::displayGPS2(void) {
 	} else {
 		vue.println(" No fix");
 	}
+
+	line = " GPSMGMT ";
+	line += gps_mgmt.getPowerState();
+	vue.println(line);
 
 	line = " Time age: ";
 	line += String((int)gps.time.age());

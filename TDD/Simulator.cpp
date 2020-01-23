@@ -11,6 +11,8 @@
 #include "ff.h"
 #include "millis.h"
 #include "bme280.h"
+#include "gpio.h"
+#include "boards.h"
 #include "tdd_logger.h"
 #include "uart_tdd.h"
 #include "usb_cdc.h"
@@ -286,17 +288,21 @@ static void _loc_sim(void) {
 
 	static uint32_t last_point_ms = 0;
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
-	if (millis() < 8000) {
+	if (millis() < 60000) {
 
-		const char *e_gprmc = "$GPRMC,,V,,,,,,,,,,N*53\r\n"
-				"$GNGGA,,,,,,0,6,1.93,34.9,M,17.8,M,,*5B\r\n"
-				"$GPGSV,3,1,10,42,54,137,,14,51,128,46,31,48,015,48,16,42,243,*72\r\n"
-				"$GPGSV,3,2,10,29,23,054,44,193,20,175,37,03,17,298,,27,15,190,37*47\r\n"
-				"$GPGSV,3,3,10,22,10,176,,25,06,043,38*74\r\n";
+		gpio_clear(FIX_PIN);
 
-		// send to uart_tdd
-		for (int i=0; i < strlen(e_gprmc); i++)
-			uart_rx_handler(e_gprmc[i]);
+		if (gpio_get(GPS_R) && gpio_get(GPS_S) ) {
+			const char *e_gprmc = "$GPRMC,,V,,,,,,,,,,N*53\r\n"
+					"$GNGGA,,,,,,0,6,1.93,34.9,M,17.8,M,,*5B\r\n"
+					"$GPGSV,3,1,10,42,54,137,,14,51,128,46,31,48,015,48,16,42,243,*72\r\n"
+					"$GPGSV,3,2,10,29,23,054,44,193,20,175,37,03,17,298,,27,15,190,37*47\r\n"
+					"$GPGSV,3,3,10,22,10,176,,25,06,043,38*74\r\n";
+
+			// send to uart_tdd
+			for (int i=0; i < strlen(e_gprmc); i++)
+				uart_rx_handler(e_gprmc[i]);
+		}
 
 		last_point_ms = millis();
 		return;
@@ -347,7 +353,11 @@ static void _loc_sim(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
-		if (millis() < 15000) {
+		if (millis() < 25000 &&
+				(gpio_get(GPS_R) && gpio_get(GPS_S)) ) {
+
+			gpio_set(FIX_PIN);
+
 			// build make NMEA sentence
 			GPRMC gprmc_(lat, lon, 0., (int)rtime);
 			int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
@@ -385,11 +395,17 @@ static void _loc_sim(void) {
 			lns_info.speed = cur_speed * 10.;
 			locator_dispatch_lns_update(&lns_info);
 
-			const char *e_gpgsv = "$GNVTG,286.99,T,,M,0.62,N,1.15,K,A*2E\r\n";
+			gpio_clear(FIX_PIN);
 
-			// send to uart_tdd
-			for (int i=0; i < strlen(e_gpgsv); i++)
-				uart_rx_handler(e_gpgsv[i]);
+			if (gpio_get(GPS_R) && gpio_get(GPS_S) ) {
+				const char *e_gpgsv = ""
+						"$GNGGA,,,,,,0,6,1.93,34.9,M,17.8,M,,*5B\r\n"
+						"$GNVTG,286.99,T,,M,0.62,N,1.15,K,A*2E\r\n";
+
+				// send to uart_tdd
+				for (int i=0; i < strlen(e_gpgsv); i++)
+					uart_rx_handler(e_gpgsv[i]);
+			}
 		}
 
 	} else {
