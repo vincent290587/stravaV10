@@ -8,6 +8,7 @@
 #include "millis.h"
 #include "Model.h"
 #include "gpio.h"
+#include "boards.h"
 #include "sd_hal.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"

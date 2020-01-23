@@ -94,7 +94,6 @@ set(SRCS
 	TDD/sd/sd_functions.cpp
 	TDD/sd/sd_hal.c
 	TDD/timer/timer.c
-    TDD/sensors/GPSMGMT.cpp
     TDD/sensors/STC3100.cpp
     TDD/sensors/fxos.cpp
     TDD/sensors/bme280.c
@@ -126,6 +125,7 @@ set(SRCS
 	source/routes/Segment.cpp
 	source/routes/Vecteur.cpp
     source/sensors/fram.c
+    source/sensors/GPSMGMT.cpp
 	source/parsers/file_parser.cpp
 	source/model/Attitude.cpp
 	source/model/Boucle.cpp
