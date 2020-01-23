@@ -121,9 +121,15 @@ String _imkstr(int value) {
 
 String _secjmkstr(uint32_t value, char sep) {
 
-	char time_char[10];
+	char time_char[16];
 
 	memset(time_char, 0, sizeof(time_char));
+
+	if (value >= 86400) {
+
+		String res = " --:--:--";
+		return res;
+	}
 
 	uint8_t hours   = (uint8_t) (value / 3600);
 	value -= hours * 3600;
