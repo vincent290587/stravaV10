@@ -20,13 +20,19 @@
 
 #ifdef WIN32
 #include <winsock2.h>
+
+#define BUF_TYPE          char
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#define BUF_TYPE          uint8_t
+#define SOCKET            int
+#define INVALID_SOCKET    -1
 #endif
 
-extern int sockfd;
+extern SOCKET sockfd;
 
 #endif
 
@@ -104,9 +110,9 @@ void register_btn_press(uint8_t btn_index) {
 void btn_task(void) {
 
 #ifdef LS027_GUI
-	uint8_t RecvBuffer[1];
+	BUF_TYPE RecvBuffer[1];
 
-	if (sockfd > 0) {
+	if (sockfd != INVALID_SOCKET) {
 		if (recv(sockfd, RecvBuffer, sizeof(RecvBuffer), 0) < 0) {
 			// fail
 		} else {

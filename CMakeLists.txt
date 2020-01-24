@@ -9,10 +9,10 @@ add_definitions(-D_USE_MATH_DEFINES)
 #add_definitions(-DTDD_RANDOMIZE)
 add_definitions(-DUSB_ENABLED)
 add_definitions(-DBLE_STACK_SUPPORT_REQD)
+#add_definitions(-DLS027_GUI)
 
 if(CMAKE_HOST_UNIX)
 
-#add_definitions(-DLS027_GUI)
 
 option(CODE_COVERAGE "Enable coverage reporting" ON)
 if(CODE_COVERAGE)
@@ -168,6 +168,7 @@ if(CMAKE_HOST_UNIX)
 else()
 
   target_link_libraries(StravaV10 imagehlp)
+  target_link_libraries(StravaV10 wsock32)
 
 endif()
 
