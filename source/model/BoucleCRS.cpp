@@ -163,6 +163,8 @@ void BoucleCRS::run() {
 
 	segMngr.computeOrder();
 
+	segMngr.conveyLightNotification();
+
 	att.next = m_dist_next_seg;
 
 	LOG_INFO("Next segment: %u", att.next);
