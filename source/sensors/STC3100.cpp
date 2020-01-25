@@ -16,8 +16,6 @@
 #include "i2c.h"
 #include "nrf_twi_mngr.h"
 
-#define FRAM_TWI_ADDRESS       0b10100000
-
 #define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
 		NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
@@ -141,7 +139,7 @@ void STC3100::checkDevID(uint8_t dev_id) {
 void STC3100::reset(void) {
 
 	// Reset sensor
-	writeCommand(REG_CONTROL, STC_RESET);
+	writeCommand(REG_CONTROL, STC_RESET | STC_IO_OD);
 
 }
 

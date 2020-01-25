@@ -1,3 +1,4 @@
+#include "stdint.h"
 #include <string.h>
 #include <stdbool.h>
 #include "boards.h"
@@ -9,8 +10,9 @@
 #define ON_TICKS_DEFAULT 3
 
 
-//static neopixel_strip_t     strip;
+static neopixel_strip_t     strip;
 static neo_sb_init_params_t _params;
+static neo_sb_seg_params    m_seg_notif;
 static bool                 leds_is_on;     /**< Flag for indicating if LEDs are on. */
 static bool                 is_counting_up; /**< Flag for indicating if counter is incrementing or decrementing. */
 static int32_t              pause_ticks;
@@ -27,6 +29,17 @@ static uint32_t get_notifications_color(uint8_t red, uint8_t green, uint8_t blue
 
 	uint32_t res = (red << 16) | (green << 8) | (blue);
 	return res;
+}
+
+/**
+ *
+ * @param red
+ * @param green
+ * @param blue
+ * @return
+ */
+static uint8_t notifications_setColor(uint8_t red, uint8_t green, uint8_t blue ) {
+	return neopixel_set_color(&strip, 0, red, green, blue );
 }
 
 /**
@@ -48,6 +61,8 @@ void notifications_init(uint8_t pin_num) {
 
 	_params.step = _params.max / ON_STEPS_NB;
 	_params.on_time_ticks = ON_TICKS_DEFAULT;
+
+	memset(&m_seg_notif, 0, sizeof(m_seg_notif));
 
 	is_counting_up = true;
 
@@ -94,8 +109,8 @@ void notifications_setNotify(sNeopixelOrders* orders) {
 
 			return;
 		}
-		// no break
 	}
+	// no break
 
 	case eNeoEventNotify:
 	{
@@ -115,11 +130,52 @@ void notifications_setNotify(sNeopixelOrders* orders) {
 
 }
 
+void notifications_segNotify(neo_sb_seg_params* orders) {
+
+	memcpy(&m_seg_notif, orders, sizeof(m_seg_notif));
+}
+
 /**
  *
  * @return 1 if no task is active
  */
 uint8_t notifications_tasks() {
+
+	if (!leds_is_on) {
+
+		static int on_time = 0;
+		static int off_time = 0;
+
+		// handle notifications
+		if (m_seg_notif.active) {
+
+			if (on_time == -1) {
+				on_time = m_seg_notif.on_time;
+				off_time = 0;
+			}
+
+			if (on_time) {
+
+				on_time--;
+				notifications_setColor(m_seg_notif.rgb[0], m_seg_notif.rgb[1], m_seg_notif.rgb[2]);
+			} else if (off_time) {
+
+				off_time--;
+				notifications_setColor(0, 0, 0);
+			} else {
+
+				off_time = m_seg_notif.off_time;
+				notifications_setColor(0, 0, 0);
+			}
+
+		} else {
+
+			on_time = -1;
+			off_time = 0;
+			notifications_setColor(0, 0, 0);
+		}
+
+	}
 
 	// continue process
 	if (pause_ticks <= 0)

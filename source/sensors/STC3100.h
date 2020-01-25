@@ -38,6 +38,7 @@
  -----------------------------------------------------------------------*/
 
 #define MODE_RUN                0x10
+#define STC_IO_OD               0x01
 #define STC_RESET               0x02
 
 typedef enum {

@@ -288,7 +288,7 @@ static void _loc_sim(void) {
 
 	static uint32_t last_point_ms = 0;
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
-	if (millis() < 60000) {
+	if (millis() < 20000) {
 
 		gpio_clear(FIX_PIN);
 
@@ -353,7 +353,7 @@ static void _loc_sim(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
-		if (millis() < 25000 &&
+		if (millis() < 60000 &&
 				(gpio_get(GPS_R) && gpio_get(GPS_S)) ) {
 
 			gpio_set(FIX_PIN);

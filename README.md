@@ -43,8 +43,8 @@ make flash            (or) make dfu
 - [x] Better power computation
 - [x] ANT+ sensors pairing (FEC, HRM, BSC)
 - [x] User settings (FTP, weight)
+- [x] Better LED interaction
 - [ ] Connection to a BLE AP to unload recorded data
-- [ ] Better LED interaction
 
 
 ## Screenshots

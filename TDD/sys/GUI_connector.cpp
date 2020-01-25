@@ -1,7 +1,7 @@
 /*
  * GUI_connector.cpp
  *
- *  Created on: 6 déc. 2018
+ *  Created on: 6 dï¿½c. 2018
  *      Author: Vincent
  */
 
@@ -25,10 +25,23 @@
 
 #ifdef WIN32
 # include <winsock2.h>
+
+#define SO_REUSEPORT      0
+#define TCP_BUF_CAST      const char *
+#define TCP_OPT_CAST      char *
+#define TCP_OPT_TYPE      char
+typedef int               socklen_t;
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#define SOCKET            int
+#define TCP_OPT_TYPE      int
+#define TCP_BUF_CAST      void *
+#define TCP_OPT_CAST      void *
+#define INVALID_SOCKET    -1
+#define WSACleanup()      do {} while (0)
 #endif
 
 #endif
@@ -60,10 +73,10 @@ static sGUIComm m_gui_comm;
 
 static bool m_is_init = false;
 
-int sockfd = -1;
-static int server_fd = -1;
+SOCKET sockfd           = INVALID_SOCKET;
+static SOCKET server_fd = INVALID_SOCKET;
 
-struct sockaddr_in address;
+static struct sockaddr_in address;
 static int addrlen;
 #endif
 
@@ -74,40 +87,79 @@ void GUI_connector_init(void) {
 	LOG_INFO("GUI Init");
 
 	int valread;
-	int opt = 1;
+	TCP_OPT_TYPE opt = 1;
 
 	m_last_updated = millis();
 
 	addrlen = sizeof(address);
 
-	// Creating socket file descriptor
-	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+#ifdef WIN32
+	WSADATA wsaData;
+	if (WSAStartup(MAKEWORD(2, 0), &wsaData) != 0) /* Load Winsock 2.0 DLL */
 	{
-		perror("socket failed");
+		perror("WSAStartup() failed");
+		WSACleanup();
 		exit(EXIT_FAILURE);
 	}
+#endif
+
+	// Creating socket file descriptor
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+	{
+		perror("socket failed");
+		WSACleanup();
+		exit(EXIT_FAILURE);
+	}
+
+#ifdef WIN32
+	//-------------------------
+	// Set the socket I/O mode: In this case FIONBIO
+	// enables or disables the blocking mode for the
+	// socket based on the numerical value of iMode.
+	// If iMode = 0, blocking is enabled;
+	// If iMode != 0, non-blocking mode is enabled.
+	int iResult;
+	u_long iMode = 1;
+	iResult = ioctlsocket(server_fd, FIONBIO, &iMode);
+	if (iResult != NO_ERROR)
+	  printf("ioctlsocket failed with error: %ld\n", iResult);
+#endif
 
 	// Forcefully attaching socket to the port 8080
 	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
 			&opt, sizeof(opt)))
 	{
 		perror("setsockopt");
+		WSACleanup();
 		exit(EXIT_FAILURE);
 	}
+
+	memset(&address, 0, sizeof(address));
 	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_addr.s_addr = inet_addr("127.0.0.1");
 	address.sin_port = htons( PORT );
 
 	// Forcefully attaching socket to the port 8080
-	if (bind(server_fd, (struct sockaddr *)&address,
-			sizeof(address))<0)
+	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
 		perror("bind failed");
+#ifdef WIN32
+		closesocket(server_fd);
+#else
+		close(server_fd);
+#endif
+		WSACleanup();
 		exit(EXIT_FAILURE);
 	}
 	if (listen(server_fd, 3) < 0)
 	{
 		perror("listen");
+#ifdef WIN32
+		closesocket(server_fd);
+#else
+		close(server_fd);
+#endif
+		WSACleanup();
 		exit(EXIT_FAILURE);
 	}
 
@@ -123,8 +175,8 @@ void GUI_UpdateLS027(void) {
 	memcpy(m_gui_comm.ls027_buffer, ls027_tdd_buffer, sizeof(ls027_tdd_buffer));
 
 
-	if (sockfd > 0) {
-		send(sockfd, &m_gui_comm, sizeof(m_gui_comm), 0);
+	if (sockfd != INVALID_SOCKET) {
+		send(sockfd, (TCP_BUF_CAST)&m_gui_comm, sizeof(m_gui_comm), 0);
 	} else {
 		sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
 	}
@@ -146,8 +198,8 @@ void neopixel_update(uint8_t red, uint8_t green, uint8_t blue) {
 	m_gui_comm.neopixel[2] = blue;
 
 
-	if (sockfd > 0) {
-		send(sockfd, &m_gui_comm, sizeof(m_gui_comm), 0);
+	if (sockfd != INVALID_SOCKET) {
+		send(sockfd, (TCP_BUF_CAST)&m_gui_comm, sizeof(m_gui_comm), 0);
 	} else {
 		sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
 	}

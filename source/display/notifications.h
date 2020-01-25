@@ -20,6 +20,12 @@ typedef struct
     uint32_t        on_time_ticks;   /**< Ticks to stay in high impulse state. */
 } neo_sb_init_params_t;
 
+typedef struct {
+	uint8_t         active;
+	uint8_t         on_time;
+	uint8_t         off_time;
+	uint8_t         rgb[3];
+} neo_sb_seg_params;
 
 //////////////////////////     MACROS
 
@@ -54,6 +60,8 @@ extern "C" {
 void notifications_init(uint8_t pin_num);
 
 void notifications_setNotify(sNeopixelOrders* orders);
+
+void notifications_segNotify(neo_sb_seg_params* orders);
 
 uint8_t notifications_tasks(void);
 
