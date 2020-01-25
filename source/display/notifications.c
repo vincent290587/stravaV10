@@ -4,6 +4,7 @@
 #include "boards.h"
 #include "drv_ws2812.h"
 #include "notifications.h"
+#include "segger_wrapper.h"
 
 
 #define ON_STEPS_NB      5
@@ -159,14 +160,19 @@ uint8_t notifications_tasks() {
 
 			if (on_time) {
 
+				LOG_DEBUG("Light ON");
+
 				on_time--;
 				notifications_setColor(m_seg_notif.rgb[0], m_seg_notif.rgb[1], m_seg_notif.rgb[2]);
 			} else if (off_time) {
+
+				LOG_DEBUG("Light OFF");
 
 				off_time--;
 				notifications_setColor(0, 0, 0);
 			} else {
 
+				on_time = m_seg_notif.on_time;
 				off_time = m_seg_notif.off_time;
 				notifications_setColor(0, 0, 0);
 			}
