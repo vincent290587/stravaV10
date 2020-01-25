@@ -7,7 +7,6 @@
 
 #include "Model.h"
 #include "sdk_config.h"
-#include "neopixel.h"
 #include "helper.h"
 #include "sd_hal.h"
 #include "app_scheduler.h"
@@ -320,10 +319,6 @@ void peripherals_task(void * p_context)
 
 		// BSP tasks
 		bsp_tasks();
-
-#ifndef BLE_STACK_SUPPORT_REQD
-		neopixel_radio_callback_handler(false);
-#endif
 
 #if defined( ANT_STACK_SUPPORT_REQD ) || defined( TDD )
 		sysview_task_void_enter(AntRFTasks);

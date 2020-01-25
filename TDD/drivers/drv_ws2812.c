@@ -42,6 +42,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include "GUI_connector.h"
 
 #include "drv_ws2812.h"
 
@@ -58,6 +59,7 @@ typedef struct
     uint8_t b;
 } rgb_color_t;
 
+static uint32_t m_color = 0;
 
 static void make_rgb_color(rgb_color_t *rgb_color, uint32_t color)
 {
@@ -81,7 +83,7 @@ uint32_t drv_ws2812_init(uint8_t dout_pin)
 uint32_t drv_ws2812_display(drv_ws2812_refresh_callback_t p_callback, void * p_callback_param)
 {
     uint32_t result = 0;
-
+    neopixel_update((m_color & 0xFF0000) >> 16, (m_color & 0xFF00) >> 8, m_color & 0xFF);
     return result;
 }
 
@@ -104,5 +106,5 @@ void drv_ws2812_set_pixel(uint32_t pixel_no, uint32_t color)
 
 void drv_ws2812_set_pixel_all(uint32_t color)
 {
-
+	m_color = color;
 }

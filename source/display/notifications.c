@@ -18,33 +18,15 @@ static uint32_t             ratio;
 
 /**
  *
- */
-static void notifications_clear() {
-//	neopixel_clear(&strip);
-//	drv_ws2812_set_pixel_all(0);
-//	drv_ws2812_refresh(NULL, NULL);
-}
-
-/**
- *
- */
-static void notifications_show() {
-//	neopixel_show(&strip);
-	//drv_ws2812_display(NULL, NULL);
-}
-
-/**
- *
  * @param red
  * @param green
  * @param blue
  * @return
  */
-static uint8_t notifications_setColor(uint8_t red, uint8_t green, uint8_t blue ) {
-//	return neopixel_set_color(&strip, 0, red, green, blue );
-	drv_ws2812_set_pixel_all((red << 16) | (green << 8) | (blue));
-	//drv_ws2812_refresh(NULL, NULL);
-	return 0;
+static uint32_t get_notifications_color(uint8_t red, uint8_t green, uint8_t blue ) {
+
+	uint32_t res = (red << 16) | (green << 8) | (blue);
+	return res;
 }
 
 /**
@@ -176,10 +158,11 @@ uint8_t notifications_tasks() {
 	}
 
 	// update neopixel
-	notifications_setColor(_params.rgb[0] * ratio * ratio / 255,
+	uint32_t color = get_notifications_color(_params.rgb[0] * ratio * ratio / 255,
 			_params.rgb[1] * ratio * ratio / 255,
 			_params.rgb[2] * ratio * ratio / 255);
 
+	drv_ws2812_set_pixel_all(color);
 	drv_ws2812_display(NULL, NULL);
 
 	return 0;

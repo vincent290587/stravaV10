@@ -132,7 +132,7 @@ void GUI_UpdateLS027(void) {
 #endif
 }
 
-extern "C" void neopixel_update(uint8_t red, uint8_t green, uint8_t blue) {
+void neopixel_update(uint8_t red, uint8_t green, uint8_t blue) {
 
 #ifdef LS027_GUI
 	if (!m_is_init) return;
