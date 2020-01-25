@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdbool.h>
-#include "neopixel.h"
+#include "boards.h"
+#include "drv_ws2812.h"
 #include "notifications.h"
 
 
@@ -8,7 +9,7 @@
 #define ON_TICKS_DEFAULT 3
 
 
-static neopixel_strip_t     strip;
+//static neopixel_strip_t     strip;
 static neo_sb_init_params_t _params;
 static bool                 leds_is_on;     /**< Flag for indicating if LEDs are on. */
 static bool                 is_counting_up; /**< Flag for indicating if counter is incrementing or decrementing. */
@@ -19,14 +20,17 @@ static uint32_t             ratio;
  *
  */
 static void notifications_clear() {
-	neopixel_clear(&strip);
+//	neopixel_clear(&strip);
+//	drv_ws2812_set_pixel_all(0);
+//	drv_ws2812_refresh(NULL, NULL);
 }
 
 /**
  *
  */
 static void notifications_show() {
-	neopixel_show(&strip);
+//	neopixel_show(&strip);
+	//drv_ws2812_display(NULL, NULL);
 }
 
 /**
@@ -37,7 +41,10 @@ static void notifications_show() {
  * @return
  */
 static uint8_t notifications_setColor(uint8_t red, uint8_t green, uint8_t blue ) {
-	return neopixel_set_color(&strip, 0, red, green, blue );
+//	return neopixel_set_color(&strip, 0, red, green, blue );
+	drv_ws2812_set_pixel_all((red << 16) | (green << 8) | (blue));
+	//drv_ws2812_refresh(NULL, NULL);
+	return 0;
 }
 
 /**
@@ -62,8 +69,7 @@ void notifications_init(uint8_t pin_num) {
 
 	is_counting_up = true;
 
-	neopixel_init(&strip, pin_num, 1);
-
+	drv_ws2812_init(pin_num);
 }
 
 /**
@@ -133,11 +139,6 @@ void notifications_setNotify(sNeopixelOrders* orders) {
  */
 uint8_t notifications_tasks() {
 
-	if (!leds_is_on) {
-		notifications_clear();
-		return 1;
-	}
-
 	// continue process
 	if (pause_ticks <= 0)
 	{
@@ -161,8 +162,7 @@ uint8_t notifications_tasks() {
 				// Min is reached, we are done
 				// end process
 				leds_is_on = false;
-				notifications_clear();
-				return 1;
+				ratio = 0;
 			}
 			else
 			{
@@ -179,7 +179,8 @@ uint8_t notifications_tasks() {
 	notifications_setColor(_params.rgb[0] * ratio * ratio / 255,
 			_params.rgb[1] * ratio * ratio / 255,
 			_params.rgb[2] * ratio * ratio / 255);
-	notifications_show();
+
+	drv_ws2812_display(NULL, NULL);
 
 	return 0;
 }

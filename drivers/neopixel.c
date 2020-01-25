@@ -63,8 +63,8 @@ void neopixel_radio_callback_handler(bool radio_active)
 {
 	if (radio_active == false && m_neo_orders_ready)
 	{
-		m_neo_orders_ready = false;
-		_neopixel_show(m_p_strip);
+//		m_neo_orders_ready = false;
+//		_neopixel_show(m_p_strip);
 	}
 }
 
