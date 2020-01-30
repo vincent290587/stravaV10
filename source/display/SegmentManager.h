@@ -1,7 +1,7 @@
 /*
  * SegmentManager.h
  *
- *  Created on: 19 févr. 2018
+ *  Created on: 19 fÃ©vr. 2018
  *      Author: Vincent
  */
 
@@ -37,6 +37,8 @@ public:
 	void clearSegs() {
 		seg_list.clear();
 	}
+
+	void conveyLightNotification(void);
 
 	std::vector<sVueCRSPSeg> seg_list;
 };
