@@ -55,6 +55,8 @@
 #include <stdbool.h>
 #include "nordic_common.h"
 #include "nrf.h"
+#include "nrf_sdm.h"
+#include "hardfault.h"
 #include "ble_hci.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
@@ -203,11 +205,112 @@ static volatile bool m_nus_cts = false;
 static bool m_usb_connected = false;
 static bool m_nus_connected = false;
 
+
+/**@brief Callback function for asserts in the SoftDevice.
+ *
+ * @details This function will be called in case of an assert in the SoftDevice.
+ *
+ * @warning This handler is an example only and does not fit a final product. You need to analyze
+ *          how your product is supposed to react in case of Assert.
+ * @warning On assert from the SoftDevice, the system can only recover on reset.
+ *
+ * @param[in] line_num   Line number of the failing ASSERT call.
+ * @param[in] file_name  File name of the failing ASSERT call.
+ */
+void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name)
+{
+    assert_info_t assert_info =
+    {
+        .line_num    = line_num,
+        .p_file_name = file_name,
+    };
+    app_error_fault_handler(NRF_FAULT_ID_SDK_ASSERT, 0, (uint32_t)(&assert_info));
+
+#ifndef DEBUG_NRF_USER
+    NRF_LOG_WARNING("System reset");
+    NRF_LOG_FLUSH();
+    NVIC_SystemReset();
+#else
+    NRF_BREAKPOINT_COND;
+
+    bool loop = true;
+    while (loop) ;
+#endif // DEBUG
+
+    UNUSED_VARIABLE(assert_info);
+}
+
+/**
+ *
+ * @param id
+ * @param pc
+ * @param info
+ */
+void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+{
+    switch (id)
+    {
+#if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
+        case NRF_FAULT_ID_SD_ASSERT:
+        	NRF_LOG_ERROR("SOFTDEVICE: ASSERTION FAILED");
+            break;
+        case NRF_FAULT_ID_APP_MEMACC:
+        	NRF_LOG_ERROR("SOFTDEVICE: INVALID MEMORY ACCESS");
+            break;
+#endif
+        case NRF_FAULT_ID_SDK_ASSERT:
+        {
+            assert_info_t * p_info = (assert_info_t *)info;
+            NRF_LOG_ERROR("ASSERTION FAILED at %s:%u",
+                    p_info->p_file_name,
+                    p_info->line_num);
+            break;
+        }
+        case NRF_FAULT_ID_SDK_ERROR:
+        {
+        	error_info_t * p_info = (error_info_t *)info;
+        	NRF_LOG_ERROR("ERROR %lu [%s] at %s:%lu",
+					p_info->err_code,
+					nrf_strerror_get(p_info->err_code),
+					p_info->p_file_name,
+					p_info->line_num);
+            break;
+        }
+        default:
+            NRF_LOG_ERROR("UNKNOWN FAULT at 0x%08X", pc);
+            break;
+    }
+
+    NRF_LOG_FLUSH();
+
+#ifdef DEBUG_NRF
+    NRF_BREAKPOINT_COND;
+    // On assert, the system can only recover with a reset.
+#endif
+
+}
+
+void HardFault_process(HardFault_stack_t * p_stack)
+{
+	NRF_LOG_ERROR("HardFault: pc=%u", p_stack->pc);
+	NRF_LOG_FLUSH();
+
+#ifdef DEBUG_NRF
+    NRF_BREAKPOINT_COND;
+    // On hardfault, the system can only recover with a reset.
+
+    bool loop = true;
+    while (loop) ;
+#endif
+    // Restart the system by default
+    NVIC_SystemReset();
+}
+
 /**
  * Prints a char* to VCOM printf style
  * @param format
  */
-void usb_printf(const char *format, ...) {
+static void usb_printf(const char *format, ...) {
 
 	va_list args;
 	va_start(args, format);
@@ -233,24 +336,6 @@ void usb_printf(const char *format, ...) {
 				length);
 	}
 
-}
-
-
-/**
- * @brief Function for assert macro callback.
- *
- * @details This function will be called in case of an assert in the SoftDevice.
- *
- * @warning This handler is an example only and does not fit a final product. You need to analyze
- *          how your product is supposed to react in case of an assert.
- * @warning On assert from the SoftDevice, the system can only recover on reset.
- *
- * @param[in] line_num    Line number of the failing ASSERT call.
- * @param[in] p_file_name File name of the failing ASSERT call.
- */
-void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
-{
-	app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
 /** @brief Function for initializing the timer module. */
@@ -531,7 +616,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		NRF_LOG_INFO("BLE NUS connected");
 		usb_printf("Connected");
 		m_nus_connected = true;
-		m_nus_cts = true;
 		err_code = app_timer_stop(m_blink_ble);
 		APP_ERROR_CHECK(err_code);
 		bsp_board_led_on(LED_BLE_NUS_CONN);
@@ -681,6 +765,8 @@ void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const * p_evt)
 	if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
 	{
 		m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+		// we can transmit now
+		m_nus_cts = true;
 		NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
 	}
 	NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x",
