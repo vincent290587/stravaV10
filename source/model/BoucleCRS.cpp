@@ -145,6 +145,12 @@ void BoucleCRS::run() {
 
 			}
 
+			if (seg.getStatus() == SEG_OFF && tmp_dist > DIST_ALLOC) {
+				// we don't want to save this, it will be deallocated in the next loop,
+				// and is of no further interest
+				continue;
+			}
+
 			segMngr.addSegment(seg);
 
 		} // fin isValid
@@ -156,6 +162,8 @@ void BoucleCRS::run() {
 	sysview_task_void_exit(MainSegLoop);
 
 	segMngr.computeOrder();
+
+	segMngr.conveyLightNotification();
 
 	att.next = m_dist_next_seg;
 

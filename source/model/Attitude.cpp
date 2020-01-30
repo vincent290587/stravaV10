@@ -20,6 +20,11 @@
 #include "tdd_logger.h"
 #endif
 
+#ifdef USE_JSCOPE
+#include "JScope.h"
+JScope jscope;
+#endif
+
 
 static float lp1_filter_coefficients[5] =
 {
@@ -44,6 +49,10 @@ Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
 
 	m_st_buffer_nb_elem = 0;
 
+
+#ifdef USE_JSCOPE
+	jscope.init();
+#endif
 }
 
 /**
@@ -67,42 +76,40 @@ void Attitude::computeFusion(void) {
 	}
 
 	// 2 seconds time constant
-	const float taub = 2 / (2 + BARO_REFRESH_PER_MS / 1000.);
+	const float taub = 2 / (2 + BARO_REFRESH_PER_MS / 1000.f);
 	m_cur_ele = taub * m_cur_ele + (1 - taub) * (ele);
 
 	float alti = ele;
 	static float alti_prev = ele;
 
-	static float cur_time_prev;
-	float dt = ((float)millis() - cur_time_prev) / 1000.0f;
-
-	float yaw_rad;
-	fxos_get_yaw(yaw_rad);
+	float pitch_rad;
+	fxos_get_pitch(pitch_rad);
 
 	// 3 seconds time constant
 	static float alpha_bar;
-	const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.);
-	float innov = yaw_rad;
+	const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.f);
+	float innov = pitch_rad;
 	alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
 
 	// work on alpha zero
-	if (m_speed_ms < 1.5f || dt < 0.01f || m_speed_ms * dt < 0.1) {
+	if (m_speed_ms < 1.5f) {
 		return;
 	}
 
 	// about 40 seconds time constant
-	float new_alpha_z = yaw_rad - atan2f((alti - alti_prev) , (m_speed_ms * dt));
+	float new_alpha_z = pitch_rad - atan2f((alti - alti_prev) * 1000.f , (m_speed_ms * SENSORS_REFRESH_PER_MS));
 	static float alpha_zero = 0;
 	alpha_zero = new_alpha_z * 0.003 + 0.997 * alpha_zero;
 
-	// update vertical speed
-	att.vit_asc = tanf(alpha_bar - alpha_zero) * m_speed_ms;
+	// update vertical speed after 3 mins
+	if (att.nbsec_act > 3.f * 60.f) {
+		att.vit_asc = tanf(alpha_bar - alpha_zero) * m_speed_ms;
+	}
 
 	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
 			180.f*(alpha_bar-alpha_zero)/3.1415f,
 			180.f*alpha_zero/3.1415f);
 
-	cur_time_prev = millis();
 	alti_prev = alti;
 
 #ifdef TDD
@@ -111,6 +118,18 @@ void Attitude::computeFusion(void) {
 		tdd_logger_log_float(TDD_LOGGING_ALPHA0, 180.f * alpha_zero / 3.1415f);
 		tdd_logger_log_float(TDD_LOGGING_EST_SLOPE, 100.0f * tanf(alpha_bar - alpha_zero));
 		tdd_logger_log_float(TDD_LOGGING_ALT_EST, m_cur_ele);
+#endif
+
+#ifdef USE_JSCOPE
+	{
+		// output some results to Segger JSCOPE
+		jscope.inputData(att.vit_asc, 								0);
+		jscope.inputData(180.f * (alpha_bar - alpha_zero)/3.1415f,	4);
+		jscope.inputData(180.f * alpha_zero / 3.1415f, 				8);
+		jscope.inputData(100.0f * tanf(alpha_bar - alpha_zero),		12);
+	}
+
+	jscope.flush();
 #endif
 }
 
@@ -162,8 +181,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 	float res = 0.;
 
 	// init the altitude model
-	if ((eLocationSourceGPS == source_ ||
-			eLocationSourceNRF == source_) &&
+	if ((eLocationSourceNone != source_) &&
 			m_baro.isDataReady() &&
 			!m_baro.hasSeaLevelRef()) {
 
@@ -201,8 +219,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
 		m_app_error.saved_data.crc = 0x00;
 
-	} else if ((eLocationSourceGPS == source_ ||
-			eLocationSourceNRF == source_) &&
+	} else if ((eLocationSourceNone != source_) &&
 			m_baro.hasSeaLevelRef()) {
 
 		res = att.climb = this->filterElevation(loc_);

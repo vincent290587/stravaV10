@@ -29,16 +29,13 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 
 	LOG_DEBUG("Last update age: %lu\r\n", locator.getLastUpdateAge());
 
-	LOG_INFO("Points2D allocated: %d\r\n",Point2D::getObjectCount()-Point::getObjectCount());
-	LOG_INFO("Points   allocated: %d\r\n",Point::getObjectCount());
-
 	// switch back and forth to GPS information page
 	if (eVuePRCScreenInit != m_prc_screen_mode &&
 			locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS) {
+
 		m_prc_screen_mode = eVuePRCScreenGps;
-	}
-	else if (m_prc_screen_mode == eVuePRCScreenGps &&
-			locator.getLastUpdateAge() <= LOCATOR_MAX_DATA_AGE_MS) {
+	} else {
+
 		m_prc_screen_mode = eVuePRCScreenDataFull;
 	}
 
@@ -348,13 +345,31 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 	LOG_DEBUG("VuePRC %u points printed\r\n", points_nb);
 
-	// draw a circle at the end of the segment
-	if (p_seg->getStatus() != SEG_OFF) {
+	if (p_seg->getStatus() < SEG_OFF) {
+
+		// draw a rect at the end of the segment (done)
 		if (((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
-				(pSuivant._lat > minLat && pSuivant._lat < maxLat)))
-			drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5.f, LS027_PIXEL_BLACK);
+				(pSuivant._lat > minLat && pSuivant._lat < maxLat))) {
+
+			drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
+		}
+	} else if (p_seg->getStatus() != SEG_OFF) {
+
+		// draw a flag at the end of the segment (not done yet)
+		if (((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
+						(pSuivant._lat > minLat && pSuivant._lat < maxLat))) {
+
+			drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
+			fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 5, 5, LS027_PIXEL_BLACK);
+			fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, 5, LS027_PIXEL_BLACK);
+		}
+
 	} else {
+
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
 		if (((maPos->_lon > minLon && maPos->_lon < maxLon) &&

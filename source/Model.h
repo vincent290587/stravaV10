@@ -8,20 +8,19 @@
 #ifndef SOURCE_MODEL_H_
 #define SOURCE_MODEL_H_
 
-#ifndef TDD
-
 #include <stdbool.h>
 #include "notifications.h"
 #include "parameters.h"
 #include "g_structs.h"
+#include "task_manager_wrapper.h"
 
 typedef struct {
-	uint8_t peripherals_id;
-	uint8_t boucle_id;
-	uint8_t system_id;
-	uint8_t ls027_id;
-	uint8_t uart_id;
-	uint8_t usb_id;
+	task_id_t peripherals_id;
+	task_id_t boucle_id;
+	task_id_t system_id;
+	task_id_t ls027_id;
+	task_id_t uart_id;
+	task_id_t usb_id;
 } sTasksIDs;
 
 extern sTasksIDs m_tasks_id;
@@ -45,6 +44,7 @@ extern sTasksIDs m_tasks_id;
 #include "VParser.h"
 #include "SufferScore.h"
 #include "PowerZone.h"
+#include "RRZone.h"
 #include "UserSettings.h"
 #include "mk64f_parser.h"
 
@@ -90,6 +90,8 @@ extern SufferScore   suffer_score;
 
 extern PowerZone     zPower;
 
+extern RRZone        rrZones;
+
 extern UserSettings   u_settings;
 
 extern "C" {
@@ -129,10 +131,5 @@ void ls027_task(void * p_context);
 }
 #endif // defined C++
 
-#else /* TDD */
-
-#include "Model_tdd.h"
-
-#endif /* TDD */
 
 #endif /* SOURCE_MODEL_H_ */

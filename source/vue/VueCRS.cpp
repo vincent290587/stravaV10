@@ -23,47 +23,30 @@ VueCRS::VueCRS() : Adafruit_GFX(0, 0) {
 
 eVueCRSScreenModes VueCRS::tasksCRS() {
 
-	LOG_DEBUG("Last update age: %lu\r\n", locator.getLastUpdateAge());
+	LOG_DEBUG("Last update age: %lu", locator.getLastUpdateAge());
 
-	if (locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS ||
-			!gps_mgmt.isEPOUpdating()) {
-		m_crs_screen_mode = eVueCRSScreenInit;
-	}
-	else if (m_crs_screen_mode == eVueCRSScreenInit) {
-		m_crs_screen_mode = eVueCRSScreenDataFull;
-	}
+	if (locator.getLastUpdateAge() > LOCATOR_MAX_DATA_AGE_MS) {
 
-	if (m_crs_screen_mode != eVueCRSScreenInit) {
-		switch (segMngr.getNbSegs()) {
-		case 0:
-			m_crs_screen_mode = eVueCRSScreenDataFull;
-			break;
-		case 1:
-			m_crs_screen_mode = eVueCRSScreenDataSS;
-			break;
-		case 2:
-		default:
-			m_crs_screen_mode = eVueCRSScreenDataDS;
-			break;
-		}
+		m_crs_screen_mode =  eVueCRSScreenInit;
+	} else {
+
+		m_crs_screen_mode =  eVueCRSScreenDataFull;
 	}
 
 	switch (m_crs_screen_mode) {
 	case eVueCRSScreenInit:
 	{
-		// boot in screen #1
-		m_screen_page = eVueCRSScreenPage1;
-
 		// display GPS page
-		this->displayGPS();
-
+		vue.displayGPS();
 	} break;
 
 	default:
 		if (m_screen_page == eVueCRSScreenPage1) {
 			this->afficheScreen1();
-		} else {
+		} else if (m_screen_page == eVueCRSScreenPage2) {
 			this->afficheScreen2();
+		} else {
+			this->afficheSensors();
 		}
 		break;
 
@@ -84,14 +67,16 @@ bool VueCRS::propagateEventsCRS(eButtonsEvent event) {
 	switch (event) {
 		case eButtonsEventLeft:
 		{
-			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
-			else m_screen_page = eVueCRSScreenPage1;
+			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage3;
+			else if (m_screen_page==eVueCRSScreenPage2) m_screen_page = eVueCRSScreenPage1;
+			else m_screen_page = eVueCRSScreenPage2;
 			break;
 		}
 
 		case eButtonsEventRight:
 		{
 			if (m_screen_page==eVueCRSScreenPage1) m_screen_page = eVueCRSScreenPage2;
+			else if (m_screen_page==eVueCRSScreenPage2) m_screen_page = eVueCRSScreenPage3;
 			else m_screen_page = eVueCRSScreenPage1;
 			break;
 		}
@@ -108,6 +93,24 @@ bool VueCRS::propagateEventsCRS(eButtonsEvent event) {
 
 
 void VueCRS::afficheScreen1(void) {
+
+	if (m_crs_screen_mode != eVueCRSScreenInit) {
+		switch (segMngr.getNbSegs()) {
+		case 0:
+			m_crs_screen_mode = eVueCRSScreenDataFull;
+			break;
+		case 1:
+			m_crs_screen_mode = eVueCRSScreenDataSS;
+			break;
+		case 2:
+			// no break
+		default:
+			m_crs_screen_mode = eVueCRSScreenDataDS;
+			break;
+		}
+	}
+
+	LOG_INFO("Displaying %u segments", segMngr.getNbSegs());
 
 	switch (m_crs_screen_mode) {
 	case eVueCRSScreenDataFull:
@@ -249,7 +252,7 @@ void VueCRS::afficheScreen2(void) {
 	model_get_navigation(&navi);
 
 	this->cadran(5, VUE_CRS_NB_LINES, 1, "Next turn", _imkstr(navi.distance), "m");
-	this->cadran(5, VUE_CRS_NB_LINES, 2, "Direction", _imkstr(navi.direction), NULL);
+	this->cadranRR(5, VUE_CRS_NB_LINES, 2, "RR", rrZones);
 
 	const uint8_t* bitmap = komoot_nav_get_icon(navi.direction);
 	if (bitmap) {
@@ -258,6 +261,48 @@ void VueCRS::afficheScreen2(void) {
 				KOMOOT_ICON_SIZE_W, KOMOOT_ICON_SIZE_H, 0, 1);
 	}
 
+}
+
+void VueCRS::afficheSensors(void) {
+
+	// get values from FXOS
+	float yaw_rad;
+	float pitch_rad;
+	(void)fxos_get_yaw(yaw_rad);
+	(void)fxos_get_pitch(pitch_rad);
+
+	// mag heading
+	const uint16_t radius = 50;
+	this->drawCircle(this->width()/2, 300, radius, LS027_PIXEL_BLACK);
+
+	int16_t x2, y2;
+	rotate_point(yaw_rad * 180. / 3.1415, this->width()/2, 300,
+			this->width()/2, 300 - radius, x2, y2);
+	this->drawLine(this->width()/2, 300, x2, y2, LS027_PIXEL_BLACK);
+
+	// pitch
+	const uint16_t bar_len = 140;
+	float val = regFenLim(pitch_rad, -1.6, 1.6, -bar_len/2, bar_len/2);
+	if (val > 0.) {
+		this->fillRect(this->width()/2, 53, val, 8, LS027_PIXEL_BLACK);
+	} else {
+		this->fillRect(this->width()/2 + val, 53, -val, 8, LS027_PIXEL_BLACK);
+	}
+	this->drawRect(this->width()/2-bar_len/2, 50, bar_len, 14, LS027_PIXEL_BLACK);
+
+	this->setTextSize(2);
+	this->setCursor(this->width()/2-bar_len/2, 35);
+	this->print("Pitch");
+
+	// pitch #2
+	sVueHistoConfiguration h_config;
+	h_config.cur_elem_nb = fxos_histo_size();
+	h_config.ref_value   = (tHistoValue)157;
+	h_config.max_value   = (tHistoValue)314;
+	h_config.nb_elem_tot = PITCH_BUFFER_SIZE;
+	h_config.p_f_read    = fxos_histo_read;
+
+	this->HistoH(3, 6, h_config);
 }
 
 
@@ -398,20 +443,32 @@ void VueCRS::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	}
 	LOG_DEBUG("VueCRS %u points printed\r\n", points_nb);
 
-	// draw a circle at the end of the segment
 	if (p_seg->getStatus() < SEG_OFF) {
-		drawCircle(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
-				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
-	} else if (p_seg->getStatus() > SEG_OFF) {
+
+		// draw a rect at the end of the segment (done)
+		drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
+
+	} else if (p_seg->getStatus() != SEG_OFF) {
+
+		drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
+		fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 5, 5, LS027_PIXEL_BLACK);
+		fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
+				regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, 5, LS027_PIXEL_BLACK);
+
+	} else {
+
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
 		drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0.f, _width),
-				regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5, LS027_PIXEL_BLACK);
+				regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5.f, LS027_PIXEL_BLACK);
 	}
 
-	// limit position when segment is finished
 	float _lat, _lon;
 	if (p_seg->getStatus() < SEG_OFF) {
+		// limit position when segment is finished
 		_lon = pCourant._lon;
 		_lat = pCourant._lat;
 	} else {

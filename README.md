@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/vincent290587/stravaV10/tree/develop.svg?style=svg)](https://circleci.com/gh/vincent290587/stravaV10/tree/develop)
+[![codecov](https://codecov.io/gh/vincent290587/stravaV10/branch/develop/graph/badge.svg)](https://codecov.io/gh/vincent290587/stravaV10)
 
 # Project
 
@@ -42,8 +43,8 @@ make flash            (or) make dfu
 - [x] Better power computation
 - [x] ANT+ sensors pairing (FEC, HRM, BSC)
 - [x] User settings (FTP, weight)
+- [x] Better LED interaction
 - [ ] Connection to a BLE AP to unload recorded data
-- [ ] Better LED interaction
 
 
 ## Screenshots

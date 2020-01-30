@@ -105,12 +105,12 @@ INC_FOLDERS += \
   $(SDK_ROOT)/modules/nrfx \
   $(SDK_ROOT)/external/nrf_oberon/include \
   $(SDK_ROOT)/components/libraries/crypto/backend/oberon \
+  $(SDK_ROOT)/external/utf_converter \
   $(SDK_ROOT)/components/libraries/crypto/backend/cifra \
   $(SDK_ROOT)/components/libraries/atomic \
   $(SDK_ROOT)/integration/nrfx \
   $(SDK_ROOT)/components/libraries/crypto/backend/cc310_bl \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd \
-  $(SDK_ROOT)/components/softdevice/mbr/nrf52840/headers \
   $(SDK_ROOT)/components/libraries/log/src \
   $(SDK_ROOT)/components/libraries/bootloader/dfu \
   $(SDK_ROOT)/components/libraries/bootloader/serial_dfu \
@@ -128,14 +128,14 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/boards \
   $(SDK_ROOT)/components/libraries/crypto/backend/cc310 \
   $(SDK_ROOT)/components/libraries/bootloader \
-  $(SDK_ROOT)/external/fprintf \
+  $(SDK_ROOT)/components/softdevice/mbr/headers \
   $(SDK_ROOT)/components/libraries/crypto \
   ../config \
   $(SDK_ROOT)/components/libraries/crypto/backend/optiga \
   $(SDK_ROOT)/components/libraries/scheduler \
   $(SDK_ROOT)/components/libraries/slip \
   $(SDK_ROOT)/modules/nrfx/hal \
-  $(SDK_ROOT)/external/utf_converter \
+  $(SDK_ROOT)/external/fprintf \
   $(SDK_ROOT)/components/toolchain/cmsis/include \
   $(SDK_ROOT)/components/libraries/usbd/class/cdc/acm \
   $(SDK_ROOT)/components/libraries/balloc \
@@ -151,7 +151,7 @@ INC_FOLDERS += \
 
 # Libraries common to all targets
 LIB_FILES += \
-  $(SDK_ROOT)/external/nrf_oberon/lib/cortex-m4/hard-float/liboberon_2.0.7.a \
+  $(SDK_ROOT)/external/nrf_oberon/lib/cortex-m4/hard-float/liboberon_3.0.1.a \
   $(SDK_ROOT)/external/nrf_cc310_bl/lib/cortex-m4/hard-float/libnrf_cc310_bl_0.9.12.a \
 
 # Optimization flags
@@ -162,7 +162,7 @@ OPT = -Os -g3
 # C flags common to all targets
 CFLAGS += $(OPT)
 CFLAGS += -DBOARD_PCA10056
-CFLAGS += -DCONFIG_GPIO_AS_PINRESET
+#CFLAGS += -DCONFIG_GPIO_AS_PINRESET
 CFLAGS += -DFLOAT_ABI_HARD
 CFLAGS += -DMBR_PRESENT
 CFLAGS += -DNRF52840_XXAA
@@ -185,7 +185,7 @@ ASMFLAGS += -mcpu=cortex-m4
 ASMFLAGS += -mthumb -mabi=aapcs
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DBOARD_PCA10056
-ASMFLAGS += -DCONFIG_GPIO_AS_PINRESET
+#ASMFLAGS += -DCONFIG_GPIO_AS_PINRESET
 ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -DMBR_PRESENT
 ASMFLAGS += -DNRF52840_XXAA
@@ -239,9 +239,9 @@ flash: default
 	nrfjprog -f nrf52 --reset
 
 # Flash softdevice
-flash_mbr: default
+flash_mbr:
 	@echo Flashing: mbr_nrf52_2.4.1_mbr.hex
-	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/mbr/nrf52840/hex/mbr_nrf52_2.4.1_mbr.hex --sectorerase
+	nrfjprog -f nrf52 --program $(SDK_ROOT)/components/softdevice/mbr/hex/mbr_nrf52_2.4.1_mbr.hex --sectorerase
 	nrfjprog -f nrf52 --program $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --sectorerase
 	nrfjprog -f nrf52 --reset
 

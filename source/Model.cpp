@@ -21,7 +21,7 @@
 #include "ble_api_base.h"
 #endif
 
-#ifdef ANT_STACK_SUPPORT_REQD
+#if defined( ANT_STACK_SUPPORT_REQD ) || defined( TDD )
 #include "ant.h"
 #endif
 
@@ -35,6 +35,8 @@ SAtt att;
 SufferScore   suffer_score;
 
 PowerZone     zPower;
+
+RRZone        rrZones;
 
 UserSettings   u_settings;
 
@@ -157,6 +159,9 @@ static void model_perform_virtual_tasks(void) {
 //			APP_ERROR_CHECK(0x18);
 //			ASSERT(0);
 	}
+	else if (m_vparser_event == 18) {
+		fxos_calibration_start();
+	}
 	else if (m_vparser_event == 17) {
 #if defined (BLE_STACK_SUPPORT_REQD)
 		ble_start_evt(eBleEventTypeStartXfer);
@@ -169,6 +174,14 @@ static void model_perform_virtual_tasks(void) {
 	else if (m_vparser_event == 15) {
 		LOG_WARNING("fmkfs_memory start");
 		fmkfs_memory();
+	}
+	else if (m_vparser_event == 14) {
+
+		test_memory();
+	}
+	else if (m_vparser_event == 13) {
+
+		format_memory();
 	}
 
 	m_vparser_event = 0;
@@ -232,7 +245,6 @@ void idle_task(void * p_context)
 		app_sched_execute();
 #endif
 
-		// TODO sysview_task_idle();
 		pwr_mgmt_run();
 
 		w_task_yield();
@@ -313,11 +325,12 @@ void peripherals_task(void * p_context)
 		neopixel_radio_callback_handler(false);
 #endif
 
-#ifdef ANT_STACK_SUPPORT_REQD
+#if defined( ANT_STACK_SUPPORT_REQD ) || defined( TDD )
 		sysview_task_void_enter(AntRFTasks);
 		ant_tasks();
 		roller_manager_tasks();
 		suffer_score.addHrmData(hrm_info.bpm, millis());
+		rrZones.addRRData(hrm_info);
 		sysview_task_void_exit(AntRFTasks);
 #endif
 
@@ -342,9 +355,7 @@ void peripherals_task(void * p_context)
 
 		backlighting_tasks();
 
-		if (task_manager_is_started()) {
-			w_task_delay(100);
-		}
+		w_task_delay(100);
 
 	}
 }

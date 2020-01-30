@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+void bme280_set_pressure(float);
+
 void simulator_init(void);
 
 void simulator_tasks(void);

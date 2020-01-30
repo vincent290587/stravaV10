@@ -13,10 +13,11 @@
 #include <string.h>
 #include <unistd.h>
 #include "sd_hal.h"
+#include "millis.h"
 #include "sd_functions.h"
 #include "Simulator.h"
-#include "Model_tdd.h"
-#include "bme280.h"
+#include "Model.h"
+#include "i2c_scheduler.h"
 #include "segger_wrapper.h"
 #include "GUI_connector.h"
 #include "unit_testing.hpp"
@@ -124,6 +125,24 @@ void task4(void *p_context) {
 
 /**
  *
+ * @param p_context
+ */
+void idle_task_tdd(void * p_context)
+{
+
+	for(;;)
+	{
+
+#ifndef LS027_GUI
+		millis_increase_time(5);
+#endif
+
+		w_task_yield();
+	}
+}
+
+/**
+ *
  * @return 0
  */
 int main(void)
@@ -197,12 +216,16 @@ int main(void)
 
 	LOG_INFO("Program init");
 
-	m_tasks_id.boucle_id = TASK_ID_INVALID;
-	m_tasks_id.system_id = TASK_ID_INVALID;
-	m_tasks_id.peripherals_id = TASK_ID_INVALID;
-	m_tasks_id.ls027_id = TASK_ID_INVALID;
+	m_tasks_id.boucle_id		= TASK_ID_INVALID;
+	m_tasks_id.system_id		= TASK_ID_INVALID;
+	m_tasks_id.peripherals_id	= TASK_ID_INVALID;
+	m_tasks_id.ls027_id			= TASK_ID_INVALID;
+	m_tasks_id.uart_id			= TASK_ID_INVALID;
+	m_tasks_id.usb_id			= TASK_ID_INVALID;
 
-	bme280_init_sensor();
+	task_begin(65536 * 5);
+
+	i2c_scheduling_init();
 
 	simulator_init();
 
@@ -213,7 +236,9 @@ int main(void)
 
 	fatfs_init();
 
-	boucle.init();
+	gps_mgmt.init();
+
+	//boucle.init();
 
 	vue.init();
 
@@ -226,7 +251,7 @@ int main(void)
 		message += String(m_app_error.hf_desc.stck.pc, HEX);
 		message += " in void ";
 		message += m_app_error.void_id;
-		LOG_ERROR(message.c_str());
+		LOG_ERROR("%s", message.c_str());
 	    vue.addNotif("Error", message.c_str(), 8, eNotificationTypeComplete);
 		memset(&m_app_error.hf_desc, 0, sizeof(m_app_error.hf_desc));
 	}
@@ -237,14 +262,12 @@ int main(void)
 
 	delay_ms(1);
 
-	task_begin(65536 * 5);
-
 	m_tasks_id.boucle_id = task_create(boucle_task, "boucle_task", 65536, NULL);
 	m_tasks_id.system_id = task_create(system_task, "system_task", 65536, NULL);
 	m_tasks_id.peripherals_id = task_create(peripherals_task, "peripherals_task", 65536, NULL);
 	m_tasks_id.ls027_id = task_create(ls027_task, "ls027_task", 65536, NULL);
 
-	task_start(idle_task, NULL);
+	task_start(idle_task_tdd, NULL);
 
 }
 

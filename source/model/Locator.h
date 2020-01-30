@@ -92,6 +92,7 @@ public:
 	bool isUpdated();
 
 	uint32_t getLastUpdateAge();
+	uint32_t getUsedSatsAge();
 
 	Sensor<sLocationData> nrf_loc;
 	Sensor<sLocationData> sim_loc;
@@ -101,6 +102,7 @@ private:
 	bool anyChanges;
 
 	uint16_t m_nb_nrf_pos;
+	uint16_t m_nb_sats;
 };
 
 #endif /* _cplusplus */

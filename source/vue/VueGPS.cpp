@@ -20,12 +20,18 @@ void VueGPS::displayGPS() {
 	vue.setCursor(20,20);
 	vue.setTextSize(2);
 
-	if (gps_mgmt.isEPOUpdating()) {
+	if (!gps_mgmt.isEPOUpdating()) {
+
 		locator.displayGPS2();
 	} else {
+
 		vue.println("EPO update in progress");
-//		vue.println("EPO update in progress...");
 	}
+
+	String segs = " ";
+	segs += mes_segments.size();
+	segs += " segments loaded";
+	vue.println(segs);
 
 	this->cadranH(6, VUE_GPS_NB_LINES, "Time", _timemkstr(att.date, ':'), NULL);
 

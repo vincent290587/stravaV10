@@ -72,7 +72,7 @@ class Print
 	size_t print(long n, int base)			{ return (base == 10) ? print(n) : printNumber(n, base, 0); }
 	size_t print(unsigned long n, int base)		{ return printNumber(n, base, 0); }
 
-	size_t print(double n, int digits = 2)		{ return printFloat(n, digits); }
+	size_t print(double n, int digits = 2)		{ return printFloat((float)n, digits); }
 	size_t print(const Printable &obj)		{ return obj.printTo(*this); }
 	size_t println(void);
 	size_t println(const String &s)			{ return print(s) + println(); }
@@ -102,7 +102,10 @@ class Print
 	void setWriteError(int err = 1) { write_error = err; }
   private:
 	char write_error;
-	size_t printFloat(double n, uint8_t digits);
+#if 1
+	char m_str_buffer[128];
+#endif
+	size_t printFloat(float n, uint8_t digits);
 	size_t printNumber(unsigned long n, uint8_t base, uint8_t sign);
 };
 

@@ -338,14 +338,14 @@ static void usb_cdc_trigger_xfer(void) {
 	NRF_LOG_DEBUG("VCOM new index %u", m_tx_buffer_index);
 }
 
-static void _wait_for_usb(void ) {
+static void _wait_for_disk(void ) {
 
-	if (m_tasks_id.usb_id != TASK_ID_INVALID &&
-			task_manager_is_started()) {
-		w_task_delay(110);
-	} else {
-		perform_system_tasks_light();
+	if (task_manager_is_started()) {
+
+		w_task_yield();
 	}
+
+	__WFE();
 }
 
 /**
@@ -370,7 +370,7 @@ void usb_cdc_diskio_init(void) {
 	// Initialize FATFS disk I/O interface by providing the block device.
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), _wait_for_usb)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), _wait_for_disk)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));

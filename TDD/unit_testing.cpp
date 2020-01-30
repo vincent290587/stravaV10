@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "Model_tdd.h"
+#include "Model.h"
 #include "Screenutils.h"
 #include "fram.h"
 #include "bme280.h"
@@ -19,7 +19,7 @@
 
 #define TEST_FILTRE_NB    15
 
-#define TEST_ROLLOF_NB    48759
+#define TEST_ROLLOF_NB    1024
 
 extern void simulator_simulate_altitude(float alti);
 
@@ -81,30 +81,31 @@ bool test_rollover(void) {
 
 	LOG_INFO("Testing overflow...");
 
-	uint8_t el_time_prev;
-	uint8_t fec_info_el_time;
+	uint8_t el_time_prev = 0;
+	uint8_t fec_info_el_time = 0;
 	uint32_t m_el_time = 0;
 	uint32_t m_el_time_ref = 0;
 
-	for (uint16_t i=1; i< TEST_ROLLOF_NB; ) {
+	for (uint16_t i=0; i< TEST_ROLLOF_NB; i++) {
 
 		int rnd_add;
-		rnd_add = (rand() % 5);
+		rnd_add = 5;
 
-		i+= rnd_add;
+		m_el_time_ref += rnd_add;
 
-		fec_info_el_time = (uint8_t)i;
+		fec_info_el_time = (uint8_t)(m_el_time_ref & 0xFF);
 
 		// WORKS
-		uint8_t rollof = fec_info_el_time;
-		rollof -= el_time_prev;
-		rollof &= 0x3F;
-		if (rollof) {
-			m_el_time += rollof;
-			el_time_prev = fec_info_el_time;
+		int16_t rollof = (int16_t)fec_info_el_time - el_time_prev;
+		m_el_time += rollof;
+
+		if (el_time_prev > fec_info_el_time) {
+			m_el_time += 0xFF + 1;
+			LOG_INFO("Rollover %u %u %lu %lu", el_time_prev, fec_info_el_time, m_el_time, m_el_time_ref);
 		}
 
-		m_el_time_ref = i;
+		el_time_prev = fec_info_el_time;
+
 	}
 
 	if (m_el_time != m_el_time_ref) {

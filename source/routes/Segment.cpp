@@ -298,8 +298,10 @@ int Segment::testActivation(ListePoints& liste) {
 
 	if (p_scal > PSCAL_LIM &&
 			distP2 * distP2 < distP1 * distP1 + distP1P2 * distP1P2) {
+		LOG_DEBUG("PSCAL1 %s %.2f %.1f", this->getName(), p_scal, distP2 * distP2 - (distP1 * distP1 + distP1P2 * distP1P2));
 		return 1;
 	} else {
+		LOG_DEBUG("PSCAL0 %s %.2f %.1f", this->getName(), p_scal, distP2 * distP2 - (distP1 * distP1 + distP1P2 * distP1P2));
 		return 0;
 	}
 
@@ -368,9 +370,9 @@ void Segment::majPerformance(ListePoints& mes_points) {
 		return;
 	}
 
-	activable = testActivation(mes_points);
-
-	ASSERT(m_p_data);
+	if (!m_p_data) {
+		return;
+	}
 
 	m_p_data->_lpts.updateDelta();
 	Vecteur& delta = m_p_data->_lpts.getDeltaListe();
@@ -379,6 +381,9 @@ void Segment::majPerformance(ListePoints& mes_points) {
 	m_p_data->_lpts.updateRelativePosition(pc);
 
 	if (_actif == SEG_OFF) {
+
+		activable = testActivation(mes_points);
+
 		if (activable > 0) {
 			// premiere interpolation avec notre historique de points
 			pc = this->getFirstPoint();
@@ -467,12 +472,12 @@ int Segment::getScore(void) {
 	if (this->_actif == SEG_OFF) return 1;
 	if (this->_actif == SEG_START) return 2;
 
-	// we are in START or ON
-	int score = 1;
+	// we are in ON: end result between 3 and 9
+	int score = 2;
 	if (this->_actif == SEG_ON && m_p_data) {
 
 		LOG_DEBUG("Calculated pDist: %f", m_p_data->_monPDist);
-		score = (int)regFenLim(m_p_data->_monPDist, 0., 1., 1., 10.);
+		score += (int)regFenLim(m_p_data->_monPDist, 0., 1., 1.1, 7.1);
 
 	}
 

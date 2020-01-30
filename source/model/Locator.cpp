@@ -14,8 +14,9 @@
 #include <stdlib.h>
 #include <Locator.h>
 
+#define NB_SATS_TO_DETAIL           4
 
-static bool m_is_updated = false;
+static bool m_is_gps_updated = false;
 
 TinyGPSPlus   gps;
 TinyGPSCustom hdop(gps, "GPGSA", 16);       // $GPGSA sentence, 16th element
@@ -26,12 +27,12 @@ TinyGPSCustom messageNumber(gps, "GPGSV", 2);      // $GPGSV sentence, second el
 
 TinyGPSCustom satsInView(gps, "GPGSV", 3);  // $GPGSV sentence, third element
 
-TinyGPSCustom satsInUse(gps, "GNGGA", 7);  // $GPGSV sentence, 7th element
+TinyGPSCustom satsInUse(gps, "GNGGA", 7);   // $GNGGA sentence, 7th element
 
-TinyGPSCustom satNumber[4]; // to be initialized later
-TinyGPSCustom elevation[4];
-TinyGPSCustom azimuth[4];
-TinyGPSCustom snr[4];
+TinyGPSCustom satNumber[NB_SATS_TO_DETAIL]; // to be initialized later
+TinyGPSCustom elevation[NB_SATS_TO_DETAIL];
+TinyGPSCustom azimuth[NB_SATS_TO_DETAIL];
+TinyGPSCustom snr[NB_SATS_TO_DETAIL];
 
 sSatellite sats[MAX_SATELLITES];
 
@@ -47,7 +48,7 @@ uint32_t locator_encode_char(char c) {
 	if (gps.encode(c)) {
 
 		if (GPS_SENTENCE_GPRMC == gps.curSentenceType) {
-			m_is_updated = true;
+			m_is_gps_updated = true;
 		}
 
 	}
@@ -66,6 +67,7 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 	locator.nrf_loc.data.lon = (float)(lns_info->lon / 10000000.f);
 	locator.nrf_loc.data.speed = (float)(lns_info->speed / 10.f);
 
+	locator.nrf_loc.data.course = (float)(lns_info->heading);
 	locator.nrf_loc.data.utc_time = lns_info->secj;
 	locator.nrf_loc.data.date = lns_info->date;
 
@@ -77,14 +79,15 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 
 
 Locator::Locator() {
-	m_is_updated = false;
+	m_is_gps_updated = false;
 
 	anyChanges   = false;
 
 	m_nb_nrf_pos = 0;
+	m_nb_sats    = 0;
 
 	// Initialize all the uninitialized TinyGPSCustom objects
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < NB_SATS_TO_DETAIL; ++i)
 	{
 	    satNumber[i].begin(gps, "GPGSV", 4 + 4 * i); // offsets 4, 8, 12, 16
 	    elevation[i].begin(gps, "GPGSV", 5 + 4 * i); // offsets 5, 9, 13, 17
@@ -156,6 +159,15 @@ uint32_t Locator::getLastUpdateAge() {
 
 /**
  *
+ * @return The last GPGSV sentence age
+ */
+uint32_t Locator::getUsedSatsAge() {
+
+	return satsInUse.age();
+}
+
+/**
+ *
  * @param lat
  * @param lon
  * @param sec_
@@ -187,7 +199,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 		loc_.lon = nrf_loc.data.lon;
 		loc_.alt = nrf_loc.data.alt;
 		loc_.speed = nrf_loc.data.speed;
-		loc_.course = -1;
+		loc_.course = nrf_loc.data.course;
 		date_.secj = nrf_loc.data.utc_time;
 		date_.date = nrf_loc.data.date;
 		date_.timestamp = nrf_loc.data.utc_timestamp;
@@ -283,8 +295,8 @@ eLocationSource Locator::getDate(SDate& date_) {
  */
 void Locator::tasks() {
 
-	if (m_is_updated) {
-		m_is_updated = false;
+	if (m_is_gps_updated) {
+		m_is_gps_updated = false;
 
 		if (gps.time.isValid()) {
 			gps_loc.data.utc_time = get_sec_jour(gps.time.hour(), gps.time.minute(), gps.time.second());
@@ -321,10 +333,10 @@ void Locator::tasks() {
 
 		if (totalGPGSVMessages.isUpdated()) {
 
-			for (int i=0; i<4; ++i) {
+			for (int i=0; i < NB_SATS_TO_DETAIL; ++i) {
 
 				int no = atoi(satNumber[i].value());
-				// Serial.print(F("SatNumber is ")); Serial.println(no);
+
 				if (no >= 1 && no <= MAX_SATELLITES)
 				{
 					sats[no-1].elevation = atoi(elevation[i].value());
@@ -360,7 +372,6 @@ bool Locator::getGPSDate(int& iYr, int& iMo, int& iDay, int& iHr) {
 /**
  *
  */
-#ifndef TDD
 void Locator::displayGPS2(void) {
 
 	sysview_task_void_enter(Ls027Print);
@@ -371,40 +382,56 @@ void Locator::displayGPS2(void) {
 	vue.setCursor(20,20);
 	vue.setTextSize(2);
 
+	vue.print(" ");
 	vue.print(satsInUse.value());
-	vue.print(F(" used of "));
+	vue.print(F(" used out of "));
 	vue.println(satsInView.value());
 	vue.println("");
 
 	if (gps.location.isValid()) {
-		vue.println("Loc valid");
+		vue.println(" Loc valid");
 	} else {
-		vue.println("Loc pb");
+		vue.println(" Loc pb");
 	}
 
-	String line = "Loc age: ";
+	String line = " Loc age: ";
 	line += String((int)gps.location.age());
 	vue.println(line);
 
 	if (gps_mgmt.isFix()) {
-		vue.println("FIX pin high");
+		vue.println(" FIX pin high");
 	} else {
-		vue.println("No fix");
+		vue.println(" No fix");
 	}
 
-	line = "Time age: ";
+	line = " GPSMGMT ";
+	line += gps_mgmt.getPowerState();
+	vue.println(line);
+
+	line = " Time age: ";
 	line += String((int)gps.time.age());
 	vue.println(line);
 
-	vue.println("  ------");
+	vue.println("  ----- SAT -----");
+
+	uint16_t nb_printed = 0;
+	for (int i=0; i < MAX_SATELLITES; ++i) {
+
+		if (sats[i].active && ++nb_printed < 8)
+		{
+			line = " ID ";
+			line += i;
+			vue.print(line);
+			vue.setCursorX(160);
+			line = "";
+			line += sats[i].snr;
+			vue.println(line);
+		}
+	}
+
+	vue.println("  ----- MEM -----");
 
 	sysview_task_void_exit(Ls027Print);
 
 }
 
-#else
-void Locator::displayGPS2(void) {
-	vue.setCursor(20,20);
-	vue.setTextSize(2);
-}
-#endif

@@ -54,6 +54,8 @@ static task_t* s_running = NULL;
 static char *s_lframe = NULL; // top of stack
 static size_t stack_used = 0;
 
+static uint32_t m_is_started = 0;
+
 bool task_begin(size_t stackSize)
 {
 	m_tasks_nb = 0;
@@ -121,6 +123,11 @@ static int _task_init(tasked_func_t loop, const char *name, size_t stackSize, ui
 	return (int)m_tasks[task_id].task_id;
 }
 
+uint32_t task_manager_is_started(void) {
+
+	return m_is_started;
+}
+
 /**
  * https://fanf.livejournal.com/105413.html
  *
@@ -152,6 +159,8 @@ int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void
 void task_start(tasked_func_t idle_task, void *p_context)
 {
 	LOG_INFO("%u tasks recorded and starting", m_tasks_nb);
+
+	m_is_started = 1;
 
 	uint8_t idle_stack[DEFAULT_STACK_SIZE + DEFAULT_STACK_SPACING];
 

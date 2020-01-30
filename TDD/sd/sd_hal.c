@@ -37,6 +37,13 @@ void format_memory(void) {
 
 /**
  *
+ */
+void test_memory(void) {
+
+}
+
+/**
+ *
  * @return 0 if success
  */
 int fatfs_init(void) {

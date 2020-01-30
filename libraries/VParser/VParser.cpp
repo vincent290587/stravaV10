@@ -241,7 +241,7 @@ int32_t VParser::parse_decimal()
   char *p = _term;
   bool isneg = *p == '-';
   if (isneg) ++p;
-  int32_t ret = 100. * (int32_t)natol(p);
+  int32_t ret = 100 * (int32_t)natol(p);
   while (isdigit(*p)) ++p;
   if (*p == '.')
   {
@@ -283,7 +283,7 @@ String VParser::encodeOrder(float avance, float curTime) {
   //Serial.print(String("Partner= ") + String(partner, 2) + "  -> ");
 
   avt_pt = (uint8_t)fabs(partner);
-  i_tmp = fabs(partner) * 100.;
+  i_tmp = (int)(fabsf(partner) * 100.f);
   i_tmp = i_tmp % 100;
   ap_pt = (uint8_t)i_tmp;
 

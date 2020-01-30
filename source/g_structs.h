@@ -27,6 +27,7 @@ typedef struct {
 typedef struct {
 	uint8_t bpm;
 	uint16_t rr;
+	uint32_t timestamp;
 } sHrmInfo;
 
 typedef struct {

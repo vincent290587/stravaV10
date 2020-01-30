@@ -92,6 +92,8 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 #include "Model.h"
 #include "UserSettings.h"
 
+#define FDS_SUCCESS     NRF_SUCCESS
+
 /* File ID and Key used for the configuration record. */
 
 #define CONFIG_FILE     (0xF010)

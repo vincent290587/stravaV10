@@ -39,7 +39,7 @@
  */
 
 #include "diskio_blkdev.h"
-#include "task_manager_wrapper.h"
+#include "segger_wrapper.h"
 
 
 /**
@@ -51,8 +51,6 @@ static diskio_blkdev_t * m_drives;
  * @brief Number of registered drives.
  * */
 static BYTE m_drives_count;
-
-static task_id_t m_task_id = TASK_ID_INVALID;
 
 /**
  * @brief Block device handler.
@@ -71,16 +69,9 @@ static void block_dev_handler(struct nrf_block_dev_s const * p_blk_dev,
         case NRF_BLOCK_DEV_EVT_UNINIT:
         case NRF_BLOCK_DEV_EVT_BLK_WRITE_DONE:
         case NRF_BLOCK_DEV_EVT_BLK_READ_DONE:
-        {
             m_drives[drv].last_result = p_event->result;
             m_drives[drv].busy = false;
-
-            if (m_task_id != TASK_ID_INVALID &&
-					task_manager_is_started()) {
-            	w_task_delay_cancel(m_task_id);
-            	m_task_id = TASK_ID_INVALID;
-            }
-        } break;
+            break;
         default:
             break;
     }
@@ -91,12 +82,7 @@ static void block_dev_handler(struct nrf_block_dev_s const * p_blk_dev,
  * */
 static void default_wait_func(void)
 {
-	if (task_manager_is_started()) {
-		m_task_id = w_task_id_get();
-		w_task_delay(15);
-	} else {
-		__WFE();
-	}
+    __WFE();
 }
 
 DSTATUS disk_initialize(BYTE drv)
@@ -170,6 +156,7 @@ DSTATUS disk_uninitialize(BYTE drv)
     ret_code_t ret;
     do
     {
+        w_task_yield();
         /*Perform synchronous uninit.*/
         ret = nrf_blk_dev_uninit(m_drives[drv].config.p_block_device);
     } while (ret == NRF_ERROR_BUSY);

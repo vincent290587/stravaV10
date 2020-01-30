@@ -17,9 +17,10 @@ static bme280_data m_data;
 
 static bool m_is_updated = false;
 
-float m_press_sim;
+static float m_press_sim;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void bme280_init_sensor() {
 
@@ -44,6 +45,11 @@ float bme280_get_pressure(void) {
 	return m_data.comp_press / (256.0F * 100.0F);
 }
 
+void bme280_set_pressure(float press) {
+	m_press_sim = press;
+	m_is_updated = true;
+}
+
 bool bme280_is_data_ready(void) {
 	return m_data.is_updated;
 }
@@ -52,6 +58,8 @@ void bme280_refresh(void) {
 
 	if (m_is_updated) {
 		m_is_updated = false;
+
+		LOG_DEBUG("BME280 Updated");
 
 		m_data.comp_press = m_press_sim * (256.0F * 100.0F);
 		m_data.comp_temp = 20.7f * 100.0F;

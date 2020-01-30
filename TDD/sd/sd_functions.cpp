@@ -65,7 +65,7 @@ int init_liste_segments(void)
 	struct dirent *de;  // Pointer for directory entry
 
 	// opendir() returns a pointer of DIR type.
-	DIR *dr = opendir("./DB/");
+	DIR *dr = opendir("./../TDD/DB/");
 
 	if (dr == NULL)  // opendir returns NULL if couldn't open directory
 	{
@@ -164,7 +164,7 @@ int load_segment(Segment& seg) {
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
 
-	String fat_name = "./DB/";
+	String fat_name = "./../TDD/DB/";
 	fat_name += seg.getName();
 
 	//error = f_open(g_fileObject, _T(fat_name.c_str()), FA_READ);
@@ -229,7 +229,7 @@ int load_parcours(Parcours& mon_parcours) {
 	// clear list
 	mon_parcours.desallouerPoints();
 
-	String fat_name = "./DB/";
+	String fat_name = "./../TDD/DB/";
 	fat_name += mon_parcours.getName();
 
 	W_SYSVIEW_OnTaskStartExec(SD_ACCESS_TASK);
@@ -333,9 +333,11 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
 
 
 				int res = load_segment(mon_seg);
-				LOG_INFO("-->> Loading segment %s %u", mon_seg.getName(), res);
+				LOG_INFO("-->> Loading segment %s %d", mon_seg.getName(), res);
 
-				if (res > 0) mon_seg.init();
+				if (res <= 0) return res;
+
+				mon_seg.init();
 			}
 		}
 
@@ -376,9 +378,10 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 	uint32_t millis_ = millis();
 
-//	FRESULT error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-//	if (error) error = f_open(&g_fileObject, "histo.txt", FA_OPEN_APPEND | FA_WRITE);
-	g_fileObject = fopen("DB/histo.txt", "a+");
+	String fname = "rec";
+	fname += att->date.date;
+	fname += ".txt";
+	g_fileObject = fopen(fname.c_str(), "a+");
 
 	if (!g_fileObject)
 	{
@@ -427,7 +430,7 @@ bool sd_erase_pos(void) {
 int epo_file_size(void) {
 
 	FRESULT error;
-	const char* fname = "DB/MTK14.EPO";
+	const char* fname = "./../TDD/DB/MTK14.EPO";
 
 	if (!is_fat_init()) return -1;
 
@@ -449,7 +452,7 @@ int epo_file_size(void) {
 bool epo_file_start(int current_gps_hour_) {
 
 	FRESULT error;
-	const char* fname = "DB/MTK14.EPO";
+	const char* fname = "./../TDD/DB/MTK14.EPO";
 
 	if (!is_fat_init()) return -1;
 
@@ -539,7 +542,7 @@ int epo_file_stop(bool toBeDeleted) {
 
 //#ifndef DEBUG_CONFIG
 //	if (toBeDeleted) {
-//		error = funlink("MTK14.EPO");
+//		error = funlink("./../TDD/MTK14.EPO");
 //		if (error)
 //		{
 //			LOG_INFO("Unlink file failed.");

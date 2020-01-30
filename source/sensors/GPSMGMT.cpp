@@ -148,11 +148,12 @@ void GPS_MGMT::runWDT(void) {
 
 	// check if GPS is in a good state
 	if (millis() - last_toggled > 3000 &&
-			gps.time.age() > 3000) {
+			gps.time.age() > 3000 &&
+			locator.getUsedSatsAge() > 3000) {
 
 		last_toggled = millis();
 
-		LOG_WARNING("GPS WDT timeout: %u", gps.time.age());
+		LOG_WARNING("GPS WDT timeout: %u %u", locator.getUsedSatsAge(), gps.time.age());
 
 		gps_uart_stop();
 
@@ -170,7 +171,7 @@ void GPS_MGMT::runWDT(void) {
 
 		gps_uart_start();
 
-		LOG_WARNING("Resetting GPS....");
+		LOG_WARNING("Switching GPS UART speed");
 		vue.addNotif("GPS", "Resetting...", 5, eNotificationTypeComplete);
 	}
 }
@@ -217,7 +218,7 @@ bool GPS_MGMT::isStandby(void) {
 }
 
 bool GPS_MGMT::isEPOUpdating(void) {
-	return m_epo_state == eGPSMgmtEPOIdle;
+	return m_epo_state != eGPSMgmtEPOIdle;
 }
 
 void GPS_MGMT::startEpoUpdate(void) {

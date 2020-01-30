@@ -1,3 +1,4 @@
+#include "stdint.h"
 #include <string.h>
 #include <stdbool.h>
 #include "neopixel.h"
@@ -10,6 +11,7 @@
 
 static neopixel_strip_t     strip;
 static neo_sb_init_params_t _params;
+static neo_sb_seg_params    m_seg_notif;
 static bool                 leds_is_on;     /**< Flag for indicating if LEDs are on. */
 static bool                 is_counting_up; /**< Flag for indicating if counter is incrementing or decrementing. */
 static int32_t              pause_ticks;
@@ -60,6 +62,8 @@ void notifications_init(uint8_t pin_num) {
 	_params.step = _params.max / ON_STEPS_NB;
 	_params.on_time_ticks = ON_TICKS_DEFAULT;
 
+	memset(&m_seg_notif, 0, sizeof(m_seg_notif));
+
 	is_counting_up = true;
 
 	neopixel_init(&strip, pin_num, 1);
@@ -106,8 +110,8 @@ void notifications_setNotify(sNeopixelOrders* orders) {
 
 			return;
 		}
-		// no break
 	}
+	// no break
 
 	case eNeoEventNotify:
 	{
@@ -127,6 +131,11 @@ void notifications_setNotify(sNeopixelOrders* orders) {
 
 }
 
+void notifications_segNotify(neo_sb_seg_params* orders) {
+
+	memcpy(&m_seg_notif, orders, sizeof(m_seg_notif));
+}
+
 /**
  *
  * @return 1 if no task is active
@@ -134,8 +143,39 @@ void notifications_setNotify(sNeopixelOrders* orders) {
 uint8_t notifications_tasks() {
 
 	if (!leds_is_on) {
-		notifications_clear();
-		return 1;
+
+		static int on_time = 0;
+		static int off_time = 0;
+
+		// handle notifications
+		if (m_seg_notif.active) {
+
+			if (on_time == -1) {
+				on_time = m_seg_notif.on_time;
+				off_time = 0;
+			}
+
+			if (on_time) {
+
+				on_time--;
+				notifications_setColor(m_seg_notif.rgb[0], m_seg_notif.rgb[1], m_seg_notif.rgb[2]);
+			} else if (off_time) {
+
+				off_time--;
+				notifications_setColor(0, 0, 0);
+			} else {
+
+				off_time = m_seg_notif.off_time;
+				notifications_setColor(0, 0, 0);
+			}
+
+		} else {
+
+			on_time = -1;
+			off_time = 0;
+			notifications_setColor(0, 0, 0);
+		}
+
 	}
 
 	// continue process

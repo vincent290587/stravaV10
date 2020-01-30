@@ -96,34 +96,48 @@ size_t Print::println(void)
 	return write(buf, 2);
 }
 
-extern "C" {
-__attribute__((weak))
-int _write(int file, char *ptr, int len)
-{
-	((class Print *)file)->write((uint8_t *)ptr, len);
-	return len;
-}
-}
+//extern "C" {
+//__attribute__((weak))
+//int _write(int file, char *ptr, int len)
+//{
+//	((class Print *)file)->write((uint8_t *)ptr, len);
+//	return len;
+//}
+//}
 
 int Print::printf(const char *format, ...)
 {
 	va_list ap;
+#if 1
 	va_start(ap, format);
-#ifdef __STRICT_ANSI__
-	return 0;  // TODO: make this work with -std=c++0x
+	memset(m_str_buffer, 0, sizeof(m_str_buffer));
+	vsnprintf(m_str_buffer, sizeof(m_str_buffer)-1, format, ap);
+	write(m_str_buffer, strlen(m_str_buffer));
+	va_end(ap);
+	return 0;
 #else
-	return vdprintf((int)this, format, ap);
+	va_start(ap, format);
+	int res = vdprintf((int)this, format, ap);
+	va_end(ap);
+	return res;
 #endif
 }
 
 int Print::printf(const __FlashStringHelper *format, ...)
 {
 	va_list ap;
+#if 1
 	va_start(ap, format);
-#ifdef __STRICT_ANSI__
+	memset(m_str_buffer, 0, sizeof(m_str_buffer));
+	vsnprintf(m_str_buffer, sizeof(m_str_buffer)-1, (const char *)format, ap);
+	write(m_str_buffer, strlen(m_str_buffer));
+	va_end(ap);
 	return 0;
 #else
-	return vdprintf((int)this, (const char *)format, ap);
+	va_start(ap, format);
+	int res = vdprintf((int)this, (const char *)format, ap);
+	va_end(ap);
+	return res;
 #endif
 }
 
@@ -264,7 +278,7 @@ size_t Print::printNumber(unsigned long n, uint8_t base, uint8_t sign)
 
 #endif
 
-size_t Print::printFloat(double number, uint8_t digits) 
+size_t Print::printFloat(float number, uint8_t digits)
 {
 	uint8_t sign=0;
 	size_t count=0;
@@ -275,21 +289,21 @@ size_t Print::printFloat(double number, uint8_t digits)
     	if (number <-4294967040.0f) return print("ovf");  // constant determined empirically
 	
 	// Handle negative numbers
-	if (number < 0.0) {
+	if (number < 0.0f) {
 		sign = 1;
 		number = -number;
 	}
 
 	// Round correctly so that print(1.999, 2) prints as "2.00"
-	double rounding = 0.5;
+	float rounding = 0.5f;
 	for (uint8_t i=0; i<digits; ++i) {
-		rounding *= 0.1;
+		rounding *= 0.1f;
 	}
 	number += rounding;
 
 	// Extract the integer part of the number and print it
 	unsigned long int_part = (unsigned long)number;
-	double remainder = number - (double)int_part;
+	float remainder = number - (float)int_part;
 	count += printNumber(int_part, 10, sign);
 
 	// Print the decimal point, but only if there are digits beyond
@@ -302,7 +316,7 @@ size_t Print::printFloat(double number, uint8_t digits)
 		if (digits > sizeof(buf) - 1) digits = sizeof(buf) - 1;
 
 		while (digits-- > 0) {
-			remainder *= 10.0;
+			remainder *= 10.0f;
 			n = (uint8_t)(remainder);
 			buf[count++] = '0' + n;
 			remainder -= n; 

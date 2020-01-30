@@ -11,9 +11,12 @@
 #include "ff.h"
 #include "millis.h"
 #include "bme280.h"
+#include "gpio.h"
+#include "boards.h"
 #include "tdd_logger.h"
 #include "uart_tdd.h"
-#include "Model_tdd.h"
+#include "usb_cdc.h"
+#include "Model.h"
 #include "Simulator.h"
 #include "segger_wrapper.h"
 #include "assert_wrapper.h"
@@ -152,7 +155,20 @@ static void simulator_modes(void) {
 
 }
 
-extern float m_press_sim;
+void print_mem_state(void) {
+
+	static int max_mem_used = 0;
+	int tot_point_mem = 0;
+	tot_point_mem += Point::getObjectCount() * sizeof(Point);
+	tot_point_mem += Point2D::getObjectCount() * sizeof(Point2D);
+	tot_point_mem += segMngr.getNbSegs() * sizeof(sSegmentData);
+
+	if (tot_point_mem > max_mem_used) max_mem_used = tot_point_mem;
+
+	LOG_INFO(">> Allocated pts: %d 2D %d 3D / mem %d o / %d o",
+			Point2D::getObjectCount(), Point::getObjectCount(),
+			tot_point_mem, max_mem_used);
+}
 
 void simulator_simulate_altitude(float alti) {
 
@@ -160,10 +176,8 @@ void simulator_simulate_altitude(float alti) {
 
 	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
 
-	m_press_sim = sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f);
+	bme280_set_pressure(sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f));
 
-	// sets the updated flag
-	bme280_read_sensor();
 }
 
 void simulator_init(void) {
@@ -186,7 +200,7 @@ void simulator_init(void) {
 	tdd_logger_log_name(TDD_LOGGING_CUR_POWER, "power");
 	tdd_logger_log_name(TDD_LOGGING_CUR_SPEED, "speed");
 
-	g_fileObject = fopen("GPX_simu.csv", "r");
+	g_fileObject = fopen("./../TDD/GPX_simu.csv", "r");
 
 	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
 	m_app_error.hf_desc.stck.pc = 0x567896;
@@ -214,12 +228,22 @@ static void _fec_sim(void) {
 	last_point_ms = millis();
 
 	// HRM simulation
+	static uint32_t hrm_timestamp = 0;
 	hrm_info.bpm = 120 + (rand() % 65);
+	if(millis() - hrm_timestamp > hrm_info.rr) {
+		hrm_info.rr = 900 + (rand() % 24);
+//		static int i=0;
+//		hrm_info.rr = i++ %2==0 ? 700 : 900;
+		hrm_info.timestamp = millis();
+
+		hrm_timestamp = millis();
+	}
 
 	// FEC simulation
 	fec_info.power = rand() % 500;
 	fec_info.speed = 20.;
-	fec_info.el_time++;
+	uint32_t millis_ = millis() / 1000;
+	fec_info.el_time = (uint8_t)(millis_ & 0xFF);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
 }
@@ -227,7 +251,7 @@ static void _fec_sim(void) {
 static void _sensors_sim(void) {
 
 	static uint32_t last_point_ms = 0;
-	if (millis() - last_point_ms < 100) return;
+	if (millis() - last_point_ms < SENSORS_REFRESH_PER_MS) return;
 
 	static float cur_a = toRadians(5.0f);
 	static const float cur_a0 = toRadians(3.4f);
@@ -242,8 +266,10 @@ static void _sensors_sim(void) {
 		sim_nb = 0;
 	}
 
-	fxos_set_yaw(cur_a + cur_a0);
+	fxos_set_pitch(cur_a + cur_a0);
 	simulator_simulate_altitude(alt_sim);
+
+	LOG_DEBUG("Simulating sensors");
 
 	last_point_ms = millis();
 
@@ -262,6 +288,26 @@ static void _loc_sim(void) {
 
 	static uint32_t last_point_ms = 0;
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
+	if (millis() < 20000) {
+
+		gpio_clear(FIX_PIN);
+
+		if (gpio_get(GPS_R) && gpio_get(GPS_S) ) {
+			const char *e_gprmc = "$GPRMC,,V,,,,,,,,,,N*53\r\n"
+					"$GNGGA,,,,,,0,6,1.93,34.9,M,17.8,M,,*5B\r\n"
+					"$GPGSV,3,1,10,42,54,137,,14,51,128,46,31,48,015,48,16,42,243,*72\r\n"
+					"$GPGSV,3,2,10,29,23,054,44,193,20,175,37,03,17,298,,27,15,190,37*47\r\n"
+					"$GPGSV,3,3,10,22,10,176,,25,06,043,38*74\r\n";
+
+			// send to uart_tdd
+			for (int i=0; i < strlen(e_gprmc); i++)
+				uart_rx_handler(e_gprmc[i]);
+		}
+
+		last_point_ms = millis();
+		return;
+	}
+
 	last_point_ms = millis();
 
 	simulator_modes();
@@ -273,6 +319,8 @@ static void _loc_sim(void) {
 		float data[4];
 		char *pch;
 		uint16_t pos = 0;
+
+		LOG_INFO("Simulating coordinate...");
 
 		lat = 0; lon = 0; alt = 0;// on se met au bon endroit
 		pch = strtok (g_bufferRead, " ");
@@ -305,44 +353,70 @@ static void _loc_sim(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
-#ifdef LOC_SOURCE_GPS
-		// build make NMEA sentence
-		GPRMC gprmc_(lat, lon, 0., (int)rtime);
-		int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
+		if (millis() < 60000 &&
+				(gpio_get(GPS_R) && gpio_get(GPS_S)) ) {
 
-		LOG_WARNING("Sentence: %s", g_bufferWrite);
+			gpio_set(FIX_PIN);
 
-		// send to uart_tdd
-		for (int i=0; i < nmea_length; i++)
-			uart_rx_handler(g_bufferWrite[i]);
+			// build make NMEA sentence
+			GPRMC gprmc_(lat, lon, 0., (int)rtime);
+			int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
 
-		if (++nb_gps_loc == 1) {
-			sLocationData loc_data;
-			loc_data.alt = 9.5;
-			loc_data.lat = lat;
-			loc_data.lon = lon;
-			loc_data.utc_time = 15 * 3600 + 5 * 60 + 39;
-			loc_data.date = 11218;
+			LOG_WARNING("Sentence: %s", g_bufferWrite);
 
-			gps_mgmt.startHostAidingEPO(loc_data, 350);
+			// send to uart_tdd
+			for (int i=0; i < nmea_length; i++)
+				uart_rx_handler(g_bufferWrite[i]);
+
+			const char *e_gpgsv = "$GNVTG,286.99,T,,M,0.62,N,1.15,K,A*2E\r\n";
+
+			// send to uart_tdd
+			for (int i=0; i < strlen(e_gpgsv); i++)
+				uart_rx_handler(e_gpgsv[i]);
+
+			if (++nb_gps_loc == 1) {
+				sLocationData loc_data;
+				loc_data.alt = 9.5;
+				loc_data.lat = lat;
+				loc_data.lon = lon;
+				loc_data.utc_time = 15 * 3600 + 5 * 60 + 39;
+				loc_data.date = 11218;
+
+				gps_mgmt.startHostAidingEPO(loc_data, 350);
+			}
+		} else {
+			sLnsInfo lns_info;
+			lns_info.lat = lat * 10000000.;
+			lns_info.lon = lon * 10000000.;
+			lns_info.ele = (alt_sim + 32.3f) * 100.;
+			lns_info.secj = (int)rtime;
+			lns_info.date = 11218;
+			lns_info.heading = 5;
+			lns_info.speed = cur_speed * 10.;
+			locator_dispatch_lns_update(&lns_info);
+
+			gpio_clear(FIX_PIN);
+
+			if (gpio_get(GPS_R) && gpio_get(GPS_S) ) {
+				const char *e_gpgsv = ""
+						"$GNGGA,,,,,,0,6,1.93,34.9,M,17.8,M,,*5B\r\n"
+						"$GNVTG,286.99,T,,M,0.62,N,1.15,K,A*2E\r\n";
+
+				// send to uart_tdd
+				for (int i=0; i < strlen(e_gpgsv); i++)
+					uart_rx_handler(e_gpgsv[i]);
+			}
 		}
-#else
-		sLnsInfo lns_info;
-		lns_info.lat = lat * 10000000.;
-		lns_info.lon = lon * 10000000.;
-		lns_info.ele = (alt_sim + 32.3f) * 100.;
-		lns_info.secj = (int)rtime;
-		lns_info.date = 11218;
-		lns_info.speed = cur_speed * 10.;
-		locator_dispatch_lns_update(&lns_info);
-#endif
 
 	} else {
 		fclose(g_fileObject);
 
+		// test msc mode
+		usb_cdc_start_msc();
+
 #ifdef TDD_RANDOMIZE
 		static int nb_tests = 0;
-		g_fileObject = fopen("GPX_simu.csv", "r");
+		g_fileObject = fopen("./../TDD/GPX_simu.csv", "r");
 		if (++nb_tests < 750) {
 			LOG_WARNING("Starting next simulation");
 			return;
@@ -376,12 +450,12 @@ void simulator_tasks(void) {
 		return;
 	}
 
-	_fec_sim();
-	_sensors_sim();
-	_loc_sim();
-
 	tdd_logger_log_int(TDD_LOGGING_P2D, Point2D::getObjectCount());
 	tdd_logger_log_int(TDD_LOGGING_P3D, Point::getObjectCount());
+
+	_fec_sim();
+	_loc_sim();
+	_sensors_sim();
 
 }
 

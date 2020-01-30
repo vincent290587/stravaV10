@@ -190,7 +190,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
     NRF_LOG_FLUSH();
 
 #ifdef DEBUG_NRF
-    NRF_BREAKPOINT_COND;
+    if (id != NRF_FAULT_ID_SDK_ERROR) NRF_BREAKPOINT_COND;
     // On assert, the system can only recover with a reset.
 #endif
 
@@ -198,7 +198,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 extern "C" void HardFault_process(HardFault_stack_t * p_stack)
 {
-	LOG_ERROR("HardFault: pc=%u", p_stack->pc);
+	LOG_ERROR("HardFault: pc=%u lr=%u psr=%u", p_stack->pc, p_stack->lr, p_stack->psr);
 
 	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
 	memcpy(&m_app_error.hf_desc.stck, p_stack, sizeof(HardFault_stack_t));
@@ -382,7 +382,7 @@ int main(void)
 	m_tasks_id.usb_id   = TASK_ID_INVALID;
 
 #if CONFIG_JLINK_MONITOR_ENABLED
-	NVIC_SetPriority(DebugMonitor_IRQn, APP_IRQ_PRIORITY_LOW);
+	NVIC_SetPriority(DebugMonitor_IRQn, _PRIO_SD_LOW);
 #warning "!! MONITORING active !!"
 #endif
 
@@ -420,11 +420,19 @@ int main(void)
 		LOG_ERROR("Hard Fault found");
 		String message = "Hardfault happened: pc = 0x";
 		message += String(m_app_error.hf_desc.stck.pc, HEX);
+		message += " lr = 0x";
+		message += String(m_app_error.hf_desc.stck.lr, HEX);
+		message += " psr = 0x";
+		message += String(m_app_error.hf_desc.stck.psr, HEX);
 		message += " in void ";
 		message += m_app_error.void_id;
 		LOG_ERROR(message.c_str());
 	    vue.addNotif("Error", message.c_str(), 8, eNotificationTypeComplete);
 		memset(&m_app_error.hf_desc, 0, sizeof(m_app_error.hf_desc));
+	}
+	if (m_app_error.err_desc.crc == SYSTEM_DESCR_POS_CRC) {
+
+		LOG_ERROR("Also contains error...");
 	}
 
 	// drivers

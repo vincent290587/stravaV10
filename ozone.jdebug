@@ -15,7 +15,7 @@ void OnProjectLoad (void) {
   Project.SetDevice ("nRF52840_xxAA");
   Project.SetHostIF ("USB", "");
   Project.SetTargetIF ("SWD");
-  Project.SetTIFSpeed ("200 kHz");
+  Project.SetTIFSpeed ("Automatic");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M4F.svd");
   Project.AddPathSubstitute ("E:/Nordic/Projects/Perso/stravaV10", "$(ProjectDir)");
   Project.AddPathSubstitute ("e:/nordic/projects/perso/stravav10", "$(ProjectDir)");

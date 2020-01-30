@@ -10,6 +10,7 @@
 #include "app_scheduler.h"
 #include "nrf_soc.h"
 #include "nrf_sdh.h"
+#include "millis.h"
 #include "app_timer.h"
 #include "ant_device_manager.h"
 
@@ -90,8 +91,9 @@ static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t eve
 
 			hrm_info.rr = (uint16_t)(rrInterval * 1000.f / 1024.f);
 
+			hrm_info.timestamp = millis();
+
 			// Subtracting the event time gives the R-R interval
-			//ble_hrs_rr_interval_add(&m_hrs, beat_time - prev_beat);
 			LOG_INFO( "Evenement HR RR=%u\n", hrm_info.rr);
 
 		}
