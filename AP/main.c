@@ -178,7 +178,6 @@ typedef struct {
 
 BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
-NRF_BLE_QWR_DEF(m_qwr);                                                             /**< GATT module instance. */
 BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
 
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
@@ -190,8 +189,8 @@ static ble_uuid_t m_adv_uuids[]          =                                      
 
 // BLE DEFINES END
 
-NRF_QUEUE_DEF(sNusXfer, m_to_usb_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
-NRF_QUEUE_DEF(sNusXfer, m_to_nus_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
+NRF_QUEUE_DEF(sNusXfer, m_to_usb_queue, 100, NRF_QUEUE_MODE_NO_OVERFLOW);
+NRF_QUEUE_DEF(sNusXfer, m_to_nus_queue, 50, NRF_QUEUE_MODE_NO_OVERFLOW);
 
 static sNusXfer m_to_cdc_data;
 static sNusXfer m_to_nus_data;
@@ -380,19 +379,6 @@ static void gap_params_init(void)
 }
 
 
-/**@brief Function for handling Queued Write Module errors.
- *
- * @details A pointer to this function will be passed to each service which may need to inform the
- *          application about an error.
- *
- * @param[in]   nrf_error   Error code containing information about what went wrong.
- */
-static void nrf_qwr_error_handler(uint32_t nrf_error)
-{
-	APP_ERROR_HANDLER(nrf_error);
-}
-
-
 /**
  * @brief Function for handling the data from the Nordic UART Service.
  *
@@ -442,7 +428,10 @@ static void cdc_process(void) {
 	}
 
 	if (m_is_port_open &&
+			m_is_xfer_done &&
 			m_to_cdc_data.length) {
+
+		m_is_xfer_done = false;
 
 		// Send data through CDC ACM
 		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
@@ -450,7 +439,7 @@ static void cdc_process(void) {
 				m_to_cdc_data.length);
 		if(ret != NRF_SUCCESS)
 		{
-			NRF_LOG_INFO("CDC ACM unavailable");
+			NRF_LOG_INFO("CDC ACM unavailable 0x%X", ret);
 		}
 	}
 
@@ -515,13 +504,6 @@ static void services_init(void)
 {
 	uint32_t       err_code;
 	ble_nus_init_t nus_init;
-	nrf_ble_qwr_init_t qwr_init = {0};
-
-	// Initialize Queued Write Module.
-	qwr_init.error_handler = nrf_qwr_error_handler;
-
-	err_code = nrf_ble_qwr_init(&m_qwr, &qwr_init);
-	APP_ERROR_CHECK(err_code);
 
 	memset(&nus_init, 0, sizeof(nus_init));
 
@@ -620,8 +602,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		APP_ERROR_CHECK(err_code);
 		bsp_board_led_on(LED_BLE_NUS_CONN);
 		m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-		err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
-		APP_ERROR_CHECK(err_code);
 		break;
 
 	case BLE_GAP_EVT_DISCONNECTED:
@@ -878,7 +858,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		/*Setup first transfer*/
 		index = 0;
 		ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
-				&m_cdc_data_array[index],
+				m_cdc_data_array,
 				1);
 		UNUSED_VARIABLE(ret);
 		ret = app_timer_stop(m_blink_cdc);
