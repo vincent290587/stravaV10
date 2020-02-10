@@ -136,6 +136,7 @@ set(SRCS
 	source/model/RRZone.cpp
 	source/model/SufferScore.cpp
 	source/model/UserSettings.cpp
+	source/scheduling/power_scheduler.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
     source/vue/MenuObjects.cpp

@@ -15,15 +15,15 @@
 class BoucleFEC: virtual public BoucleInterface {
 public:
 	BoucleFEC();
-	void init();
 
-	bool isTime();
-	void run();
+	void init_internal(void);
+
+	void run_internal(void);
+
+	void invalidate_internal(void);
 
 	RingBuffer<tHistoValue> m_pw_buffer;
 
-protected:
-	uint32_t m_last_run_time;
 };
 
 #endif /* SOURCE_MODEL_BOUCLEFEC_H_ */

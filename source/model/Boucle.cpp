@@ -14,13 +14,10 @@ BoucleCRS boucle_crs;
 
 BoucleFEC boucle_fec;
 
-Boucle::Boucle() {
+static eBoucleGlobalModes m_global_mode = eBoucleGlobalModesInit;
 
-	m_global_mode = eBoucleGlobalModesInit;
 
-}
-
-void Boucle::init(void) {
+void boucle__init(void) {
 
 	LOG_INFO("Boucle init...");
 
@@ -53,7 +50,7 @@ void Boucle::init(void) {
 	m_app_error.special = SYSTEM_DESCR_POS_CRC;
 }
 
-void Boucle::uninit(void) {
+void boucle__uninit(void) {
 
 	LOG_INFO("Boucle uninit");
 
@@ -62,46 +59,12 @@ void Boucle::uninit(void) {
 	m_global_mode = eBoucleGlobalModesMSC;
 }
 
-bool Boucle::isTime(void) {
+void boucle__run(void) {
 
 	switch (m_global_mode) {
 	case eBoucleGlobalModesInit:
 	{
-		return true;
-	}
-	break;
-
-	case eBoucleGlobalModesCRS:
-	{
-		return boucle_crs.isTime();
-	}
-	break;
-
-	case eBoucleGlobalModesFEC:
-	{
-		return boucle_fec.isTime();
-	}
-	break;
-
-	case eBoucleGlobalModesPRC:
-	{
-		return boucle_crs.isTime();
-	}
-	break;
-
-	default:
-		break;
-	}
-
-	return false;
-}
-
-void Boucle::run(void) {
-
-	switch (m_global_mode) {
-	case eBoucleGlobalModesInit:
-	{
-		this->init();
+		boucle__init();
 	}
 	break;
 	case eBoucleGlobalModesCRS:
@@ -122,14 +85,13 @@ void Boucle::run(void) {
 
 	default:
 	{
-		(void)w_task_events_wait(TASK_EVENT_LOCATION);
+		(void)w_task_delay(10000);
 	} break;
 	}
 
-	return;
 }
 
-void Boucle::changeMode(eBoucleGlobalModes new_mode) {
+void boucle__change_mode(eBoucleGlobalModes new_mode) {
 
 	if (new_mode == m_global_mode) return;
 
@@ -167,3 +129,9 @@ void Boucle::changeMode(eBoucleGlobalModes new_mode) {
 
 	m_global_mode = new_mode;
 }
+
+eBoucleGlobalModes boucle__get_mode(void) {
+
+	return m_global_mode;
+}
+

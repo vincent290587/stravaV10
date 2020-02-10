@@ -12,6 +12,7 @@
 #include "uart.h"
 #include "sd_functions.h"
 #include "segger_wrapper.h"
+#include "power_scheduler.h"
 
 #ifdef TDD
 #include "tdd_logger.h"
@@ -30,51 +31,26 @@ BoucleCRS::BoucleCRS() : BoucleInterface() {
 
 /**
  *
- * @return true if we are ready to run
  */
-bool BoucleCRS::isTime() {
-
-	if (locator.isUpdated()) {
-		LOG_INFO("Locator updated");
-		return true;
-	}
-
-	if (m_needs_init ||
-			m_last_refresh.getAge() > 1200) {
-		LOG_INFO("Auto refresh %u", millis());
-		return true;
-	}
-
-	return false;
-}
-
-/**
- *
- */
-void BoucleCRS::init() {
+void BoucleCRS::init_internal(void) {
 
 	// turn GPS ON
 	gps_mgmt.awake();
  	gps_mgmt.startEpoUpdate();
 
-	m_last_refresh = 0;
-
 	m_dist_next_seg = 9999;
 
 	if (m_s_parcours) this->loadPRC();
 
-	m_needs_init = false;
 }
 
 /**
  *
  */
-void BoucleCRS::run() {
+void BoucleCRS::run_internal(void) {
 
 	m_dist_next_seg = 9999;
 	float tmp_dist = 0.0f;
-
-	if (m_needs_init) this->init();
 
 	// wait for location to be updated
 	(void)w_task_events_wait(TASK_EVENT_LOCATION);
@@ -181,6 +157,8 @@ void BoucleCRS::run() {
 		w_task_delay_cancel(m_tasks_id.ls027_id);
 	}
 
+	power_scheduler__ping(ePowerSchedulerPingCRS);
+
 }
 
 /**
@@ -210,8 +188,8 @@ void BoucleCRS::parcoursSelect(int prc_ind) {
 /**
  *
  */
-void BoucleCRS::invalidate(void) {
-	BoucleInterface::invalidate();
+void BoucleCRS::invalidate_internal(void) {
+
 	if (m_s_parcours) m_s_parcours->desallouerPoints();
 	m_s_parcours = nullptr;
 }

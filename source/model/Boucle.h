@@ -13,6 +13,7 @@
 #include <model/BoucleFEC.h>
 #include "parameters.h"
 
+
 typedef enum {
 	eBoucleGlobalModesInit,
 	eBoucleGlobalModesCRS,
@@ -27,24 +28,15 @@ extern BoucleCRS     boucle_crs;
 extern BoucleFEC     boucle_fec;
 
 
-class Boucle : virtual public BoucleInterface {
-public:
-	Boucle();
+void boucle__init(void);
 
-	void init(void);
-	void uninit(void);
+void boucle__uninit(void);
 
-	bool isTime();
+void boucle__run(void);
 
-	void changeMode(eBoucleGlobalModes new_mode);
-	void run(void);
+void boucle__change_mode(eBoucleGlobalModes new_mode);
 
-	eBoucleGlobalModes getGlobalMode() const {
-		return m_global_mode;
-	}
+eBoucleGlobalModes boucle__get_mode(void);
 
-protected:
-	eBoucleGlobalModes m_global_mode;
-};
 
 #endif /* SOURCE_MODEL_BOUCLE_H_ */

@@ -18,20 +18,28 @@ public:
 		m_needs_init = true;
 	}
 
-	void tasks() { if (this->isTime()) this->run(); }
+	virtual void init_internal()=0;
+	virtual void run_internal()=0;
+	virtual void invalidate_internal(void)=0;
 
-	virtual bool isTime() {return false;}
-	virtual void run() {}
-
-	virtual void invalidate(void) {
+	void invalidate(void) {
+		this->invalidate_internal();
 		m_needs_init = true;
+	}
+
+	void run(void) {
+		if (m_needs_init) {
+			m_needs_init = false;
+			this->init_internal();
+		}
+		this->run_internal();
 	}
 
 	bool needsInit() const {
 		return m_needs_init;
 	}
 
-protected:
+private:
 	bool m_needs_init;
 
 };

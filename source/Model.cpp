@@ -11,6 +11,7 @@
 #include "helper.h"
 #include "sd_hal.h"
 #include "app_scheduler.h"
+#include "power_scheduler.h"
 #include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
@@ -47,8 +48,6 @@ ListeParcours mes_parcours;
 ListePoints   mes_points;
 
 Locator       locator;
-
-Boucle        boucle;
 
 SegmentManager     segMngr;
 
@@ -207,7 +206,7 @@ void perform_system_tasks_light(void) {
  */
 void model_go_to_msc_mode(void) {
 
-	boucle.uninit();
+	boucle__uninit();
 
 }
 
@@ -259,8 +258,8 @@ void idle_task(void * p_context)
 void boucle_task(void * p_context)
 {
 
-	boucle.run(); // init
-	boucle.run(); // run once
+	boucle__run(); // init
+	boucle__run(); // run once
 
 	// potentially change mode
 //	vue.setCurrentMode(eVueGlobalScreenFEC);
@@ -270,9 +269,11 @@ void boucle_task(void * p_context)
 	{
 		LOG_INFO("\r\nTask %u", millis());
 
-		boucle.run();
+		boucle__run();
 
-		if (!millis()) NRF_LOG_WARNING("No millis");
+		if (!millis()) {
+			NRF_LOG_WARNING("No millis");
+		}
 	}
 }
 
@@ -354,6 +355,8 @@ void peripherals_task(void * p_context)
 		notifications_tasks();
 
 		backlighting_tasks();
+
+		power_scheduler__run();
 
 		w_task_delay(100);
 

@@ -16,23 +16,20 @@
 class BoucleCRS : virtual public BoucleInterface {
 public:
 	BoucleCRS();
-	void init();
 
-	bool isTime();
-	void run();
+	void init_internal(void);
+
+	void run_internal(void);
+
+	void invalidate_internal(void);
 
 	void loadPRC();
 
 	void parcoursSelect(int prc_ind);
 
-	void invalidate(void);
-
 	uint16_t m_dist_next_seg;
 
 	Parcours *m_s_parcours;
-protected:
-
-	UData<uint8_t> m_last_refresh;
 };
 
 
