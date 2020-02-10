@@ -367,7 +367,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  */
 void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
-	String fname = "rec";
+	String fname = "@";
 	fname += att->date.date;
 	fname += ".txt";
 
