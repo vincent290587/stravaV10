@@ -122,7 +122,7 @@ void GUI_connector_init(void) {
 	u_long iMode = 1;
 	iResult = ioctlsocket(server_fd, FIONBIO, &iMode);
 	if (iResult != NO_ERROR)
-	  printf("ioctlsocket failed with error: %ld\n", iResult);
+	  printf("ioctlsocket failed with error: %d\n", iResult);
 #endif
 
 	// Forcefully attaching socket to the port 8080
