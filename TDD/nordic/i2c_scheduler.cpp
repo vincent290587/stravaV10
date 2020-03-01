@@ -63,7 +63,7 @@ static void timer_handler(void * p_context)
 {
 	W_SYSVIEW_RecordEnterISR();
 
-	if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.sensorRead();
+	if (boucle__get_mode() != eBoucleGlobalModesFEC) baro.sensorRead();
 
 	if (++m_last_polled_index >= SENSORS_REFRESH_PER_MS / I2C_SCHEDULING_PERIOD_MS) {
 		m_last_polled_index = 0;
@@ -72,7 +72,7 @@ static void timer_handler(void * p_context)
 
 		veml.readChip();
 
-		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_readChip();
+		if (boucle__get_mode() != eBoucleGlobalModesFEC) fxos_readChip();
 	}
 
     W_SYSVIEW_RecordExitISR();
@@ -125,8 +125,8 @@ void i2c_scheduling_tasks(void) {
 		_counter = 0;
 		stc.refresh(nullptr);
 		veml.refresh(nullptr);
-		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
-		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
+		if (boucle__get_mode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
+		if (boucle__get_mode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
 	}
 #endif
 

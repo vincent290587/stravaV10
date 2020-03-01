@@ -90,7 +90,7 @@ void stop_timer(void)
   timervalue.it_value.tv_usec = 0;
   setitimer(ITIMER_REAL, &timervalue, NULL);
 
-  sigaction(SIGALRM, &old_handler, NULL);
+  sigaction(SIGUSR2, &old_handler, NULL);
 }
 
 #else
