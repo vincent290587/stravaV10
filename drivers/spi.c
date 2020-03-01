@@ -21,7 +21,7 @@
 
 #define SPIM_INSTANCE  0
 
-#define SPIM_XFER_TIMEOUT  150
+#define SPIM_XFER_TIMEOUT  250
 
 static const nrfx_spim_t spi = NRFX_SPIM_INSTANCE(SPIM_INSTANCE);  /**< SPI instance. */
 
@@ -54,7 +54,8 @@ static void spim_event_handler(nrfx_spim_evt_t const * p_event,
     sSpimConfig **spi_config = (sSpimConfig**)p_context;
 
     if (m_task_id != TASK_ID_INVALID) {
-    	w_task_delay_cancel(m_task_id);
+
+    	w_task_events_set(m_task_id, TASK_EVENT_SPIM);
     }
 
     if (spi_config[0]) {
@@ -97,7 +98,7 @@ void spi_init(void)
 	m_spi_config.miso_pin       = NRFX_SPIM_PIN_NOT_USED;
 	m_spi_config.mosi_pin       = LS027_MOSI_PIN;
 	m_spi_config.sck_pin        = LS027_SCK_PIN;
-	m_spi_config.frequency      = NRF_SPIM_FREQ_4M;
+	m_spi_config.frequency      = NRF_SPIM_FREQ_2M;
 	m_spi_config.bit_order      = NRF_SPIM_BIT_ORDER_LSB_FIRST;
 
 	spi_xfer_done = true;
@@ -164,7 +165,7 @@ int spi_schedule (sSpimConfig const * spi_config,
 
 				m_task_id = w_task_id_get();
 
-				w_task_delay(SPIM_XFER_TIMEOUT);
+				w_task_events_wait(TASK_EVENT_SPIM);
 
 				m_task_id = TASK_ID_INVALID;
 			} else {
