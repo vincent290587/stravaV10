@@ -1,15 +1,16 @@
 #include "stdint.h"
 #include <string.h>
 #include <stdbool.h>
-#include "neopixel.h"
+#include "boards.h"
+#include "drv_ws2812.h"
 #include "notifications.h"
+#include "segger_wrapper.h"
 
 
 #define ON_STEPS_NB      5
 #define ON_TICKS_DEFAULT 3
 
 
-static neopixel_strip_t     strip;
 static neo_sb_init_params_t _params;
 static neo_sb_seg_params    m_seg_notif;
 static bool                 leds_is_on;     /**< Flag for indicating if LEDs are on. */
@@ -19,16 +20,15 @@ static uint32_t             ratio;
 
 /**
  *
+ * @param red
+ * @param green
+ * @param blue
+ * @return
  */
-static void notifications_clear() {
-	neopixel_clear(&strip);
-}
+static uint32_t get_notifications_color(uint8_t red, uint8_t green, uint8_t blue ) {
 
-/**
- *
- */
-static void notifications_show() {
-	neopixel_show(&strip);
+	uint32_t res = (red << 16) | (green << 8) | (blue);
+	return res;
 }
 
 /**
@@ -38,8 +38,12 @@ static void notifications_show() {
  * @param blue
  * @return
  */
-static uint8_t notifications_setColor(uint8_t red, uint8_t green, uint8_t blue ) {
-	return neopixel_set_color(&strip, 0, red, green, blue );
+static void notifications_setColor(uint8_t red, uint8_t green, uint8_t blue) {
+
+	// update neopixel
+	uint32_t color = get_notifications_color(red, green, blue);
+
+	drv_ws2812_set_pixel_all(color);
 }
 
 /**
@@ -66,8 +70,7 @@ void notifications_init(uint8_t pin_num) {
 
 	is_counting_up = true;
 
-	neopixel_init(&strip, pin_num, 1);
-
+	drv_ws2812_init(pin_num);
 }
 
 /**
@@ -157,14 +160,19 @@ uint8_t notifications_tasks() {
 
 			if (on_time) {
 
+				LOG_DEBUG("Light ON");
+
 				on_time--;
 				notifications_setColor(m_seg_notif.rgb[0], m_seg_notif.rgb[1], m_seg_notif.rgb[2]);
 			} else if (off_time) {
+
+				LOG_DEBUG("Light OFF");
 
 				off_time--;
 				notifications_setColor(0, 0, 0);
 			} else {
 
+				on_time = m_seg_notif.on_time;
 				off_time = m_seg_notif.off_time;
 				notifications_setColor(0, 0, 0);
 			}
@@ -176,50 +184,50 @@ uint8_t notifications_tasks() {
 			notifications_setColor(0, 0, 0);
 		}
 
-	}
+	} else {
 
-	// continue process
-	if (pause_ticks <= 0)
-	{
-		if (is_counting_up)
+		// continue process
+		if (pause_ticks <= 0)
 		{
-			if ((int)(ratio) >= (int)(_params.max - _params.step))
+			if (is_counting_up)
 			{
-				// start decrementing.
-				is_counting_up = false;
-				pause_ticks = _params.on_time_ticks;
+				if ((int)(ratio) >= (int)(_params.max - _params.step))
+				{
+					// start decrementing.
+					is_counting_up = false;
+					pause_ticks = _params.on_time_ticks;
+				}
+				else
+				{
+					ratio += _params.step;
+				}
 			}
 			else
 			{
-				ratio += _params.step;
+				if ((int)(ratio) <= (int)(_params.min + _params.step))
+				{
+					// Min is reached, we are done
+					// end process
+					leds_is_on = false;
+					ratio = 0;
+				}
+				else
+				{
+					ratio -= _params.step;
+				}
 			}
 		}
 		else
 		{
-			if ((int)(ratio) <= (int)(_params.min + _params.step))
-			{
-				// Min is reached, we are done
-				// end process
-				leds_is_on = false;
-				notifications_clear();
-				return 1;
-			}
-			else
-			{
-				ratio -= _params.step;
-			}
+			pause_ticks -= 1;
 		}
-	}
-	else
-	{
-		pause_ticks -= 1;
+
+		notifications_setColor(_params.rgb[0] * ratio * ratio / 255,
+		 			_params.rgb[1] * ratio * ratio / 255,
+		 			_params.rgb[2] * ratio * ratio / 255);
 	}
 
-	// update neopixel
-	notifications_setColor(_params.rgb[0] * ratio * ratio / 255,
-			_params.rgb[1] * ratio * ratio / 255,
-			_params.rgb[2] * ratio * ratio / 255);
-	notifications_show();
+	drv_ws2812_display(NULL, NULL);
 
 	return 0;
 }
