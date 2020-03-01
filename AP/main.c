@@ -191,15 +191,16 @@ static bool m_usb_connected = false;
 void usb_printf(const char *format, ...) {
 
 	va_list args;
-	va_start(args, format);
 
 	static char m_usb_char_buffer[256];
 
 	memset(m_usb_char_buffer, 0, sizeof(m_usb_char_buffer));
 
+	va_start(args, format);
 	int length = vsnprintf(m_usb_char_buffer,
 			sizeof(m_usb_char_buffer),
 			format, args);
+	va_end(args);
 
 	//NRF_LOG_DEBUG("Printfing %d bytes to VCOM", length);
 
@@ -747,7 +748,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
 			/*Get amount of data transferred*/
 			size_t size = app_usbd_cdc_acm_rx_size(p_cdc_acm);
-			NRF_LOG_DEBUG("RX: size: %lu char: %c", size, m_cdc_data_array[index - 1]);
+			NRF_LOG_DEBUG("RX: size: %lu ", size);
 
 			/* Fetch data until internal buffer is empty */
 			ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,

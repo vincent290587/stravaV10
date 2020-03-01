@@ -16,6 +16,7 @@
  *
  */
 ListePoints::ListePoints() {
+	ind_P1 = 0;
 	m_dist = 0;
     m_cur_dist = 0;
 }

@@ -122,7 +122,7 @@ void Vue::refresh(void) {
 
 		text += notif.m_msg;
 
-		int16_t x1; int16_t y1; uint16_t w; uint16_t h;
+		int16_t x1=0; int16_t y1=0; uint16_t w=0; uint16_t h=0;
 		if (text > 2)
 			this->getTextBounds((char*)text.c_str(), this->getCursorX(), this->getCursorY(), &x1, &y1, &w, &h);
 

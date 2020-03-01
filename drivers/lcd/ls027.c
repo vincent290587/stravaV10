@@ -84,6 +84,7 @@ static void _ls027_mutex_give(void) {
 static void ls027_cs_on() {
 
 	nrf_gpio_pin_set(LS027_CS_PIN);
+	m_ls27_mutex_taken = 10;
 
 }
 
@@ -91,6 +92,7 @@ static void ls027_cs_off(nrfx_spim_evt_t const * p_event,
         void *                  p_context) {
 
 	nrf_gpio_pin_clear(LS027_CS_PIN);
+	m_ls27_mutex_taken = 0;
 
 }
 
@@ -98,13 +100,13 @@ static void ls027_spi_buffer_clear(ret_code_t result, void * p_user_data) {
 
 	_ls027_mutex_take();
 
-	NRF_LOG_DEBUG("LS027 buffers cleared");
-
+	// just here to sync, buffer is always cleared after (blocking) display
 	if (!m_is_color_inverted) {
 		memset(LS027_SpiBuf, LS027_PIXEL_GROUP_WHITE, sizeof(LS027_SpiBuf));
 	} else {
 		memset(LS027_SpiBuf, LS027_PIXEL_GROUP_BLACK, sizeof(LS027_SpiBuf));
 	}
+	NRF_LOG_DEBUG("LS027 buffers cleared");
 
 	_ls027_mutex_give();
 }
@@ -380,5 +382,6 @@ void LS027_UpdateFull(void)
 	/* Start master transfer */
 	spi_schedule(&m_spi_ls027_cfg, LS027_SpiBuf, LS027_HW_SPI_BUFFER_SIZE, NULL, 0);
 
-	_ls027_mutex_give();
+	ls027_spi_buffer_clear(0, NULL);
+
 }

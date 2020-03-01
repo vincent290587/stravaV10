@@ -498,8 +498,6 @@ int main(void)
 	// init all I2C devices
 	i2c_scheduling_init();
 
-	boucle.init();
-
 	LOG_INFO("App init done");
 
 #if APP_SCHEDULER_ENABLED
