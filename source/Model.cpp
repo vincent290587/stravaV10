@@ -270,6 +270,11 @@ void boucle_task(void * p_context)
 	{
 		LOG_INFO("\r\nTask %u", millis());
 
+		wdt_reload();
+
+		// check button actions
+		bsp_tasks();
+
 		boucle.run();
 
 		if (!millis()) NRF_LOG_WARNING("No millis");
@@ -288,6 +293,9 @@ void ls027_task(void * p_context)
 		wdt_reload();
 
 		w_task_delay(LS027_TIMEOUT_DELAY_MS);
+
+		// check button actions
+		bsp_tasks();
 
 		// timeout
 		sysview_task_void_enter(VueRefresh);
