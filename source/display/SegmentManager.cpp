@@ -44,15 +44,15 @@ void SegmentManager::conveyLightNotification(void) {
 
 	neo_sb_seg_params orders;
 
-	if (seg_list.size() < 1) {
+	// clear it
+	memset(&orders, 0, sizeof(orders));
 
-		// clear it all: no light
-		memset(&orders, 0, sizeof(orders));
+	if (seg_list.size() >= 1) {
 
-	} else {
 		float off_time;
 		float indice_pc;
 		float rtime, curtime;
+
 		Segment* p_seg = this->getSeg(0)->p_seg;
 
 		ASSERT(p_seg);
@@ -61,13 +61,18 @@ void SegmentManager::conveyLightNotification(void) {
 		curtime = p_seg->getCur();
 
 		if (curtime < 7.f) {
+
+			// do not show at the start of a segment
 			indice_pc = 100.f * rtime / 7.f;
+
+			orders.active  = 0;
+			orders.on_time = 1;
 		} else {
 			indice_pc = 100.f * rtime / curtime;
-		}
 
-		orders.active = 1;
-		orders.on_time = 1;
+			orders.active  = 1;
+			orders.on_time = 1;
+		}
 
 		if (indice_pc < 0.f) {
 			off_time = regFen(indice_pc, -10.f,  0.f,  12.5f, 1.5f);

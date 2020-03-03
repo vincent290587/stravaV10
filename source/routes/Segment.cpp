@@ -477,7 +477,7 @@ int Segment::getScore(void) {
 	if (this->_actif == SEG_ON && m_p_data) {
 
 		LOG_DEBUG("Calculated pDist: %f", m_p_data->_monPDist);
-		score += (int)regFenLim(m_p_data->_monPDist, 0., 1., 1.1, 7.1);
+		score += (int)regFenLim(m_p_data->_monPDist, 0.f, 1.f, 1.1f, 7.1f);
 
 	}
 
