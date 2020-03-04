@@ -392,6 +392,56 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 }
 
 
+/**@brief Function for handling the Connected event.
+ *
+ * @param[in] p_gap_evt GAP event received from the BLE stack.
+ */
+static void on_connected(const ble_gap_evt_t * const p_gap_evt)
+{
+    ret_code_t  err_code;
+    uint32_t    periph_link_cnt = ble_conn_state_peripheral_conn_count(); // Number of peripheral links.
+
+    NRF_LOG_INFO("Connection with link 0x%x established.", p_gap_evt->conn_handle);
+
+	usb_printf("Connected");
+	err_code = app_timer_stop(m_blink_ble);
+	APP_ERROR_CHECK(err_code);
+	bsp_board_led_on(LED_BLE_NUS_CONN);
+
+    // Update LEDs
+    if (periph_link_cnt == NRF_SDH_BLE_PERIPHERAL_LINK_COUNT)
+    {
+
+    }
+    else
+    {
+        // Continue advertising. More connections can be established because the maximum link count has not been reached.
+        advertising_start();
+    }
+}
+
+
+/**@brief Function for handling the Disconnected event.
+ *
+ * @param[in] p_gap_evt GAP event received from the BLE stack.
+ */
+static void on_disconnected(ble_gap_evt_t const * const p_gap_evt)
+{
+    ret_code_t  err_code;
+    uint32_t    periph_link_cnt = ble_conn_state_peripheral_conn_count(); // Number of peripheral links.
+
+    NRF_LOG_INFO("Connection 0x%x has been disconnected. Reason: 0x%X",
+                 p_gap_evt->conn_handle,
+                 p_gap_evt->params.disconnected.reason);
+
+    // Advertising is not running when all connections are taken, and must therefore be started on the first disconnection
+    if (periph_link_cnt == NRF_SDH_BLE_PERIPHERAL_LINK_COUNT - 1)
+    {
+    	advertising_start();
+    }
+}
+
+
 /**
  * @brief Function for handling BLE events.
  *
@@ -406,17 +456,13 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 	case BLE_GAP_EVT_CONNECTED:
 		NRF_LOG_INFO("BLE NUS connected");
-		usb_printf("Connected");
-		err_code = app_timer_stop(m_blink_ble);
-		APP_ERROR_CHECK(err_code);
-		bsp_board_led_on(LED_BLE_NUS_CONN);
-		m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+        on_connected(&p_ble_evt->evt.gap_evt);
 		break;
 
 	case BLE_GAP_EVT_DISCONNECTED:
 		NRF_LOG_INFO("BLE NUS disconnected");
+        on_disconnected(&p_ble_evt->evt.gap_evt);
 		// LED indication will be changed when advertising starts.
-		m_conn_handle = BLE_CONN_HANDLE_INVALID;
 		break;
 
 	case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -433,7 +479,10 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
 		// Pairing not supported.
-		err_code = sd_ble_gap_sec_params_reply(m_conn_handle, BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP, NULL, NULL);
+		err_code = sd_ble_gap_sec_params_reply(p_ble_evt->evt.gap_evt.conn_handle,
+				BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP,
+				NULL,
+				NULL);
 		APP_ERROR_CHECK(err_code);
 		break;
 
@@ -449,7 +498,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GATTS_EVT_SYS_ATTR_MISSING:
 		// No system attributes have been stored.
-		err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, 0);
+		err_code = sd_ble_gatts_sys_attr_set(p_ble_evt->evt.gap_evt.conn_handle, NULL, 0, 0);
 		APP_ERROR_CHECK(err_code);
 		break;
 
@@ -642,6 +691,35 @@ static void idle_state_handle(void)
 	power_manage();
 }
 
+/**
+ * @brief Function for writing to the characteristic of all connected clients.
+ *
+ * @return If successful NRF_SUCCESS is returned. Otherwise, the error code from @ref ble_nus_data_send.
+ */
+static uint32_t text_send_to_all(uint8_t *buffer, uint16_t *length)
+{
+    ret_code_t                        err_code;
+    ble_conn_state_conn_handle_list_t conn_handles = ble_conn_state_periph_handles();
+
+    for (uint8_t i = 0; i < conn_handles.len; i++)
+    {
+        err_code = ble_nus_data_send(&m_nus,
+        		buffer,
+				length,
+				conn_handles.conn_handles[i]);
+
+        if (err_code != NRF_SUCCESS &&
+            err_code != BLE_ERROR_INVALID_CONN_HANDLE &&
+            err_code != NRF_ERROR_INVALID_STATE &&
+            err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING)
+        {
+            APP_ERROR_CHECK(err_code);
+            NRF_LOG_DEBUG("Sent button change 0x%x on connection handle 0x%x.", button_action, conn_handles.conn_handles[i]);
+        }
+    }
+    return NRF_SUCCESS;
+}
+
 /** @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t */
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		app_usbd_cdc_acm_user_event_t event)
@@ -717,10 +795,8 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 							usb_printf("ERROR: BLE not connected");
 						} else {
 
-							ret = ble_nus_data_send(&m_nus,
-									(uint8_t *) m_cdc_data_array,
-									&length,
-									m_conn_handle);
+							ret = text_send_to_all( (uint8_t *) m_cdc_data_array, &length);
+
 						}
 
 						if (ret == NRF_ERROR_NOT_FOUND)

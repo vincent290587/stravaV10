@@ -33,16 +33,7 @@ public:
 	};
 
 	void invalidate_internal(void) {
-		BoucleCRS::invalidate_internal();
 	};
-
-//	void loadPRC() {
-//
-//	};
-//
-//	void parcoursSelect(int prc_ind) {
-//
-//	};
 
 };
 
