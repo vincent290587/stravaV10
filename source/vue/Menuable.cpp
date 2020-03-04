@@ -35,6 +35,13 @@ static eFuncMenuAction _page0_mode_crs(int var) {
 	return eFuncMenuActionEndMenu;
 }
 
+static eFuncMenuAction _page0_mode_zwift(int var) {
+
+	vue.setCurrentMode(eVueGlobalScreenCRS);
+	boucle__change_mode(eBoucleGlobalModesZwift);
+	return eFuncMenuActionEndMenu;
+}
+
 static eFuncMenuAction _page0_mode_prc_go(int var) {
 
 	LOG_INFO("parcoursSelect %d", var);
@@ -258,13 +265,15 @@ Menuable::~Menuable() {
 void Menuable::initMenu(void) {
 
 	// Main page
-	MenuItem item_fec(m_main_page, "Mode FEC", _page0_mode_fec);
-	MenuItem item_crs(m_main_page, "Mode CRS", _page0_mode_crs);
-	MenuItem item_prc(m_main_page, "Mode PRC", _page0_mode_prc_list, &prc_sel);
-	MenuItem item_deb(m_main_page, "Mode DBG", _page0_mode_debug);
-	MenuItem item_set(m_main_page, "Settings", _page0_settings, &page_set);
-	MenuItem item_shu(m_main_page, "Shutdown", _page0_shutdown);
+	MenuItem item_zwi(m_main_page, "Mode Zwift", _page0_mode_zwift);
+	MenuItem item_fec(m_main_page, "Mode FEC" , _page0_mode_fec);
+	MenuItem item_crs(m_main_page, "Mode CRS" , _page0_mode_crs);
+	MenuItem item_prc(m_main_page, "Mode PRC" , _page0_mode_prc_list, &prc_sel);
+	MenuItem item_deb(m_main_page, "Mode DBG" , _page0_mode_debug);
+	MenuItem item_set(m_main_page, "Settings" , _page0_settings, &page_set);
+	MenuItem item_shu(m_main_page, "Shutdown" , _page0_shutdown);
 
+	m_main_page.addItem(item_zwi);
 	m_main_page.addItem(item_fec);
 	m_main_page.addItem(item_crs);
 	m_main_page.addItem(item_prc);
