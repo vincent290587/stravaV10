@@ -152,7 +152,9 @@ void i2c_scheduling_tasks(void) {
 	if (++_counter >= SENSORS_REFRESH_PER_MS / APP_TIMEOUT_DELAY_MS) {
 		_counter = 0;
 		stc.refresh(nullptr);
+#ifdef VEML_PRESENT
 		veml.refresh(nullptr);
+#endif
 		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
 		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
 	}
