@@ -1,7 +1,7 @@
 
 #include "boards.h"
 
-#if defined (PROTO_V10)
+#if defined (PROTO_V10) || defined (PROTO_V11)
 
 #include <stdbool.h>
 #include "nrfx_qspi.h"

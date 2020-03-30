@@ -26,6 +26,7 @@
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
 #include "nrf_drv_clock.h"
+#include "power_scheduler.h"
 #include "task_manager_wrapper.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
@@ -275,8 +276,13 @@ void bsp_tasks(void)
 static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 {
 	if (NRF_PWR_MGMT_EVT_PREPARE_SYSOFF == event) {
+#if defined (PROTO_V11)
+		power_scheduler__shutdown();
+		return false;
+#else
 		nrf_gpio_pin_set(KILL_PIN);
-		return true;
+#endif
+
 	} else if (NRF_PWR_MGMT_EVT_PREPARE_DFU == event) {
 
 #if 0
@@ -292,7 +298,6 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 
 		LOG_INFO("Power management allowed to reset to DFU mode.");
 
-		return true;
 	}
 
 	return true;
@@ -337,8 +342,10 @@ static void pins_init(void)
 	nrf_gpio_cfg_output(NEO_PIN);
 	nrf_gpio_pin_clear(NEO_PIN);
 
+#if !defined (PROTO_V11)
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
+#endif
 
 }
 

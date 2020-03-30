@@ -1,7 +1,7 @@
 /*
- * custom_board_v2.h
+ * custom_board_v3.h
  *
- *  Created on: 30 nov. 2018
+ *  Created on: 29 march 2020
  *      Author: Vincent
  */
 
@@ -18,7 +18,7 @@ extern "C" {
 // LEDs definitions
 #define LEDS_NUMBER    1
 
-#define LED_1            NRF_GPIO_PIN_MAP(1, 3)
+#define LED_1            NRF_GPIO_PIN_MAP(1, 4)
 #define LED_START        LED_1
 #define LED_STOP         LED_1
 
@@ -50,8 +50,8 @@ extern "C" {
 #define BSP_BUTTON_1   BUTTON_2
 #define BSP_BUTTON_2   BUTTON_3
 
-#define SDA_PIN_NUMBER    NRF_GPIO_PIN_MAP(0, 26)
-#define SCL_PIN_NUMBER    NRF_GPIO_PIN_MAP(0, 25)
+#define SDA_PIN_NUMBER    NRF_GPIO_PIN_MAP(1, 0)
+#define SCL_PIN_NUMBER    NRF_GPIO_PIN_MAP(1, 1)
 
 #define TX_PIN_NUMBER     NRF_GPIO_PIN_MAP(0, 5)
 #define RX_PIN_NUMBER     NRF_GPIO_PIN_MAP(0, 7)
@@ -70,8 +70,8 @@ extern "C" {
 #define QSPI_IO2_PIN      NRF_GPIO_PIN_MAP(0, 23)
 #define QSPI_IO3_PIN      NRF_GPIO_PIN_MAP(0, 21)
 
-#define FXOS_INT1         NRF_GPIO_PIN_MAP(0, 28)
-#define FXOS_RST          NRF_GPIO_PIN_MAP(0, 27)
+#define FXOS_INT1         NRF_GPIO_PIN_MAP(1, 2)
+#define FXOS_RST          NRF_GPIO_PIN_MAP(1, 3)
 
 #define BCK_PIN           NRF_GPIO_PIN_MAP(1, 8)
 
@@ -79,11 +79,7 @@ extern "C" {
 #define GPS_S             NRF_GPIO_PIN_MAP(1, 15)
 #define FIX_PIN           NRF_GPIO_PIN_MAP(1, 14)
 
-#define KILL_PIN          NRF_GPIO_PIN_MAP(0, 12)
-
 #define NEO_PIN           NRF_GPIO_PIN_MAP(1, 13)
-
-#define VEML_PRESENT
 
 
 #ifdef __cplusplus

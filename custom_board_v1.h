@@ -89,6 +89,8 @@ extern "C" {
 
 //#define USB_PRES          NRF_GPIO_PIN_MAP(0, 6)
 
+#define VEML_PRESENT
+
 #ifdef __cplusplus
 }
 #endif
