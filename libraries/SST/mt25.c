@@ -3,6 +3,8 @@
 
 #if defined (PROTO_V10) || defined (PROTO_V11)
 
+#if defined (USE_MEMORY_NOR)
+
 #include <stdbool.h>
 #include "nrfx_qspi.h"
 #include "nor_defines.h"
@@ -129,6 +131,8 @@ bool configure_memory()
 
 	return recv[0] == 0x20;
 }
+
+#endif // NOR
 
 #endif
 

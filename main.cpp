@@ -19,7 +19,6 @@
 #include "spi.h"
 #include "i2c.h"
 #include "fram.h"
-#include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
@@ -31,6 +30,7 @@
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
+#include "diskio_sdc.h"
 #include "diskio_nor.h"
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
@@ -276,11 +276,10 @@ void bsp_tasks(void)
 static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 {
 	if (NRF_PWR_MGMT_EVT_PREPARE_SYSOFF == event) {
-#if defined (PROTO_V11)
+
 		power_scheduler__shutdown();
+#if defined (PROTO_V11)
 		return false;
-#else
-		nrf_gpio_pin_set(KILL_PIN);
 #endif
 
 	} else if (NRF_PWR_MGMT_EVT_PREPARE_DFU == event) {
@@ -449,7 +448,12 @@ int main(void)
 	delay_ms(10);
 
 	// diskio + fatfs init
+#if defined( USE_MEMORY_NOR )
 	diskio_nor_init();
+#endif
+#if defined( USE_MEMORY_SDC )
+	diskio_sdc_init();
+#endif
 
 	// LCD displayer
 	vue.init();

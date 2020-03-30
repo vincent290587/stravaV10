@@ -84,6 +84,7 @@ extern "C" {
 #define NEO_PIN           NRF_GPIO_PIN_MAP(1, 13)
 
 #define VEML_PRESENT
+#define USE_MEMORY_NOR
 
 
 #ifdef __cplusplus

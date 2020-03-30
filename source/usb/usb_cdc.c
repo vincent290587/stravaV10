@@ -25,6 +25,7 @@
 #include "Model.h"
 
 #include "diskio_blkdev.h"
+#include "nrf_block_dev_sdc.h"
 #include "nrf_block_dev_qspi.h"
 #include "segger_wrapper.h"
 
@@ -92,6 +93,9 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
  */
 #define MSC_WORKBUFFER_SIZE (1024)
 
+
+#if defined( USE_MEMORY_NOR )
+
 #define NRF_QSPI_CONFIG                                        \
 		{                                                                       \
 	.xip_offset  = NRFX_QSPI_CONFIG_XIP_OFFSET,                         \
@@ -122,7 +126,7 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
  * @brief  QSPI block device definition
  */
 NRF_BLOCK_DEV_QSPI_DEFINE(
-		m_block_dev_qspi,
+		m_block_dev_mem,
 		NRF_BLOCK_DEV_QSPI_CONFIG(
 				512,
 				NRF_BLOCK_DEV_QSPI_FLAG_CACHE_WRITEBACK,
@@ -131,13 +135,30 @@ NRF_BLOCK_DEV_QSPI_DEFINE(
 		NFR_BLOCK_DEV_INFO_CONFIG("stravaV10", "QSPI", "0.01")
 );
 
+#elif defined( USE_MEMORY_SDC )
+
+/**
+ * @brief  SDC block device definition
+ */
+NRF_BLOCK_DEV_SDC_DEFINE(
+		m_block_dev_mem,
+		NRF_BLOCK_DEV_SDC_CONFIG(
+				SDC_SECTOR_SIZE,
+				APP_SDCARD_CONFIG(SDC_MOSI_PIN, SDC_MISO_PIN, SDC_SCK_PIN, SDC_CS_PIN)
+		),
+		NFR_BLOCK_DEV_INFO_CONFIG("stravaV10", "SDC", "1.00")
+);
+
+
+#endif
+
 
 /**
  * @brief Block devices list passed to @ref APP_USBD_MSC_GLOBAL_DEF
 
  */
-#define BLOCKDEV_LIST() (                                   \
-		NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev),    \
+#define BLOCKDEV_LIST() (                                      \
+		NRF_BLOCKDEV_BASE_ADDR(m_block_dev_mem, block_dev),    \
 )
 
 /**
@@ -370,16 +391,18 @@ void usb_cdc_diskio_init(void) {
 	// Initialize FATFS disk I/O interface by providing the block device.
 	static diskio_blkdev_t drives[] =
 	{
-			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_qspi, block_dev), _wait_for_disk)
+			DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_mem, block_dev), _wait_for_disk)
 	};
 
 	diskio_blockdev_register(drives, ARRAY_SIZE(drives));
 
 	fatfs_init();
 
-	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_qspi.block_dev.p_ops->geometry(&m_block_dev_qspi.block_dev)->blk_size;
-	uint32_t capacity = m_block_dev_qspi.block_dev.p_ops->geometry(&m_block_dev_qspi.block_dev)->blk_count / blocks_per_mb;
+#if defined( USE_MEMORY_NOR )
+	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_mem.block_dev.p_ops->geometry(&m_block_dev_mem.block_dev)->blk_size;
+	uint32_t capacity = m_block_dev_mem.block_dev.p_ops->geometry(&m_block_dev_mem.block_dev)->blk_count / blocks_per_mb;
 	LOG_INFO("Capacity: %d MB", capacity);
+#endif
 
 }
 

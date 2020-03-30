@@ -5,6 +5,9 @@
  *      Author: Vincent
  */
 
+#include "boards.h"
+
+#if defined (USE_MEMORY_NOR)
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -14,7 +17,6 @@
 
 #include "ff.h"
 #include "nrf.h"
-#include "boards.h"
 #include "nrf_gpio.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
@@ -111,3 +113,5 @@ void diskio_nor_init(void) {
 	LOG_INFO("Capacity: %d MB", capacity);
 
 }
+
+#endif // NOR

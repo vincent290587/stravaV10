@@ -70,6 +70,11 @@ extern "C" {
 #define QSPI_IO2_PIN      NRF_GPIO_PIN_MAP(0, 23)
 #define QSPI_IO3_PIN      NRF_GPIO_PIN_MAP(0, 21)
 
+#define SDC_MOSI_PIN      NRF_GPIO_PIN_MAP(0, 25)
+#define SDC_CS_PIN        NRF_GPIO_PIN_MAP(0, 26)
+#define SDC_SCK_PIN       NRF_GPIO_PIN_MAP(0, 27)
+#define SDC_MISO_PIN      NRF_GPIO_PIN_MAP(0, 28)
+
 #define FXOS_INT1         NRF_GPIO_PIN_MAP(1, 2)
 #define FXOS_RST          NRF_GPIO_PIN_MAP(1, 3)
 
@@ -80,6 +85,9 @@ extern "C" {
 #define FIX_PIN           NRF_GPIO_PIN_MAP(1, 14)
 
 #define NEO_PIN           NRF_GPIO_PIN_MAP(1, 13)
+
+//#define USE_MEMORY_NOR
+#define USE_MEMORY_SDC
 
 
 #ifdef __cplusplus
