@@ -723,9 +723,15 @@ void fxos_tasks()
 	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
 
 	/* Calculate pitch angle g_Pitch and sin, cos*/
-	g_Pitch = atan2f(-g_Ax , g_Az);
+#if defined( PROTO_V11)
+	g_Pitch = atan2f(-g_Ay , g_Az);
 	sinAngle = sinf(g_Pitch);
 	cosAngle = cosf(g_Pitch);
+#else
+	g_Pitch = atan2f( g_Ax , g_Az);
+	sinAngle = sinf(g_Pitch);
+	cosAngle = cosf(g_Pitch);
+#endif
 
 	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57) * 100.);
 	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
@@ -788,9 +794,9 @@ bool fxos_get_yaw(float &yaw_rad) {
 	return true;
 }
 
-bool fxos_get_pitch(float &yaw_rad) {
+bool fxos_get_pitch(float &pitch_rad) {
 
-	yaw_rad = g_Pitch;
+	pitch_rad = g_Pitch;
 
 	return true;
 }
