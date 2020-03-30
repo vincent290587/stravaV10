@@ -398,11 +398,9 @@ void usb_cdc_diskio_init(void) {
 
 	fatfs_init();
 
-#if defined( USE_MEMORY_NOR )
 	uint32_t blocks_per_mb = (1024uL * 1024uL) / m_block_dev_mem.block_dev.p_ops->geometry(&m_block_dev_mem.block_dev)->blk_size;
 	uint32_t capacity = m_block_dev_mem.block_dev.p_ops->geometry(&m_block_dev_mem.block_dev)->blk_count / blocks_per_mb;
 	LOG_INFO("Capacity: %d MB", capacity);
-#endif
 
 }
 
