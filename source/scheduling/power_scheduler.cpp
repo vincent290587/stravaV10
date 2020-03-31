@@ -7,6 +7,7 @@
 
 #include "millis.h"
 #include "boards.h"
+#include "Model.h"
 #include "gpio.h"
 //#include "nrf_pwr_mgmt.h"
 #include "power_scheduler.h"
@@ -23,8 +24,19 @@ void power_scheduler__run(void) {
 	if (millis() - m_last_ping > (60000 * POWER_SCHEDULER_MAX_IDLE_MIN)) {
 
 		//nrf_pwr_mgmt_shutdown(NRF_PWR_MGMT_SHUTDOWN_STAY_IN_SYSOFF);
-		gpio_set(KILL_PIN);
+		power_scheduler__shutdown();
 	}
+
+}
+
+
+void power_scheduler__shutdown(void) {
+
+#if defined (PROTO_V11)
+	stc.shutdown();
+#else
+	gpio_set(KILL_PIN);
+#endif
 
 }
 

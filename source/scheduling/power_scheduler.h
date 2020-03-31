@@ -24,6 +24,8 @@ extern "C" {
 
 void power_scheduler__run(void);
 
+void power_scheduler__shutdown(void);
+
 void power_scheduler__ping(ePowerSchedulerPing ping_type);
 
 

@@ -8,6 +8,7 @@
 #include "Model.h"
 #include "sdk_config.h"
 #include "helper.h"
+#include "boards.h"
 #include "sd_hal.h"
 #include "app_scheduler.h"
 #include "power_scheduler.h"
@@ -54,7 +55,9 @@ Vue           vue;
 
 STC3100       stc;
 
+#ifdef VEML_PRESENT
 VEML6075      veml;
+#endif
 
 AltiBaro      baro;
 
@@ -84,6 +87,7 @@ int Point::objectCount = 0;
  */
 void model_dispatch_sensors_update(void) {
 
+#ifdef VEML_PRESENT
 	uint16_t light_level = veml.getRawUVA();
 
 	LOG_DEBUG("Light level: %u", light_level);
@@ -99,6 +103,7 @@ void model_dispatch_sensors_update(void) {
 			backlight.state = 0;
 		}
 	}
+#endif
 }
 
 void model_get_navigation(sKomootNavigation *nav) {

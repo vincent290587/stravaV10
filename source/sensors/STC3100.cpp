@@ -138,8 +138,8 @@ void STC3100::checkDevID(uint8_t dev_id) {
 
 void STC3100::reset(void) {
 
-	// Reset sensor
-	writeCommand(REG_CONTROL, STC_RESET | STC_IO_OD);
+	// Reset sensor, no open-drain
+	this->writeCommand(REG_CONTROL, STC_RESET);
 
 }
 
@@ -147,16 +147,19 @@ void STC3100::reset(void) {
 void STC3100::shutdown(void) {
 
 	// reset
-	this->reset();
-	delay_ms(1);
+//	this->reset();
+//	delay_ms(1);
 
 	/* Set the mode indicator */
 	_stc3100Mode  = 0;
 	//_stc3100Mode |= MODE_RUN;
 	//_stc3100Mode |= STC3100_MODE_HIGHRES;
 
-	// set mode
+	// set mode OFF
 	this->writeCommand(REG_MODE, _stc3100Mode);
+
+	// Activate open-drain
+	this->writeCommand(REG_CONTROL, STC_IO_OD);
 
 }
 

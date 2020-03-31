@@ -13,6 +13,7 @@
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include "sd_functions.h"
+#include "power_scheduler.h"
 #include "ant_device_manager.h"
 #include "MenuObjects.h"
 #include "Menuable.h"
@@ -86,7 +87,7 @@ static eFuncMenuAction _page0_mode_debug(int var) {
 static eFuncMenuAction _page0_shutdown(int var) {
 
 	// shutdown
-	gpio_set(KILL_PIN);
+	power_scheduler__shutdown();
 
 	return eFuncMenuActionEndMenu;
 }
