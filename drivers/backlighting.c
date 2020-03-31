@@ -31,8 +31,10 @@ extern sBacklightOrders     backlight;
 
 void backlighting_init(void) {
 
+#ifdef BCK_PIN
 	nrf_gpio_cfg_output(BCK_PIN);
 	nrf_gpio_pin_clear(BCK_PIN);
+#endif
 
 	// Create timer.
 //	uint32_t err_code = app_timer_create(&m_back_timer, APP_TIMER_MODE_SINGLE_SHOT, _backlight_callback);
@@ -63,6 +65,7 @@ void backlighting_init(void) {
  */
 void backlighting_tasks(void) {
 
+#ifdef BCK_PIN
 	m_ticks = 0;
 
 	if (backlight.state) {
@@ -77,6 +80,7 @@ void backlighting_tasks(void) {
 		nrf_gpio_pin_clear(BCK_PIN);
 
 	}
+#endif
 
 }
 

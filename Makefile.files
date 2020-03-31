@@ -61,7 +61,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/mpu/nrf_mpu_lib.c \
   $(SDK_ROOT)/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c \
   $(SDK_ROOT)/components/libraries/queue/nrf_queue.c \
-  $(SDK_ROOT)/components/libraries/sdcard/app_sdcard.c \
   $(SDK_ROOT)/components/libraries/ringbuf/nrf_ringbuf.c \
   $(SDK_ROOT)/components/libraries/experimental_section_vars/nrf_section_iter.c \
   $(SDK_ROOT)/components/libraries/experimental_task_manager/task_manager_core_armgcc.S \

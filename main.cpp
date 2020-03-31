@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "boards.h"
 #include "hardfault.h"
 #include "i2c.h"
 #include "notifications.h"
@@ -333,15 +334,17 @@ static void pins_init(void)
 
 	// LS027_CS_PIN is configured later
 
+#ifdef BCK_PIN
 	nrf_gpio_cfg_output(BCK_PIN);
 	nrf_gpio_pin_clear(BCK_PIN);
+#endif
 
 	// FIX_PIN is configured later
 
 	nrf_gpio_cfg_output(NEO_PIN);
 	nrf_gpio_pin_clear(NEO_PIN);
 
-#if !defined (PROTO_V11)
+#ifdef KILL_PIN
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
 #endif

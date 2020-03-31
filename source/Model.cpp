@@ -8,6 +8,7 @@
 #include "Model.h"
 #include "sdk_config.h"
 #include "helper.h"
+#include "boards.h"
 #include "sd_hal.h"
 #include "app_scheduler.h"
 #include "power_scheduler.h"

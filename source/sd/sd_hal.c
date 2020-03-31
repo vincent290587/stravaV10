@@ -26,8 +26,10 @@ static FATFS fs;
 static bool m_is_fat_mounted = false;
 
 #define MEM_TEST_DATA_SIZE 512
+#if defined (USE_MEMORY_NOR)
 static uint8_t m_buffer_tx[MEM_TEST_DATA_SIZE];
 static uint8_t m_buffer_rx[MEM_TEST_DATA_SIZE];
+#endif
 
 static void fatfs_mkfs(void);
 
@@ -49,6 +51,7 @@ void format_memory() {
 	}
 #else
 
+	LOG_WARNING("Not supported");
 #endif
 
 	return;
@@ -65,10 +68,12 @@ void fmkfs_memory(void) {
 
 void test_memory(void)
 {
-    uint32_t i;
-    uint32_t err_code;
 
     LOG_WARNING("Test memory start...");
+
+#if defined (USE_MEMORY_NOR)
+    uint32_t i;
+    uint32_t err_code;
 
     for (i = 0; i < MEM_TEST_DATA_SIZE; ++i) {
       m_buffer_tx[i] = (uint8_t)i;
@@ -78,11 +83,9 @@ void test_memory(void)
     // put memory in given state
     //configure_memory();
 
-#if defined (USE_MEMORY_NOR)
     LOG_WARNING("Process of erasing first block start");
     err_code = nrfx_qspi_erase(QSPI_ERASE_LEN_LEN_4KB, 0);
     APP_ERROR_CHECK(err_code);
-#endif
 
     w_task_delay(25);
     LOG_WARNING("Process of writing data start");
@@ -117,6 +120,7 @@ void test_memory(void)
     {
     	LOG_WARNING("Data inconsistent");
     }
+#endif
 
 }
 

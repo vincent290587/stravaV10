@@ -78,8 +78,6 @@ extern "C" {
 #define FXOS_INT1         NRF_GPIO_PIN_MAP(1, 2)
 #define FXOS_RST          NRF_GPIO_PIN_MAP(1, 3)
 
-#define BCK_PIN           NRF_GPIO_PIN_MAP(1, 8)
-
 #define GPS_R             NRF_GPIO_PIN_MAP(0, 3)
 #define GPS_S             NRF_GPIO_PIN_MAP(1, 15)
 #define FIX_PIN           NRF_GPIO_PIN_MAP(1, 14)
