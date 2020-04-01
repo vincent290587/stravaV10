@@ -64,8 +64,12 @@ static uint16_t cur_idx = 0;
  */
 int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
 
+	LOG_INFO("SD function query start !");
+
 	// reset query
 	if (m_cur_query != eSDTaskQueryNone) {
+
+		LOG_INFO("SD function query already running...");
 
 		int ret = sd_functions__stop_query();
 		if (ret) return ret;
@@ -132,6 +136,8 @@ int sd_functions__stop_query(void) {
 		break;
 
 	}
+
+	LOG_INFO("SD function query stop");
 
 	m_cur_query = eSDTaskQueryNone;
 

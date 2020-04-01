@@ -17,7 +17,7 @@
 #define COMBINE(sentence_type, term_number) (((unsigned)(sentence_type) << 5) | term_number)
 
 enum {
-  _SENTENCE_NONE, _SENTENCE_OTHER, _SENTENCE_LOC, _SENTENCE_HRM, _SENTENCE_CAD, _SENTENCE_ANCS, _SENTENCE_PC, _SENTENCE_BTN, _SENTENCE_DBG
+  _SENTENCE_NONE, _SENTENCE_OTHER, _SENTENCE_LOC, _SENTENCE_HRM, _SENTENCE_CAD, _SENTENCE_ANCS, _SENTENCE_PC, _SENTENCE_QY, _SENTENCE_BTN, _SENTENCE_DBG
 };
 
 class VParser {
@@ -90,6 +90,9 @@ class VParser {
       return _dbg_file.c_str();
     }
 
+	uint8_t _qy;
+    String  _qy_msg;
+
   private:
 
     int nstrcmp(const char *str1, const char *str2);
@@ -102,6 +105,7 @@ class VParser {
     uint8_t term_complete();
 
 	uint8_t _pc;
+
 	uint8_t _btn;
     unsigned long _bpm, _rr;
     unsigned long _rpm;

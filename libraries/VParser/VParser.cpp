@@ -13,6 +13,7 @@
 #define _CAD_TERM    "CAD"
 #define _ANCS_TERM   "ANCS"
 #define _PC_TERM     "DWN"
+#define _QY_TERM     "QRY"
 #define _BTN_TERM    "BTN"
 #define _DBG_TERM    "DBG"
 
@@ -29,6 +30,8 @@ VParser::VParser() {
   _lon = 0;
   _lat = 0;
   _pc = 0;
+  _qy = 0;
+  _qy_msg = "";
   _cad_speed = 0.;
   _sec_jour = 0;
   _dbg_code = 0;
@@ -132,6 +135,8 @@ uint8_t VParser::term_complete() {
       _sentence_type = _SENTENCE_BTN;
     else if (!nstrcmp(_term, _DBG_TERM))
       _sentence_type = _SENTENCE_DBG;
+    else if (!nstrcmp(_term, _QY_TERM))
+      _sentence_type = _SENTENCE_QY;
     else
       _sentence_type = _SENTENCE_OTHER;
     return false;
@@ -215,7 +220,16 @@ uint8_t VParser::term_complete() {
 		
       case COMBINE(_SENTENCE_PC, 1):
         _pc = natol(_term);
-        ret_val = _SENTENCE_PC;
+      	ret_val = _SENTENCE_PC;
+        break;
+
+      case COMBINE(_SENTENCE_QY, 1):
+        _qy = natol(_term);
+        _qy_msg = "";
+        break;
+      case COMBINE(_SENTENCE_QY, 2):
+        _qy_msg = _term;
+        ret_val = _SENTENCE_QY;
         break;
     }
   }

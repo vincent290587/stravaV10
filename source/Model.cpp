@@ -12,6 +12,7 @@
 #include "sd_hal.h"
 #include "sd_functions.h"
 #include "app_scheduler.h"
+#include "nrf_bootloader_info.h"
 #include "power_scheduler.h"
 #include "hardfault_genhf.h"
 #include "segger_wrapper.h"
@@ -143,6 +144,27 @@ void model_input_virtual_uart(char c) {
 
 		break;
 
+	case _SENTENCE_QY: {
+
+		int ret = 0;
+		char fname[20];
+
+		// filename argument
+		vparser._qy_msg.toCharArray(fname, sizeof(fname));
+		if ((ret = sd_functions__start_query((eSDTaskQuery)vparser._qy, fname)) == 0) {
+
+			LOG_INFO("SD function query start success");
+
+#if defined (BLE_STACK_SUPPORT_REQD)
+			// start BLE task
+			ble_start_evt(eBleEventTypeStartXfer);
+#endif
+		} else {
+			LOG_ERROR("SD Query failed %d", ret);
+		}
+
+	} break;
+
 	default:
 		break;
 
@@ -168,16 +190,14 @@ static void model_perform_virtual_tasks(void) {
 	}
 	else if (m_vparser_event == 17) {
 
-#if defined (BLE_STACK_SUPPORT_REQD)
-		// TODO filename argument
-		int ret = 0;
-		if ((ret = sd_functions__start_query(eSDTaskQueryFile, 0)) == 0) {
+		// TODO go to DFU
+#ifndef TDD
+		ret_code_t err_code = sd_power_gpregret_set(1, BOOTLOADER_DFU_START);
+		APP_ERROR_CHECK(err_code);
 
-			// start BLE task
-			ble_start_evt(eBleEventTypeStartXfer);
-		} else {
-			LOG_ERROR("SD Query failed %d", ret);
-		}
+		//nrf_power_gpregret_set(BOOTLOADER_DFU_START);
+
+		// TODO reboot ..?
 #endif
 
 	}
