@@ -10,6 +10,7 @@
 #include "helper.h"
 #include "boards.h"
 #include "sd_hal.h"
+#include "sd_functions.h"
 #include "app_scheduler.h"
 #include "power_scheduler.h"
 #include "hardfault_genhf.h"
@@ -166,15 +167,27 @@ static void model_perform_virtual_tasks(void) {
 		fxos_calibration_start();
 	}
 	else if (m_vparser_event == 17) {
+
 #if defined (BLE_STACK_SUPPORT_REQD)
-		ble_start_evt(eBleEventTypeStartXfer);
+		// TODO filename argument
+		int ret = 0;
+		if ((ret = sd_functions__start_query(eSDTaskQueryFile, 0)) == 0) {
+
+			// start BLE task
+			ble_start_evt(eBleEventTypeStartXfer);
+		} else {
+			LOG_ERROR("SD Query failed %d", ret);
+		}
 #endif
+
 	}
 	else if (m_vparser_event == 16) {
+
 		LOG_WARNING("usb_cdc_start_msc start");
 		usb_cdc_start_msc();
 	}
 	else if (m_vparser_event == 15) {
+
 		LOG_WARNING("fmkfs_memory start");
 		fmkfs_memory();
 	}
