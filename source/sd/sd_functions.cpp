@@ -87,12 +87,14 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
 		if ((ret = sd_functions__query_file_start(fname)) != 0) {
 			return ret;
 		}
+		LOG_INFO("SD function query file");
 	} break;
 
 	case eSDTaskQueryHisto: {
 		if (m_list_histo.size() == 0) {
 			return -2;
 		}
+		LOG_INFO("SD function query histo");
 	} break;
 
 	default:
@@ -151,6 +153,8 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 
 	int ret = 0;
 
+	p_array->length = 0;
+
 	switch (m_cur_query) {
 
 	case eSDTaskQueryNone: {
@@ -202,12 +206,21 @@ uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t
 	}
 
 	while (cur_idx < m_list_histo.size() &&
-			cur_size + m_list_histo[cur_idx]._name.length() < max_size) {
+			cur_size + m_list_histo[cur_idx]._name.length() + 2 < max_size) {
 
 		m_list_histo[cur_idx]._name.toCharArray(p_array->str + cur_size, max_size - cur_size);
 
-		cur_idx  += 1;
+		LOG_INFO("Adding histo size %u", m_list_histo[cur_idx]._name.length());
+
 		cur_size += m_list_histo[cur_idx]._name.length();
+		cur_idx  += 1;
+
+		if (cur_idx == m_list_histo.size()) {
+
+			// add a line termination
+			p_array->str[cur_size++] = '\r';
+			p_array->str[cur_size++] = '\n';
+		}
 	}
 
 	p_array->length = cur_size;

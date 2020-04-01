@@ -480,6 +480,12 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
  */
 static void _service_c_error_handler(uint32_t nrf_error)
 {
+	if (nrf_error == NRF_ERROR_RESOURCES) {
+
+		LOG_DEBUG("NUS RESSSS %u", m_nus_packet_nb);
+		m_nus_cts = false;
+		return;
+	}
 	APP_ERROR_HANDLER(nrf_error);
 }
 
@@ -822,7 +828,13 @@ void ble_nus_tasks(void) {
 
 			// read whatever buffer
 			int ret = sd_functions__run_query(0, &m_nus_xfer_array, m_mtu_length < sizeof(_buffer) ? m_mtu_length : sizeof(_buffer));
-			(void)ret;
+			if (ret) {
+
+				LOG_INFO("sd_functions__run_query error %d", ret);
+				return;
+			}
+
+			LOG_INFO("sd_functions__run_query sending %u bytes", m_nus_xfer_array.length);
 		}
 
 		if (!m_nus_xfer_array.str || !m_nus_xfer_array.length) {
@@ -852,15 +864,17 @@ void ble_nus_tasks(void) {
 
 		case NRF_SUCCESS:
 		{
-			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_array.length);
+			if (m_nus_cts) {
+				LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_array.length);
 
-			m_nus_packet_nb++;
-			m_nus_xfer_array.length = 0;
+				m_nus_packet_nb++;
+				m_nus_xfer_array.length = 0;
+			}
 		} break;
 
 		default:
 		{
-			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_array.length, BLE_NUS_MAX_DATA_LEN);
+			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_array.length, m_mtu_length);
 			return;
 		} break;
 		}

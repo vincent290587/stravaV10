@@ -13,8 +13,8 @@
 
 typedef enum {
 	eSDTaskQueryNone,
-	eSDTaskQueryFile,
 	eSDTaskQueryHisto,
+	eSDTaskQueryFile,
 } eSDTaskQuery;
 
 #if defined(__cplusplus)
