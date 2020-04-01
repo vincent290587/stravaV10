@@ -60,8 +60,6 @@ extern ListeParcours mes_parcours;
 
 extern Locator       locator;
 
-extern Boucle        boucle;
-
 extern SegmentManager     segMngr;
 
 extern Vue           vue;

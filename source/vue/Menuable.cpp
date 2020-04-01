@@ -13,6 +13,7 @@
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include "sd_functions.h"
+#include "power_scheduler.h"
 #include "ant_device_manager.h"
 #include "MenuObjects.h"
 #include "Menuable.h"
@@ -31,7 +32,7 @@ static MenuPagePairing page_pair(vue, &page_set, _page1_mode_ant_list);
 static eFuncMenuAction _page0_mode_crs(int var) {
 
 	vue.setCurrentMode(eVueGlobalScreenCRS);
-	boucle.changeMode(eBoucleGlobalModesCRS);
+	boucle__change_mode(eBoucleGlobalModesCRS);
 	return eFuncMenuActionEndMenu;
 }
 
@@ -40,7 +41,7 @@ static eFuncMenuAction _page0_mode_prc_go(int var) {
 	LOG_INFO("parcoursSelect %d", var);
 
 	vue.setCurrentMode(eVueGlobalScreenPRC);
-	boucle.changeMode(eBoucleGlobalModesPRC);
+	boucle__change_mode(eBoucleGlobalModesPRC);
 
 	boucle_crs.parcoursSelect(var);
 
@@ -72,21 +73,21 @@ static eFuncMenuAction _page0_mode_prc_list(int var) {
 static eFuncMenuAction _page0_mode_fec(int var) {
 
 	vue.setCurrentMode(eVueGlobalScreenFEC);
-	boucle.changeMode(eBoucleGlobalModesFEC);
+	boucle__change_mode(eBoucleGlobalModesFEC);
 	return eFuncMenuActionEndMenu;
 }
 
 static eFuncMenuAction _page0_mode_debug(int var) {
 
 	vue.setCurrentMode(eVueGlobalScreenDEBUG);
-	boucle.changeMode(eBoucleGlobalModesCRS);
+	boucle__change_mode(eBoucleGlobalModesCRS);
 	return eFuncMenuActionEndMenu;
 }
 
 static eFuncMenuAction _page0_shutdown(int var) {
 
 	// shutdown
-	gpio_set(KILL_PIN);
+	power_scheduler__shutdown();
 
 	return eFuncMenuActionEndMenu;
 }

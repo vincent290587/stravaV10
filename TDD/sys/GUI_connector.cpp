@@ -122,7 +122,7 @@ void GUI_connector_init(void) {
 	u_long iMode = 1;
 	iResult = ioctlsocket(server_fd, FIONBIO, &iMode);
 	if (iResult != NO_ERROR)
-	  printf("ioctlsocket failed with error: %ld\n", iResult);
+	  printf("ioctlsocket failed with error: %d\n", iResult);
 #endif
 
 	// Forcefully attaching socket to the port 8080
@@ -184,7 +184,7 @@ void GUI_UpdateLS027(void) {
 #endif
 }
 
-extern "C" void neopixel_update(uint8_t red, uint8_t green, uint8_t blue) {
+void neopixel_update(uint8_t red, uint8_t green, uint8_t blue) {
 
 #ifdef LS027_GUI
 	if (!m_is_init) return;

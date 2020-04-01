@@ -148,7 +148,10 @@ bool test_fram(void) {
 
 	sUserParameters *params = user_settings_get();
 
-	if (!u_settings.isConfigValid())
+	if (u_settings.isConfigValid())
+		return false;
+
+	if (!u_settings.resetConfig())
 		return false;
 
 	if (u_settings.getFECdevID() != 2846U)

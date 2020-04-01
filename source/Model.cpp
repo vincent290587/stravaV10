@@ -7,10 +7,13 @@
 
 #include "Model.h"
 #include "sdk_config.h"
-#include "neopixel.h"
 #include "helper.h"
+#include "boards.h"
 #include "sd_hal.h"
+#include "sd_functions.h"
 #include "app_scheduler.h"
+#include "nrf_bootloader_info.h"
+#include "power_scheduler.h"
 #include "hardfault_genhf.h"
 #include "segger_wrapper.h"
 
@@ -48,15 +51,15 @@ ListePoints   mes_points;
 
 Locator       locator;
 
-Boucle        boucle;
-
 SegmentManager     segMngr;
 
 Vue           vue;
 
 STC3100       stc;
 
+#ifdef VEML_PRESENT
 VEML6075      veml;
+#endif
 
 AltiBaro      baro;
 
@@ -86,6 +89,7 @@ int Point::objectCount = 0;
  */
 void model_dispatch_sensors_update(void) {
 
+#ifdef VEML_PRESENT
 	uint16_t light_level = veml.getRawUVA();
 
 	LOG_DEBUG("Light level: %u", light_level);
@@ -101,6 +105,7 @@ void model_dispatch_sensors_update(void) {
 			backlight.state = 0;
 		}
 	}
+#endif
 }
 
 void model_get_navigation(sKomootNavigation *nav) {
@@ -139,6 +144,27 @@ void model_input_virtual_uart(char c) {
 
 		break;
 
+	case _SENTENCE_QY: {
+
+		int ret = 0;
+		char fname[20];
+
+		// filename argument
+		vparser._qy_msg.toCharArray(fname, sizeof(fname));
+		if ((ret = sd_functions__start_query((eSDTaskQuery)vparser._qy, fname)) == 0) {
+
+			LOG_INFO("SD function query start success");
+
+#if defined (BLE_STACK_SUPPORT_REQD)
+			// start BLE task
+			ble_start_evt(eBleEventTypeStartXfer);
+#endif
+		} else {
+			LOG_ERROR("SD Query failed %d", ret);
+		}
+
+	} break;
+
 	default:
 		break;
 
@@ -163,15 +189,25 @@ static void model_perform_virtual_tasks(void) {
 		fxos_calibration_start();
 	}
 	else if (m_vparser_event == 17) {
-#if defined (BLE_STACK_SUPPORT_REQD)
-		ble_start_evt(eBleEventTypeStartXfer);
+
+		// TODO go to DFU
+#ifndef TDD
+		ret_code_t err_code = sd_power_gpregret_set(1, BOOTLOADER_DFU_START);
+		APP_ERROR_CHECK(err_code);
+
+		//nrf_power_gpregret_set(BOOTLOADER_DFU_START);
+
+		// TODO reboot ..?
 #endif
+
 	}
 	else if (m_vparser_event == 16) {
+
 		LOG_WARNING("usb_cdc_start_msc start");
 		usb_cdc_start_msc();
 	}
 	else if (m_vparser_event == 15) {
+
 		LOG_WARNING("fmkfs_memory start");
 		fmkfs_memory();
 	}
@@ -207,7 +243,7 @@ void perform_system_tasks_light(void) {
  */
 void model_go_to_msc_mode(void) {
 
-	boucle.uninit();
+	boucle__uninit();
 
 }
 
@@ -259,8 +295,8 @@ void idle_task(void * p_context)
 void boucle_task(void * p_context)
 {
 
-	boucle.run(); // init
-	boucle.run(); // run once
+	boucle__run(); // init
+	boucle__run(); // run once
 
 	// potentially change mode
 //	vue.setCurrentMode(eVueGlobalScreenFEC);
@@ -270,9 +306,16 @@ void boucle_task(void * p_context)
 	{
 		LOG_INFO("\r\nTask %u", millis());
 
-		boucle.run();
+		wdt_reload();
 
-		if (!millis()) NRF_LOG_WARNING("No millis");
+		// check button actions
+		bsp_tasks();
+
+		boucle__run();
+
+		if (!millis()) {
+			NRF_LOG_WARNING("No millis");
+		}
 	}
 }
 
@@ -288,6 +331,9 @@ void ls027_task(void * p_context)
 		wdt_reload();
 
 		w_task_delay(LS027_TIMEOUT_DELAY_MS);
+
+		// check button actions
+		bsp_tasks();
 
 		// timeout
 		sysview_task_void_enter(VueRefresh);
@@ -321,10 +367,6 @@ void peripherals_task(void * p_context)
 		// BSP tasks
 		bsp_tasks();
 
-#ifndef BLE_STACK_SUPPORT_REQD
-		neopixel_radio_callback_handler(false);
-#endif
-
 #if defined( ANT_STACK_SUPPORT_REQD ) || defined( TDD )
 		sysview_task_void_enter(AntRFTasks);
 		ant_tasks();
@@ -354,6 +396,8 @@ void peripherals_task(void * p_context)
 		notifications_tasks();
 
 		backlighting_tasks();
+
+		power_scheduler__run();
 
 		w_task_delay(100);
 

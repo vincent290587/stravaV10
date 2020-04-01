@@ -16,8 +16,6 @@
 #include "i2c.h"
 #include "nrf_twi_mngr.h"
 
-#define FRAM_TWI_ADDRESS       0b10100000
-
 #define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr, p_reg_addr, 1, NRF_TWI_MNGR_NO_STOP), \
 		NRF_TWI_MNGR_READ (addr, p_buffer, byte_cnt, 0)
@@ -140,8 +138,8 @@ void STC3100::checkDevID(uint8_t dev_id) {
 
 void STC3100::reset(void) {
 
-	// Reset sensor
-	writeCommand(REG_CONTROL, STC_RESET);
+	// Reset sensor, no open-drain
+	this->writeCommand(REG_CONTROL, STC_RESET);
 
 }
 
@@ -149,16 +147,19 @@ void STC3100::reset(void) {
 void STC3100::shutdown(void) {
 
 	// reset
-	this->reset();
-	delay_ms(1);
+//	this->reset();
+//	delay_ms(1);
 
 	/* Set the mode indicator */
 	_stc3100Mode  = 0;
 	//_stc3100Mode |= MODE_RUN;
 	//_stc3100Mode |= STC3100_MODE_HIGHRES;
 
-	// set mode
+	// set mode OFF
 	this->writeCommand(REG_MODE, _stc3100Mode);
+
+	// Activate open-drain
+	this->writeCommand(REG_CONTROL, STC_IO_OD);
 
 }
 

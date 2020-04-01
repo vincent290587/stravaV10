@@ -53,7 +53,7 @@ void print_backtrace(void)
 
 void signalHandler( int signum ) {
 
-    printf("Interrupt signal %u received.\n", signum);
+    printf("Interrupt signal %d received.\n", signum);
 
     // Get a back trace
     void *array[10];

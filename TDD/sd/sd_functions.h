@@ -11,6 +11,12 @@
 #include "Attitude.h"
 #include "EpoDefinitions.h"
 
+typedef enum {
+	eSDTaskQueryNone,
+	eSDTaskQueryHisto,
+	eSDTaskQueryFile,
+} eSDTaskQuery;
+
 #if defined(__cplusplus)
 
 class Segment;
@@ -30,6 +36,16 @@ extern "C" {
 int init_liste_segments(void);
 
 void uninit_liste_segments(void);
+
+int sd_functions__start_query(eSDTaskQuery query, const char * const fname);
+int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size);
+int sd_functions__stop_query(void);
+
+uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t max_size);
+
+int   sd_functions__query_file_start(const char * const fname);
+char* sd_functions__query_file_run(sCharArray *p_array, size_t max_size);
+int   sd_functions__query_file_stop(bool toBeDeleted);
 
 int epo_file_size(void);
 int epo_file_read(sEpoPacketSatData* sat_data, uint16_t size_);

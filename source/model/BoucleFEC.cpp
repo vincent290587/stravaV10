@@ -11,6 +11,7 @@
 #include "fec.h"
 #include "millis.h"
 #include "Model.h"
+#include "power_scheduler.h"
 #include "segger_wrapper.h"
 #include "parameters.h"
 #include "Locator.h"
@@ -26,42 +27,30 @@ static tHistoValue m_st_buffer[FEC_PW_BUFFER_NB_ELEM];
  *
  */
 BoucleFEC::BoucleFEC() : m_pw_buffer(FEC_PW_BUFFER_NB_ELEM, m_st_buffer) {
-	m_last_run_time = 0;
+
 }
 
-/**
- *
- * @return true if we are ready to run
- */
-bool BoucleFEC::isTime() {
-
-	if (millis() - m_last_run_time >= BOUCLE_FEC_UPDATE_RATE_MS) {
-		m_last_run_time = millis();
-		return true;
-	}
-
-	return false;
-}
 
 /**
  *
  */
-void BoucleFEC::init() {
+void BoucleFEC::init_internal(void) {
 
 	LOG_INFO("Boucle FEC init\r\n");
 
 	// turn GPS OFF
 	gps_mgmt.standby();
+}
 
-	m_needs_init = false;
+void BoucleFEC::invalidate_internal(void) {
+
+
 }
 
 /**
  *
  */
-void BoucleFEC::run() {
-
-	if (m_needs_init) this->init();
+void BoucleFEC::run_internal(void) {
 
 	// wait for location to be updated
 	(void)w_task_events_wait(TASK_EVENT_FEC_INFO | TASK_EVENT_FEC_POWER);
@@ -83,4 +72,6 @@ void BoucleFEC::run() {
 	if (m_tasks_id.ls027_id != TASK_ID_INVALID) {
 		w_task_delay_cancel(m_tasks_id.ls027_id);
 	}
+
+	power_scheduler__ping(ePowerSchedulerPingFEC);
 }

@@ -8,7 +8,6 @@
 #include "ble_hci.h"
 #include "ble_db_discovery.h"
 #include "ble_srv_common.h"
-#include "ble_radio_notification.h"
 #include "nrf_sdh.h"
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_soc.h"
@@ -459,15 +458,6 @@ static void soc_evt_handler(uint32_t evt_id, void * p_context)
 }
 
 
-void ble_radio_callback_handler(bool radio_active)
-{
-	if (radio_active == false)
-	{
-		neopixel_radio_callback_handler(radio_active);
-	}
-}
-
-
 /**@brief Function for initializing the BLE stack.
  *
  * @details Initializes the SoftDevice and the BLE event interrupt.
@@ -495,10 +485,6 @@ static void ble_stack_init(void)
 	// Register handlers for BLE and SoC events.
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 	NRF_SDH_SOC_OBSERVER(m_soc_observer, APP_SOC_OBSERVER_PRIO, soc_evt_handler, NULL);
-
-	// radio callback to write to the neopixels right ;-)
-	err_code = ble_radio_notification_init(7, NRF_RADIO_NOTIFICATION_DISTANCE_1740US, ble_radio_callback_handler);
-	APP_ERROR_CHECK(err_code);
 
 	// set name
 	ble_gap_conn_sec_mode_t sec_mode; // Struct to store security parameters

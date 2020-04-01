@@ -100,6 +100,7 @@ set(SRCS
 	TDD/sensors/VEML6075.cpp
 	TDD/drivers/uart_tdd.c
 	TDD/drivers/ant_tdd.c
+	TDD/drivers/drv_ws2812.c
 	TDD/drivers/gpio_tdd.cpp
 	TDD/drivers/ls027_tdd.cpp
 	TDD/drivers/neopixel_tdd.c
@@ -136,6 +137,7 @@ set(SRCS
 	source/model/RRZone.cpp
 	source/model/SufferScore.cpp
 	source/model/UserSettings.cpp
+	source/scheduling/power_scheduler.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
     source/vue/MenuObjects.cpp

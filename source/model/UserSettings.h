@@ -14,7 +14,7 @@
 
 
 #define FRAM_SETTINGS_ADDRESS        0x0000
-#define FRAM_SETTINGS_VERSION        0x0001
+#define FRAM_SETTINGS_VERSION        0x0002
 
 #if defined(__cplusplus)
 extern "C" {
@@ -69,7 +69,7 @@ private:
 	bool m_is_init = false;
 	sUserParameters &m_params;
 
-	void sync();
+	void sync(uint8_t force = 0);
 };
 
 #endif // defined C++
