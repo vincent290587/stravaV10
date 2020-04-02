@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "Model.h"
 #include "Screenutils.h"
+#include "ant_device_manager.h"
 #include "fram.h"
 #include "bme280.h"
 #include "utils.h"
@@ -154,7 +155,7 @@ bool test_fram(void) {
 	if (!u_settings.resetConfig())
 		return false;
 
-	if (u_settings.getFECdevID() != 2846U)
+	if (u_settings.getFECdevID() != TACX_DEVICE_NUMBER)
 		return false;
 
 	params->fec_devid = 1234u;
@@ -170,7 +171,7 @@ bool test_fram(void) {
 	if (!u_settings.resetConfig())
 		return false;
 
-	if (u_settings.getFECdevID() != 2846U)
+	if (u_settings.getFECdevID() != TACX_DEVICE_NUMBER)
 		return false;
 
 	LOG_INFO("FRAM OK");
