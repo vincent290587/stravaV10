@@ -17,7 +17,6 @@
 #include "segger_wrapper.h"
 
 #include "ff.h"
-#include "diskio_blkdev.h"
 #include "sd_functions.h"
 
 /*******************************************************************************
@@ -97,6 +96,14 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
 		LOG_INFO("SD function query histo");
 	} break;
 
+	case eSDTaskQueryDelete: {
+		int ret = 0;
+		ret = sd_functions__unlink(fname);
+		m_cur_query = eSDTaskQueryNone;
+		LOG_INFO("SD function unlink");
+		return ret;
+	} break;
+
 	default:
 		m_cur_query = eSDTaskQueryNone;
 		return -1;
@@ -131,6 +138,10 @@ int sd_functions__stop_query(void) {
 
 	case eSDTaskQueryHisto: {
 		cur_idx = 0;
+	} break;
+
+	case eSDTaskQueryDelete: {
+
 	} break;
 
 	default:
@@ -171,6 +182,10 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 		if (!sd_functions__query_histo_list(restart, p_array, max_size)) {
 			return -2;
 		}
+	} break;
+
+	case eSDTaskQueryDelete: {
+		m_cur_query = eSDTaskQueryNone;
 	} break;
 
 	default:
@@ -605,19 +620,6 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 }
 
-
-bool sd_erase_pos(void) {
-
-	FRESULT error = f_unlink("histo.txt"); // TODO histo.txt
-	if (error)
-	{
-		LOG_INFO("Unlink file failed.");
-		return false;
-	}
-
-	return true;
-}
-
 /**
  *
  * @return The size of the EPO file
@@ -819,16 +821,22 @@ int sd_functions__query_file_stop(bool toBeDeleted) {
 		return -1;
 	}
 
-#ifndef DEBUG_CONFIG
-	if (toBeDeleted) {
-		error = f_unlink("histo.txt"); // TODO histo.txt
-		if (error)
-		{
-			LOG_INFO("Unlink file failed.");
-			return -2;
-		}
+	return 0;
+}
+
+/**
+ *
+ */
+int sd_functions__unlink(const char * const fname) {
+
+	if (!is_fat_init() || !fname) return -3;
+
+	FRESULT error = f_unlink(fname);
+	if (error)
+	{
+		LOG_INFO("Unlink file failed.");
+		return -2;
 	}
-#endif
 
 	return 0;
 }
