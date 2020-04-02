@@ -24,6 +24,17 @@
 #include <dirent.h>
 #include <stdio.h>
 
+
+/**@brief Macro for calling error handler function if supplied error code any other than NRF_SUCCESS.
+ *
+ * @param[in] ERR_CODE Error code supplied to the error handler.
+ */
+#define APP_ERROR_CHECK(ERR_CODE)                           \
+    do                                                      \
+    {                                                       \
+    } while (0)
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -180,8 +191,39 @@ typedef struct {
 //#endif
 //} FIL;
 
-/* Directory object structure (DIR) */
 
+/* File information structure (FILINFO) */
+
+typedef struct {
+	FSIZE_t	fsize;			/* File size */
+	WORD	fdate;			/* Modified date */
+	WORD	ftime;			/* Modified time */
+	BYTE	fattrib;		/* File attribute */
+#if _USE_LFN != 0
+	TCHAR	altname[13];			/* Altenative file name */
+	TCHAR	fname[_MAX_LFN + 1];	/* Primary file name */
+#else
+	TCHAR	fname[13];		/* File name */
+#endif
+} FILINFO;
+
+typedef FILE FIL;
+
+//typedef struct dirent FILINFO;
+
+//#ifdef __WIN32__
+//
+//#include "dirent.h"
+//
+//typedef DIR DIR_;
+//
+//#else
+//
+//#include "dirent.h"
+//
+///* Directory object structure (DIR) */
+//
+//
 //typedef struct {
 //	_FDID	obj;			/* Object identifier */
 //	DWORD	dptr;			/* Current read/write offset */
@@ -195,28 +237,9 @@ typedef struct {
 //#if _USE_FIND
 //	const TCHAR* pat;		/* Pointer to the name matching pattern */
 //#endif
-//} DIR;
-
-
-
-/* File information structure (FILINFO) */
-
-//typedef struct {
-//	FSIZE_t	fsize;			/* File size */
-//	WORD	fdate;			/* Modified date */
-//	WORD	ftime;			/* Modified time */
-//	BYTE	fattrib;		/* File attribute */
-//#if _USE_LFN != 0
-//	TCHAR	altname[13];			/* Altenative file name */
-//	TCHAR	fname[_MAX_LFN + 1];	/* Primary file name */
-//#else
-//	TCHAR	fname[13];		/* File name */
+//} DIR_;
+//
 //#endif
-//} FILINFO;
-
-typedef FILE FIL;
-
-typedef struct dirent FILINFO;
 
 /* File function return code (FRESULT) */
 
@@ -261,9 +284,9 @@ FRESULT f_readdir (DIR* dp, FILINFO* fno);							/* Read a directory item */
 FRESULT f_findfirst (DIR* dp, FILINFO* fno, const TCHAR* path, const TCHAR* pattern);	/* Find first file */
 FRESULT f_findnext (DIR* dp, FILINFO* fno);							/* Find next file */
 FRESULT f_mkdir (const TCHAR* path);								/* Create a sub directory */
-FRESULT f_unlink (const TCHAR* path);								/* Delete an existing file or directory */
+//FRESULT f_unlink (const TCHAR* path);								/* Delete an existing file or directory */
 FRESULT f_rename (const TCHAR* path_old, const TCHAR* path_new);	/* Rename/Move a file or directory */
-FRESULT f_stat (const TCHAR* path, FILINFO* fno);					/* Get file status */
+//FRESULT f_stat (const TCHAR* path, FILINFO* fno);					/* Get file status */
 FRESULT f_chmod (const TCHAR* path, BYTE attr, BYTE mask);			/* Change attribute of a file/dir */
 FRESULT f_utime (const TCHAR* path, const FILINFO* fno);			/* Change timestamp of a file/dir */
 FRESULT f_chdir (const TCHAR* path);								/* Change current directory */
@@ -282,8 +305,31 @@ int f_puts (const TCHAR* str, FIL* cp);								/* Put a string to the file */
 int f_printf (FIL* fp, const TCHAR* str, ...);						/* Put a formatted string to the file */
 TCHAR* f_gets (TCHAR* buff, int len, FIL* fp);						/* Get a string from the file */
 
-#define f_eof(fp) ((int)((fp)->fptr == (fp)->obj.objsize))
-#define f_error(fp) ((fp)->err)
+static inline int f_eof(FIL *p_file) {
+	return feof(p_file);
+}
+
+static inline int f_error(FIL *p_file) {
+	return ferror(p_file);
+}
+
+static inline FRESULT f_stat (
+	const TCHAR* path,	/* Pointer to the file path */
+	FILINFO* fno		/* Pointer to file information to return */
+)
+{
+
+	return FR_OK;
+}
+
+static inline FRESULT f_unlink (const TCHAR* path) {
+
+
+	return FR_OK;
+}
+
+//#define f_eof(fp) ((int)((fp)->fptr == (fp)->obj.objsize))
+//#define f_error(fp) ((fp)->err)
 #define f_tell(fp) ((fp)->fptr)
 #define f_size(fp) ((fp)->obj.objsize)
 #define f_rewind(fp) f_lseek((fp), 0)

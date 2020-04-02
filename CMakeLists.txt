@@ -91,7 +91,6 @@ set(SRCS
     TDD/Simulator.cpp
 	TDD/millis_tdd.c
 	TDD/order1_filter_tdd.c
-	TDD/sd/sd_functions.cpp
 	TDD/sd/sd_hal.c
 	TDD/timer/timer.c
     TDD/sensors/STC3100.cpp
@@ -138,6 +137,7 @@ set(SRCS
 	source/model/SufferScore.cpp
 	source/model/UserSettings.cpp
 	source/scheduling/power_scheduler.cpp
+	source/sd/sd_functions.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
     source/vue/MenuObjects.cpp

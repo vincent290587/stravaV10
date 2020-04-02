@@ -3616,7 +3616,7 @@ FRESULT f_lseek (
 	return FR_OK;
 }
 
-
+static DIR* m_o_dir = NULL;
 
 #if _FS_MINIMIZE <= 1
 /*-----------------------------------------------------------------------*/
@@ -3629,14 +3629,12 @@ FRESULT f_opendir (
 	const TCHAR* path	/* Pointer to the directory path */
 )
 {
-	DIR* dp_temp = opendir("./DB");
+	m_o_dir = opendir("./../TDD/DB/");
 
-	if (!dp_temp)  // opendir returns NULL if couldn't open directory
+	if (!m_o_dir)  // opendir returns NULL if couldn't open directory
 	{
 		return FR_NO_PATH;
 	}
-
-	memcpy(&dp, &dp_temp, sizeof(DIR*));
 
 	return FR_OK;
 }
@@ -3649,7 +3647,12 @@ FRESULT f_closedir (
 	DIR *dp		/* Pointer to the directory object to be closed */
 )
 {
-	return closedir(dp);
+
+	if (!m_o_dir)  // opendir returns NULL if couldn't open directory
+	{
+		return FR_NO_PATH;
+	}
+	return closedir(m_o_dir);
 }
 
 
@@ -3664,11 +3667,27 @@ FRESULT f_readdir (
 	FILINFO* fno		/* Pointer to file information to return */
 )
 {
-	FILINFO* temp_fno = readdir(dp);
 
-	if (!temp_fno) return FR_INT_ERR;
+	if (!m_o_dir)  // opendir returns NULL if couldn't open directory
+	{
+		return FR_NO_PATH;
+	}
 
-	memcpy(fno, temp_fno, sizeof(FILINFO));
+	memset(fno, 0, sizeof(FILINFO));
+
+#if 1
+	struct dirent* tmp_dirent = readdir(m_o_dir);
+
+	if (!tmp_dirent) return FR_INT_ERR;
+
+	strncpy(fno->fname, tmp_dirent->d_name, sizeof(fno->fname));
+#else
+	FILINFO* tmp_dirent = readdir(m_o_dir);
+
+	if (!tmp_dirent) return FR_INT_ERR;
+
+	memcpy(fno, tmp_dirent, sizeof(FILINFO));
+#endif
 
 	return FR_OK;
 }

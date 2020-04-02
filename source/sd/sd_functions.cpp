@@ -251,7 +251,11 @@ uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t
 int init_liste_segments(void)
 {
 	FRESULT error;
+	DIR *p_dir = nullptr;
+#ifndef TDD
 	DIR directory; /* Directory object */
+	p_dir = &directory;
+#endif
 	FILINFO fileInformation;
 	uint16_t nb_files_errors = 0;
 
@@ -272,7 +276,7 @@ int init_liste_segments(void)
 #endif
 
 	LOG_INFO("List the file in the root directory......");
-	if (f_opendir(&directory, "/"))
+	if (f_opendir(p_dir, "/"))
 	{
 		LOG_INFO("Open directory failed.");
 		sysview_task_void_exit(SdFunction);
@@ -281,7 +285,7 @@ int init_liste_segments(void)
 
 	do
 	{
-		error = f_readdir(&directory, &fileInformation);
+		error = f_readdir(p_dir, &fileInformation);
 
 		/* To the end. */
 		if ((error != FR_OK) || (fileInformation.fname[0U] == 0U))
@@ -333,6 +337,13 @@ int init_liste_segments(void)
 		}
 
 	} while (fileInformation.fname[0U]);
+
+	if (f_closedir(p_dir))
+	{
+		LOG_INFO("Close directory failed.");
+		sysview_task_void_exit(SdFunction);
+		return -3;
+	}
 
 	LOG_INFO("%u files refused", nb_files_errors);
 	LOG_INFO("%u segments addded", mes_segments.size());
@@ -786,12 +797,15 @@ char* sd_functions__query_file_run(sCharArray *p_array, size_t max_size) {
 
 	sysview_task_void_enter(SdFunction);
 
+	UINT a_size = 0;
 	FRESULT error = f_read (
 			&g_LogFileObject, 	/* Pointer to the file object */
 			p_array->str,	    /* Pointer to data buffer */
 			max_size,           /* Number of bytes to read */
-			&p_array->length	/* Pointer to number of bytes read */
+			&a_size	/* Pointer to number of bytes read */
 	);
+
+	p_array->length = a_size;
 
 	if (error) {
 
