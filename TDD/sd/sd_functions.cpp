@@ -5,6 +5,8 @@
  *      Author: Vincent
  */
 
+#if 0
+
 #include <stdio.h>
 #include <string.h>
 #include "Model.h"
@@ -588,3 +590,5 @@ int epo_file_stop(bool toBeDeleted) {
 
 	return 0;
 }
+
+#endif

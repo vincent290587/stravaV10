@@ -22,6 +22,8 @@
 #include "diskio.h"		/* Declarations of device I/O functions */
 #include <string.h>
 
+#define TDD_BASE_DIR                  "./../TDD/DB/"
+
 /*--------------------------------------------------------------------------
 
    Module Private Definitions
@@ -3227,8 +3229,20 @@ FRESULT f_open (
 	BYTE mode			/* Access mode and file open mode flags */
 )
 {
+	FIL* temp_fp = NULL;
 	// f_open
-	FIL* temp_fp = fopen(path, "rw");
+	if (strstr(path, "DB")) {
+
+		temp_fp = fopen(path, "rw");
+	} else {
+
+		char l_fname[60];
+
+		snprintf(l_fname, sizeof(l_fname),
+				"%s%s", TDD_BASE_DIR, path);
+
+		temp_fp = fopen(l_fname, "rw");
+	}
 
 	if (!temp_fp) return FR_NO_FILE;
 
@@ -3629,7 +3643,7 @@ FRESULT f_opendir (
 	const TCHAR* path	/* Pointer to the directory path */
 )
 {
-	m_o_dir = opendir("./../TDD/DB/");
+	m_o_dir = opendir(TDD_BASE_DIR);
 
 	if (!m_o_dir)  // opendir returns NULL if couldn't open directory
 	{
