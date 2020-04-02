@@ -5,6 +5,8 @@
  *      Author: Vincent
  */
 
+#if 0
+
 #include <stdio.h>
 #include <string.h>
 #include "Model.h"
@@ -34,6 +36,41 @@ static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
 static FIL* g_fileObject;   /* File object */
 static FIL* g_EpoFileObject;   /* File object */
+
+
+/**
+ *
+ */
+int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
+
+	LOG_INFO("SD function query start !");
+
+	return 0;
+}
+
+/**
+ *
+ */
+int sd_functions__stop_query(void) {
+
+	return 0;
+}
+
+/**
+ *
+ */
+int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
+
+	return 0;
+}
+
+/**
+ *
+ */
+uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t max_size) {
+
+	return 0;
+}
 
 /*!
  * @brief Main function
@@ -553,3 +590,5 @@ int epo_file_stop(bool toBeDeleted) {
 
 	return 0;
 }
+
+#endif

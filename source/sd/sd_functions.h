@@ -10,6 +10,14 @@
 
 #include "EpoDefinitions.h"
 
+
+typedef enum {
+	eSDTaskQueryNone,
+	eSDTaskQueryHisto,
+	eSDTaskQueryFile,
+	eSDTaskQueryDelete,
+} eSDTaskQuery;
+
 #if defined(__cplusplus)
 
 #include "g_structs.h"
@@ -33,16 +41,23 @@ int init_liste_segments(void);
 
 void uninit_liste_segments(void);
 
+int sd_functions__start_query(eSDTaskQuery query, const char * const fname);
+int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size);
+int sd_functions__stop_query(void);
+
+int sd_functions__unlink(const char * const fname);
+
+uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t max_size);
+
+int   sd_functions__query_file_start(const char * const fname);
+char* sd_functions__query_file_run(sCharArray *p_array, size_t max_size);
+int   sd_functions__query_file_stop(bool toBeDeleted);
+
 int epo_file_size(void);
 int epo_file_read(sEpoPacketSatData* epo_data, uint16_t size_);
 bool epo_file_start(int current_gps_hour);
 int epo_file_stop(bool toBeDeleted);
 
-bool log_file_start(void);
-char* log_file_read(sCharArray *p_array, size_t max_size);
-int log_file_stop(bool toBeDeleted);
-
-bool sd_erase_pos(void);
 
 #if defined(__cplusplus)
 }

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "boards.h"
 #include "hardfault.h"
 #include "i2c.h"
 #include "notifications.h"
@@ -19,17 +20,18 @@
 #include "spi.h"
 #include "i2c.h"
 #include "fram.h"
-#include "nor.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
 #include "nrf_sdm.h"
 #include "nrf_strerror.h"
 #include "nrf_drv_timer.h"
 #include "nrf_drv_clock.h"
+#include "power_scheduler.h"
 #include "task_manager_wrapper.h"
 #include "nrf_bootloader_info.h"
 #include "nrfx_wdt.h"
 #include "nrf_gpio.h"
+#include "diskio_sdc.h"
 #include "diskio_nor.h"
 #include "nrf_delay.h"
 #include "i2c_scheduler.h"
@@ -275,8 +277,12 @@ void bsp_tasks(void)
 static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 {
 	if (NRF_PWR_MGMT_EVT_PREPARE_SYSOFF == event) {
-		nrf_gpio_pin_set(KILL_PIN);
-		return true;
+
+		power_scheduler__shutdown();
+#if defined (PROTO_V11)
+		return false;
+#endif
+
 	} else if (NRF_PWR_MGMT_EVT_PREPARE_DFU == event) {
 
 #if 0
@@ -292,7 +298,6 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 
 		LOG_INFO("Power management allowed to reset to DFU mode.");
 
-		return true;
 	}
 
 	return true;
@@ -329,16 +334,20 @@ static void pins_init(void)
 
 	// LS027_CS_PIN is configured later
 
+#ifdef BCK_PIN
 	nrf_gpio_cfg_output(BCK_PIN);
 	nrf_gpio_pin_clear(BCK_PIN);
+#endif
 
 	// FIX_PIN is configured later
 
 	nrf_gpio_cfg_output(NEO_PIN);
 	nrf_gpio_pin_clear(NEO_PIN);
 
+#ifdef KILL_PIN
 	nrf_gpio_cfg_output(KILL_PIN);
 	nrf_gpio_pin_clear(KILL_PIN);
+#endif
 
 }
 
@@ -442,7 +451,12 @@ int main(void)
 	delay_ms(10);
 
 	// diskio + fatfs init
+#if defined( USE_MEMORY_NOR )
 	diskio_nor_init();
+#endif
+#if defined( USE_MEMORY_SDC )
+	diskio_sdc_init();
+#endif
 
 	// LCD displayer
 	vue.init();

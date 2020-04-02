@@ -55,6 +55,8 @@
 #include <stdbool.h>
 #include "nordic_common.h"
 #include "nrf.h"
+#include "nrf_sdm.h"
+#include "hardfault.h"
 #include "ble_hci.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
@@ -63,6 +65,7 @@
 #include "nrf_sdh_soc.h"
 #include "nrf_sdh_ble.h"
 #include "nrf_ble_gatt.h"
+#include "nrf_ble_qwr.h"
 #include "app_timer.h"
 #include "ble_nus.h"
 #include "app_uart.h"
@@ -76,16 +79,26 @@
 #include "nrf_drv_usbd.h"
 #include "nrf_drv_clock.h"
 #include "nrf_gpio.h"
+#include "nrf_queue.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
 
 #include "app_error.h"
 #include "app_util.h"
+#include "app_scheduler.h"
 #include "app_usbd_core.h"
 #include "app_usbd.h"
 #include "app_usbd_string_desc.h"
 #include "app_usbd_cdc_acm.h"
 #include "app_usbd_serial_num.h"
+
+
+#define SCHED_MAX_EVENT_DATA_SIZE      250              /**< Maximum size of scheduler events. */
+#ifdef SVCALL_AS_NORMAL_FUNCTION
+#define SCHED_QUEUE_SIZE               20                                           /**< Maximum number of events in the scheduler queue. More is needed in case of Serialization. */
+#else
+#define SCHED_QUEUE_SIZE               20                                           /**< Maximum number of events in the scheduler queue. */
+#endif
 
 #define LED_BLE_NUS_CONN (BSP_BOARD_LED_0)
 #define LED_BLE_NUS_RX   (BSP_BOARD_LED_1)
@@ -157,9 +170,11 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(m_app_cdc_acm,
 
 #define DEAD_BEEF                       0xDEADBEEF                                  /**< Value used as error code on stack dump. Can be used to identify stack location on stack unwind. */
 
-#define UART_TX_BUF_SIZE                256                                         /**< UART TX buffer size. */
-#define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
 
+typedef struct {
+	uint8_t p_xfer_str[BLE_NUS_MAX_DATA_LEN];
+	uint16_t length;
+} sNusXfer;
 
 BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
@@ -174,21 +189,127 @@ static ble_uuid_t m_adv_uuids[]          =                                      
 
 // BLE DEFINES END
 
+NRF_QUEUE_DEF(sNusXfer, m_to_usb_queue, 100, NRF_QUEUE_MODE_NO_OVERFLOW);
+NRF_QUEUE_DEF(sNusXfer, m_to_nus_queue, 50, NRF_QUEUE_MODE_NO_OVERFLOW);
+
+static sNusXfer m_to_cdc_data;
+static sNusXfer m_to_nus_data;
+
 static char m_cdc_data_array[BLE_NUS_MAX_DATA_LEN];
 
-static char m_nus_data_array[BLE_NUS_MAX_DATA_LEN];
-
 static volatile bool m_is_xfer_done = true;
-
 static volatile bool m_is_port_open = false;
+static volatile bool m_nus_cts = false;
 
 static bool m_usb_connected = false;
+static bool m_nus_connected = false;
+
+
+/**@brief Callback function for asserts in the SoftDevice.
+ *
+ * @details This function will be called in case of an assert in the SoftDevice.
+ *
+ * @warning This handler is an example only and does not fit a final product. You need to analyze
+ *          how your product is supposed to react in case of Assert.
+ * @warning On assert from the SoftDevice, the system can only recover on reset.
+ *
+ * @param[in] line_num   Line number of the failing ASSERT call.
+ * @param[in] file_name  File name of the failing ASSERT call.
+ */
+void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name)
+{
+    assert_info_t assert_info =
+    {
+        .line_num    = line_num,
+        .p_file_name = file_name,
+    };
+    app_error_fault_handler(NRF_FAULT_ID_SDK_ASSERT, 0, (uint32_t)(&assert_info));
+
+#ifndef DEBUG_NRF_USER
+    NRF_LOG_WARNING("System reset");
+    NRF_LOG_FLUSH();
+    NVIC_SystemReset();
+#else
+    NRF_BREAKPOINT_COND;
+
+    bool loop = true;
+    while (loop) ;
+#endif // DEBUG
+
+    UNUSED_VARIABLE(assert_info);
+}
+
+/**
+ *
+ * @param id
+ * @param pc
+ * @param info
+ */
+void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
+{
+    switch (id)
+    {
+#if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
+        case NRF_FAULT_ID_SD_ASSERT:
+        	NRF_LOG_ERROR("SOFTDEVICE: ASSERTION FAILED");
+            break;
+        case NRF_FAULT_ID_APP_MEMACC:
+        	NRF_LOG_ERROR("SOFTDEVICE: INVALID MEMORY ACCESS");
+            break;
+#endif
+        case NRF_FAULT_ID_SDK_ASSERT:
+        {
+            assert_info_t * p_info = (assert_info_t *)info;
+            NRF_LOG_ERROR("ASSERTION FAILED at %s:%u",
+                    p_info->p_file_name,
+                    p_info->line_num);
+            break;
+        }
+        case NRF_FAULT_ID_SDK_ERROR:
+        {
+        	error_info_t * p_info = (error_info_t *)info;
+        	NRF_LOG_ERROR("ERROR %lu [%s] at %s:%lu",
+					p_info->err_code,
+					nrf_strerror_get(p_info->err_code),
+					p_info->p_file_name,
+					p_info->line_num);
+            break;
+        }
+        default:
+            NRF_LOG_ERROR("UNKNOWN FAULT at 0x%08X", pc);
+            break;
+    }
+
+    NRF_LOG_FLUSH();
+
+#ifdef DEBUG_NRF
+    NRF_BREAKPOINT_COND;
+    // On assert, the system can only recover with a reset.
+#endif
+
+}
+
+void HardFault_process(HardFault_stack_t * p_stack)
+{
+	NRF_LOG_ERROR("HardFault: pc=%u", p_stack->pc);
+	NRF_LOG_FLUSH();
+
+#ifdef DEBUG_NRF
+    NRF_BREAKPOINT_COND;
+    // On hardfault, the system can only recover with a reset.
+
+    bool loop = true;
+    while (loop) ;
+#endif
+    // Restart the system by default
+    NVIC_SystemReset();
+}
 
 /**
  * Prints a char* to VCOM printf style
  * @param format
  */
-void usb_printf(const char *format, ...) {
+static void usb_printf(const char *format, ...) {
 
 	va_list args;
 
@@ -215,24 +336,6 @@ void usb_printf(const char *format, ...) {
 				length);
 	}
 
-}
-
-
-/**
- * @brief Function for assert macro callback.
- *
- * @details This function will be called in case of an assert in the SoftDevice.
- *
- * @warning This handler is an example only and does not fit a final product. You need to analyze
- *          how your product is supposed to react in case of an assert.
- * @warning On assert from the SoftDevice, the system can only recover on reset.
- *
- * @param[in] line_num    Line number of the failing ASSERT call.
- * @param[in] p_file_name File name of the failing ASSERT call.
- */
-void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
-{
-	app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
 /** @brief Function for initializing the timer module. */
@@ -293,17 +396,105 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
 		bsp_board_led_invert(LED_BLE_NUS_RX);
 		NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on CDC ACM.");
 		NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
-        memcpy(m_nus_data_array, p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
 
-        // Send data through CDC ACM
-        ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
-                                                m_nus_data_array,
-												p_evt->params.rx_data.length);
-        if(ret != NRF_SUCCESS)
-        {
-            NRF_LOG_INFO("CDC ACM unavailable, data received: %s", m_nus_data_array);
-        }
+		if (!nrf_queue_is_full(&m_to_usb_queue)) {
 
+			sNusXfer _xfer;
+
+			memset(&_xfer, 0, sizeof(_xfer));
+
+			// get data
+			_xfer.length = p_evt->params.rx_data.length;
+			memcpy(_xfer.p_xfer_str, p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
+
+			// store it in a queue
+			ret_code_t err_code = nrf_queue_push(&m_to_usb_queue, &_xfer);
+			APP_ERROR_CHECK(err_code);
+
+		} else {
+
+			NRF_LOG_ERROR("CDC queue full");
+		}
+
+	}
+}
+
+static void cdc_process(void) {
+
+	if (!m_to_cdc_data.length && !nrf_queue_is_empty(&m_to_usb_queue)) {
+
+		// get the next victim
+		ret_code_t err_code = nrf_queue_pop(&m_to_usb_queue, &m_to_cdc_data);
+		APP_ERROR_CHECK(err_code);
+	}
+
+	if (m_is_port_open &&
+			m_is_xfer_done &&
+			m_to_cdc_data.length) {
+
+		m_is_xfer_done = false;
+
+		// Send data through CDC ACM
+		ret_code_t ret = app_usbd_cdc_acm_write(&m_app_cdc_acm,
+				m_to_cdc_data.p_xfer_str,
+				m_to_cdc_data.length);
+		if(ret != NRF_SUCCESS)
+		{
+			NRF_LOG_INFO("CDC ACM unavailable 0x%X", ret);
+		}
+	}
+
+}
+
+static void nus_process(void) {
+
+	if (!m_to_nus_data.length && !nrf_queue_is_empty(&m_to_nus_queue)) {
+
+		// get the next victim
+		ret_code_t err_code = nrf_queue_pop(&m_to_nus_queue, &m_to_nus_data);
+		APP_ERROR_CHECK(err_code);
+	}
+
+	while (m_nus_connected &&
+			m_nus_cts &&
+			m_to_nus_data.length) {
+
+		// Send data to NUS
+		ret_code_t ret = ble_nus_data_send(&m_nus,
+				(uint8_t *) m_to_nus_data.p_xfer_str,
+				&m_to_nus_data.length,
+				m_conn_handle);
+
+		switch (ret) {
+		case NRF_ERROR_BUSY:
+			NRF_LOG_WARNING("NUS BUSY");
+			return;
+			break;
+
+		case NRF_ERROR_RESOURCES:
+			m_nus_cts = false;
+			break;
+
+		case NRF_ERROR_TIMEOUT:
+			return;
+			break;
+
+		case NRF_SUCCESS:
+		{
+			m_to_nus_data.length = 0;
+
+			if (!nrf_queue_is_empty(&m_to_nus_queue)) {
+				ret_code_t err_code = nrf_queue_pop(&m_to_nus_queue, &m_to_nus_data);
+				APP_ERROR_CHECK(err_code);
+			}
+		} break;
+
+		default:
+		{
+			NRF_LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", ret, m_to_nus_data.length, BLE_NUS_MAX_DATA_LEN);
+			return;
+		} break;
+		}
 	}
 
 }
@@ -392,56 +583,6 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 }
 
 
-/**@brief Function for handling the Connected event.
- *
- * @param[in] p_gap_evt GAP event received from the BLE stack.
- */
-static void on_connected(const ble_gap_evt_t * const p_gap_evt)
-{
-    ret_code_t  err_code;
-    uint32_t    periph_link_cnt = ble_conn_state_peripheral_conn_count(); // Number of peripheral links.
-
-    NRF_LOG_INFO("Connection with link 0x%x established.", p_gap_evt->conn_handle);
-
-	usb_printf("Connected");
-	err_code = app_timer_stop(m_blink_ble);
-	APP_ERROR_CHECK(err_code);
-	bsp_board_led_on(LED_BLE_NUS_CONN);
-
-    // Update LEDs
-    if (periph_link_cnt == NRF_SDH_BLE_PERIPHERAL_LINK_COUNT)
-    {
-
-    }
-    else
-    {
-        // Continue advertising. More connections can be established because the maximum link count has not been reached.
-        advertising_start();
-    }
-}
-
-
-/**@brief Function for handling the Disconnected event.
- *
- * @param[in] p_gap_evt GAP event received from the BLE stack.
- */
-static void on_disconnected(ble_gap_evt_t const * const p_gap_evt)
-{
-    ret_code_t  err_code;
-    uint32_t    periph_link_cnt = ble_conn_state_peripheral_conn_count(); // Number of peripheral links.
-
-    NRF_LOG_INFO("Connection 0x%x has been disconnected. Reason: 0x%X",
-                 p_gap_evt->conn_handle,
-                 p_gap_evt->params.disconnected.reason);
-
-    // Advertising is not running when all connections are taken, and must therefore be started on the first disconnection
-    if (periph_link_cnt == NRF_SDH_BLE_PERIPHERAL_LINK_COUNT - 1)
-    {
-    	advertising_start();
-    }
-}
-
-
 /**
  * @brief Function for handling BLE events.
  *
@@ -456,13 +597,20 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 	case BLE_GAP_EVT_CONNECTED:
 		NRF_LOG_INFO("BLE NUS connected");
-        on_connected(&p_ble_evt->evt.gap_evt);
+		usb_printf("Connected");
+		m_nus_connected = true;
+		err_code = app_timer_stop(m_blink_ble);
+		APP_ERROR_CHECK(err_code);
+		bsp_board_led_on(LED_BLE_NUS_CONN);
+		m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 		break;
 
 	case BLE_GAP_EVT_DISCONNECTED:
 		NRF_LOG_INFO("BLE NUS disconnected");
-        on_disconnected(&p_ble_evt->evt.gap_evt);
+		m_nus_connected = false;
+		m_nus_cts = false;
 		// LED indication will be changed when advertising starts.
+		m_conn_handle = BLE_CONN_HANDLE_INVALID;
 		break;
 
 	case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -479,10 +627,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
 		// Pairing not supported.
-		err_code = sd_ble_gap_sec_params_reply(p_ble_evt->evt.gap_evt.conn_handle,
-				BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP,
-				NULL,
-				NULL);
+		err_code = sd_ble_gap_sec_params_reply(m_conn_handle, BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP, NULL, NULL);
 		APP_ERROR_CHECK(err_code);
 		break;
 
@@ -498,7 +643,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GATTS_EVT_SYS_ATTR_MISSING:
 		// No system attributes have been stored.
-		err_code = sd_ble_gatts_sys_attr_set(p_ble_evt->evt.gap_evt.conn_handle, NULL, 0, 0);
+		err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, 0);
 		APP_ERROR_CHECK(err_code);
 		break;
 
@@ -550,6 +695,12 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		}
 	} break; // BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST
 
+	case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
+		NRF_LOG_DEBUG("GATTC WRITE_CMD_TX Complete %u", m_nus_cts);
+		// clear to send more packets
+		m_nus_cts = true;
+		break;
+
 	case BLE_GATTS_EVT_HVN_TX_COMPLETE:
 	{
 		// TODO wait for BLE to be ready again
@@ -595,6 +746,8 @@ void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const * p_evt)
 	if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
 	{
 		m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+		// we can transmit now
+		m_nus_cts = true;
 		NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
 	}
 	NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x",
@@ -691,35 +844,6 @@ static void idle_state_handle(void)
 	power_manage();
 }
 
-/**
- * @brief Function for writing to the characteristic of all connected clients.
- *
- * @return If successful NRF_SUCCESS is returned. Otherwise, the error code from @ref ble_nus_data_send.
- */
-static uint32_t text_send_to_all(uint8_t *buffer, uint16_t *length)
-{
-    ret_code_t                        err_code;
-    ble_conn_state_conn_handle_list_t conn_handles = ble_conn_state_periph_handles();
-
-    for (uint8_t i = 0; i < conn_handles.len; i++)
-    {
-        err_code = ble_nus_data_send(&m_nus,
-        		buffer,
-				length,
-				conn_handles.conn_handles[i]);
-
-        if (err_code != NRF_SUCCESS &&
-            err_code != BLE_ERROR_INVALID_CONN_HANDLE &&
-            err_code != NRF_ERROR_INVALID_STATE &&
-            err_code != BLE_ERROR_GATTS_SYS_ATTR_MISSING)
-        {
-            APP_ERROR_CHECK(err_code);
-            NRF_LOG_DEBUG("Sent button change 0x%x on connection handle 0x%x.", button_action, conn_handles.conn_handles[i]);
-        }
-    }
-    return NRF_SUCCESS;
-}
-
 /** @brief User event handler @ref app_usbd_cdc_acm_user_ev_handler_t */
 static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		app_usbd_cdc_acm_user_event_t event)
@@ -731,12 +855,12 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 	{
 	case APP_USBD_CDC_ACM_USER_EVT_PORT_OPEN:
 	{
-    	m_is_port_open = true;
-        /*Setup first transfer*/
-    	index = 0;
-        ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
-        		&m_cdc_data_array[index],
-                1);
+		m_is_port_open = true;
+		/*Setup first transfer*/
+		index = 0;
+		ret_code_t ret = app_usbd_cdc_acm_read(&m_app_cdc_acm,
+				m_cdc_data_array,
+				1);
 		UNUSED_VARIABLE(ret);
 		ret = app_timer_stop(m_blink_cdc);
 		APP_ERROR_CHECK(ret);
@@ -747,8 +871,8 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 
 	case APP_USBD_CDC_ACM_USER_EVT_PORT_CLOSE:
 		NRF_LOG_INFO("CDC ACM port closed");
-    	m_is_port_open = false;
-    	m_is_xfer_done = true;
+		m_is_port_open = false;
+		m_is_xfer_done = true;
 		if (m_usb_connected)
 		{
 			ret_code_t ret = app_timer_start(m_blink_cdc,
@@ -761,6 +885,7 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 	case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
 	{
 		m_is_xfer_done = true;
+		m_to_cdc_data.length = 0;
 
 		break;
 	}
@@ -774,49 +899,40 @@ static void cdc_acm_user_ev_handler(app_usbd_class_inst_t const * p_inst,
 		{
 			if ((m_cdc_data_array[index - 1] == '\n') ||
 					(m_cdc_data_array[index - 1] == '\r') ||
-					(index >= (m_ble_nus_max_data_len)))
+					(index + 2 >= (m_ble_nus_max_data_len)))
 			{
 				if (index > 1)
 				{
-					NRF_LOG_DEBUG("Ready to send data over BLE NUS");
-					NRF_LOG_HEXDUMP_DEBUG(m_cdc_data_array, index);
-
-					do
+					uint16_t length = (uint16_t)index;
+					if (length + sizeof(ENDLINE_STRING) < BLE_NUS_MAX_DATA_LEN)
 					{
-						uint16_t length = (uint16_t)index;
-						if (length + sizeof(ENDLINE_STRING) < BLE_NUS_MAX_DATA_LEN)
-						{
-							memcpy(m_cdc_data_array + length, ENDLINE_STRING, sizeof(ENDLINE_STRING));
-							length += sizeof(ENDLINE_STRING);
-						}
-
-						if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
-
-							usb_printf("ERROR: BLE not connected");
-						} else {
-
-							ret = text_send_to_all( (uint8_t *) m_cdc_data_array, &length);
-
-						}
-
-						if (ret == NRF_ERROR_NOT_FOUND)
-						{
-							NRF_LOG_INFO("BLE NUS unavailable, data received: %s", m_cdc_data_array);
-							break;
-						}
-
-						if (ret == NRF_ERROR_RESOURCES)
-						{
-							NRF_LOG_ERROR("BLE NUS Too many notifications queued.");
-							break;
-						}
-
-						if ((ret != NRF_ERROR_INVALID_STATE) && (ret != NRF_ERROR_BUSY))
-						{
-							APP_ERROR_CHECK(ret);
-						}
+						memcpy(m_cdc_data_array + length, ENDLINE_STRING, sizeof(ENDLINE_STRING));
+						length += sizeof(ENDLINE_STRING);
 					}
-					while (ret == NRF_ERROR_BUSY);
+
+					if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
+
+						usb_printf("ERROR: BLE not connected");
+					} else {
+
+						if (!nrf_queue_is_full(&m_to_nus_queue)) {
+
+							sNusXfer _xfer;
+
+							memset(&_xfer, 0, sizeof(_xfer));
+
+							// get data
+							_xfer.length = length;
+							memcpy(_xfer.p_xfer_str, m_cdc_data_array, length);
+
+							// store it in a queue
+							ret_code_t err_code = nrf_queue_push(&m_to_nus_queue, &_xfer);
+							APP_ERROR_CHECK(err_code);
+
+						}
+
+					}
+
 				}
 
 				index = 0;
@@ -923,6 +1039,10 @@ int main(void)
 	log_init();
 	timers_init();
 
+#if APP_SCHEDULER_ENABLED
+	APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+#endif
+
 	buttons_leds_init();
 
 	app_usbd_serial_num_generate();
@@ -957,7 +1077,15 @@ int main(void)
 	{
 		usb_cdc_tasks();
 
+		cdc_process();
+
+		nus_process();
+
 		idle_state_handle();
+
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
+#endif
 	}
 }
 

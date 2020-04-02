@@ -45,7 +45,9 @@ static void _i2c_scheduling_sensors_init() {
 	// Init sensors configuration
 	fxos_init();
 
+#ifdef VEML_PRESENT
 	veml.init();
+#endif
 
 	// init configuration
 	stc.init(STC3100_CUR_SENS_RES_MO);
@@ -75,7 +77,9 @@ static void timer_handler(void * p_context)
 
 		stc.readChip();
 
+#ifdef VEML_PRESENT
 		veml.readChip();
+#endif
 
 		if (boucle__get_mode() != eBoucleGlobalModesFEC) fxos_readChip();
 	}
@@ -130,11 +134,13 @@ void i2c_scheduling_tasks(void) {
 		m_fxos_updated = 1;
 		sysview_task_void_exit(I2cMgmtRead1);
 	}
+#ifdef VEML_PRESENT
 	if (is_veml_updated()) {
 		sysview_task_void_enter(I2cMgmtRead2);
 		veml.refresh();
 		sysview_task_void_exit(I2cMgmtRead2);
 	}
+#endif
 	if (is_stc_updated()) {
 		sysview_task_void_enter(I2cMgmtRead2);
 		stc.refresh();
@@ -146,7 +152,9 @@ void i2c_scheduling_tasks(void) {
 	if (++_counter >= SENSORS_REFRESH_PER_MS / APP_TIMEOUT_DELAY_MS) {
 		_counter = 0;
 		stc.refresh(nullptr);
+#ifdef VEML_PRESENT
 		veml.refresh(nullptr);
+#endif
 		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) fxos_tasks(nullptr);
 		if (boucle.getGlobalMode() != eBoucleGlobalModesFEC) baro.refresh(nullptr);
 	}

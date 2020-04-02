@@ -1,7 +1,9 @@
 
 #include "boards.h"
 
-#if !defined (PROTO_V10)
+#if !defined (PROTO_V10) && !defined (PROTO_V11)
+
+#if defined (USE_MEMORY_NOR)
 
 #include <stdbool.h>
 #include "millis.h"
@@ -91,5 +93,7 @@ bool configure_memory()
 
 	return recv[0] == 0xBF;
 }
+
+#endif // NOR
 
 #endif

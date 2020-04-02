@@ -37,6 +37,11 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#include "boards.h"
+
+#if defined (USE_MEMORY_NOR)
+
 #include "sdk_common.h"
 #if NRF_MODULE_ENABLED(NRF_BLOCK_DEV_QSPI)
 #include "nrf_serial_flash_params.h"
@@ -845,3 +850,5 @@ const nrf_block_dev_ops_t nrf_block_device_qspi_ops = {
 
 /** @} */
 #endif // NRF_MODULE_ENABLED(NRF_BLOCK_DEV_QSPI)
+
+#endif // NOR

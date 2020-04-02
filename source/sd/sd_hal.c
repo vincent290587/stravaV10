@@ -25,9 +25,11 @@ static FATFS fs;
 
 static bool m_is_fat_mounted = false;
 
-#define QSPI_TEST_DATA_SIZE 512
-static uint8_t m_buffer_tx[QSPI_TEST_DATA_SIZE];
-static uint8_t m_buffer_rx[QSPI_TEST_DATA_SIZE];
+#define MEM_TEST_DATA_SIZE 512
+#if defined (USE_MEMORY_NOR)
+static uint8_t m_buffer_tx[MEM_TEST_DATA_SIZE];
+static uint8_t m_buffer_rx[MEM_TEST_DATA_SIZE];
+#endif
 
 static void fatfs_mkfs(void);
 
@@ -35,6 +37,7 @@ extern bool configure_memory();
 
 void format_memory() {
 
+#ifdef USE_MEMORY_NOR
 	LOG_WARNING("Process of erasing first block start");
 
 	for (uint16_t i = 0; i < 512; i++) {
@@ -46,6 +49,10 @@ void format_memory() {
 
 		w_task_delay(25);
 	}
+#else
+
+	LOG_WARNING("Not supported");
+#endif
 
 	return;
 }
@@ -61,12 +68,14 @@ void fmkfs_memory(void) {
 
 void test_memory(void)
 {
-    uint32_t i;
-    uint32_t err_code;
 
     LOG_WARNING("Test memory start...");
 
-    for (i = 0; i < QSPI_TEST_DATA_SIZE; ++i) {
+#if defined (USE_MEMORY_NOR)
+    uint32_t i;
+    uint32_t err_code;
+
+    for (i = 0; i < MEM_TEST_DATA_SIZE; ++i) {
       m_buffer_tx[i] = (uint8_t)i;
     }
     m_buffer_tx[0] = 0xDB;
@@ -95,7 +104,7 @@ void test_memory(void)
     LOG_WARNING("Data read");
 
     int cnt = 0;
-    for (i = 0; i < QSPI_TEST_DATA_SIZE; i++) {
+    for (i = 0; i < MEM_TEST_DATA_SIZE; i++) {
       if (m_buffer_rx[i] != m_buffer_tx[i]) {
         cnt++;
       }
@@ -103,7 +112,7 @@ void test_memory(void)
     LOG_WARNING("--> %u different bytes", cnt);
 
     LOG_WARNING("Compare...");
-    if (memcmp(m_buffer_tx, m_buffer_rx, QSPI_TEST_DATA_SIZE) == 0)
+    if (memcmp(m_buffer_tx, m_buffer_rx, MEM_TEST_DATA_SIZE) == 0)
     {
     	LOG_WARNING("Data consistent");
     }
@@ -111,6 +120,7 @@ void test_memory(void)
     {
     	LOG_WARNING("Data inconsistent");
     }
+#endif
 
 }
 
@@ -161,7 +171,7 @@ int fatfs_init(void) {
 
     memset(&fs, 0, sizeof(FATFS));
 
-	LOG_INFO("Initializing disk 0 (QSPI)...");
+	LOG_INFO("Initializing disk 0 ...");
 	LOG_FLUSH();
 	for (uint32_t retries = 5; retries; --retries)
 	{

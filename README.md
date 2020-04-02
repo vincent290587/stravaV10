@@ -24,7 +24,7 @@ The BOM costs around 100€
 
 ## Compilation & Programming
 
-Must be compiled with GCC 6 2017-q2-update and nRF SDK V15.3 with softdevice s340 V6.1.1
+Must be compiled with GCC 6 2017-q2-update and nRF SDK V6.0 with softdevice s340 V6.1.1
 
 /!\ The USB bootloader must be programmed before using the dfu targets (found in dfu subfolder)
 
@@ -44,7 +44,7 @@ make flash            (or) make dfu
 - [x] ANT+ sensors pairing (FEC, HRM, BSC)
 - [x] User settings (FTP, weight)
 - [x] Better LED interaction
-- [ ] Connection to a BLE AP to unload recorded data
+- [x] Connection to a BLE AP to unload recorded data
 
 
 ## Screenshots

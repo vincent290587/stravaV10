@@ -13,6 +13,7 @@
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
 #include "sd_functions.h"
+#include "power_scheduler.h"
 #include "ant_device_manager.h"
 #include "MenuObjects.h"
 #include "Menuable.h"
@@ -93,18 +94,7 @@ static eFuncMenuAction _page0_mode_debug(int var) {
 static eFuncMenuAction _page0_shutdown(int var) {
 
 	// shutdown
-	gpio_set(KILL_PIN);
-
-	return eFuncMenuActionEndMenu;
-}
-
-static eFuncMenuAction _page1_erase(int var) {
-
-	if (sd_erase_pos()) {
-		vue.addNotif("GPX", "Erasing... ", 4, eNotificationTypeComplete);
-	} else {
-		vue.addNotif("GPX", "Erase failed", 4, eNotificationTypeComplete);
-	}
+	power_scheduler__shutdown();
 
 	return eFuncMenuActionEndMenu;
 }
@@ -288,7 +278,6 @@ void Menuable::initMenu(void) {
 	MenuItem item_ftpf(page_set, "Set FTP", _page1_set_ftp, &page_value);
 	MenuItem item_weif(page_set, "Set Weight", _page1_set_weight, &page_value);
 	MenuItem item_cal(page_set, "Cal. mag", _page1_start_cal);
-	MenuItem item_era(page_set, "Erase GPX", _page1_erase);
 	MenuItem item_for(page_set, "! Format !", _page1_format);
 
 	page_set.addItem(item_prm);
@@ -297,7 +286,6 @@ void Menuable::initMenu(void) {
 	page_set.addItem(item_ftpf);
 	page_set.addItem(item_weif);
 	page_set.addItem(item_cal);
-	page_set.addItem(item_era);
 	page_set.addItem(item_for);
 
 

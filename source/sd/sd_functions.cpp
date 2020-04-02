@@ -17,9 +17,7 @@
 #include "segger_wrapper.h"
 
 #include "ff.h"
-#include "diskio_blkdev.h"
 #include "sd_functions.h"
-
 
 /*******************************************************************************
  * Definitions
@@ -27,6 +25,8 @@
 
 /* buffer size (in byte) for read/write operations */
 #define BUFFER_SIZE (128U)
+
+#define HISTO_MARKER_CHAR          '@'
 
 /*******************************************************************************
  * Variables
@@ -42,13 +42,220 @@ static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
 static FIL g_LogFileObject;   /* File object */
 
+static eSDTaskQuery m_cur_query = eSDTaskQueryNone;
+
+class HistoFile {
+public:
+	HistoFile(const char * const name) {
+		_name = name;
+	};
+
+	String _name;
+private:
+};
+
+static std::vector<HistoFile> m_list_histo;
+static uint16_t cur_idx = 0;
+
+
+/**
+ *
+ */
+int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
+
+	LOG_INFO("SD function query start !");
+
+	// reset query
+	if (m_cur_query != eSDTaskQueryNone) {
+
+		LOG_INFO("SD function query already running...");
+
+		int ret = sd_functions__stop_query();
+		if (ret) return ret;
+	}
+
+	switch (query) {
+
+	case eSDTaskQueryNone: {
+
+	} break;
+
+	case eSDTaskQueryFile: {
+
+		int ret = 0;
+		if ((ret = sd_functions__query_file_start(fname)) != 0) {
+			return ret;
+		}
+		LOG_INFO("SD function query file");
+	} break;
+
+	case eSDTaskQueryHisto: {
+		if (m_list_histo.size() == 0) {
+			return -2;
+		}
+		LOG_INFO("SD function query histo");
+	} break;
+
+	case eSDTaskQueryDelete: {
+		int ret = 0;
+		ret = sd_functions__unlink(fname);
+		m_cur_query = eSDTaskQueryNone;
+		LOG_INFO("SD function unlink");
+		return ret;
+	} break;
+
+	default:
+		m_cur_query = eSDTaskQueryNone;
+		return -1;
+		break;
+
+	}
+
+	// set query
+	m_cur_query = query;
+
+	return 0;
+}
+
+/**
+ *
+ */
+int sd_functions__stop_query(void) {
+
+	int ret = 0;
+
+	switch (m_cur_query) {
+
+	case eSDTaskQueryNone: {
+
+	} break;
+
+	case eSDTaskQueryFile: {
+		if (sd_functions__query_file_stop(false)) {
+			ret = -2;
+		}
+	} break;
+
+	case eSDTaskQueryHisto: {
+		cur_idx = 0;
+	} break;
+
+	case eSDTaskQueryDelete: {
+
+	} break;
+
+	default:
+		ret = -1;
+		break;
+
+	}
+
+	LOG_INFO("SD function query stop");
+
+	m_cur_query = eSDTaskQueryNone;
+
+	return ret;
+}
+
+/**
+ *
+ */
+int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
+
+	int ret = 0;
+
+	p_array->length = 0;
+
+	switch (m_cur_query) {
+
+	case eSDTaskQueryNone: {
+
+	} break;
+
+	case eSDTaskQueryFile: {
+		if (!sd_functions__query_file_run(p_array, max_size)) {
+			return -2;
+		}
+	} break;
+
+	case eSDTaskQueryHisto: {
+		if (!sd_functions__query_histo_list(restart, p_array, max_size)) {
+			return -2;
+		}
+	} break;
+
+	case eSDTaskQueryDelete: {
+		m_cur_query = eSDTaskQueryNone;
+	} break;
+
+	default:
+		m_cur_query = eSDTaskQueryNone;
+		return -1;
+		break;
+
+	}
+
+	return ret;
+}
+
+/**
+ *
+ */
+uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t max_size) {
+
+	if (!is_fat_init()) return 0;
+
+	sysview_task_void_enter(SdFunction);
+
+	size_t tot_size = 0;
+	size_t cur_size = 0;
+
+	if (restart) {
+		cur_idx = 0;
+	}
+
+	tot_size = 12 * m_list_histo.size();
+
+	if (tot_size == 0) {
+		return 0;
+	}
+
+	while (cur_idx < m_list_histo.size() &&
+			cur_size + m_list_histo[cur_idx]._name.length() + 2 < max_size) {
+
+		m_list_histo[cur_idx]._name.toCharArray(p_array->str + cur_size, max_size - cur_size);
+
+		LOG_INFO("Adding histo size %u", m_list_histo[cur_idx]._name.length());
+
+		cur_size += m_list_histo[cur_idx]._name.length();
+		cur_idx  += 1;
+
+		if (cur_idx == m_list_histo.size()) {
+
+			// add a line termination
+			p_array->str[cur_size++] = '\r';
+			p_array->str[cur_size++] = '\n';
+		}
+	}
+
+	p_array->length = cur_size;
+
+	sysview_task_void_exit(SdFunction);
+
+	return tot_size;
+}
+
 /*!
  * @brief Main function
  */
 int init_liste_segments(void)
 {
 	FRESULT error;
+	DIR *p_dir = nullptr;
+#ifndef TDD
 	DIR directory; /* Directory object */
+	p_dir = &directory;
+#endif
 	FILINFO fileInformation;
 	uint16_t nb_files_errors = 0;
 
@@ -69,7 +276,7 @@ int init_liste_segments(void)
 #endif
 
 	LOG_INFO("List the file in the root directory......");
-	if (f_opendir(&directory, "/"))
+	if (f_opendir(p_dir, "/"))
 	{
 		LOG_INFO("Open directory failed.");
 		sysview_task_void_exit(SdFunction);
@@ -78,7 +285,7 @@ int init_liste_segments(void)
 
 	do
 	{
-		error = f_readdir(&directory, &fileInformation);
+		error = f_readdir(p_dir, &fileInformation);
 
 		/* To the end. */
 		if ((error != FR_OK) || (fileInformation.fname[0U] == 0U))
@@ -103,13 +310,24 @@ int init_liste_segments(void)
 			LOG_DEBUG("General file : %s", (uint32_t)fileInformation.fname);
 
 			if (Segment::nomCorrect(fileInformation.fname)) {
+
 				LOG_DEBUG("Segment added : %s", (uint32_t)fileInformation.fname);
 				mes_segments.push_back(Segment(fileInformation.fname));
+
 			} else if (Parcours::nomCorrect(fileInformation.fname)) {
+
 				// pas de chargement en double
 				LOG_INFO("Parcours added");
 				mes_parcours.push_back(Parcours(fileInformation.fname));
+
+			} else if (fileInformation.fname[0] == HISTO_MARKER_CHAR) {
+
+				LOG_INFO("Histo added");
+				HistoFile h_file(fileInformation.fname);
+				m_list_histo.push_back(h_file);
+
 			} else {
+
 				LOG_INFO("File refused");
 				nb_files_errors++;
 			}
@@ -119,6 +337,13 @@ int init_liste_segments(void)
 		}
 
 	} while (fileInformation.fname[0U]);
+
+	if (f_closedir(p_dir))
+	{
+		LOG_INFO("Close directory failed.");
+		sysview_task_void_exit(SdFunction);
+		return -3;
+	}
 
 	LOG_INFO("%u files refused", nb_files_errors);
 	LOG_INFO("%u segments addded", mes_segments.size());
@@ -226,7 +451,6 @@ int load_parcours(Parcours& mon_parcours) {
 
 	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 
-	if (error) error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
@@ -367,7 +591,7 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  */
 void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
-	String fname = "@";
+	String fname = HISTO_MARKER_CHAR;
 	fname += att->date.date;
 	fname += ".txt";
 
@@ -404,19 +628,6 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 		LOG_INFO("Points added to histo: %u", nb_pos);
 	}
 
-}
-
-
-bool sd_erase_pos(void) {
-
-	FRESULT error = f_unlink("histo.txt");
-	if (error)
-	{
-		LOG_INFO("Unlink file failed.");
-		return false;
-	}
-
-	return true;
 }
 
 /**
@@ -557,21 +768,20 @@ int epo_file_stop(bool toBeDeleted) {
  *
  * @return True on success
  */
-bool log_file_start(void) {
+int sd_functions__query_file_start(const char * const fname) {
 
 	FRESULT error;
-	const char* fname = "histo.txt";
 
-	if (!is_fat_init()) return -1;
+	if (!is_fat_init() || !fname) return -1;
 
 	error = f_open(&g_LogFileObject, fname, FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");
-		return false;
+		return -2;
 	}
 
-	return true;
+	return 0;
 }
 
 /**
@@ -580,18 +790,21 @@ bool log_file_start(void) {
  * @param size_
  * @return The pointer to read string, or NULL if problem
  */
-char* log_file_read(sCharArray *p_array, size_t max_size) {
+char* sd_functions__query_file_run(sCharArray *p_array, size_t max_size) {
 
 	if (!is_fat_init()) return NULL;
 
 	sysview_task_void_enter(SdFunction);
 
+	UINT a_size = 0;
 	FRESULT error = f_read (
 			&g_LogFileObject, 	/* Pointer to the file object */
 			p_array->str,	    /* Pointer to data buffer */
 			max_size,           /* Number of bytes to read */
-			&p_array->length	/* Pointer to number of bytes read */
+			&a_size	/* Pointer to number of bytes read */
 	);
+
+	p_array->length = a_size;
 
 	if (error) {
 
@@ -610,7 +823,7 @@ char* log_file_read(sCharArray *p_array, size_t max_size) {
  *
  * @return 0 on success
  */
-int log_file_stop(bool toBeDeleted) {
+int sd_functions__query_file_stop(bool toBeDeleted) {
 
 	if (!is_fat_init()) return -3;
 
@@ -621,16 +834,22 @@ int log_file_stop(bool toBeDeleted) {
 		return -1;
 	}
 
-#ifndef DEBUG_CONFIG
-	if (toBeDeleted) {
-		error = f_unlink("histo.txt");
-		if (error)
-		{
-			LOG_INFO("Unlink file failed.");
-			return -2;
-		}
+	return 0;
+}
+
+/**
+ *
+ */
+int sd_functions__unlink(const char * const fname) {
+
+	if (!is_fat_init() || !fname) return -3;
+
+	FRESULT error = f_unlink(fname);
+	if (error)
+	{
+		LOG_INFO("Unlink file failed.");
+		return -2;
 	}
-#endif
 
 	return 0;
 }

@@ -22,6 +22,8 @@
 #include "diskio.h"		/* Declarations of device I/O functions */
 #include <string.h>
 
+#define TDD_BASE_DIR                  "./../TDD/DB/"
+
 /*--------------------------------------------------------------------------
 
    Module Private Definitions
@@ -3215,7 +3217,7 @@ FRESULT f_mount (
 }
 
 
-
+FILE *m_o_file = NULL;
 
 /*-----------------------------------------------------------------------*/
 /* Open or Create a File                                                 */
@@ -3227,12 +3229,29 @@ FRESULT f_open (
 	BYTE mode			/* Access mode and file open mode flags */
 )
 {
+	char *o_type = "r";
+
+	if (mode & FA_OPEN_APPEND) {
+
+		o_type = "a+";
+
+	}
+
 	// f_open
-	FIL* temp_fp = fopen(path, "rw");
+	if (strstr(path, "DB")) {
 
-	if (!temp_fp) return FR_NO_FILE;
+		m_o_file = fopen(path, o_type);
+	} else {
 
-	memcpy(fp, temp_fp, sizeof(FIL));
+		char l_fname[60];
+
+		snprintf(l_fname, sizeof(l_fname),
+				"%s%s", TDD_BASE_DIR, path);
+
+		m_o_file = fopen(l_fname, o_type);
+	}
+
+	if (!m_o_file) return FR_NO_FILE;
 
 	return FR_OK;
 }
@@ -3251,7 +3270,7 @@ FRESULT f_read (
 	UINT* br	/* Pointer to number of bytes read */
 )
 {
-	*br = fread(buff, btr, 1, fp);
+	*br = fread(buff, btr, 1, m_o_file);
 
 	return FR_OK;
 }
@@ -3271,7 +3290,8 @@ FRESULT f_write (
 	UINT* bw			/* Pointer to number of bytes written */
 )
 {
-	*bw = fwrite(buff, btw, 1, fp);
+	UINT nb_written = fwrite(buff, btw, 1, m_o_file);
+	if (bw) *bw = nb_written;
 	return FR_OK;
 }
 
@@ -3302,7 +3322,9 @@ FRESULT f_close (
 	FIL* fp		/* Pointer to the file object to be closed */
 )
 {
-	fclose(fp);
+	fclose(m_o_file);
+	m_o_file = NULL;
+
 	return FR_OK;
 }
 
@@ -3616,7 +3638,7 @@ FRESULT f_lseek (
 	return FR_OK;
 }
 
-
+static DIR* m_o_dir = NULL;
 
 #if _FS_MINIMIZE <= 1
 /*-----------------------------------------------------------------------*/
@@ -3629,14 +3651,12 @@ FRESULT f_opendir (
 	const TCHAR* path	/* Pointer to the directory path */
 )
 {
-	DIR* dp_temp = opendir("./DB");
+	m_o_dir = opendir(TDD_BASE_DIR);
 
-	if (!dp_temp)  // opendir returns NULL if couldn't open directory
+	if (!m_o_dir)  // opendir returns NULL if couldn't open directory
 	{
 		return FR_NO_PATH;
 	}
-
-	memcpy(&dp, &dp_temp, sizeof(DIR*));
 
 	return FR_OK;
 }
@@ -3649,7 +3669,12 @@ FRESULT f_closedir (
 	DIR *dp		/* Pointer to the directory object to be closed */
 )
 {
-	return closedir(dp);
+
+	if (!m_o_dir)  // opendir returns NULL if couldn't open directory
+	{
+		return FR_NO_PATH;
+	}
+	return closedir(m_o_dir);
 }
 
 
@@ -3664,11 +3689,27 @@ FRESULT f_readdir (
 	FILINFO* fno		/* Pointer to file information to return */
 )
 {
-	FILINFO* temp_fno = readdir(dp);
 
-	if (!temp_fno) return FR_INT_ERR;
+	if (!m_o_dir)  // opendir returns NULL if couldn't open directory
+	{
+		return FR_NO_PATH;
+	}
 
-	memcpy(fno, temp_fno, sizeof(FILINFO));
+	memset(fno, 0, sizeof(FILINFO));
+
+#if 1
+	struct dirent* tmp_dirent = readdir(m_o_dir);
+
+	if (!tmp_dirent) return FR_INT_ERR;
+
+	strncpy(fno->fname, tmp_dirent->d_name, sizeof(fno->fname));
+#else
+	FILINFO* tmp_dirent = readdir(m_o_dir);
+
+	if (!tmp_dirent) return FR_INT_ERR;
+
+	memcpy(fno, tmp_dirent, sizeof(FILINFO));
+#endif
 
 	return FR_OK;
 }

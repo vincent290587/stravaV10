@@ -5,6 +5,8 @@
  *      Author: Vincent
  */
 
+#if defined (PROTO_V11)
+
 #include "i2c.h"
 #include "millis.h"
 #include "nrf_twi_mngr.h"
@@ -299,3 +301,5 @@ void VEML6075::write16(uint8_t reg, uint16_t raw_data) {
 
 #endif
 }
+
+#endif // PROTO_V11
