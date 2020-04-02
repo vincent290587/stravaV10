@@ -184,8 +184,8 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	{
 		loc_.lat = sim_loc.data.lat;
 		loc_.lon = sim_loc.data.lon;
-		loc_.alt = sim_loc.data.alt / 100.f;
-		loc_.speed = 20.f;
+		loc_.alt = sim_loc.data.alt;
+		loc_.speed = sim_loc.data.speed;
 		loc_.course = -1.f;
 		date_.secj = sim_loc.data.utc_time;
 		date_.date = 291217;

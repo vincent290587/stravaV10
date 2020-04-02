@@ -26,7 +26,7 @@ VParser::VParser() {
   _dbg_type = 0;
   _sentence_type = 0;
   _btn = 0;
-  _gps_speed = 0;
+  _gps_speed = 20.f * 100.f / 3.6f;
   _lon = 0;
   _lat = 0;
   _pc = 0;
