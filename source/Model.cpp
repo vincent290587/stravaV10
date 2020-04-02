@@ -126,11 +126,14 @@ void model_input_virtual_uart(char c) {
 		locator.sim_loc.data.lon = (float)vparser.getLon() / 10000000.f;
 		locator.sim_loc.data.alt = (float)vparser.getEle() / 100.f;
 		locator.sim_loc.data.speed = (float)vparser.getGpsSpeed() * 3.6f / 100.f;
-		locator.sim_loc.data.utc_time = vparser.getSecJ();
+
+		// we base it on the first GPS time that was hopefully read at the device init
+		locator.sim_loc.data.utc_time = locator.gps_loc.data.utc_time + vparser.getSecJ();
+		locator.sim_loc.data.date = locator.gps_loc.data.date;
 
 		locator.sim_loc.setIsUpdated();
 
-		LOG_INFO("New sim loc received");
+		LOG_INFO("New sim loc received (GPS: %u %u)", locator.gps_loc.data.utc_time, locator.gps_loc.data.date);
 
 		SLoc loc;
 		loc.lat = locator.sim_loc.data.lat;
