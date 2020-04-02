@@ -451,7 +451,6 @@ int load_parcours(Parcours& mon_parcours) {
 
 	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 
-	if (error) error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_INFO("Open file failed.");

@@ -3217,7 +3217,7 @@ FRESULT f_mount (
 }
 
 
-
+FILE *m_o_file = NULL;
 
 /*-----------------------------------------------------------------------*/
 /* Open or Create a File                                                 */
@@ -3229,11 +3229,18 @@ FRESULT f_open (
 	BYTE mode			/* Access mode and file open mode flags */
 )
 {
-	FIL* temp_fp = NULL;
+	char *o_type = "r";
+
+	if (mode & FA_OPEN_APPEND) {
+
+		o_type = "a+";
+
+	}
+
 	// f_open
 	if (strstr(path, "DB")) {
 
-		temp_fp = fopen(path, "rw");
+		m_o_file = fopen(path, o_type);
 	} else {
 
 		char l_fname[60];
@@ -3241,12 +3248,10 @@ FRESULT f_open (
 		snprintf(l_fname, sizeof(l_fname),
 				"%s%s", TDD_BASE_DIR, path);
 
-		temp_fp = fopen(l_fname, "rw");
+		m_o_file = fopen(l_fname, o_type);
 	}
 
-	if (!temp_fp) return FR_NO_FILE;
-
-	memcpy(fp, temp_fp, sizeof(FIL));
+	if (!m_o_file) return FR_NO_FILE;
 
 	return FR_OK;
 }
@@ -3265,7 +3270,7 @@ FRESULT f_read (
 	UINT* br	/* Pointer to number of bytes read */
 )
 {
-	*br = fread(buff, btr, 1, fp);
+	*br = fread(buff, btr, 1, m_o_file);
 
 	return FR_OK;
 }
@@ -3285,7 +3290,8 @@ FRESULT f_write (
 	UINT* bw			/* Pointer to number of bytes written */
 )
 {
-	*bw = fwrite(buff, btw, 1, fp);
+	UINT nb_written = fwrite(buff, btw, 1, m_o_file);
+	if (bw) *bw = nb_written;
 	return FR_OK;
 }
 
@@ -3316,7 +3322,9 @@ FRESULT f_close (
 	FIL* fp		/* Pointer to the file object to be closed */
 )
 {
-	fclose(fp);
+	fclose(m_o_file);
+	m_o_file = NULL;
+
 	return FR_OK;
 }
 
