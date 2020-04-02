@@ -135,7 +135,7 @@ void MenuPage::render(void) {
 MenuPageItems::MenuPageItems(Menuable &menu, MenuPage *parent) : MenuPage(menu, parent) {
 
 	// insert the "go back" element
-	m_items.push_back(MenuItem(*this, "Retour"));
+	m_items.push_back(MenuItem(*this, "Back"));
 }
 
 void MenuPageItems::addItem(MenuItem& item) {
