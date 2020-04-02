@@ -364,6 +364,37 @@ float Attitude::computePower(float speed_) {
 
 
 
+void Attitude::addNewLNSPoint(SLoc& loc_, uint32_t sec_jour) {
+
+	// TODO check vertical speed
+	att.vit_asc = loc_.alt - m_cur_ele;
+
+	m_cur_ele = loc_.alt;
+
+	if (!m_is_alt_init) {
+		m_is_alt_init = true;
+		m_last_stored_ele = m_cur_ele;
+
+		return;
+	}
+
+	LOG_INFO("Filtering LNS altitude");
+
+	// compute accumulated climb on the corrected filtered barometer altitude
+	if (m_cur_ele > m_last_stored_ele + 2.f) {
+		// mise a jour de la montee totale
+		m_climb += m_cur_ele - m_last_stored_ele;
+		m_last_stored_ele = m_cur_ele;
+	}
+	else if (m_cur_ele + 2.f < m_last_stored_ele) {
+		// on descend, donc on garde la derniere alti
+		// la plus basse
+		m_last_stored_ele = m_cur_ele;
+	}
+
+}
+
+
 /**
  *
  */

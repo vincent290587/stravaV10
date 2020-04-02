@@ -77,6 +77,8 @@ public:
 
 	void addNewFECPoint(sFecInfo& fec_);
 
+	void addNewLNSPoint(SLoc& loc_, uint32_t sec_jour);
+
 	void  computeFusion(void);
 	float computePower(float speed_);
 

@@ -132,6 +132,14 @@ void model_input_virtual_uart(char c) {
 
 		LOG_INFO("New sim loc received");
 
+		SLoc loc;
+		loc.lat = locator.sim_loc.data.lat;
+		loc.lon = locator.sim_loc.data.lon;
+		loc.alt = locator.sim_loc.data.alt;
+
+		// TODO attitude computation
+		attitude.addNewLNSPoint(loc, locator.sim_loc.data.utc_time);
+
 		// notify task
 		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
 			w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_LOCATION);
