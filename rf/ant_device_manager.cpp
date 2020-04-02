@@ -50,9 +50,18 @@ void ant_device_manager_search_start(eAntPairingSensorType dev_type) {
 
 void ant_device_manager_search_validate(int var) {
 #if defined(ANT_STACK_SUPPORT_REQD)
-	if (eAntPairingSensorTypeNone == m_search_type) return;
-	if (var < 0 || var >= m_sensors_list.nb_sensors) return;
-	if (m_sensors_list.nb_sensors == 0) return;
+	if (eAntPairingSensorTypeNone == m_search_type) {
+		LOG_ERROR("ant_device_manager_search_validate: Error no search active");
+		return;
+	}
+	if (var < 0 || var >= m_sensors_list.nb_sensors) {
+		LOG_ERROR("ant_device_manager_search_validate: Error var invalid %d", var);
+		return;
+	}
+	if (m_sensors_list.nb_sensors == 0) {
+		LOG_ERROR("ant_device_manager_search_validate: No sensor");
+		return;
+	}
 	ant_search_end(m_search_type, m_sensors_list.sensors[var].dev_id);
 
 	sUserParameters *settings = user_settings_get();
@@ -83,7 +92,7 @@ void ant_device_manager_search_validate(int var) {
 
 	m_search_type = eAntPairingSensorTypeNone;
 #endif
-	LOG_WARNING("ANT+ search ended");
+	LOG_WARNING("ANT+ search validated");
 }
 
 void ant_device_manager_search_cancel(void) {
@@ -96,6 +105,8 @@ void ant_device_manager_search_cancel(void) {
 #endif
 
 	LOG_WARNING("ANT+ search cancelled");
+
+	vue.addNotif("ANT", "ANT+ search cancelled", 4, eNotificationTypeComplete);
 }
 
 void ant_device_manager_search_add(uint16_t sensor_id, int8_t ssid) {
@@ -113,7 +124,8 @@ void ant_device_manager_search_add(uint16_t sensor_id, int8_t ssid) {
 		}
 	}
 
-	m_sensors_list.sensors[m_sensors_list.nb_sensors++].dev_id = sensor_id;
+	m_sensors_list.sensors[m_sensors_list.nb_sensors].dev_id = sensor_id;
+	m_sensors_list.nb_sensors++;
 
 	LOG_WARNING("Found ANT+ sensor %u", sensor_id);
 }

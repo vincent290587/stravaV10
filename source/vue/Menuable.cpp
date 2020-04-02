@@ -152,7 +152,7 @@ static eFuncMenuAction _page0_mode_ant_go(int var) {
 	} else {
 
 		// sensor selection
-		ant_device_manager_search_validate(var);
+		ant_device_manager_search_validate(var - 1);
 
 	}
 

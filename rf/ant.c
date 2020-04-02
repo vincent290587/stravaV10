@@ -212,21 +212,32 @@ void ant_search_start(eAntPairingSensorType search_type) {
 
 	ret_code_t err_code;
 
-    err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
-    APP_ERROR_CHECK(err_code);
+    (void)sd_ant_channel_close(BS_CHANNEL_NUMBER);
 
 	switch (search_type) {
 	case eAntPairingSensorTypeNone:
 		break;
 	case eAntPairingSensorTypeHRM:
-		break;
+	{
+		err_code = sd_ant_channel_id_set (BS_CHANNEL_NUMBER, 0, HRM_DEVICE_TYPE, WILDCARD_TRANSMISSION_TYPE);
+		APP_ERROR_CHECK(err_code);
+	} break;
 	case eAntPairingSensorTypeBSC:
-		break;
+	{
+		err_code = sd_ant_channel_id_set (BS_CHANNEL_NUMBER, 0, BSC_COMBINED_DEVICE_TYPE, WILDCARD_TRANSMISSION_TYPE);
+		APP_ERROR_CHECK(err_code);
+	} break;
 	case eAntPairingSensorTypeFEC:
-		break;
+	{
+		err_code = sd_ant_channel_id_set (BS_CHANNEL_NUMBER, 0, FEC_DEVICE_TYPE, WILDCARD_TRANSMISSION_TYPE);
+		APP_ERROR_CHECK(err_code);
+	} break;
 	default:
 		break;
 	}
+
+    err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
+    APP_ERROR_CHECK(err_code);
 
 }
 
