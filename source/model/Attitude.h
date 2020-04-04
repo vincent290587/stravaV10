@@ -72,6 +72,8 @@ class Attitude {
 public:
 	Attitude(AltiBaro &_baro);
 
+	void reset(void);
+
 	void addNewDate(SDate *date_);
 	void addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_);
 

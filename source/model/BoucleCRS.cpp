@@ -40,6 +40,10 @@ void BoucleCRS::init_internal(void) {
 
 	m_dist_next_seg = 9999;
 
+	baro.sensorInit();
+
+	attitude.reset();
+
 	if (m_s_parcours) this->loadPRC();
 
 }

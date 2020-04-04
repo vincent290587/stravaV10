@@ -228,6 +228,8 @@ extern "C" {
 
 void bme280_init_sensor(void);
 
+void bme280_sleep(void);
+
 void bme280_read_sensor(void);
 
 void bme280_refresh(void);

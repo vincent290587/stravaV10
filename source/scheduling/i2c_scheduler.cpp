@@ -70,7 +70,12 @@ static void timer_handler(void * p_context)
 {
 	W_SYSVIEW_RecordEnterISR();
 
-	if (boucle__get_mode() != eBoucleGlobalModesFEC) baro.sensorRead();
+	if (boucle__get_mode() == eBoucleGlobalModesCRS ||
+			boucle__get_mode() == eBoucleGlobalModesPRC) {
+		baro.sensorRead();
+	} else {
+		baro.sleep();
+	}
 
 	if (++m_last_polled_index >= SENSORS_REFRESH_PER_MS / I2C_SCHEDULING_PERIOD_MS) {
 		m_last_polled_index = 0;
@@ -81,7 +86,7 @@ static void timer_handler(void * p_context)
 		veml.readChip();
 #endif
 
-		if (boucle__get_mode() != eBoucleGlobalModesFEC) fxos_readChip();
+		fxos_readChip();
 	}
 
     W_SYSVIEW_RecordExitISR();

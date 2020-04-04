@@ -9,6 +9,7 @@
 #define SOURCE_MODEL_BOUCLEZWIFT_H_
 
 #include "BoucleCRS.h"
+#include "Attitude.h"
 #include "GPSMGMT.h"
 
 class BoucleZwift : private BoucleCRS, virtual public BoucleInterface {
@@ -24,6 +25,9 @@ public:
 		// turn GPS OFF
 		extern GPS_MGMT gps_mgmt;
 		gps_mgmt.standby();
+
+		extern Attitude attitude;
+		attitude.reset();
 
 		m_dist_next_seg = 9999;
 	};

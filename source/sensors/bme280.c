@@ -105,7 +105,15 @@ static void bme280_meas_config(void) {
 			I2C_WRITE(BME280_TWI_ADDRESS, meas_config, 2)
 	};
 
-	i2c_perform(NULL, bme280_meas_transfer, sizeof(bme280_meas_transfer) / sizeof(bme280_meas_transfer[0]), NULL);
+	static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
+	{
+			.callback            = NULL,
+			.p_user_data         = NULL,
+			.p_transfers         = bme280_meas_transfer,
+			.number_of_transfers = sizeof(bme280_meas_transfer) / sizeof(bme280_meas_transfer[0])
+	};
+
+	i2c_schedule(&transaction);
 
 	LOG_INFO("BME measurement configured");
 
@@ -317,6 +325,16 @@ void bme280_init_sensor() {
 
 	LOG_INFO("BME init done");
 
+}
+
+void bme280_sleep(void) {
+
+	m_meas_config.osrs_p = SAMPLING_NONE;
+	m_meas_config.osrs_t = SAMPLING_NONE;
+
+	// set to sleep
+	m_meas_config.mode = MODE_SLEEP;
+	bme280_meas_config();
 }
 
 void bme280_read_sensor(void) {

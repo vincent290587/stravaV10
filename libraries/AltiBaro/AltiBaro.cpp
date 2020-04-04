@@ -42,6 +42,10 @@ AltiBaro::AltiBaro() {
 
 }
 
+void AltiBaro::sleep(void) {
+	BARO_WRAPPER(_sleep());
+}
+
 /**
  *
  * @return True if updated

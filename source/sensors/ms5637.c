@@ -338,6 +338,10 @@ void ms5637_init_sensor(void) {
 
 }
 
+void ms5637_sleep(void) {
+
+}
+
 void ms5637_refresh(void) {
 
 	if (!m_is_updated) return;

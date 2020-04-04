@@ -15,7 +15,7 @@
 
 
 #define HRM_CHANNEL_NUMBER              0x00
-#define HRM_DEVICE_NUMBER               7382U    /**< Device Number. */
+#define HRM_DEVICE_NUMBER               17334U    /**< Device Number. */
 
 #define BSC_CHANNEL_NUMBER              0x01
 #define BSC_DEVICE_NUMBER               15568U    /**< Device Number. */

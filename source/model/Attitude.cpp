@@ -55,6 +55,22 @@ Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
 #endif
 }
 
+void Attitude::reset(void) {
+
+	m_last_save_dist = 0.;
+	m_last_stored_ele = 0.;
+	m_cur_ele = 0.;
+	m_climb = 0.;
+	m_speed_ms = 0.;
+
+	m_is_init = false;
+	m_is_acc_init = false;
+	m_is_alt_init = false;
+	m_is_pw_init = false;
+
+	m_st_buffer_nb_elem = 0;
+}
+
 /**
  *
  * @param loc_

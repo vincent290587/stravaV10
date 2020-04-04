@@ -366,6 +366,8 @@ void uninit_liste_segments(void)
 
 	mes_parcours._parcs.clear();
 
+	m_list_histo.clear();
+
 	return;
 }
 
@@ -408,8 +410,20 @@ int load_segment(Segment& seg) {
 			// meta data
 		} else if (strstr(g_bufferRead, ";")) {
 			// on est pret a charger le point
-			if (!chargerPointSeg(g_bufferRead, seg, time_start))
+			if (!chargerPointSeg(g_bufferRead, seg, time_start)) {
 				res++;
+#if defined( DEBUG_NRF_USER ) || defined( TDD )
+				if (res == 1 &&
+						seg.getFirstPoint()) {
+
+					float tmp_lat, tmp_lon, dist;
+					parseSegmentName(seg.getName(), &tmp_lat, &tmp_lon);
+					dist = seg.getFirstPoint()->dist(tmp_lat, tmp_lon);
+
+					LOG_INFO("Distance to seg name: %d ", (int)dist);
+				}
+#endif
+			}
 		}
 
 		if (check_memory_exception()) return -1;

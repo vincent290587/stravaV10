@@ -16,6 +16,8 @@ public:
 	bool computeAlti(float& alti_);
 	bool computeVA(float& va_);
 
+	void sleep(void);
+
     void seaLevelForAltitude(float altitude);
 	void setCorrection(float cor_) {correction = cor_;}
 
