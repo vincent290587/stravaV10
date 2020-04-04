@@ -69,6 +69,14 @@ void Attitude::reset(void) {
 	m_is_pw_init = false;
 
 	m_st_buffer_nb_elem = 0;
+
+	// reset global location
+	memset(&att.loc , 0 , sizeof(SLoc));
+	// reset date
+	memset(&att.date, 0 , sizeof(SDate));
+
+	// remove saved points
+	mes_points.removeAll();
 }
 
 /**
@@ -249,7 +257,7 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 }
 
 
-void Attitude::computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_) {
+void Attitude::computeDistance(SLoc& loc_, SDate &date_) {
 
 	float tmp_dist = distance_between(att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
 
@@ -325,7 +333,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		// update the computed power
 		att.pwr = this->computePower(loc_.speed);
 
-		this->computeDistance(loc_, date_, source_);
+		this->computeDistance(loc_, date_);
 	}
 
 	m_speed_ms = loc_.speed / 3.6f;
@@ -380,12 +388,43 @@ float Attitude::computePower(float speed_) {
 
 
 
-void Attitude::addNewLNSPoint(SLoc& loc_, uint32_t sec_jour) {
+void Attitude::addNewLNSPoint(SLoc& loc_, SDate& date_) {
 
 	// TODO check vertical speed
 	att.vit_asc = loc_.alt - m_cur_ele;
 
 	m_cur_ele = loc_.alt;
+
+	if (m_is_init) {
+
+		// small correction to allow time with millisecond precision
+		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000);
+
+		LOG_INFO("Adding location: %f", cur_time);
+
+		// add this point to our historic
+		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
+		if (loc_.speed > 7.f) att.nbsec_act++;
+		att.nbpts++;
+
+		// update the computed power
+		att.pwr = this->computePower(loc_.speed);
+
+		this->computeDistance(loc_, date_);
+	}
+
+	m_speed_ms = loc_.speed / 3.6f;
+
+#ifdef TDD
+	tdd_logger_log_float(TDD_LOGGING_CUR_SPEED, loc_.speed);
+#endif
+
+	m_is_init = true;
+
+	// update global location
+	memcpy(&att.loc , &loc_ , sizeof(SLoc));
+	// update date
+	memcpy(&att.date, &date_, sizeof(SDate));
 
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;

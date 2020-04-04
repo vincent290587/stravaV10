@@ -37,6 +37,9 @@ public:
 	};
 
 	void invalidate_internal(void) {
+
+		extern Attitude attitude;
+		attitude.reset();
 	};
 
 };

@@ -43,6 +43,9 @@ AltiBaro::AltiBaro() {
 }
 
 void AltiBaro::sleep(void) {
+	// force re-acquisition of sea level ref.
+	m_is_init = false;
+	// sleep sensor
 	BARO_WRAPPER(_sleep());
 }
 

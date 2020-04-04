@@ -44,7 +44,9 @@ void BoucleCRS::init_internal(void) {
 
 	attitude.reset();
 
-	if (m_s_parcours) this->loadPRC();
+	if (m_s_parcours) {
+		this->loadPRC();
+	}
 
 }
 
@@ -76,7 +78,14 @@ void BoucleCRS::run_internal(void) {
 
 	if (eLocationSourceNone == loc_source) return;
 
-	attitude.addNewLocation(loc, dat, loc_source);
+	// altitude / distance computation
+	if (eBoucleGlobalModesZwift != boucle__get_mode()) {
+
+		attitude.addNewLocation(loc, dat, loc_source);
+	} else {
+
+		attitude.addNewLNSPoint(loc, dat);
+	}
 
 	// update segments
 
@@ -196,4 +205,6 @@ void BoucleCRS::invalidate_internal(void) {
 
 	if (m_s_parcours) m_s_parcours->desallouerPoints();
 	m_s_parcours = nullptr;
+
+	attitude.reset();
 }

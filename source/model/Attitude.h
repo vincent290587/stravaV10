@@ -79,7 +79,7 @@ public:
 
 	void addNewFECPoint(sFecInfo& fec_);
 
-	void addNewLNSPoint(SLoc& loc_, uint32_t sec_jour);
+	void addNewLNSPoint(SLoc& loc_, SDate& date_);
 
 	void  computeFusion(void);
 	float computePower(float speed_);
@@ -103,7 +103,7 @@ private:
 
 	float filterElevation(SLoc& loc_);
 	float computeElevation(SLoc& loc_, eLocationSource source_);
-	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
+	void  computeDistance(SLoc& loc_, SDate &date_);
 };
 #endif
 
