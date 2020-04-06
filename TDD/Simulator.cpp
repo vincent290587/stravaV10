@@ -197,6 +197,7 @@ void simulator_init(void) {
 	tdd_logger_log_name(TDD_LOGGING_ALT_SIM, "alti_sim");
 	tdd_logger_log_name(TDD_LOGGING_ALT_EST, "alti_est");
 	tdd_logger_log_name(TDD_LOGGING_TOT_CLIMB, "climb");
+	tdd_logger_log_name(TDD_LOGGING_BARO_DIFF, "baro_corr");
 	tdd_logger_log_name(TDD_LOGGING_CUR_POWER, "power");
 	tdd_logger_log_name(TDD_LOGGING_CUR_SPEED, "speed");
 
@@ -265,6 +266,10 @@ static void _sensors_sim(void) {
 
 		sim_nb = 0;
 	}
+
+	// have to simulate the baro sleep...
+	extern void timer_handler(void * p_context);
+	timer_handler(NULL);
 
 	fxos_set_pitch(cur_a + cur_a0);
 	simulator_simulate_altitude(alt_sim);

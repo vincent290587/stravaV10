@@ -34,7 +34,7 @@ void bme280_sleep() {
 }
 
 void bme280_read_sensor(void) {
-	m_is_updated = true;
+
 }
 
 bool is_bme280_updated(void) {

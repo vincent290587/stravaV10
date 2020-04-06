@@ -25,6 +25,7 @@
 JScope jscope;
 #endif
 
+#define CLIMB_ELEVATION_HYSTERESIS_M           2.f
 
 static float lp1_filter_coefficients[5] =
 {
@@ -169,7 +170,7 @@ float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;
-		m_last_stored_ele = m_cur_ele;
+		m_last_stored_ele = m_cur_ele = loc_.alt;
 
 		order1_filter_init(&m_lp_filt, lp1_filter_coefficients);
 
@@ -196,15 +197,19 @@ float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 			m_st_buffer[m_st_buffer_nb_elem].alti.baro_corr  = alt_div;
 		}
 
+#ifdef TDD
+	tdd_logger_log_float(TDD_LOGGING_BARO_DIFF, alt_div);
+#endif
+
 	}
 
 	// compute accumulated climb on the corrected filtered barometer altitude
-	if (m_cur_ele > m_last_stored_ele + 2.f) {
+	if (m_cur_ele > m_last_stored_ele + CLIMB_ELEVATION_HYSTERESIS_M) {
 		// mise a jour de la montee totale
 		m_climb += m_cur_ele - m_last_stored_ele;
 		m_last_stored_ele = m_cur_ele;
 	}
-	else if (m_cur_ele + 2.f < m_last_stored_ele) {
+	else if (m_cur_ele + CLIMB_ELEVATION_HYSTERESIS_M < m_last_stored_ele) {
 		// on descend, donc on garde la derniere alti
 		// la plus basse
 		m_last_stored_ele = m_cur_ele;
@@ -384,6 +389,20 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 	memcpy(&att.date, &date_, sizeof(SDate));
 }
 
+void Attitude::addNewLNSPoint(SLoc& loc_, SDate& date_) {
+
+	// TODO check vertical speed
+	if (date_.timestamp > att.date.timestamp + 500) {
+		att.vit_asc = loc_.alt - m_cur_ele;
+		att.vit_asc /= (date_.timestamp - att.date.timestamp) / 1000.f;
+	}
+
+	// current filtered elevation is supposed exact: #NoFilter
+	m_cur_ele = loc_.alt;
+
+	this->addNewLocation(loc_, date_, eLocationSourceSIM);
+
+}
 
 /**
  *
@@ -419,21 +438,6 @@ float Attitude::computePower(float speed_) {
 
 	return power;
 }
-
-
-
-void Attitude::addNewLNSPoint(SLoc& loc_, SDate& date_) {
-
-	// TODO check vertical speed
-	att.vit_asc = loc_.alt - m_cur_ele;
-
-	// current filtered elevation is supposed exact: #NoFilter
-	m_cur_ele = loc_.alt;
-
-	this->addNewLocation(loc_, date_, eLocationSourceSIM);
-
-}
-
 
 /**
  *

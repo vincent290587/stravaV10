@@ -206,5 +206,4 @@ void BoucleCRS::invalidate_internal(void) {
 	if (m_s_parcours) m_s_parcours->desallouerPoints();
 	m_s_parcours = nullptr;
 
-	attitude.reset();
 }
