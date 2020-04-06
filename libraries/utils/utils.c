@@ -409,12 +409,20 @@ float simpLinReg(float* x, float* y, float* lrCoef, int n) {
 /**
  * Calculates the CRC of an array
  */
-uint8_t calculate_crc(uint8_t input_a[], uint16_t length) {
-	int sum = 0;
-	for (int i = 1; i < length; i++) {
-		sum ^= (uint8_t) input_a[i];
+uint8_t calculate_crc(uint8_t *addr, uint16_t len) {
+	uint8_t crc=0;
+	for (uint8_t i=0; i<len;i++) {
+		uint8_t inbyte = addr[i];
+		for (uint8_t j=0;j<8;j++) {
+			uint8_t mix = (crc ^ inbyte) & 0x01;
+			crc >>= 1;
+			if (mix)
+				crc ^= 0x8C;
+			inbyte >>= 1;
+		}
 	}
-	return sum;
+
+	return crc;
 }
 
 
