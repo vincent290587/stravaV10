@@ -364,8 +364,17 @@ static void _loc_sim(void) {
 			gpio_set(FIX_PIN);
 
 			// build make NMEA sentence
-			GPRMC gprmc_(lat, lon, 0., (int)rtime);
+			GPRMC gprmc_(lat, lon, cur_speed, (int)rtime);
 			int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
+
+			LOG_WARNING("Sentence: %s", g_bufferWrite);
+
+			// send to uart_tdd
+			for (int i=0; i < nmea_length; i++)
+				uart_rx_handler(g_bufferWrite[i]);
+
+			GPGGA gpgga_(lat, lon, alt_sim + 32.3f, (int)rtime);
+			nmea_length = gpgga_.toString(g_bufferWrite, sizeof(g_bufferWrite));
 
 			LOG_WARNING("Sentence: %s", g_bufferWrite);
 
@@ -524,7 +533,87 @@ int GPRMC::toString(char *buffer_, size_t max_size_) {
 
 	res += tmp;
 
-	res += ",231.8,171115,004.2,W";
+	res += ",231.8,11218,004.2,W";
+
+	int sum = 0;
+	for (int i = 1; i < res.length(); i++) {
+		sum ^= (uint8_t) res[i];
+	}
+
+	sprintf(x, "*%02X\r\n", sum);
+	res += x;
+
+	res.toCharArray(buffer_, max_size_);
+
+	return res.length();
+}
+
+GPGGA::GPGGA(float latitude, float longitude, float altitude, int sec_jour) {
+
+	c_latitude = latitude;
+	c_longitude = longitude;
+	_altitude = altitude;
+	_date = sec_jour;
+
+}
+
+void GPGGA::coordtoString(char* buffer_, size_t max_size_, uint16_t prec, float value) {
+
+	float val1, val2;
+
+	String format = "%";
+	format += prec;
+	format += ".4f";
+
+	val1 = (int)value;
+	val2 = value - val1;
+	val1 *= 100;
+	val2 *= 60;
+
+	sprintf(buffer_, format.c_str(), val1 + val2);
+
+}
+
+int GPGGA::toString(char *buffer_, size_t max_size_) {
+
+	int heure, minute, sec;
+	char x[256];
+	String tmp, res = "$GPGGA,";
+
+	memset(buffer_, 0, max_size_);
+
+	heure = _date / 3600;
+	minute = (_date % 3600) / 60;
+	sec = _date % 60;
+
+	sprintf(x, "%02d%02d%02d,", heure, minute, sec);
+	res += x;
+
+	this->coordtoString(x, 256, 8, c_latitude);
+	res += x;
+	res += ",N,";
+	this->coordtoString(x, 256, 9, c_longitude);
+	res += x;
+	if (c_longitude > 0) res += ",E,";
+	else res += ",W,";
+
+	res.replace(" ", "0");
+
+	// fix quality + sats in view + hdop
+	res += "1,05,2.5,";
+
+	// altitude in meters
+	sprintf(x, "%5.1f", _altitude);
+	tmp = x;
+
+	tmp.replace(",", ".");
+	tmp.replace(" ", "0");
+
+	res += tmp;
+	res += ",M";
+
+	// height of geoid + blank + blank
+	res += ",0.0,M,,,";
 
 	int sum = 0;
 	for (int i = 1; i < res.length(); i++) {

@@ -38,4 +38,18 @@ private:
 	int _date;
 };
 
+class GPGGA {
+public:
+	GPGGA(float latitude, float longitude, float altitude, int sec_jour);
+
+	void coordtoString(char* buffer_, size_t max_size_, uint16_t prec, float value);
+	int toString(char *buffer_, size_t max_size_);
+
+private:
+	float c_latitude;
+	float c_longitude;
+	float _altitude;
+	int _date;
+};
+
 #endif /* TDD_SIMULATOR_H_ */
