@@ -106,7 +106,7 @@ eLocationSource Locator::getUpdateSource() {
 	this->tasks();
 
 	if (sim_loc.isUpdated()) {
-		return eLocationSourceSimu;
+		return eLocationSourceSIM;
 	} else if (sim_loc.getAge() < 2000) {
 		return eLocationSourceNone;
 	}
@@ -180,7 +180,7 @@ eLocationSource Locator::getPosition(SLoc& loc_, SDate& date_) {
 	LOG_INFO("Locator update source: %u", (uint8_t)res);
 
 	switch (res) {
-	case eLocationSourceSimu:
+	case eLocationSourceSIM:
 	{
 		loc_.lat = sim_loc.data.lat;
 		loc_.lon = sim_loc.data.lon;
@@ -252,7 +252,7 @@ eLocationSource Locator::getDate(SDate& date_) {
 	eLocationSource res = this->getUpdateSource();
 
 	switch (res) {
-	case eLocationSourceSimu:
+	case eLocationSourceSIM:
 	{
 		date_.secj = sim_loc.data.utc_time;
 		date_.date = 291217;

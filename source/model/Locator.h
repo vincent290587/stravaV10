@@ -24,6 +24,23 @@ typedef struct {
 } SLoc;
 
 typedef struct {
+	float gps_ele;
+	float baro_ele;
+	float baro_corr;
+	float filt_ele;
+	float alpha_bar;
+	float alpha_zero;
+	float climb;
+	float vit_asc;
+} SEle;
+
+typedef struct {
+	uint8_t bpm;
+	uint32_t cadence;
+	int16_t pwr;
+} SSensors;
+
+typedef struct {
 	uint32_t secj;
 	uint32_t date;
 	uint32_t timestamp;
@@ -41,7 +58,7 @@ extern sSatellite sats[MAX_SATELLITES];
 
 typedef enum {
 	eLocationSourceNone,
-	eLocationSourceSimu,
+	eLocationSourceSIM,
 	eLocationSourceNRF,
 	eLocationSourceGPS,
 } eLocationSource;

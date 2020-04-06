@@ -391,7 +391,6 @@ int load_segment(Segment& seg) {
 	String fat_name = seg.getName();
 
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_ERROR("Open file failed. (error %u)", error);
@@ -618,11 +617,19 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 	}
 
 	for (uint16_t i=0; i< nb_pos; i++) {
+
 		// print histo
-		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
-				att[i].loc.lat, att[i].loc.lon,
-				att[i].loc.alt, att[i].date.secj,
-				att[i].pwr);
+		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite),
+				"%f;%f;%f;%lu;"
+				"%d;%u;%u;"
+				"%f;%f;%f;"
+				"%f;%f;%f;%f;"
+				"\r\n",
+				att[i].loc.lat, att[i].loc.lon, att[i].loc.alt, att[i].date.secj,
+				att[i].sensors.pwr, att[i].sensors.bpm, att[i].sensors.cadence,
+				att[i].alti.alpha_bar, att[i].alti.alpha_zero, att[i].alti.baro_ele,
+				att[i].alti.climb, att[i].alti.filt_ele, att[i].alti.gps_ele, att[i].alti.vit_asc
+				);
 
 		if (to_wr > 0 && to_wr < (int)sizeof(g_bufferWrite)) {
 			f_write(&g_fileObject, g_bufferWrite, to_wr, NULL);

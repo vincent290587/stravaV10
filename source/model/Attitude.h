@@ -21,7 +21,8 @@
 typedef struct {
 	SLoc  loc;
 	SDate date;
-	int16_t pwr;
+	SSensors sensors;
+	SEle  alti;
 } SAttTime;
 
 typedef struct {
@@ -101,7 +102,7 @@ private:
 	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
 	uint16_t m_st_buffer_nb_elem;
 
-	float filterElevation(SLoc& loc_);
+	float filterElevation(SLoc& loc_, eLocationSource source_);
 	float computeElevation(SLoc& loc_, eLocationSource source_);
 	void  computeDistance(SLoc& loc_, SDate &date_);
 };

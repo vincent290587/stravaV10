@@ -136,6 +136,13 @@ void Attitude::computeFusion(void) {
 
 	alti_prev = alti;
 
+	if (m_st_buffer_nb_elem < ATT_BUFFER_NB_ELEM) {
+
+		m_st_buffer[m_st_buffer_nb_elem].alti.baro_ele   = ele;
+		m_st_buffer[m_st_buffer_nb_elem].alti.alpha_zero = alpha_zero;
+		m_st_buffer[m_st_buffer_nb_elem].alti.alpha_bar  = alpha_bar;
+	}
+
 #ifdef TDD
 		tdd_logger_log_float(TDD_LOGGING_HP    , att.vit_asc);
 		tdd_logger_log_float(TDD_LOGGING_ALPHA , 180.f * (alpha_bar - alpha_zero)/3.1415f);
@@ -158,7 +165,7 @@ void Attitude::computeFusion(void) {
 }
 
 
-float Attitude::filterElevation(SLoc& loc_) {
+float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 
 	if (!m_is_alt_init) {
 		m_is_alt_init = true;
@@ -169,16 +176,27 @@ float Attitude::filterElevation(SLoc& loc_) {
 		return 0.;
 	}
 
-	LOG_INFO("Filtering GPS/Baro correction");
+	// high-pass on the difference baro/GPS to remove air pressure drifts
+	if (source_ == eLocationSourceGPS ||
+			source_ == eLocationSourceNRF) {
 
-	// filter with a high time-constant the difference between
-	// GPS altitude and barometer altitude to remove drifts
-	float input = m_cur_ele - loc_.alt;
-	order1_filter_writeInput(&m_lp_filt, &input);
+		LOG_INFO("Filtering GPS/Baro correction");
 
-	float alt_div = order1_filter_readOutput(&m_lp_filt);
-	// set barometer correction
-	m_baro.setCorrection(alt_div);
+		// filter with a high time-constant the difference between
+		// GPS altitude and barometer altitude to remove drifts
+		float input = m_cur_ele - loc_.alt;
+		order1_filter_writeInput(&m_lp_filt, &input);
+
+		float alt_div = order1_filter_readOutput(&m_lp_filt);
+		// set barometer correction
+		m_baro.setCorrection(alt_div);
+
+		// store correction
+		if (m_st_buffer_nb_elem < ATT_BUFFER_NB_ELEM) {
+			m_st_buffer[m_st_buffer_nb_elem].alti.baro_corr  = alt_div;
+		}
+
+	}
 
 	// compute accumulated climb on the corrected filtered barometer altitude
 	if (m_cur_ele > m_last_stored_ele + 2.f) {
@@ -204,8 +222,15 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
 	float res = 0.;
 
+	if (eLocationSourceSIM == source_) {
+
+		// compute baro/GPS altitude corrections and total climb
+		res = this->filterElevation(loc_, source_);
+		return res;
+	}
+
 	// init the altitude model
-	if ((eLocationSourceNone != source_) &&
+	if (eLocationSourceNone != source_ &&
 			m_baro.isDataReady() &&
 			!m_baro.hasSeaLevelRef()) {
 
@@ -217,8 +242,8 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
 		LOG_WARNING("Init sea level pressure... gps: %dm bme:%dm", (int)loc_.alt, (int)m_cur_ele);
 
-		// treat elevation
-		this->filterElevation(loc_);
+		// compute baro/GPS altitude corrections and total climb
+		this->filterElevation(loc_, source_);
 
 		// reset accumulated data
 		m_climb = 0.;
@@ -243,13 +268,11 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
 		m_app_error.saved_data.crc = 0x00;
 
-	} else if ((eLocationSourceNone != source_) &&
+	} else if (eLocationSourceNone != source_ &&
 			m_baro.hasSeaLevelRef()) {
 
-		res = att.climb = this->filterElevation(loc_);
-
-		// overwrite GPS/NRF's elevation
-		loc_.alt = m_cur_ele;
+		// compute baro/GPS altitude corrections and total climb
+		res = this->filterElevation(loc_, source_);
 
 	}
 
@@ -261,11 +284,13 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_) {
 
 	float tmp_dist = distance_between(att.loc.lat, att.loc.lon, loc_.lat, loc_.lon);
 
+#if defined( DEBUG_NRF_USER ) || defined( TDD )
 	if (tmp_dist > 400000.f) {
 		char buffer[100];
 		snprintf(buffer, sizeof(buffer), "Weird pos: %f %f %f %f (%f)\r\n", att.loc.lat, att.loc.lon, loc_.lat, loc_.lon, tmp_dist);
 		LOG_WARNING(buffer);
 	}
+#endif
 
 	att.dist += tmp_dist;
 
@@ -290,7 +315,16 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_) {
 		// save on buffer
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
-		m_st_buffer[m_st_buffer_nb_elem].pwr = att.pwr;
+
+		m_st_buffer[m_st_buffer_nb_elem].sensors.pwr   = att.pwr;
+
+		m_st_buffer[m_st_buffer_nb_elem].alti.filt_ele = m_cur_ele;
+		m_st_buffer[m_st_buffer_nb_elem].alti.vit_asc  = att.vit_asc;
+		m_st_buffer[m_st_buffer_nb_elem].alti.climb    = att.climb;
+		m_st_buffer[m_st_buffer_nb_elem].alti.gps_ele  = att.loc.alt;
+
+		m_st_buffer[m_st_buffer_nb_elem].sensors.bpm     = hrm_info.bpm;
+		m_st_buffer[m_st_buffer_nb_elem].sensors.cadence = bsc_info.cadence;
 
 		m_st_buffer_nb_elem++;
 
@@ -328,7 +362,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		att.nbpts++;
 
 		// calculate elevation shifts
-		this->computeElevation(loc_, source_);
+		att.climb = this->computeElevation(loc_, source_);
 
 		// update the computed power
 		att.pwr = this->computePower(loc_.speed);
@@ -393,59 +427,10 @@ void Attitude::addNewLNSPoint(SLoc& loc_, SDate& date_) {
 	// TODO check vertical speed
 	att.vit_asc = loc_.alt - m_cur_ele;
 
+	// current filtered elevation is supposed exact: #NoFilter
 	m_cur_ele = loc_.alt;
 
-	if (m_is_init) {
-
-		// small correction to allow time with millisecond precision
-		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000);
-
-		LOG_INFO("Adding location: %f", cur_time);
-
-		// add this point to our historic
-		mes_points.ajouteFinIso(loc_.lat, loc_.lon, loc_.alt, cur_time, HISTO_POINT_SIZE);
-		if (loc_.speed > 7.f) att.nbsec_act++;
-		att.nbpts++;
-
-		// update the computed power
-		att.pwr = this->computePower(loc_.speed);
-
-		this->computeDistance(loc_, date_);
-	}
-
-	m_speed_ms = loc_.speed / 3.6f;
-
-#ifdef TDD
-	tdd_logger_log_float(TDD_LOGGING_CUR_SPEED, loc_.speed);
-#endif
-
-	m_is_init = true;
-
-	// update global location
-	memcpy(&att.loc , &loc_ , sizeof(SLoc));
-	// update date
-	memcpy(&att.date, &date_, sizeof(SDate));
-
-	if (!m_is_alt_init) {
-		m_is_alt_init = true;
-		m_last_stored_ele = m_cur_ele;
-
-		return;
-	}
-
-	LOG_INFO("Filtering LNS altitude");
-
-	// compute accumulated climb on the corrected filtered barometer altitude
-	if (m_cur_ele > m_last_stored_ele + 2.f) {
-		// mise a jour de la montee totale
-		m_climb += m_cur_ele - m_last_stored_ele;
-		m_last_stored_ele = m_cur_ele;
-	}
-	else if (m_cur_ele + 2.f < m_last_stored_ele) {
-		// on descend, donc on garde la derniere alti
-		// la plus basse
-		m_last_stored_ele = m_cur_ele;
-	}
+	this->addNewLocation(loc_, date_, eLocationSourceSIM);
 
 }
 
