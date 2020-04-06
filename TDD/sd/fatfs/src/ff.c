@@ -3238,18 +3238,13 @@ FRESULT f_open (
 	}
 
 	// f_open
-	if (strstr(path, "DB")) {
+	char l_fname[60];
 
-		m_o_file = fopen(path, o_type);
-	} else {
+	snprintf(l_fname, sizeof(l_fname),
+			"%s%s", TDD_BASE_DIR, path);
 
-		char l_fname[60];
+	m_o_file = fopen(l_fname, o_type);
 
-		snprintf(l_fname, sizeof(l_fname),
-				"%s%s", TDD_BASE_DIR, path);
-
-		m_o_file = fopen(l_fname, o_type);
-	}
 
 	if (!m_o_file) return FR_NO_FILE;
 
