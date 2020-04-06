@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <random>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -249,6 +250,22 @@ static void _fec_sim(void) {
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
 }
 
+static void _fxos_sim(float cur_a, float cur_a0) {
+
+	static std::default_random_engine generator;
+	static std::normal_distribution<float> distr_alt_x(0.0, 2);
+	static std::normal_distribution<float> distr_alt_z(0.0, 4);
+
+	float val_x = 9.81f * cosf(cur_a + cur_a0);
+	float val_z = 9.81f * sinf(cur_a + cur_a0);
+
+	val_x += distr_alt_x(generator);
+	val_z += distr_alt_z(generator);
+
+	// add noise
+	fxos_set_pitch(atan2f(val_z, val_x));
+}
+
 static void _sensors_sim(void) {
 
 	static uint32_t last_point_ms = 0;
@@ -271,7 +288,7 @@ static void _sensors_sim(void) {
 	extern void timer_handler(void * p_context);
 	timer_handler(NULL);
 
-	fxos_set_pitch(cur_a + cur_a0);
+	_fxos_sim(cur_a, cur_a0);
 	simulator_simulate_altitude(alt_sim);
 
 	LOG_DEBUG("Simulating sensors");

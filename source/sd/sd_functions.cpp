@@ -620,10 +620,10 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 
 		// print histo
 		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite),
-				"%f;%f;%f;%lu;"
+				"%f;%f;%.2f;%lu;"
 				"%d;%u;%u;"
-				"%f;%f;%f;"
-				"%f;%f;%f;%f;"
+				"%.3f;%.3f;%.3f;"
+				"%.1f;%.2f;%.2f;%.2f;"
 				"\r\n",
 				att[i].loc.lat, att[i].loc.lon, att[i].loc.alt, att[i].date.secj,
 				att[i].sensors.pwr, att[i].sensors.bpm, att[i].sensors.cadence,
