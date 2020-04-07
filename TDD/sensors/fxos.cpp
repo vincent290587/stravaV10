@@ -12,6 +12,35 @@
 #include "RingBuffer.h"
 #include "UserSettings.h"
 
+
+/*******************************************************************************
+ * Definitions
+ ******************************************************************************/
+
+#define MAX_ACCEL_AVG_COUNT 5U
+
+/* multiplicative conversion constants */
+#define DegToRad 0.017453292f
+#define RadToDeg 57.295779f
+
+/*******************************************************************************
+ * Variables
+ ******************************************************************************/
+
+int16_t g_Ax_buff[MAX_ACCEL_AVG_COUNT] = {0};
+int16_t g_Ay_buff[MAX_ACCEL_AVG_COUNT] = {0};
+int16_t g_Az_buff[MAX_ACCEL_AVG_COUNT] = {0};
+
+int16_t g_Ax_Raw = 0;
+int16_t g_Ay_Raw = 0;
+int16_t g_Az_Raw = 0;
+
+
+float g_Yaw = 0;
+float g_Yaw_LP = 0;
+float g_Pitch = 0;
+float g_Roll = 0;
+
 static tHistoValue m_pi_buffer[PITCH_BUFFER_SIZE];
 RingBuffer<tHistoValue> m_pitch_buffer(PITCH_BUFFER_SIZE, m_pi_buffer);
 
@@ -91,6 +120,69 @@ void fxos_set_pitch(float pitch_rad) {
 	m_is_updated = true;
 }
 
+void fxos_set_xyz(float g_Ax_Raw, float g_Ay_Raw, float g_Az_Raw) {
+
+	uint16_t i = 0;
+	float sinAngle = 0;
+	float cosAngle = 0;
+
+	float g_Ax;
+	float g_Ay;
+	float g_Az;
+
+	/* Average accel value */
+	for (i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
+	{
+		g_Ax_buff[i] = g_Ax_buff[i - 1];
+		g_Ay_buff[i] = g_Ay_buff[i - 1];
+		g_Az_buff[i] = g_Az_buff[i - 1];
+	}
+
+	g_Ax = g_Ax_buff[0] = g_Ax_Raw;
+	g_Ay = g_Ay_buff[0] = g_Ay_Raw;
+	g_Az = g_Az_buff[0] = g_Az_Raw;
+
+	for (i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
+	{
+		g_Ax += (float)g_Ax_buff[i];
+		g_Ay += (float)g_Ay_buff[i];
+		g_Az += (float)g_Az_buff[i];
+	}
+
+	g_Ax /= MAX_ACCEL_AVG_COUNT;
+	g_Ay /= MAX_ACCEL_AVG_COUNT;
+	g_Az /= MAX_ACCEL_AVG_COUNT;
+
+	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
+	g_Roll = atan2f(g_Ay, g_Az) * RadToDeg;
+	sinAngle = sinf(g_Roll * DegToRad);
+	cosAngle = cosf(g_Roll * DegToRad);
+
+	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
+
+	/* Calculate pitch angle g_Pitch and sin, cos*/
+#if defined( PROTO_V11)
+	g_Pitch  = atan2f(-g_Ay , g_Az);
+	sinAngle = sinf(g_Pitch);
+	cosAngle = cosf(g_Pitch);
+#else
+	g_Pitch  = atan2f( g_Ax , g_Az);
+	sinAngle = sinf(g_Pitch);
+	cosAngle = cosf(g_Pitch);
+#endif
+
+	m_pitch = g_Pitch;
+
+	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57) * 100.);
+	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
+
+	if (m_pitch_buffer.isFull()) {
+		m_pitch_buffer.popLast();
+	}
+	m_pitch_buffer.add(&u_integ_pitch);
+
+	m_is_updated = true;
+}
 tHistoValue fxos_histo_read(uint16_t ind_) {
 
 	tHistoValue *p_ret_val = m_pitch_buffer.get(ind_);
