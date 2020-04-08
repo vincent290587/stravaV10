@@ -704,7 +704,7 @@ void fxos_tasks(void)
 
 	float g_Mx = 0;
 	float g_My = 0;
-	float g_Mz = 0;
+//	float g_Mz = 0;
 
 	static float g_Mx_LP = 0;
 	static float g_My_LP = 0;
@@ -736,7 +736,7 @@ void fxos_tasks(void)
 	g_My_Raw /= MAX_ACCEL_AVG_COUNT;
 	g_Mz_Raw /= MAX_ACCEL_AVG_COUNT;
 
-	LOG_INFO("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
+	LOG_DEBUG("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
 
 	if (g_FirstRun) {
 
@@ -800,20 +800,20 @@ void fxos_tasks(void)
 	g_My = g_My_LP - g_My_Offset;
 	g_Mz = g_Mz_LP - g_Mz_Offset;
 
-	LOG_INFO("Mag. comp.: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
+	LOG_DEBUG("Mag. comp.: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
 
 	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
 #if defined( PROTO_V11)
 	g_Roll = atan2f(g_Ax, g_Az);
-	sinAngle = sinf(g_Roll);
-	cosAngle = cosf(g_Roll);
+//	sinAngle = sinf(g_Roll);
+//	cosAngle = cosf(g_Roll);
 #else
 	g_Roll = atan2f(g_Ay, g_Az);
 //	sinAngle = sinf(g_Roll);
 //	cosAngle = cosf(g_Roll);
 #endif
 
-	LOG_INFO("Roll: %d deg/10", (int)(g_Roll*RadToDeg*10.f));
+	LOG_DEBUG("Roll: %d deg/10", (int)(g_Roll*RadToDeg*10.f));
 
 	/* De-rotate by roll angle g_Roll */
 	//By = g_My * cosAngle - g_Mz * sinAngle;
@@ -823,8 +823,8 @@ void fxos_tasks(void)
 	/* Calculate pitch angle g_Pitch and sin, cos*/
 #if defined( PROTO_V11)
 	g_Pitch = -atan2f( g_Ay , -g_Az);
-	sinAngle = sinf(g_Pitch);
-	cosAngle = cosf(g_Pitch);
+//	sinAngle = sinf(g_Pitch);
+//	cosAngle = cosf(g_Pitch);
 #else
 	g_Pitch = atan2f( g_Ax , g_Az);
 //	sinAngle = sinf(g_Pitch);
@@ -848,8 +848,8 @@ void fxos_tasks(void)
 	}
 	g_Yaw_LP += (g_Yaw - g_Yaw_LP) * FXOS_MAG_FILTER_COEFF;
 
-	LOG_INFO("Compass Angle raw   : %d  ", (int)(g_Yaw*RadToDeg*10.f));
-	LOG_INFO("Compass Angle filtered: %d", (int)(g_Yaw_LP*RadToDeg*10.f));
+	LOG_DEBUG("Compass Angle raw   : %d  ", (int)(g_Yaw*RadToDeg*10.f));
+	LOG_DEBUG("Compass Angle filtered: %d", (int)(g_Yaw_LP*RadToDeg*10.f));
 
 	g_FirstRun = false;
 
