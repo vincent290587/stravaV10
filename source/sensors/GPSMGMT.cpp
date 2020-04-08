@@ -199,7 +199,7 @@ void GPS_MGMT::standby(bool is_standby) {
 		m_is_stdby = true;
 
 		// set to standby
-		SEND_TO_GPS(PMTK_STANDBY);
+		//SEND_TO_GPS(PMTK_STANDBY);
 
 		gpio_clear(GPS_S);
 	} else {
@@ -208,7 +208,7 @@ void GPS_MGMT::standby(bool is_standby) {
 
 		m_is_stdby = false;
 
-		SEND_TO_GPS(PMTK_AWAKE);
+		//SEND_TO_GPS(PMTK_AWAKE);
 	}
 
 }
