@@ -17,11 +17,9 @@ class BoucleCRS : virtual public BoucleInterface {
 public:
 	BoucleCRS();
 
-	void init_internal(void);
-
-	void run_internal(void);
-
-	void invalidate_internal(void);
+	virtual void init_internal(void);
+	virtual void run_internal(void);
+	virtual void invalidate_internal(void);
 
 	void loadPRC();
 

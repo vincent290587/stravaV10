@@ -16,11 +16,9 @@ class BoucleFEC: virtual public BoucleInterface {
 public:
 	BoucleFEC();
 
-	void init_internal(void);
-
-	void run_internal(void);
-
-	void invalidate_internal(void);
+	virtual void init_internal(void);
+	virtual void run_internal(void);
+	virtual void invalidate_internal(void);
 
 	RingBuffer<tHistoValue> m_pw_buffer;
 

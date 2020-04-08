@@ -48,12 +48,15 @@ try {
 }
 
 var interval = 1 * 1000; // 1 second;
+var alt = 4688
 
-for (var i = 0; i <=20; i++) {
+for (var i = 0; i <=2000; i++) {
     setTimeout( function (i) {
 
-        let ser_msg = '$LOC,' + i + ',-116445536,1669552923,46,797\r\n'
+        let ser_msg = '$LOC,' + i + ',-116445536,1669552923,' + alt +',797\r\n'
         console.log(ser_msg)
+		
+		alt += 50
 
         try {
             port.write(ser_msg)
