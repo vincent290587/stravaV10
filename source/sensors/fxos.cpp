@@ -32,7 +32,7 @@ static tHistoValue _pi_buffer[PITCH_BUFFER_SIZE];
 RingBuffer<tHistoValue> m_pitch_buffer(PITCH_BUFFER_SIZE, _pi_buffer);
 
 
-static void _convert_samples(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz);
+static void _convert_samples(fxos_data_t *fxos_data, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz);
 
 ret_code_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber)
 {
@@ -128,7 +128,7 @@ static inline void _process_fxos_measures(fxos_handle_t *p_fxosHandle) {
 	int16_t _Mz_Raw = 0;
 
 	/* Read sensor data */
-	_convert_samples(p_fxosHandle, &_Ax_Raw, &_Ay_Raw, &_Az_Raw, &_Mx_Raw, &_My_Raw, &_Mz_Raw);
+	_convert_samples(&p_fxosHandle->data, &_Ax_Raw, &_Ay_Raw, &_Az_Raw, &_Mx_Raw, &_My_Raw, &_Mz_Raw);
 
 	/* Average accel value */
 	for (uint16_t i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
@@ -179,11 +179,11 @@ void fxos_readChip(void) {
     //  since the transaction is scheduled and these structures most likely
     //  will be referred after this function returns]
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[2] = FXOS_READ_ALL_REGS;
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[] = { STATUS_00_REG };
 
     static nrf_twi_mngr_transfer_t const transfers[] =
     {
-		FXOS_READ_ALL    (&fxos_regs[0], &m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
+    		I2C_READ_REG(FXOS_7BIT_ADDRESS, fxos_regs, &m_fxos_handle, sizeof(m_fxos_handle)),
     };
     static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
     {
@@ -208,15 +208,14 @@ void fxos_readChip(void) {
  * @param Mz The pointer store z axis magnetic value
  * @note Must calculate g_dataScale before use this function.
  */
-static void _convert_samples(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz)
+static void _convert_samples(fxos_data_t *fxos_data, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz)
 {
-	fxos_data_t fxos_data;
 #ifdef _DEBUG_TWI
-	if (FXOS_ReadReg(nullptr, OUT_X_MSB_REG, &fxos_data.accelXMSB, 6)) {
+	if (FXOS_ReadReg(nullptr, OUT_X_MSB_REG, &fxos_data->accelXMSB, 6)) {
 		LOG_ERROR("Error reading OUT_X_MSB_REG");
 		return;
 	}
-	if (FXOS_ReadReg(nullptr, M_OUT_X_MSB_REG, &fxos_data.magXMSB, 6)) {
+	if (FXOS_ReadReg(nullptr, M_OUT_X_MSB_REG, &fxos_data->magXMSB, 6)) {
 		LOG_ERROR("Error reading M_OUT_X_MSB_REG");
 		return;
 	}
@@ -229,18 +228,17 @@ static void _convert_samples(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *
 	}
 
 #else
-	ASSERT(g_fxosHandle);
-	memcpy(&fxos_data.accelXMSB, g_fxosHandle->acc_buffer, 6);
-	memcpy(&fxos_data.magXMSB  , g_fxosHandle->mag_buffer, 6);
+	ASSERT(fxos_data);
 #endif
-	/* Get the accel data from the sensor data structure in 14 bit left format data*/
-	*Ax = (int16_t)((uint16_t)((uint16_t)fxos_data.accelXMSB << 8) | (uint16_t)fxos_data.accelXLSB)/4U;
-	*Ay = (int16_t)((uint16_t)((uint16_t)fxos_data.accelYMSB << 8) | (uint16_t)fxos_data.accelYLSB)/4U;
-	*Az = (int16_t)((uint16_t)((uint16_t)fxos_data.accelZMSB << 8) | (uint16_t)fxos_data.accelZLSB)/4U;
 
-	*Mx = (int16_t)((uint16_t)((uint16_t)fxos_data.magXMSB << 8) | (uint16_t)fxos_data.magXLSB);
-	*My = (int16_t)((uint16_t)((uint16_t)fxos_data.magYMSB << 8) | (uint16_t)fxos_data.magYLSB);
-	*Mz = (int16_t)((uint16_t)((uint16_t)fxos_data.magZMSB << 8) | (uint16_t)fxos_data.magZLSB);
+	/* Get the accel data from the sensor data structure in 14 bit left format data*/
+	*Ax = (int16_t)(((fxos_data->accelXMSB << 8) | fxos_data->accelXLSB)) >> 2u;
+	*Ay = (int16_t)(((fxos_data->accelYMSB << 8) | fxos_data->accelYLSB)) >> 2u;
+	*Az = (int16_t)(((fxos_data->accelZMSB << 8) | fxos_data->accelZLSB)) >> 2u;
+
+	*Mx = (int16_t)((fxos_data->magXMSB << 8) | (uint16_t)fxos_data->magXLSB);
+	*My = (int16_t)((fxos_data->magYMSB << 8) | (uint16_t)fxos_data->magYLSB);
+	*Mz = (int16_t)((fxos_data->magZMSB << 8) | (uint16_t)fxos_data->magZLSB);
 
 }
 
@@ -557,7 +555,7 @@ bool fxos_init(void) {
 #endif
 			/* set up Mag OSR and Hybrid mode using M_CTRL_REG1, use default for Acc */
 			{M_CTRL_REG1, (M_RST_MASK | M_OSR_MASK | M_HMS_MASK)},
-			/* Enable hyrid mode auto increment using M_CTRL_REG2 */
+			/* Enable hybrid mode auto increment using M_CTRL_REG2 */
 			{M_CTRL_REG2, (M_HYB_AUTOINC_MASK)},
 
 #ifdef EN_FFMT
@@ -695,10 +693,10 @@ bool fxos_init(void) {
 void fxos_tasks(void)
 {
 	uint16_t i = 0;
-	float sinAngle = 0;
-	float cosAngle = 0;
-	float Bx = 0;
-	float By = 0;
+//	float sinAngle = 0;
+//	float cosAngle = 0;
+//	float Bx = 0;
+//	float By = 0;
 
 	float g_Ax = 0;
 	float g_Ay = 0;
@@ -782,39 +780,11 @@ void fxos_tasks(void)
 
 	}
 
-	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
-	g_Roll = atan2f(g_Ay, g_Az) * RadToDeg;
-	sinAngle = sinf(g_Roll * DegToRad);
-	cosAngle = cosf(g_Roll * DegToRad);
-
-	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
-
-	/* Calculate pitch angle g_Pitch and sin, cos*/
-#if defined( PROTO_V11)
-	g_Pitch = atan2f(-g_Ay , g_Az);
-	sinAngle = sinf(g_Pitch);
-	cosAngle = cosf(g_Pitch);
-#else
-	g_Pitch = atan2f( g_Ax , g_Az);
-	sinAngle = sinf(g_Pitch);
-	cosAngle = cosf(g_Pitch);
-#endif
-
-	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57) * 100.);
-	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
-
-	if (m_pitch_buffer.isFull()) {
-		m_pitch_buffer.popLast();
-	}
-	m_pitch_buffer.add(&u_integ_pitch);
-
-	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10.f));
-
-	if (!g_Calibration_Done)
+	if (!g_Calibration_Done) {
 		Magnetometer_Calibrate_Task();
+	}
 
-	if(g_FirstRun)
-	{
+	if(g_FirstRun) {
 		g_Mx_LP = g_Mx_Raw;
 		g_My_LP = g_My_Raw;
 		g_Mz_LP = g_Mz_Raw;
@@ -830,27 +800,67 @@ void fxos_tasks(void)
 	g_My = g_My_LP - g_My_Offset;
 	g_Mz = g_Mz_LP - g_Mz_Offset;
 
-	LOG_INFO("Mag: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
+	LOG_INFO("Mag. comp.: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
+
+	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
+#if defined( PROTO_V11)
+	g_Roll = atan2f(g_Ax, g_Az);
+	sinAngle = sinf(g_Roll);
+	cosAngle = cosf(g_Roll);
+#else
+	g_Roll = atan2f(g_Ay, g_Az);
+//	sinAngle = sinf(g_Roll);
+//	cosAngle = cosf(g_Roll);
+#endif
+
+	LOG_INFO("Roll: %d deg/10", (int)(g_Roll*RadToDeg*10.f));
 
 	/* De-rotate by roll angle g_Roll */
-	By = g_My * cosAngle - g_Mz * sinAngle;
-	g_Mz = g_Mz * cosAngle + g_My * sinAngle;
+	//By = g_My * cosAngle - g_Mz * sinAngle;
+	//g_Mz = g_Mz * cosAngle + g_My * sinAngle;
+	//g_Az = g_Ay * sinAngle + g_Az * cosAngle;
+
+	/* Calculate pitch angle g_Pitch and sin, cos*/
+#if defined( PROTO_V11)
+	g_Pitch = -atan2f( g_Ay , -g_Az);
+	sinAngle = sinf(g_Pitch);
+	cosAngle = cosf(g_Pitch);
+#else
+	g_Pitch = atan2f( g_Ax , g_Az);
+//	sinAngle = sinf(g_Pitch);
+//	cosAngle = cosf(g_Pitch);
+#endif
+
+	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10.f));
 
 	/* De-rotate by pitch angle g_Pitch */
-	Bx = g_Mx * cosAngle + g_Mz * sinAngle;
+	//Bx = g_Mx * cosAngle + g_Mz * sinAngle;
 
 	/* Calculate yaw = ecompass angle psi (-180deg, 180deg) */
-	g_Yaw = atan2f(-By, Bx) * RadToDeg;
+#if defined( PROTO_V11)
+	g_Yaw = atan2f(-g_My, g_Mx);
+#else
+	g_Yaw = atan2f(-g_My, g_Mx);
+#endif
 	if(g_FirstRun)
 	{
 		g_Yaw_LP = g_Yaw;
-		g_FirstRun = false;
 	}
-
 	g_Yaw_LP += (g_Yaw - g_Yaw_LP) * FXOS_MAG_FILTER_COEFF;
 
-	LOG_INFO("Compass Angle raw   : %d", (int)g_Yaw);
-	LOG_INFO("Compass Angle filtered: %d", (int)g_Yaw_LP);
+	LOG_INFO("Compass Angle raw   : %d  ", (int)(g_Yaw*RadToDeg*10.f));
+	LOG_INFO("Compass Angle filtered: %d", (int)(g_Yaw_LP*RadToDeg*10.f));
+
+	g_FirstRun = false;
+
+	// store pitch
+	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57f) * 100.f);
+	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
+
+	if (m_pitch_buffer.isFull()) {
+		m_pitch_buffer.popLast();
+	}
+	m_pitch_buffer.add(&u_integ_pitch);
 
 }
 
