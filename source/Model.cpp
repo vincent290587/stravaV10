@@ -131,6 +131,8 @@ void model_input_virtual_uart(char c) {
 		locator.sim_loc.data.utc_time = locator.gps_loc.data.utc_time + vparser.getSecJ();
 		locator.sim_loc.data.date = locator.gps_loc.data.date;
 
+		locator.sim_loc.data.utc_timestamp = millis();
+
 		locator.sim_loc.setIsUpdated();
 
 		LOG_INFO("New sim loc received (GPS: %u %u)", locator.gps_loc.data.utc_time, locator.gps_loc.data.date);

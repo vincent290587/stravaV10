@@ -192,7 +192,7 @@ bool STC3100::refresh(void)
 		m_soft_reset = true;
 	}
 
-	LOG_INFO("Voltage %dmV", (int) (_voltage*1000));
+	LOG_DEBUG("Voltage %dmV", (int) (_voltage*1000));
 
 	return true;
 }

@@ -391,16 +391,17 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 void Attitude::addNewLNSPoint(SLoc& loc_, SDate& date_) {
 
-	// TODO check vertical speed
-	if (date_.timestamp > att.date.timestamp + 500) {
+	// calculate vertical speed
+	if (date_.secj > att.date.secj) {
+
 		att.vit_asc = loc_.alt - m_cur_ele;
-		att.vit_asc /= (date_.timestamp - att.date.timestamp) / 1000.f;
+		att.vit_asc /= (date_.secj - att.date.secj);
+
+		// current filtered elevation is supposed exact: #NoFilter
+		m_cur_ele = loc_.alt;
+
+		this->addNewLocation(loc_, date_, eLocationSourceSIM);
 	}
-
-	// current filtered elevation is supposed exact: #NoFilter
-	m_cur_ele = loc_.alt;
-
-	this->addNewLocation(loc_, date_, eLocationSourceSIM);
 
 }
 
