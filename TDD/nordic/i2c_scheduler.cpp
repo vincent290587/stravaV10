@@ -15,7 +15,6 @@
 
 #define I2C_SCHEDULING_PERIOD_MS      (BARO_REFRESH_PER_MS)
 
-static uint32_t m_fxos_updated = 0;
 static uint32_t m_last_polled_index = 0;
 
 void bsp_tasks() {
@@ -81,7 +80,6 @@ void timer_handler(void * p_context)
 		veml.readChip();
 #endif
 
-		fxos_readChip();
 	}
 
     W_SYSVIEW_RecordExitISR();
@@ -105,17 +103,8 @@ void i2c_scheduling_tasks(void) {
 		baro.sensorRefresh();
 		sysview_task_void_exit(I2cMgmtReadMs);
 
-		if (m_fxos_updated) {
-			m_fxos_updated = 0;
-
-			attitude.computeFusion();
-		}
-	}
-	if (is_fxos_updated()) {
-		sysview_task_void_enter(I2cMgmtRead1);
 		fxos_tasks();
-		m_fxos_updated = 1;
-		sysview_task_void_exit(I2cMgmtRead1);
+		attitude.computeFusion();
 	}
 #ifdef VEML_PRESENT
 	if (is_veml_updated()) {

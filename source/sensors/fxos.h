@@ -55,8 +55,6 @@ void fxos_calibration_start(void);
 
 void fxos_readChip(void);
 
-bool is_fxos_updated(void);
-
 void fxos_tasks(void);
 
 bool fxos_get_yaw(float &yaw_rad);

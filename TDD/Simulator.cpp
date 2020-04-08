@@ -252,6 +252,9 @@ static void _fec_sim(void) {
 
 static void _fxos_sim(float cur_a, float cur_a0) {
 
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < 40) return;
+
 	static std::default_random_engine generator;
 	static std::normal_distribution<float> distr_alt_x(0.0, 0.1 * 9810);
 	static std::normal_distribution<float> distr_alt_z(0.0, 0.5 * 9810);
@@ -269,11 +272,13 @@ static void _fxos_sim(float cur_a, float cur_a0) {
 static void _sensors_sim(void) {
 
 	static uint32_t last_point_ms = 0;
-	if (millis() - last_point_ms < SENSORS_REFRESH_PER_MS) return;
-
-	static float cur_a = toRadians(5.0f);
+	static float cur_a = toRadians(5.0f); // = 8.75 %
 	static const float cur_a0 = toRadians(3.4f);
 	static uint32_t sim_nb = 0;
+
+	_fxos_sim(cur_a, cur_a0);
+
+	if (millis() - last_point_ms < SENSORS_REFRESH_PER_MS) return;
 
 	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
 
@@ -284,14 +289,13 @@ static void _sensors_sim(void) {
 		sim_nb = 0;
 	}
 
+	simulator_simulate_altitude(alt_sim);
+
+	LOG_DEBUG("Simulating sensors loop");
+
 	// have to simulate the baro sleep...
 	extern void timer_handler(void * p_context);
 	timer_handler(NULL);
-
-	_fxos_sim(cur_a, cur_a0);
-	simulator_simulate_altitude(alt_sim);
-
-	LOG_DEBUG("Simulating sensors");
 
 	last_point_ms = millis();
 

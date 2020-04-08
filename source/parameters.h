@@ -28,7 +28,7 @@
 
 #define FXOS_MEAS_CAL_LIM_MS           60000
 
-#define FXOS_MAG_FILTER_COEFF          0.5f
+#define FXOS_MAG_FILTER_COEFF          1.f
 
 #define SEG_OFF_NB_POINTS              30
 

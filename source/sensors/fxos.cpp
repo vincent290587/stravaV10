@@ -9,6 +9,7 @@
 #include "nrf_twi_mngr.h"
 #include "fsl_fxos.h"
 #include "gpio.h"
+#include "nrfx_gpiote.h"
 #include "boards.h"
 #include "RingBuffer.h"
 #include "UserSettings.h"
@@ -18,17 +19,20 @@
 #include <math.h>
 #include <millis.h>
 
+#define EN_INTERRUPTS
+#define LPSLEEP_HIRES
+
 #define kStatus_Fail    1
 #define kStatus_Success 0
 
 // Buffer for data read from sensors.
 static fxos_handle_t m_fxos_handle;
-static volatile bool m_is_updated = false;
-
 
 static tHistoValue _pi_buffer[PITCH_BUFFER_SIZE];
 RingBuffer<tHistoValue> m_pitch_buffer(PITCH_BUFFER_SIZE, _pi_buffer);
 
+
+static void _convert_samples(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz);
 
 ret_code_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber)
 {
@@ -63,7 +67,7 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
  * Definitions
  ******************************************************************************/
 
-#define MAX_ACCEL_AVG_COUNT 5U
+#define MAX_ACCEL_AVG_COUNT 75U
 
 /* multiplicative conversion constants */
 #define DegToRad 0.017453292f
@@ -74,44 +78,29 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
  * Variables
  ******************************************************************************/
 
-volatile uint16_t SampleEventFlag;
-uint8_t g_sensorRange = FULL_SCALE_2G;
-uint8_t g_dataScale = 0;
+static uint8_t g_sensorRange = FULL_SCALE_4G;
+static uint8_t g_dataScale   = 4U;
 
-int16_t g_Ax_Raw = 0;
-int16_t g_Ay_Raw = 0;
-int16_t g_Az_Raw = 0;
+float g_Mx_Raw = 0;
+float g_My_Raw = 0;
+float g_Mz_Raw = 0;
 
-float g_Ax = 0;
-float g_Ay = 0;
-float g_Az = 0;
+static float g_Yaw = 0;
+static float g_Yaw_LP = 0;
+static float g_Pitch = 0;
+static float g_Roll = 0;
 
-int16_t g_Ax_buff[MAX_ACCEL_AVG_COUNT] = {0};
-int16_t g_Ay_buff[MAX_ACCEL_AVG_COUNT] = {0};
-int16_t g_Az_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Ax_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Ay_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Az_buff[MAX_ACCEL_AVG_COUNT] = {0};
 
-int16_t g_Mx_Raw = 0;
-int16_t g_My_Raw = 0;
-int16_t g_Mz_Raw = 0;
+static int16_t g_Mx_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_My_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Mz_buff[MAX_ACCEL_AVG_COUNT] = {0};
 
-int16_t g_Mx_Offset = 0;
-int16_t g_My_Offset = 0;
-int16_t g_Mz_Offset = 0;
-
-float g_Mx = 0;
-float g_My = 0;
-float g_Mz = 0;
-
-float g_Mx_LP = 0;
-float g_My_LP = 0;
-float g_Mz_LP = 0;
-
-float g_Yaw = 0;
-float g_Yaw_LP = 0;
-float g_Pitch = 0;
-float g_Roll = 0;
-
-bool g_FirstRun = true;
+static int16_t g_Mx_Offset = 0;
+static int16_t g_My_Offset = 0;
+static int16_t g_Mz_Offset = 0;
 
 
 static int16_t Mx_max = 0;
@@ -121,24 +110,67 @@ static int16_t Mx_min = 0;
 static int16_t My_min = 0;
 static int16_t Mz_min = 0;
 
-bool g_Calibration_Done = false;
+static bool g_Calibration_Done = false;
 
 
 /***************************************************************************
  C FUNCTIONS
  ***************************************************************************/
 
+static inline void _process_fxos_measures(fxos_handle_t *p_fxosHandle) {
+
+	int16_t _Ax_Raw = 0;
+	int16_t _Ay_Raw = 0;
+	int16_t _Az_Raw = 0;
+
+	int16_t _Mx_Raw = 0;
+	int16_t _My_Raw = 0;
+	int16_t _Mz_Raw = 0;
+
+	/* Read sensor data */
+	_convert_samples(p_fxosHandle, &_Ax_Raw, &_Ay_Raw, &_Az_Raw, &_Mx_Raw, &_My_Raw, &_Mz_Raw);
+
+	/* Average accel value */
+	for (uint16_t i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
+	{
+		g_Ax_buff[i] = g_Ax_buff[i - 1];
+		g_Ay_buff[i] = g_Ay_buff[i - 1];
+		g_Az_buff[i] = g_Az_buff[i - 1];
+
+		g_Mx_buff[i] = g_Mx_buff[i - 1];
+		g_My_buff[i] = g_My_buff[i - 1];
+		g_Mz_buff[i] = g_Mz_buff[i - 1];
+	}
+
+	g_Ax_buff[0] = _Ax_Raw;
+	g_Ay_buff[0] = _Ay_Raw;
+	g_Az_buff[0] = _Az_Raw;
+
+	g_Mx_buff[0] = _Mx_Raw;
+	g_My_buff[0] = _My_Raw;
+	g_Mz_buff[0] = _Mz_Raw;
+
+}
+
+static void _int_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+{
+	W_SYSVIEW_RecordEnterISR();
+
+	LOG_DEBUG("FXOS int %u", millis());
+
+	fxos_readChip();
+
+	W_SYSVIEW_RecordEnterISR();
+}
+
 static void _fxos_read_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
 	if (result) return;
 
-	m_is_updated = true;
+	// we fill the internal buffers, using oversampling
+	_process_fxos_measures(&m_fxos_handle);
 
-}
-
-bool is_fxos_updated(void) {
-	return m_is_updated;
 }
 
 void fxos_readChip(void) {
@@ -165,10 +197,6 @@ void fxos_readChip(void) {
 
 }
 
-/*******************************************************************************
- * Code
- ******************************************************************************/
-
 /*!
  * @brief Read all data from sensor function
  *
@@ -180,7 +208,7 @@ void fxos_readChip(void) {
  * @param Mz The pointer store z axis magnetic value
  * @note Must calculate g_dataScale before use this function.
  */
-static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz)
+static void _convert_samples(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz)
 {
 	fxos_data_t fxos_data;
 #ifdef _DEBUG_TWI
@@ -210,9 +238,6 @@ static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *A
 	*Ay = (int16_t)((uint16_t)((uint16_t)fxos_data.accelYMSB << 8) | (uint16_t)fxos_data.accelYLSB)/4U;
 	*Az = (int16_t)((uint16_t)((uint16_t)fxos_data.accelZMSB << 8) | (uint16_t)fxos_data.accelZLSB)/4U;
 
-	*Ax *= g_dataScale;
-	*Ay *= g_dataScale;
-	*Az *= g_dataScale;
 	*Mx = (int16_t)((uint16_t)((uint16_t)fxos_data.magXMSB << 8) | (uint16_t)fxos_data.magXLSB);
 	*My = (int16_t)((uint16_t)((uint16_t)fxos_data.magYMSB << 8) | (uint16_t)fxos_data.magYLSB);
 	*Mz = (int16_t)((uint16_t)((uint16_t)fxos_data.magZMSB << 8) | (uint16_t)fxos_data.magZLSB);
@@ -295,6 +320,10 @@ static int Magnetometer_Calibrate_Task(void)
 
 	return 0;
 }
+
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
 
 void fxos_calibration_start(void) {
 	g_Calibration_Done = false;
@@ -550,14 +579,22 @@ bool fxos_init(void) {
 			/* set auto-sleep wait period to 5s (=5/0.64=~8) */
 			{ASLP_COUNT_REG, 8},
 #endif
-			/* default set to 4g mode with HPF */
+			/* default set to 4g mode */
 			{XYZ_DATA_CFG_REG, FULL_SCALE_4G},
 
-			/* Use LPF, HPF bypassed */
-			{HP_FILTER_CUTOFF_REG, PULSE_HPF_BYP_MASK | PULSE_LPF_EN_MASK},
+#ifdef EN_INTERRUPTS
+			/* enable data-ready, auto-sleep and motion detection interrupts */
+			/* FXOS1_WriteRegister(CTRL_REG4, INT_EN_DRDY_MASK | INT_EN_ASLP_MASK | INT_EN_FF_MT_MASK); */
+			{CTRL_REG4, INT_EN_DRDY_MASK},
+			/* route data-ready interrupts to INT1, others INT2 (default) */
+			{CTRL_REG5, INT_CFG_DRDY_MASK},
+#endif
 
-			/* Setup the ODR for 25 Hz and activate the accelerometer */
-			{CTRL_REG1, (HYB_DATA_RATE_25HZ | ACTIVE_MASK)},
+			/* HPF bypassed */
+			{HP_FILTER_CUTOFF_REG, PULSE_HPF_BYP_MASK },
+
+			/* Setup the ODR activate the accelerometer */
+			{CTRL_REG1, (HYB_DATA_RATE_50HZ | ACTIVE_MASK)},
 	};
 
 	uint16_t cur_ind = 0;
@@ -590,6 +627,7 @@ bool fxos_init(void) {
 
 #ifdef SET_DEBOUNCE
 			/* set debounce to zero */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
 #endif
 
 #ifdef EN_AUTO_SLEEP
@@ -598,6 +636,14 @@ bool fxos_init(void) {
 #endif
 			/* default set to 4g mode */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+
+#ifdef EN_INTERRUPTS
+			/* enable data-ready, auto-sleep and motion detection interrupts */
+			/* FXOS1_WriteRegister(CTRL_REG4, INT_EN_DRDY_MASK | INT_EN_ASLP_MASK | INT_EN_FF_MT_MASK); */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+			/* route data-ready interrupts to INT1, others INT2 (default) */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+#endif
 
 			/* Use LPF */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
@@ -612,6 +658,32 @@ bool fxos_init(void) {
 
 	i2c_perform(NULL, fxos_init_transfers2, sizeof(fxos_init_transfers2) / sizeof(fxos_init_transfers2[0]), NULL);
 #endif
+
+
+#ifdef EN_INTERRUPTS
+
+#ifdef _DEBUG_TWI
+#error "Incompatible SW modes"
+#endif
+
+	// Configure INT pin
+	nrfx_gpiote_in_config_t in_config;
+	in_config.is_watcher = true;
+	in_config.hi_accuracy = true;
+	in_config.skip_gpio_setup = false;
+	in_config.pull = NRF_GPIO_PIN_PULLUP;
+	in_config.sense = NRF_GPIOTE_POLARITY_HITOLO;
+
+	ret_code_t err_code = nrfx_gpiote_in_init(FXOS_INT1, &in_config, _int_handler);
+	APP_ERROR_CHECK(err_code);
+
+	nrfx_gpiote_in_event_enable(FXOS_INT1, true);
+
+	nrf_gpio_cfg_sense_input(FXOS_INT1, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+
+#endif
+
+
 	return kStatus_Success;
 }
 
@@ -620,56 +692,51 @@ bool fxos_init(void) {
  * @param g_fxosHandle
  * @return
  */
-void fxos_tasks()
+void fxos_tasks(void)
 {
-	if (!m_is_updated) return;
-	m_is_updated = false;
-
 	uint16_t i = 0;
 	float sinAngle = 0;
 	float cosAngle = 0;
 	float Bx = 0;
 	float By = 0;
 
-	SampleEventFlag = 0;
-	g_Ax_Raw = 0;
-	g_Ay_Raw = 0;
-	g_Az_Raw = 0;
+	float g_Ax = 0;
+	float g_Ay = 0;
+	float g_Az = 0;
+
+	float g_Mx = 0;
+	float g_My = 0;
+	float g_Mz = 0;
+
+	static float g_Mx_LP = 0;
+	static float g_My_LP = 0;
+	static float g_Mz_LP = 0;
+
+	static bool g_FirstRun = true;
+
 	g_Ax = 0;
 	g_Ay = 0;
 	g_Az = 0;
-	g_Mx_Raw = 0;
-	g_My_Raw = 0;
-	g_Mz_Raw = 0;
-	g_Mx = 0;
-	g_My = 0;
-	g_Mz = 0;
 
-	/* Read sensor data */
-	Sensor_ReadData(&m_fxos_handle, &g_Ax_Raw, &g_Ay_Raw, &g_Az_Raw, &g_Mx_Raw, &g_My_Raw, &g_Mz_Raw);
-
-	/* Average accel value */
-	for (i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
-	{
-		g_Ax_buff[i] = g_Ax_buff[i - 1];
-		g_Ay_buff[i] = g_Ay_buff[i - 1];
-		g_Az_buff[i] = g_Az_buff[i - 1];
-	}
-
-	g_Ax_buff[0] = g_Ax_Raw;
-	g_Ay_buff[0] = g_Ay_Raw;
-	g_Az_buff[0] = g_Az_Raw;
-
+	/* Read buffered sensor data */
 	for (i = 0; i < MAX_ACCEL_AVG_COUNT; i++)
 	{
 		g_Ax += (float)g_Ax_buff[i];
 		g_Ay += (float)g_Ay_buff[i];
 		g_Az += (float)g_Az_buff[i];
+
+		g_Mx_Raw += (float)g_Mx_buff[i];
+		g_My_Raw += (float)g_My_buff[i];
+		g_Mz_Raw += (float)g_Mz_buff[i];
 	}
 
 	g_Ax /= MAX_ACCEL_AVG_COUNT;
 	g_Ay /= MAX_ACCEL_AVG_COUNT;
 	g_Az /= MAX_ACCEL_AVG_COUNT;
+
+	g_Mx_Raw /= MAX_ACCEL_AVG_COUNT;
+	g_My_Raw /= MAX_ACCEL_AVG_COUNT;
+	g_Mz_Raw /= MAX_ACCEL_AVG_COUNT;
 
 	LOG_INFO("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
 
@@ -754,9 +821,9 @@ void fxos_tasks()
 	}
 
 	// filtre ?
-	g_Mx_LP += ((float)g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
-	g_My_LP += ((float)g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
-	g_Mz_LP += ((float)g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
+	g_Mx_LP += (g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
+	g_My_LP += (g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
+	g_Mz_LP += (g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
 
 	/* Calculate magnetometer values */
 	g_Mx = g_Mx_LP - g_Mx_Offset;
