@@ -798,7 +798,7 @@ void fxos_tasks(void)
 	/* Calculate magnetometer values */
 	g_Mx = g_Mx_LP - g_Mx_Offset;
 	g_My = g_My_LP - g_My_Offset;
-	g_Mz = g_Mz_LP - g_Mz_Offset;
+//	g_Mz = g_Mz_LP - g_Mz_Offset;
 
 	LOG_DEBUG("Mag. comp.: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
 

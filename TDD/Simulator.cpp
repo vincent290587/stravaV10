@@ -257,7 +257,7 @@ static void _fxos_sim(float cur_a, float cur_a0) {
 
 	static std::default_random_engine generator;
 	static std::normal_distribution<float> distr_alt_x(0.0, 0.1 * 9810);
-	static std::normal_distribution<float> distr_alt_z(0.0, 0.5 * 9810);
+	static std::normal_distribution<float> distr_alt_z(0.0, 0.1 * 9810);
 
 	float val_x = 9810.f * sinf(cur_a + cur_a0);
 	float val_z = 9810.f * cosf(cur_a + cur_a0);

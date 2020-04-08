@@ -72,8 +72,6 @@ bool fxos_init(void) {
 void fxos_tasks()
 {
 	uint16_t i = 0;
-	float sinAngle = 0;
-	float cosAngle = 0;
 
 	float g_Ax = 0.f;
 	float g_Ay = 0.f;
@@ -90,31 +88,16 @@ void fxos_tasks()
 	g_Ay /= MAX_ACCEL_AVG_COUNT;
 	g_Az /= MAX_ACCEL_AVG_COUNT;
 
-	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
-	g_Roll = atan2f(g_Ay, g_Az) * RadToDeg;
-	sinAngle = sinf(g_Roll * DegToRad);
-	cosAngle = cosf(g_Roll * DegToRad);
-
-	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
-
 	if (!isnormal(g_Az)) {
 		return;
 	}
 
 	/* Calculate pitch angle g_Pitch and sin, cos*/
-#if defined( PROTO_V11)
-	g_Pitch  = atan2f(-g_Ay , g_Az);
-	sinAngle = sinf(g_Pitch);
-	cosAngle = cosf(g_Pitch);
-#else
 	g_Pitch  = atan2f( g_Ax , g_Az);
-	sinAngle = sinf(g_Pitch);
-	cosAngle = cosf(g_Pitch);
-#endif
 
 	m_pitch = g_Pitch;
 
-	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57) * 100.);
+	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57f) * 100.);
 	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
 
 	if (m_pitch_buffer.isFull()) {

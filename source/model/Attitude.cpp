@@ -124,7 +124,7 @@ void Attitude::computeFusion(void) {
 	// about 40 seconds time constant
 	float new_alpha_z = pitch_rad - atan2f((alti - alti_prev) * 1000.f , (m_speed_ms * SENSORS_REFRESH_PER_MS));
 	static float alpha_zero = 0;
-	alpha_zero = new_alpha_z * 0.003 + 0.997 * alpha_zero;
+	alpha_zero = new_alpha_z * 0.003f + 0.997f * alpha_zero;
 
 	// update vertical speed after 3 mins
 	if (att.nbsec_act > 3.f * 60.f) {

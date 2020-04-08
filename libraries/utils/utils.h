@@ -21,8 +21,8 @@ float regFen(float val_, float b1_i, float b1_f, float b2_i, float b2_f) __attri
 
 float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) __attribute__ ((pure));
 
-static volatile float toRadians(float angle) __attribute__ ((pure));
-static volatile float toRadians(float angle) {
+static inline float toRadians(float angle) __attribute__ ((pure));
+static inline float toRadians(float angle) {
   return ((float)M_PI * angle / 180.0f);
 }
 	
