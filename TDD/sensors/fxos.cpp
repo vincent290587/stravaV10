@@ -135,17 +135,15 @@ bool fxos_get_pitch(float &pitch_rad) {
 void fxos_set_xyz(float g_Ax_Raw, float g_Ay_Raw, float g_Az_Raw) {
 
 	/* Oversample accelerometer */
-	uint16_t i = 0;
-	for (i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
-	{
-		g_Ax_buff[i] = g_Ax_buff[i - 1];
-		g_Ay_buff[i] = g_Ay_buff[i - 1];
-		g_Az_buff[i] = g_Az_buff[i - 1];
-	}
+	static uint16_t index = 0;
 
-	g_Ax_buff[0] = g_Ax_Raw;
-	g_Ay_buff[0] = g_Ay_Raw;
-	g_Az_buff[0] = g_Az_Raw;
+	g_Ax_buff[index] = g_Ax_Raw;
+	g_Ay_buff[index] = g_Ay_Raw;
+	g_Az_buff[index] = g_Az_Raw;
+
+	if (++index >= MAX_ACCEL_AVG_COUNT) {
+		index = 0;
+	}
 
 }
 tHistoValue fxos_histo_read(uint16_t ind_) {

@@ -16,7 +16,7 @@
 
 #include <vector>
 
-#define NB_SATS_TO_DETAIL           4
+#define NB_SATS_TO_DETAIL           7
 
 static bool m_is_gps_updated = false;
 
@@ -81,12 +81,17 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 
 
 Locator::Locator() {
+
 	m_is_gps_updated = false;
 
 	anyChanges   = false;
 
 	m_nb_nrf_pos = 0;
 	m_nb_sats    = 0;
+}
+
+
+void Locator::init(void) {
 
 	// Initialize all the uninitialized TinyGPSCustom objects
 	for (int i = 0; i < NB_SATS_TO_DETAIL; ++i)
@@ -335,24 +340,32 @@ void Locator::tasks() {
 
 		if (totalGPGSVMessages.isUpdated()) {
 
+			// clear it
+			(void)totalGPGSVMessages.value();
 			sats.clear();
 
 			for (int i=0; i < NB_SATS_TO_DETAIL; ++i) {
 
-				sSatellite sat_ = {
-						.active    = ACTIVE_VAL,
-						.elevation = atoi(elevation[i].value()),
-						.azimuth   = atoi(azimuth[i].value()),
-						.snr       = atoi(snr[i].value()),
-						.no        = atoi(satNumber[i].value()),
-				};
+				int no = atoi(satNumber[i].value());
 
-				sats.push_back(sat_);
+				if (no && elevation[i].isUpdated()) {
+
+					sSatellite sat_ = {
+							.active    = ACTIVE_VAL,
+							.elevation = atoi(elevation[i].value()),
+							.azimuth   = atoi(azimuth[i].value()),
+							.snr       = atoi(snr[i].value()),
+							.no        = no,
+					};
+					sats.push_back(sat_);
+				}
+
 
 			}
 		}
 
 	}
+
 }
 
 /**
@@ -419,19 +432,15 @@ void Locator::displayGPS2(void) {
 
 	vue.println("  ----- SAT -----");
 
-	uint16_t nb_printed = 0;
 	for (uint16_t i=0; i < sats.size(); i++) {
 
-		if (sats[i].active && ++nb_printed < 8)
-		{
-			line = " ID ";
-			line += sats[i].no;
-			vue.print(line);
-			vue.setCursorX(160);
-			line = "";
-			line += sats[i].snr;
-			vue.println(line);
-		}
+		line = " ID ";
+		line += sats[i].no;
+		vue.print(line);
+		vue.setCursorX(160);
+		line = "";
+		line += sats[i].snr;
+		vue.println(line);
 	}
 
 	vue.println("  ----- MEM -----");

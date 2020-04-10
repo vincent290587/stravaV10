@@ -300,6 +300,7 @@ void idle_task(void * p_context)
  */
 void boucle_task(void * p_context)
 {
+	locator.init();
 
 	boucle__run(); // init
 	boucle__run(); // run once

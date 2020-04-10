@@ -93,7 +93,7 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info);
 class Locator {
 public:
 	Locator();
-
+	void init();
 	void tasks();
 
 	void displayGPS2(void);
