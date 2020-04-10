@@ -130,25 +130,21 @@ static inline void _process_fxos_measures(fxos_handle_t *p_fxosHandle) {
 	/* Read sensor data */
 	_convert_samples(&p_fxosHandle->data, &_Ax_Raw, &_Ay_Raw, &_Az_Raw, &_Mx_Raw, &_My_Raw, &_Mz_Raw);
 
-	/* Average accel value */
-	for (uint16_t i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
-	{
-		g_Ax_buff[i] = g_Ax_buff[i - 1];
-		g_Ay_buff[i] = g_Ay_buff[i - 1];
-		g_Az_buff[i] = g_Az_buff[i - 1];
+	LOG_DEBUG("FXOS process %d %d %d", _Ax_Raw, _Ay_Raw, _Az_Raw);
 
-		g_Mx_buff[i] = g_Mx_buff[i - 1];
-		g_My_buff[i] = g_My_buff[i - 1];
-		g_Mz_buff[i] = g_Mz_buff[i - 1];
+	static uint16_t index = 0;
+
+	g_Ax_buff[index] = _Ax_Raw;
+	g_Ay_buff[index] = _Ay_Raw;
+	g_Az_buff[index] = _Az_Raw;
+
+	g_Mx_buff[index] = _Mx_Raw;
+	g_My_buff[index] = _My_Raw;
+	g_Mz_buff[index] = _Mz_Raw;
+
+	if (++index >= MAX_ACCEL_AVG_COUNT) {
+		index = 0;
 	}
-
-	g_Ax_buff[0] = _Ax_Raw;
-	g_Ay_buff[0] = _Ay_Raw;
-	g_Az_buff[0] = _Az_Raw;
-
-	g_Mx_buff[0] = _Mx_Raw;
-	g_My_buff[0] = _My_Raw;
-	g_Mz_buff[0] = _Mz_Raw;
 
 }
 
