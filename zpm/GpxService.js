@@ -1,29 +1,32 @@
-/**
- * Created by Silvio Rainoldi on 05.12.2016.
- *
- * Create your GPX (1.1) file
- */
+
+
 function GPXService(name) {
     const self = this;
 
 
     const metadata = {
-        name: '',
+        name: 'Vincent Golle',
         author: {
-            name: ''
+            name: 'Vincent Golle'
         },
         description: '',
         date: new Date()
     };
 
 
-    const xmlStart = `<?xml version="1.0"?>
-<gpx
+    const xmlStart = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx creator="StravaGPX"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns="http://www.topografix.com/GPX/1/1"
-    xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
-    version="1.1"
-    creator="${metadata.author.name}" >`;
+    xsi:schemaLocation="http://www.topografix.com/GPX/1/1
+    http://www.topografix.com/GPX/1/1/gpx.xsd
+    http://www.garmin.com/xmlschemas/GpxExtensions/v3
+    http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd
+    http://www.garmin.com/xmlschemas/TrackPointExtension/v1
+    http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd"
+    version="1.1" xmlns="http://www.topografix.com/GPX/1/1"
+    xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
+    xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3">
+    `;
     const xmlEnd = '</gpx>';
 
     /**
@@ -71,10 +74,8 @@ function GPXService(name) {
 </metadata>`;
 
         xmlOutput += `<trk>
-    <name>${metadata.name}</name>
-    <cmt></cmt>
-    <desc></desc>
-    <src></src>
+    <name>Outdoor biking</name>
+    <type>1</type>
 <trkseg>
 `;
 
@@ -91,7 +92,7 @@ function GPXService(name) {
 `;
             }
             if (1) {
-                xmlOutput += `    <gpxtpx:TrackPointExtension>
+                xmlOutput += `    <extensions><gpxtpx:TrackPointExtension>
 `;
             }
             if (1) {
@@ -103,7 +104,7 @@ function GPXService(name) {
 `;
             }
             if (1) {
-                xmlOutput += `    </gpxtpx:TrackPointExtension>
+                xmlOutput += `    </gpxtpx:TrackPointExtension></extensions>
 `;
             }
             xmlOutput += `</trkpt>
@@ -111,7 +112,7 @@ function GPXService(name) {
         }
 
         // And add the end
-        xmlOutput += `</trkset>
+        xmlOutput += `</trkseg>
 </trk>
 ${xmlEnd}`;
         return xmlOutput;

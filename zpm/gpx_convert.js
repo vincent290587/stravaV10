@@ -36,8 +36,8 @@ readInterface
     var mins = (secj % 3600) / 60;
     secj = secj % 60;
 
-    var date_ = new Date(Date.UTC(annee, mois, jour, hours.toFixed(0), mins.toFixed(0), secj.toFixed(0), 0));
-    console.debug('date: ' + annee + ' ' + mois + ' ' + jour + ' ' + Math.floor(hours) + ' ' + Math.floor(mins) + ' ' + Math.floor(secj));
+    var date_ = new Date(Date.UTC(annee, mois, jour, Math.floor(hours), Math.floor(mins), Math.floor(secj)));
+    //console.debug('date: ' + annee + ' ' + mois + ' ' + jour + ' ' + Math.floor(hours) + ' ' + Math.floor(mins) + ' ' + Math.floor(secj));
 
     GPXService.addPoint({
         lat: arr[0],
@@ -52,7 +52,9 @@ readInterface
 
     // EOF: save GPX
     let output = GPXService.toXML();
-    fs.appendFileSync('file.gpx', output);
+    var new_name = f_name.slice(1, -4) + '.gpx';
+    // reset file and write
+    fs.writeFileSync(new_name, output);
 });
 
 
