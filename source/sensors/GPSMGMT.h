@@ -31,6 +31,8 @@ extern "C" {
 
 uint32_t gps_encode_char(char c);
 
+uint32_t gps_encode_array(char p_array[], size_t length);
+
 #if defined(__cplusplus)
 }
 

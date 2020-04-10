@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <Locator.h>
 
+#include <vector>
+
 #define NB_SATS_TO_DETAIL           4
 
 static bool m_is_gps_updated = false;
@@ -34,7 +36,7 @@ TinyGPSCustom elevation[NB_SATS_TO_DETAIL];
 TinyGPSCustom azimuth[NB_SATS_TO_DETAIL];
 TinyGPSCustom snr[NB_SATS_TO_DETAIL];
 
-sSatellite sats[MAX_SATELLITES];
+static std::vector<sSatellite> sats;
 
 /**
  *
@@ -333,17 +335,20 @@ void Locator::tasks() {
 
 		if (totalGPGSVMessages.isUpdated()) {
 
+			sats.clear();
+
 			for (int i=0; i < NB_SATS_TO_DETAIL; ++i) {
 
-				int no = atoi(satNumber[i].value());
+				sSatellite sat_ = {
+						.active    = ACTIVE_VAL,
+						.elevation = atoi(elevation[i].value()),
+						.azimuth   = atoi(azimuth[i].value()),
+						.snr       = atoi(snr[i].value()),
+						.no        = atoi(satNumber[i].value()),
+				};
 
-				if (no >= 1 && no <= MAX_SATELLITES)
-				{
-					sats[no-1].elevation = atoi(elevation[i].value());
-					sats[no-1].azimuth   = atoi(azimuth[i].value());
-					sats[no-1].snr       = atoi(snr[i].value());
-					sats[no-1].active    = ACTIVE_VAL;
-				}
+				sats.push_back(sat_);
+
 			}
 		}
 
@@ -415,12 +420,12 @@ void Locator::displayGPS2(void) {
 	vue.println("  ----- SAT -----");
 
 	uint16_t nb_printed = 0;
-	for (int i=0; i < MAX_SATELLITES; ++i) {
+	for (uint16_t i=0; i < sats.size(); i++) {
 
 		if (sats[i].active && ++nb_printed < 8)
 		{
 			line = " ID ";
-			line += i;
+			line += sats[i].no;
 			vue.print(line);
 			vue.setCursorX(160);
 			line = "";

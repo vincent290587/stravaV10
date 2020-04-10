@@ -52,9 +52,8 @@ typedef struct
 	int elevation;
 	int azimuth;
 	int snr;
+	int no;
 } sSatellite;
-
-extern sSatellite sats[MAX_SATELLITES];
 
 typedef enum {
 	eLocationSourceNone,

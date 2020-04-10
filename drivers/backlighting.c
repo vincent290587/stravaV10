@@ -15,9 +15,11 @@
 
 //APP_TIMER_DEF(m_back_timer);
 
+#ifdef BCK_PIN
 static uint32_t m_ticks = 0;
 
 static volatile bool m_timer_is_off = 0;
+#endif
 
 extern sBacklightOrders     backlight;
 

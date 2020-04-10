@@ -70,7 +70,7 @@
 
 #include "SEGGER_RTT.h"
 #define LOG_INFO(...)                  SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
-#define LOG_RAW_INFO(X)                EMPTY_MACRO
+#define LOG_RAW_INFO(X)                SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, X);
 #define LOG_WARNING(...)               SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')

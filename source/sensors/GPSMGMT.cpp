@@ -405,6 +405,36 @@ uint32_t gps_encode_char(char c) {
 
 /**
  *
+ * @param c Input character
+ * @return Error code
+ */
+uint32_t gps_encode_array(char p_array[], size_t length) {
+
+
+	if (eGPSMgmtEPOIdle == m_epo_state) {
+
+		for (size_t i=0; i < length; i++) {
+
+			//LOG_RAW_INFO(p_array[i]);
+
+			locator_encode_char(p_array[i]);
+		}
+
+	}
+
+	if (gps_mgmt.isStandby()) {
+
+		// handle this weird case
+		gps_mgmt.standby(false);
+		delay_ms(3);
+		gps_mgmt.standby(true);
+	}
+
+	return 0;
+}
+
+/**
+ *
  * @param loc_data
  * @param age_
  */

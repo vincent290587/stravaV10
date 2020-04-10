@@ -14,6 +14,7 @@
 #include "Model.h"
 #include "segger_wrapper.h"
 #include "nrf_soc.h"
+#include "nrf_queue.h"
 #include "nrf_pwr_mgmt.h"
 #include "GPSMGMT.h"
 #include "nrf_delay.h"
@@ -23,13 +24,11 @@
 
 #define NRFX_UARTE_INDEX     0
 
-#define UARTE_BUF_LENGTH    16
-
-#define UART0_RB_SIZE         2048
+#define UARTE_BUF_LENGTH     16
 
 typedef struct {
 	uint8_t rx_buffer[UARTE_BUF_LENGTH];
-	bool is_rx;
+	size_t  nb_bytes_read;
 } sUarteBuffer;
 
 typedef struct {
@@ -40,10 +39,11 @@ typedef struct {
 
 void uart_tasks(void *p_context);
 
+NRF_QUEUE_DEF(sUarteBuffer, m_uart_rx_queue, 50, NRF_QUEUE_MODE_NO_OVERFLOW);
+
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-RING_BUFFER_DEF(uart0_rb1, UART0_RB_SIZE);
 
 static const nrfx_uarte_t uart = NRFX_UARTE_INSTANCE(NRFX_UARTE_INDEX);
 
@@ -77,33 +77,27 @@ static void uart_event_handler(nrfx_uarte_event_t const * p_event,
 		ret_code_t err_code;
 		sUarteDBuffer *_buffer = (sUarteDBuffer *) p_context;
 
-		for (uint16_t i=0; i < p_event->data.rxtx.bytes; i++) {
-
-			char c = p_event->data.rxtx.p_data[i];
-
-			if (RING_BUFF_IS_NOT_FULL(uart0_rb1)) {
-				RING_BUFFER_ADD_ATOMIC(uart0_rb1, c);
-			} else {
-				LOG_ERROR("Ring buffer full");
-
-				// empty ring buffer
-				RING_BUFF_EMPTY(uart0_rb1);
-			}
-
-		}
-
-		if ((uint8_t*)p_event->data.rxtx.p_data == (uint8_t*)&_buffer->rx_buf1.rx_buffer) {
+		// prepare next transfer
+		if (p_event->data.rxtx.p_data == _buffer->rx_buf1.rx_buffer) {
 			// buff1 was just filled
+			// reset buff1 for RX
 			err_code = nrfx_uarte_rx(&uart, _buffer->rx_buf1.rx_buffer, UARTE_BUF_LENGTH);
 			_buffer->p_readBuffer = &_buffer->rx_buf1;
 		} else {
 			// buff2 was just filled
+			// reset buff2 for RX
 			err_code = nrfx_uarte_rx(&uart, _buffer->rx_buf2.rx_buffer, UARTE_BUF_LENGTH);
 			_buffer->p_readBuffer = &_buffer->rx_buf2;
 		}
-
-		_buffer->p_readBuffer->is_rx = true;
 		APP_ERROR_CHECK(err_code);
+
+		_buffer->p_readBuffer->nb_bytes_read = p_event->data.rxtx.bytes;
+
+		// store it in a queue
+		if (_buffer->p_readBuffer->nb_bytes_read) {
+			err_code = nrf_queue_push(&m_uart_rx_queue, _buffer->p_readBuffer);
+			APP_ERROR_CHECK(err_code);
+		}
 
 		// remove the delay on the task
 		if (m_tasks_id.uart_id != TASK_ID_INVALID) {
@@ -170,6 +164,8 @@ void uart_init_tx_only(nrf_uarte_baudrate_t baud)
 
 	uart_xfer_done = true;
 
+	memset(&m_uart_dbuffer, 0, sizeof(m_uart_dbuffer));
+
 }
 
 /**
@@ -178,6 +174,8 @@ void uart_init_tx_only(nrf_uarte_baudrate_t baud)
 void uart_init(nrf_uarte_baudrate_t baud)
 {
 	uart_init_tx_only(baud);
+
+	memset(&m_uart_dbuffer, 0, sizeof(m_uart_dbuffer));
 
 	uart_trigger_rx();
 
@@ -222,34 +220,38 @@ void uart_tasks(void *p_context) {
 		if (NRF_UARTE_ERROR_FRAMING_MASK & m_error_mask) {
 
 			LOG_ERROR("UART framing error");
-			RING_BUFF_EMPTY(uart0_rb1);
+			memset(&m_uart_dbuffer, 0, sizeof(m_uart_dbuffer));
 
 		} else if(NRF_UARTE_ERROR_PARITY_MASK & m_error_mask) {
 
 			LOG_ERROR("UART parity error");
-			RING_BUFF_EMPTY(uart0_rb1);
+			memset(&m_uart_dbuffer, 0, sizeof(m_uart_dbuffer));
 
 		} else if (NRF_UARTE_ERROR_OVERRUN_MASK & m_error_mask) {
 
 			LOG_ERROR("UART overrun: restarting RX");
+			memset(&m_uart_dbuffer, 0, sizeof(m_uart_dbuffer));
 			uart_trigger_rx();
 
 		} else if (m_error_mask) {
 
 			LOG_ERROR("UART error %u", m_error_mask);
+			memset(&m_uart_dbuffer, 0, sizeof(m_uart_dbuffer));
 
 		}
 		m_error_mask = 0;
 
-		/* If ring buffer is not empty, parse data. */
-		while (RING_BUFF_IS_NOT_EMPTY(uart0_rb1))
-		{
-			char c = RING_BUFF_GET_ELEM(uart0_rb1);
-			RING_BUFFER_POP(uart0_rb1);
+		/* If buffer is not empty, parse data. */
+		while (!nrf_queue_is_empty(&m_uart_rx_queue)) {
 
-			gps_encode_char(c);
+			sUarteBuffer _u_buffer;
 
-			//LOG_RAW_INFO(c);
+			// get the next victim
+			ret_code_t err_code = nrf_queue_pop(&m_uart_rx_queue, &_u_buffer);
+			APP_ERROR_CHECK(err_code);
+
+			// send data for parsing
+			gps_encode_array((char*)_u_buffer.rx_buffer, _u_buffer.nb_bytes_read);
 
 		}
 
