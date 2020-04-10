@@ -68,6 +68,7 @@ ant_bsc_profile_t m_ant_bsc;
 
 typedef struct
 {
+	uint8_t is_init;
 	int32_t acc_rev_cnt;
 	int32_t prev_rev_cnt;
 	int32_t prev_acc_rev_cnt;
@@ -93,9 +94,17 @@ static void bsc_connect(void * p_context)
 	APP_ERROR_CHECK(err_code);
 }
 
-static uint32_t calculate_cadence(int32_t rev_cnt, int32_t evt_time)
+static inline uint32_t calculate_cadence(int32_t rev_cnt, int32_t evt_time)
 {
-	static uint32_t computed_cadence = 0;
+	uint32_t computed_cadence = 0;
+
+	if (m_cadence_calc_data.is_init == 0) {
+
+		m_cadence_calc_data.is_init = 1;
+		m_cadence_calc_data.prev_rev_cnt  = rev_cnt;
+		m_cadence_calc_data.prev_evt_time = evt_time;
+		return computed_cadence;
+	}
 
 	if (rev_cnt != m_cadence_calc_data.prev_rev_cnt)
 	{
@@ -123,15 +132,27 @@ static uint32_t calculate_cadence(int32_t rev_cnt, int32_t evt_time)
 		m_cadence_calc_data.prev_acc_evt_time = m_cadence_calc_data.acc_evt_time;
 	}
 
-	return (uint32_t)computed_cadence;
+	if (computed_cadence > 200) {
+		computed_cadence = 0;
+	}
+
+	return computed_cadence;
 }
 
 /**
  *
  */
-static uint32_t calculate_speed(int32_t rev_cnt, int32_t evt_time)
+static inline uint32_t calculate_speed(int32_t rev_cnt, int32_t evt_time)
 {
-	static uint32_t computed_speed   = 0;
+	uint32_t computed_speed   = 0;
+
+	if (m_cadence_calc_data.is_init == 0) {
+
+		m_speed_calc_data.is_init = 1;
+		m_speed_calc_data.prev_rev_cnt  = rev_cnt;
+		m_speed_calc_data.prev_evt_time = evt_time;
+		return computed_speed;
+	}
 
 	if (rev_cnt != m_speed_calc_data.prev_rev_cnt)
 	{
@@ -157,6 +178,10 @@ static uint32_t calculate_speed(int32_t rev_cnt, int32_t evt_time)
 
 		m_speed_calc_data.prev_acc_rev_cnt  = m_speed_calc_data.acc_rev_cnt;
 		m_speed_calc_data.prev_acc_evt_time = m_speed_calc_data.acc_evt_time;
+	}
+
+	if (computed_speed > 150) {
+		computed_speed = 0;
 	}
 
 	return (uint32_t)computed_speed;
