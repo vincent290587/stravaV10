@@ -621,7 +621,7 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 		// print histo
 		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite),
 				"%f;%f;%.2f;%lu;"
-				"%d;%u;%u;"
+				"%d;%u;%lu;"
 				"%.3f;%.3f;%.3f;"
 				"%.1f;%.2f;%.2f;%.2f;"
 				"\r\n",

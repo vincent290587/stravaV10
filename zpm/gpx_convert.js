@@ -33,11 +33,11 @@ readInterface
 
     var secj = Number(arr[3]);
     var hours = secj / 3600;
-    var mins = (secj / 60) % 60;
+    var mins = (secj % 3600) / 60;
     secj = secj % 60;
 
     var date_ = new Date(Date.UTC(annee, mois, jour, hours.toFixed(0), mins.toFixed(0), secj.toFixed(0), 0));
-    console.debug('date: ' + annee + ' ' + mois + ' ' + jour + ' ' + hours.toFixed(0) + ' ' + mins.toFixed(0) + ' ' + secj.toFixed(0));
+    console.debug('date: ' + annee + ' ' + mois + ' ' + jour + ' ' + Math.floor(hours) + ' ' + Math.floor(mins) + ' ' + Math.floor(secj));
 
     GPXService.addPoint({
         lat: arr[0],
