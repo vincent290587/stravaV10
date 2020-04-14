@@ -305,18 +305,6 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_) {
 
 		m_last_save_dist = att.dist;
 
-		// save position on queue
-		if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
-
-			// save on SD
-			sysview_task_void_enter(SaveUserPosition);
-			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
-			sysview_task_void_exit(SaveUserPosition);
-
-			m_st_buffer_nb_elem = 0;
-
-		}
-
 		// save on buffer
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].loc , &loc_ , sizeof(SLoc));
 		memcpy(&m_st_buffer[m_st_buffer_nb_elem].date, &date_, sizeof(SDate));
@@ -332,6 +320,18 @@ void Attitude::computeDistance(SLoc& loc_, SDate &date_) {
 		m_st_buffer[m_st_buffer_nb_elem].sensors.cadence = bsc_info.cadence;
 
 		m_st_buffer_nb_elem++;
+
+		// save position on queue when buffer is full
+		if (m_st_buffer_nb_elem >= ATT_BUFFER_NB_ELEM) {
+
+			// save to SD
+			sysview_task_void_enter(SaveUserPosition);
+			sd_save_pos_buffer(m_st_buffer, ATT_BUFFER_NB_ELEM);
+			sysview_task_void_exit(SaveUserPosition);
+
+			m_st_buffer_nb_elem = 0;
+
+		}
 
 		// save position and stuff in case of crash
 		memcpy(&m_app_error.saved_data.att, &att, sizeof(SAtt));
