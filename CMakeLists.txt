@@ -65,6 +65,7 @@ include_directories(
 	libraries/utils
     libraries/filters
     libraries/komoot
+    libraries/kalman
 	libraries/TinyGPSPlus
 	libraries/VParser
 	rf
@@ -113,6 +114,8 @@ set(SRCS
 	libraries/AltiBaro/AltiBaro.cpp
 	libraries/utils/utils.c
     libraries/komoot/komoot_nav.c
+    libraries/kalman/kalman_ext.cpp
+    libraries/kalman/UDMatrix.cpp
 	libraries/GlobalTop/EPONmeaPacket.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
 	libraries/VParser/VParser.cpp

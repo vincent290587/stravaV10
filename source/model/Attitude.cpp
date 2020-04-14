@@ -16,6 +16,8 @@
 
 #include "order1_filter.h"
 
+#define USE_KALMAN        1
+
 #ifdef TDD
 #include "tdd_logger.h"
 #endif
@@ -34,6 +36,11 @@ static float lp1_filter_coefficients[5] =
 };
 
 static order1_filterType m_lp_filt;
+
+#if USE_KALMAN
+#include "kalman_ext.h"
+static sKalmanDescr m_k_lin;
+#endif
 
 
 Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
@@ -78,6 +85,10 @@ void Attitude::reset(void) {
 
 	// remove saved points
 	mes_points.removeAll();
+
+#if USE_KALMAN
+	m_k_lin.is_init = 0;
+#endif
 }
 
 /**
@@ -90,7 +101,23 @@ void Attitude::addNewDate(SDate *date_) {
 	memcpy(&att.date, date_, sizeof(SDate));
 }
 
+///
+/// m_cur_ele
+/// pitch_rad
+/// alpha_zero
+///
+/// d(ele)\dt = speed * tan(slope_rad)
+/// slope_rad = pitch_rad - alpha_zero
+///
+///  d(m_cur_ele) = (pitch_rad - alpha_zero) * dl
+///  dl = speed * dt
 
+/**
+ *       | 1  dl -dl |
+ * Phi = | 0   1   0 |
+ *       | 0   0   1 |
+ *
+ */
 void Attitude::computeFusion(void) {
 
 	// get current elevation
@@ -99,6 +126,89 @@ void Attitude::computeFusion(void) {
 		LOG_WARNING("Altitude error or sea level missing");
 		return;
 	}
+
+#if USE_KALMAN
+
+	static sKalmanExtFeed feed;
+	static uint32_t m_update_time = 0;
+	float alpha_zero = 0;
+	float alpha_bar = 0;
+
+	if (!m_k_lin.is_init) {
+
+		// init kalman
+		m_k_lin.ker.ker_dim = 3;
+		m_k_lin.ker.obs_dim = 2;
+
+		kalman_lin_init(&m_k_lin);
+
+		m_k_lin.ker.matA.unity();
+		m_k_lin.ker.matA.print();
+
+		m_k_lin.ker.matB.zeros();
+		m_k_lin.ker.matB.print();
+
+		// set Q: model noise
+		m_k_lin.ker.matQ.set(0, 0, 0.2f);
+		m_k_lin.ker.matQ.set(1, 1, 0.2f);
+		m_k_lin.ker.matQ.set(2, 2, 0.0002f);
+
+		// set P
+		m_k_lin.ker.matP.ones(900);
+
+		// set R: observations noise
+		m_k_lin.ker.matR.unity(1);
+		m_k_lin.ker.matR.set(0, 0, 1.f);
+		m_k_lin.ker.matR.set(1, 1, 10.f);
+
+		// init X
+		m_k_lin.ker.matX.zeros();
+		m_k_lin.ker.matX.set(0, 0, ele);
+		m_update_time = millis();
+
+		LOG_INFO("Kalman lin. init !");
+	}
+
+	if (m_speed_ms < 1.5f) {
+		return;
+	}
+
+	float pitch_rad;
+	fxos_get_pitch(pitch_rad);
+
+	feed.dt = m_speed_ms * 0.001f * (float)(millis() - m_update_time); // in seconds
+	m_update_time = millis();
+
+	// set measures: Z
+	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
+	feed.matZ.zeros();
+	feed.matZ.set(0, 0, ele);
+	feed.matZ.set(1, 0, pitch_rad);
+
+	// measures mapping (Z = C.X)
+	m_k_lin.ker.matC.zeros();
+	m_k_lin.ker.matC.set(0, 0, 1);
+	m_k_lin.ker.matC.set(1, 1, 1);
+
+	// command mapping
+	m_k_lin.ker.matB.zeros();
+
+	// set command: U
+	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
+	feed.matU.zeros();
+
+	// set core
+	m_k_lin.ker.matA.unity(1);
+	m_k_lin.ker.matA.set(0, 1,  feed.dt);
+	m_k_lin.ker.matA.set(0, 2, -feed.dt);
+
+	kalman_lin_feed(&m_k_lin, &feed);
+
+	m_cur_ele  = m_k_lin.ker.matX.get(0, 0);
+	alpha_bar  = m_k_lin.ker.matX.get(1, 0);
+	alpha_zero = m_k_lin.ker.matX.get(2, 0);
+
+#else
 
 	// 2 seconds time constant
 	const float taub = 2 / (2 + BARO_REFRESH_PER_MS / 1000.f);
@@ -126,6 +236,10 @@ void Attitude::computeFusion(void) {
 	static float alpha_zero = 0;
 	alpha_zero = new_alpha_z * 0.003f + 0.997f * alpha_zero;
 
+	alti_prev = alti;
+
+#endif
+
 	// update vertical speed after 3 mins
 	if (att.nbsec_act > 3.f * 60.f) {
 		att.vit_asc = tanf(alpha_bar - alpha_zero) * m_speed_ms;
@@ -134,8 +248,6 @@ void Attitude::computeFusion(void) {
 	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
 			180.f*(alpha_bar-alpha_zero)/3.1415f,
 			180.f*alpha_zero/3.1415f);
-
-	alti_prev = alti;
 
 	if (m_st_buffer_nb_elem < ATT_BUFFER_NB_ELEM) {
 
