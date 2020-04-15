@@ -170,6 +170,7 @@ void Attitude::computeFusion(void) {
 	}
 
 	if (m_speed_ms < 1.5f) {
+		m_update_time = millis();
 		return;
 	}
 
