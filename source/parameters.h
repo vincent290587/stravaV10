@@ -26,9 +26,7 @@
 
 #define STC3100_CUR_SENS_RES_MO        100
 
-#define FXOS_MEAS_CAL_LIM_MS           60000
-
-#define FXOS_MAG_FILTER_COEFF          1.f
+#define FXOS_MEAS_CAL_LIM_IDX          60000
 
 #define SEG_OFF_NB_POINTS              30
 
