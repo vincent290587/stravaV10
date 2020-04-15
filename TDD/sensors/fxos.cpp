@@ -5,7 +5,7 @@
  *      Author: v.golle
  */
 
-
+#include <math.h>
 #include "fxos.h"
 #include "Model.h"
 #include "parameters.h"
@@ -46,6 +46,8 @@ RingBuffer<tHistoValue> m_pitch_buffer(PITCH_BUFFER_SIZE, m_pi_buffer);
 
 static float m_yaw = 0.0f;
 static float m_pitch = 0.0f;
+
+static float m_roughness[3] = { 0 , 0 , 0 };
 
 void fxos_readChip(void) {
 
@@ -88,6 +90,15 @@ void fxos_tasks()
 	g_Ay /= MAX_ACCEL_AVG_COUNT;
 	g_Az /= MAX_ACCEL_AVG_COUNT;
 
+	/* Calculate statistical params */
+	memset(m_roughness, 0, sizeof(m_roughness));
+	for (i = 0; i < MAX_ACCEL_AVG_COUNT; i++)
+	{
+		m_roughness[0] += fabsf((float)g_Ax_buff[i] - g_Ax) / MAX_ACCEL_AVG_COUNT;
+		m_roughness[1] += fabsf((float)g_Ay_buff[i] - g_Ay) / MAX_ACCEL_AVG_COUNT;
+		m_roughness[2] += fabsf((float)g_Az_buff[i] - g_Az) / MAX_ACCEL_AVG_COUNT;
+	}
+
 	if (!isnormal(g_Az)) {
 		return;
 	}
@@ -129,6 +140,13 @@ void fxos_tasks()
 
 bool fxos_get_pitch(float &pitch_rad) {
 	pitch_rad = m_pitch;
+	return true;
+}
+
+bool fxos_get_roughness(float roughness[3]) {
+
+	memcpy(roughness, m_roughness, sizeof(m_roughness));
+
 	return true;
 }
 

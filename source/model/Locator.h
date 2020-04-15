@@ -32,6 +32,7 @@ typedef struct {
 	float alpha_zero;
 	float climb;
 	float vit_asc;
+	float rough[3];
 } SEle;
 
 typedef struct {

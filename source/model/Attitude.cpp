@@ -255,6 +255,9 @@ void Attitude::computeFusion(void) {
 		m_st_buffer[m_st_buffer_nb_elem].alti.baro_ele   = ele;
 		m_st_buffer[m_st_buffer_nb_elem].alti.alpha_zero = alpha_zero;
 		m_st_buffer[m_st_buffer_nb_elem].alti.alpha_bar  = alpha_bar;
+
+		// log fxos roughness
+		fxos_get_roughness(m_st_buffer[m_st_buffer_nb_elem].alti.rough);
 	}
 
 #ifdef TDD

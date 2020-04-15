@@ -110,6 +110,8 @@ static int16_t Mx_min = 0;
 static int16_t My_min = 0;
 static int16_t Mz_min = 0;
 
+static float m_roughness[3] = { 0 , 0 , 0 };
+
 static int16_t m_calibration_step = 0;
 
 
@@ -747,6 +749,15 @@ void fxos_tasks(void)
 	g_My /= MAX_ACCEL_AVG_COUNT;
 	g_Mz /= MAX_ACCEL_AVG_COUNT;
 
+	/* Calculate statistical params */
+	memset(m_roughness, 0, sizeof(m_roughness));
+	for (i = 0; i < MAX_ACCEL_AVG_COUNT; i++)
+	{
+		m_roughness[0] += fabsf((float)g_Ax_buff[i] - g_Ax) / MAX_ACCEL_AVG_COUNT;
+		m_roughness[1] += fabsf((float)g_Ay_buff[i] - g_Ay) / MAX_ACCEL_AVG_COUNT;
+		m_roughness[2] += fabsf((float)g_Az_buff[i] - g_Az) / MAX_ACCEL_AVG_COUNT;
+	}
+
 	LOG_DEBUG("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
 
 	if (m_calibration_step >= 0) {
@@ -824,6 +835,13 @@ bool fxos_get_yaw(float &yaw_rad) {
 bool fxos_get_pitch(float &pitch_rad) {
 
 	pitch_rad = g_Pitch;
+
+	return true;
+}
+
+bool fxos_get_roughness(float roughness[3]) {
+
+	memcpy(roughness, m_roughness, sizeof(m_roughness));
 
 	return true;
 }

@@ -61,6 +61,8 @@ bool fxos_get_yaw(float &yaw_rad);
 
 bool fxos_get_pitch(float &yaw_rad);
 
+bool fxos_get_roughness(float roughness[3]);
+
 tHistoValue fxos_histo_read(uint16_t ind_);
 
 uint16_t fxos_histo_size(void);
