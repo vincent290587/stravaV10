@@ -95,7 +95,6 @@ private:
 	bool m_is_init;
 	bool m_is_acc_init;
 	bool m_is_alt_init;
-	bool m_is_pw_init;
 
 	AltiBaro &m_baro;
 

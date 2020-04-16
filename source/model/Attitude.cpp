@@ -53,7 +53,6 @@ Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
 	m_is_init = false;
 	m_is_acc_init = false;
 	m_is_alt_init = false;
-	m_is_pw_init = false;
 
 	m_st_buffer_nb_elem = 0;
 
@@ -74,7 +73,6 @@ void Attitude::reset(void) {
 	m_is_init = false;
 	m_is_acc_init = false;
 	m_is_alt_init = false;
-	m_is_pw_init = false;
 
 	m_st_buffer_nb_elem = 0;
 
@@ -527,29 +525,18 @@ float Attitude::computePower(float speed_) {
 
 	float power = 0.0f;
 
-	// init alpha_0 filter
-	if (!m_is_pw_init) {
+	const float weight = (float)u_settings.getWeight();
 
-		m_is_pw_init = true;
-
-		return power;
-	}
-
-	// proceed to fusing measurements
-	if (m_is_pw_init) {
-
-		const float weight = (float)u_settings.getWeight();
-
-		// STEP 2 : Calculate power
-		power += 9.81f * weight * att.vit_asc; // gravity
-		power += 0.004f * 9.81f * weight * m_speed_ms; // sol + meca
-		power += 0.204f * m_speed_ms * m_speed_ms * m_speed_ms; // air
-		power *= 1.025f; // transmission (rendement velo)
+	// STEP 2 : Calculate power
+	power += 9.81f * weight * att.vit_asc; // gravity
+	power += 0.004f * 9.81f * weight * m_speed_ms; // sol + meca
+	power += 0.204f * m_speed_ms * m_speed_ms * m_speed_ms; // air
+	power *= 1.025f; // transmission (rendement velo)
 
 #ifdef TDD
-		tdd_logger_log_float(TDD_LOGGING_CUR_POWER, power);
+	tdd_logger_log_float(TDD_LOGGING_CUR_POWER, power);
 #endif
-	}
+
 
 	return power;
 }
