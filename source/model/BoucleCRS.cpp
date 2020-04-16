@@ -81,8 +81,14 @@ void BoucleCRS::run_internal(void) {
 	// altitude / distance computation
 	if (eBoucleGlobalModesZwift != boucle__get_mode()) {
 
+		// no more trigger on the SIM source, only trigger on LNS and GPS
+		if (eLocationSourceSIM == loc_source) return;
+
 		attitude.addNewLocation(loc, dat, loc_source);
 	} else {
+
+		// trigger only on the SIM source
+		if (eLocationSourceSIM != loc_source) return;
 
 		attitude.addNewLNSPoint(loc, dat);
 	}
