@@ -93,6 +93,18 @@ void BoucleCRS::run_internal(void) {
 		attitude.addNewLNSPoint(loc, dat);
 	}
 
+	if (eBoucleGlobalModesPRC == boucle__get_mode()) {
+
+		Parcours *p_parcours = boucle_crs.m_s_parcours;
+
+		// update PRC
+		if (p_parcours) {
+
+			Point2D pcur(loc.lat, loc.lon);
+			p_parcours->updatePosAuParcours(pcur);
+		}
+	}
+
 	// update segments
 
 	sysview_task_void_enter(MainSegLoop);

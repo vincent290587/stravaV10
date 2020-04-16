@@ -49,6 +49,7 @@ public:
     std::list<Point2D> *getLPTS() {return &m_lpoints;}
     
     Point m_P1, m_P2;
+    uint16_t idx_P1;
 
 protected:
     std::list<Point2D> m_lpoints;
