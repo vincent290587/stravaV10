@@ -12,7 +12,7 @@ Included features:
 * BLE connection to use the LNS, UART and Komoot (see https://www.komoot.com/)
 * Estimate power using a precise barometer and special algorithms
 
-Autonomy depends on the use: it uses <8mA in indoor mode (70+ hours), and around 40mA in outdoor modes (20+ hours).
+Autonomy depends on the use: it uses <8mA in indoor mode (100+ hours), and around 35mA in outdoor modes (30+ hours).
 
 
 ## Hardware
@@ -24,7 +24,7 @@ The BOM costs around 100€
 
 ## Compilation & Programming
 
-Must be compiled with GCC 6 2017-q2-update and nRF SDK V6.0 with softdevice s340 V6.1.1
+Must be compiled with GCC 6 2017-q2-update and nRF SDK V16.0 with softdevice s340 V6.1.1
 
 /!\ The USB bootloader must be programmed before using the dfu targets (found in dfu subfolder)
 
