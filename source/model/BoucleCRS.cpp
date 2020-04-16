@@ -90,7 +90,7 @@ void BoucleCRS::run_internal(void) {
 		// trigger only on the SIM source
 		if (eLocationSourceSIM != loc_source) return;
 
-		attitude.addNewLNSPoint(loc, dat);
+		attitude.addNewSIMPoint(loc, dat);
 	}
 
 	if (eBoucleGlobalModesPRC == boucle__get_mode()) {

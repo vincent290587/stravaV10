@@ -80,7 +80,7 @@ public:
 
 	void addNewFECPoint(sFecInfo& fec_);
 
-	void addNewLNSPoint(SLoc& loc_, SDate& date_);
+	void addNewSIMPoint(SLoc& loc_, SDate& date_);
 
 	void  computeFusion(void);
 	float computePower(float speed_);

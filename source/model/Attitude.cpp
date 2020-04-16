@@ -503,7 +503,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 	memcpy(&att.date, &date_, sizeof(SDate));
 }
 
-void Attitude::addNewLNSPoint(SLoc& loc_, SDate& date_) {
+void Attitude::addNewSIMPoint(SLoc& loc_, SDate& date_) {
 
 	LOG_INFO("LNS point added (%lu %lu)", date_.secj, att.date.secj);
 
