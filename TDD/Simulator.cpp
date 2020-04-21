@@ -176,6 +176,10 @@ void simulator_simulate_altitude(float alti) {
 	const float sea_level_pressure = 1015.0f;
 
 	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
+	static std::default_random_engine generator;
+	static std::normal_distribution<float> distr_alt(0.0, 0.5f);
+
+	alti += distr_alt(generator);
 
 	bme280_set_pressure(sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f));
 
@@ -256,17 +260,19 @@ static void _fxos_sim(float cur_a, float cur_a0) {
 	if (millis() - last_point_ms < 40) return;
 
 	static std::default_random_engine generator;
-	static std::normal_distribution<float> distr_alt_x(0.0, 0.4 * 9810);
-	static std::normal_distribution<float> distr_alt_z(0.0, 0.9 * 9810);
+	static std::normal_distribution<float> distr_alt_x(0.0, 800);
+	static std::normal_distribution<float> distr_alt_y(0.0, 400);
+	static std::normal_distribution<float> distr_alt_z(0.0, 800);
 
-	float val_x = 9810.f * sinf(cur_a + cur_a0);
-	float val_z = 9810.f * cosf(cur_a + cur_a0);
+	float val_x = 2048.f * sinf(cur_a + cur_a0);
+	float val_z = 2048.f * cosf(cur_a + cur_a0);
 
 	val_x += distr_alt_x(generator);
+	float val_y = distr_alt_y(generator);
 	val_z += distr_alt_z(generator);
 
 	// add noise
-	fxos_set_xyz(val_x, 0, val_z);
+	fxos_set_xyz(val_x, val_y, val_z);
 }
 
 static void _sensors_sim(void) {
@@ -379,6 +385,9 @@ static void _loc_sim(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
+		static std::default_random_engine generator;
+		static std::normal_distribution<float> distr_alt(0.0, 0.1f);
+
 		if (millis() < 60000 &&
 				(gpio_get(GPS_R) && gpio_get(GPS_S)) ) {
 
@@ -394,7 +403,7 @@ static void _loc_sim(void) {
 			for (int i=0; i < nmea_length; i++)
 				uart_rx_handler(g_bufferWrite[i]);
 
-			GPGGA gpgga_(lat, lon, alt_sim + 32.3f, (int)rtime);
+			GPGGA gpgga_(lat, lon, alt_sim + 32.3f + distr_alt(generator), (int)rtime);
 			nmea_length = gpgga_.toString(g_bufferWrite, sizeof(g_bufferWrite));
 
 			LOG_WARNING("Sentence: %s", g_bufferWrite);
@@ -423,7 +432,7 @@ static void _loc_sim(void) {
 			sLnsInfo lns_info;
 			lns_info.lat = lat * 10000000.;
 			lns_info.lon = lon * 10000000.;
-			lns_info.ele = (alt_sim + 32.3f) * 100.;
+			lns_info.ele = (alt_sim + 32.3f + distr_alt(generator)) * 100.;
 			lns_info.secj = (int)rtime;
 			lns_info.date = 11218;
 			lns_info.heading = 5;

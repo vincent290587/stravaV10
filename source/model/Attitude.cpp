@@ -147,8 +147,8 @@ void Attitude::computeFusion(void) {
 		m_k_lin.ker.matB.print();
 
 		// set Q: model noise
-		m_k_lin.ker.matQ.set(0, 0, 0.2f);
-		m_k_lin.ker.matQ.set(1, 1, 0.2f);
+		m_k_lin.ker.matQ.set(0, 0, 0.02f);
+		m_k_lin.ker.matQ.set(1, 1, 0.01f);
 		m_k_lin.ker.matQ.set(2, 2, 0.0002f);
 
 		// set P
@@ -156,12 +156,12 @@ void Attitude::computeFusion(void) {
 
 		// set R: observations noise
 		m_k_lin.ker.matR.unity(1);
-		m_k_lin.ker.matR.set(0, 0, 1.f);
-		m_k_lin.ker.matR.set(1, 1, 10.f);
+		m_k_lin.ker.matR.set(0, 0, 200.f); // 700 for barometer
+		m_k_lin.ker.matR.set(1, 1, 100.f); // 100 for barometer
 
 		// init X
 		m_k_lin.ker.matX.zeros();
-		m_k_lin.ker.matX.set(0, 0, ele);
+		m_k_lin.ker.matX.set(0, 0, att.loc.alt);
 		m_update_time = millis();
 
 		LOG_INFO("Kalman lin. init !");
@@ -181,7 +181,7 @@ void Attitude::computeFusion(void) {
 	// set measures: Z
 	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
 	feed.matZ.zeros();
-	feed.matZ.set(0, 0, ele);
+	feed.matZ.set(0, 0, att.loc.alt);
 	feed.matZ.set(1, 0, pitch_rad);
 
 	// measures mapping (Z = C.X)
@@ -300,9 +300,11 @@ float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 		// filter with a high time-constant the difference between
 		// GPS altitude and barometer altitude to remove drifts
 		float input = m_cur_ele - loc_.alt;
-		order1_filter_writeInput(&m_lp_filt, &input);
+		static float alt_div = input;
 
-		float alt_div = order1_filter_readOutput(&m_lp_filt);
+		const float taub = 400.f / (400.f + 1.f);
+		alt_div = taub * alt_div + (1 - taub) * (input);
+
 		// set barometer correction
 		m_baro.setCorrection(alt_div);
 
