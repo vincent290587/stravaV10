@@ -242,7 +242,7 @@ static void _convert_samples(fxos_data_t *fxos_data, int16_t *Ax, int16_t *Ay, i
 
 }
 
-static inline int Magnetometer_Calibrate_Task(int16_t g_Mx_Raw, int16_t g_My_Raw, int16_t g_Mz_Raw)
+static inline void Magnetometer_Calibrate_Task(int16_t g_Mx_Raw, int16_t g_My_Raw, int16_t g_Mz_Raw)
 {
 
 	if (g_Mx_Raw > Mx_max)
@@ -277,7 +277,7 @@ static inline int Magnetometer_Calibrate_Task(int16_t g_Mx_Raw, int16_t g_My_Raw
 	m_calibration_step += 1;
 
 	if (m_calibration_step > FXOS_MEAS_CAL_LIM_IDX &&
-			(Mx_max > (Mx_min + 500)) && (My_max > (My_min + 500)) && (Mz_max > (Mz_min + 500)))
+			(Mx_max > (Mx_min + 100)) && (My_max > (My_min + 100)) && (Mz_max > (Mz_min + 100)))
 	{
 		LOG_INFO("\r\nCalibrate magnetometer successfully!");
 		LOG_INFO("Magnetometer offset Mx: %d - My: %d - Mz: %d", g_Mx_Offset, g_My_Offset, g_Mz_Offset);
@@ -286,9 +286,9 @@ static inline int Magnetometer_Calibrate_Task(int16_t g_Mx_Raw, int16_t g_My_Raw
 
 		char buff[128];
 		memset(buff, 0, sizeof(buff));
-		snprintf(buff, sizeof(buff), "Mag cal OK: Mx: %d - My: %d - Mz: %d",
+		snprintf(buff, sizeof(buff), "MG cal OK: Mx: %d - My: %d - Mz: %d",
 				Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
-		vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
+		vue.addNotif("Event", buff, 8, eNotificationTypeComplete);
 
 		// save calibration to settings
 		sUserParameters *settings = user_settings_get();
@@ -301,6 +301,7 @@ static inline int Magnetometer_Calibrate_Task(int16_t g_Mx_Raw, int16_t g_My_Raw
 
 		u_settings.writeConfig();
 
+		// stop calibration
 		m_calibration_step = -1;
 
 	} else if (m_calibration_step > FXOS_MEAS_CAL_LIM_IDX) {
@@ -308,11 +309,18 @@ static inline int Magnetometer_Calibrate_Task(int16_t g_Mx_Raw, int16_t g_My_Raw
 		LOG_INFO("Mag cal failure");
 		LOG_INFO("Magnetometer diff Mx: %d - My: %d - Mz: %d",
 				Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
-	} else {
-		return -1;
+
+		char buff[128];
+		memset(buff, 0, sizeof(buff));
+		snprintf(buff, sizeof(buff), "MG cal ERROR: Mx: %d - My: %d - Mz: %d",
+				Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+		vue.addNotif("Event", buff, 8, eNotificationTypeComplete);
+
+		// stop calibration
+		m_calibration_step = -1;
 	}
 
-	return 0;
+	return ;
 }
 
 /*******************************************************************************
@@ -807,7 +815,8 @@ void fxos_tasks(void)
 
 	/* Calculate yaw = ecompass angle psi (-180deg, 180deg) */
 #if defined( PROTO_V11)
-	g_Yaw = atan2f(-g_My, g_Mx);
+	// top view: y to bottom, x to the right
+	g_Yaw = atan2f( g_My, g_Mx) + 1.57f;
 #else
 	g_Yaw = atan2f(-g_My, g_Mx);
 #endif
@@ -815,7 +824,7 @@ void fxos_tasks(void)
 	LOG_DEBUG("Compass Angle raw   : %d  ", (int)(g_Yaw * RadToDeg * 10.f));
 
 	// store pitch
-	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57f) * 100.f);
+	int16_t integ_pitch = (int16_t)((g_Pitch + 0.4f) * 100.f);
 	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
 
 	if (m_pitch_buffer.isFull()) {

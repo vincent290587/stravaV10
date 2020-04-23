@@ -284,7 +284,7 @@ void VueCRS::afficheSensors(void) {
 
 	// pitch
 	const uint16_t bar_len = 140;
-	float val = regFenLim(pitch_rad, -1.6, 1.6, -bar_len/2, bar_len/2);
+	float val = regFenLim(pitch_rad, -0.24, 0.24, -bar_len/2, bar_len/2);
 	if (val > 0.) {
 		this->fillRect(this->width()/2, 53, val, 8, LS027_PIXEL_BLACK);
 	} else {
@@ -299,8 +299,8 @@ void VueCRS::afficheSensors(void) {
 	// pitch #2
 	sVueHistoConfiguration h_config;
 	h_config.cur_elem_nb = fxos_histo_size();
-	h_config.ref_value   = (tHistoValue)157;
-	h_config.max_value   = (tHistoValue)314;
+	h_config.ref_value   = (tHistoValue)40;
+	h_config.max_value   = (tHistoValue)80;
 	h_config.nb_elem_tot = PITCH_BUFFER_SIZE;
 	h_config.p_f_read    = fxos_histo_read;
 
