@@ -177,7 +177,7 @@ void simulator_simulate_altitude(float alti) {
 
 	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
 	static std::default_random_engine generator;
-	static std::normal_distribution<float> distr_alt(0.0, 0.5f);
+	static std::normal_distribution<float> distr_alt(0.0, 0.4f);
 
 	alti += distr_alt(generator);
 
@@ -284,7 +284,7 @@ static void _sensors_sim(void) {
 
 	_fxos_sim(cur_a, cur_a0);
 
-	if (millis() - last_point_ms < SENSORS_REFRESH_PER_MS) return;
+	if (millis() - last_point_ms < BARO_REFRESH_PER_MS) return;
 
 	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
 

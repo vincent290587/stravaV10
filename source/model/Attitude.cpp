@@ -29,14 +29,6 @@ JScope jscope;
 
 #define CLIMB_ELEVATION_HYSTERESIS_M           2.f
 
-static float lp1_filter_coefficients[5] =
-{
-// Scaled for floating point: 0.008.fs
-    0.024521609249465722f, 0.024521609249465722f, 0.f, 0.9509567815010685f, 0.f// b0, b1, b2, a1, a2
-};
-
-static order1_filterType m_lp_filt;
-
 #if USE_KALMAN
 #include "kalman_ext.h"
 static sKalmanDescr m_k_lin;
@@ -119,11 +111,14 @@ void Attitude::addNewDate(SDate *date_) {
 void Attitude::computeFusion(void) {
 
 	// get current elevation
-	float ele = 0.;
+	float ele = att.loc.alt;
+
+#ifndef KALMAN_USE_GPS_ALTITUDE
 	if (!m_baro.computeAlti(ele)) {
 		LOG_WARNING("Altitude error or sea level missing");
 		return;
 	}
+#endif
 
 #if USE_KALMAN
 
@@ -156,12 +151,12 @@ void Attitude::computeFusion(void) {
 
 		// set R: observations noise
 		m_k_lin.ker.matR.unity(1);
-		m_k_lin.ker.matR.set(0, 0, 200.f); // 700 for barometer
+		m_k_lin.ker.matR.set(0, 0, 500.f); // 700 for barometer, 200 for GPS (not enough)
 		m_k_lin.ker.matR.set(1, 1, 100.f); // 100 for barometer
 
 		// init X
 		m_k_lin.ker.matX.zeros();
-		m_k_lin.ker.matX.set(0, 0, att.loc.alt);
+		m_k_lin.ker.matX.set(0, 0, ele);
 		m_update_time = millis();
 
 		LOG_INFO("Kalman lin. init !");
@@ -181,7 +176,7 @@ void Attitude::computeFusion(void) {
 	// set measures: Z
 	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
 	feed.matZ.zeros();
-	feed.matZ.set(0, 0, att.loc.alt);
+	feed.matZ.set(0, 0, ele);
 	feed.matZ.set(1, 0, pitch_rad);
 
 	// measures mapping (Z = C.X)
@@ -285,12 +280,13 @@ void Attitude::computeFusion(void) {
 float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 
 	if (!m_is_alt_init) {
-		m_is_alt_init = true;
+
 		m_last_stored_ele = m_cur_ele = loc_.alt;
+		m_climb = 0.;
 
-		order1_filter_init(&m_lp_filt, lp1_filter_coefficients);
+		m_is_alt_init = true;
 
-		return 0.;
+		return 0.f;
 	}
 
 	// high-pass on the difference baro/GPS to remove air pressure drifts
@@ -299,9 +295,16 @@ float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 
 		LOG_INFO("Filtering GPS/Baro correction");
 
+		// get barometer elevation
+		float ele = 0.;
+		if (!m_baro.computeAlti(ele)) {
+			LOG_WARNING("Altitude error or sea level missing 2");
+			return 0.f;
+		}
+
 		// filter with a high time-constant the difference between
 		// GPS altitude and barometer altitude to remove drifts
-		float input = m_cur_ele - loc_.alt;
+		float input = ele - loc_.alt;
 		static float alt_div = input;
 
 		const float taub = 400.f / (400.f + 1.f);
@@ -360,17 +363,12 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 		// init sea level pressure
 		m_baro.seaLevelForAltitude(loc_.alt);
 
-		// get current elevation
-		m_baro.computeAlti(m_cur_ele);
-
 		LOG_WARNING("Init sea level pressure... gps: %dm bme:%dm", (int)loc_.alt, (int)m_cur_ele);
 
 		// compute baro/GPS altitude corrections and total climb
+		// force reset
+		m_is_alt_init = false;
 		this->filterElevation(loc_, source_);
-
-		// reset accumulated data
-		m_climb = 0.;
-		m_last_stored_ele = m_cur_ele;
 
 		if (m_app_error.saved_data.crc == calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att))) {
 

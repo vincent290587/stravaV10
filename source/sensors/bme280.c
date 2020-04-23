@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <stdint.h>
 #include "i2c.h"
 #include "nrf_twi_mngr.h"
 #include "bme280.h"
@@ -302,6 +303,21 @@ void bme280_init_sensor() {
 		parse_humidity_calib_data  (buffer2);
 	}
 
+	// t_meas = 33,5 ms
+
+	// IIR x16:
+	// t_sleep = 250 ms
+	// ODR = 3,52 Hz
+	// tau = 6,2 s
+
+	// t_sleep = 20 ms
+	// ODR = 18,7 Hz
+	// tau = 1,1 s
+
+	// t_sleep = 62,5 ms
+	// ODR = 10,4 Hz
+	// tau = 2,1 s
+
 	m_meas_config.osrs_p = SAMPLING_X16;
 	m_meas_config.osrs_t = SAMPLING_X1;
 
@@ -315,7 +331,7 @@ void bme280_init_sensor() {
 	bme280_hum_config();
 
 	m_cfg_config.filter = FILTER_X16;
-	m_cfg_config.t_sb = STANDBY_MS_250;
+	m_cfg_config.t_sb = STANDBY_MS_62_5;
 
 	bme280_cfg_config();
 

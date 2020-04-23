@@ -49,13 +49,13 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define BARO_REFRESH_PER_MS            250
+#define BARO_REFRESH_PER_MS            100
 
-#define SENSORS_REFRESH_PER_MS         BARO_REFRESH_PER_MS
+#define SENSORS_REFRESH_PER_MS         1000
 
 #define ATT_BUFFER_NB_ELEM             5
 
-#define FILTRE_NB                      15
+#define FILTRE_NB                      30
 
 #define USER_WEIGHT                    79U
 

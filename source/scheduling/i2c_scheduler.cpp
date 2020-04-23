@@ -73,11 +73,18 @@ static void timer_handler(void * p_context)
 			boucle__get_mode() == eBoucleGlobalModesPRC) {
 		baro.sensorRead();
 	} else {
-		baro.sleep();
+		//baro.sleep();
 	}
 
 	if (++m_last_polled_index >= SENSORS_REFRESH_PER_MS / I2C_SCHEDULING_PERIOD_MS) {
 		m_last_polled_index = 0;
+
+		if (boucle__get_mode() == eBoucleGlobalModesCRS ||
+				boucle__get_mode() == eBoucleGlobalModesPRC) {
+			//baro.sensorRead();
+		} else {
+			baro.sleep();
+		}
 
 		stc.readChip();
 
@@ -124,11 +131,6 @@ void i2c_scheduling_tasks(void) {
 		sysview_task_void_enter(I2cMgmtReadMs);
 		baro.sensorRefresh();
 		sysview_task_void_exit(I2cMgmtReadMs);
-
-		// refresh FXOS measurements
-		fxos_tasks();
-		// fuse measurements
-		attitude.computeFusion();
 	}
 #ifdef VEML_PRESENT
 	if (is_veml_updated()) {

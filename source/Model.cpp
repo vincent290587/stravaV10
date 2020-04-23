@@ -406,7 +406,7 @@ void peripherals_task(void * p_context)
 
 		power_scheduler__run();
 
-		w_task_delay(100);
+		w_task_delay(50);
 
 	}
 }

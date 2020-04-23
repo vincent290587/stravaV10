@@ -85,6 +85,12 @@ void BoucleCRS::run_internal(void) {
 		if (eLocationSourceSIM == loc_source) return;
 
 		attitude.addNewLocation(loc, dat, loc_source);
+
+		// process FXOS measurements
+		fxos_tasks();
+
+		// fuse measurements for slope estimation
+		attitude.computeFusion();
 	} else {
 
 		// trigger only on the SIM source

@@ -9,6 +9,7 @@
 #define LIBRARIES_ALTIBARO_ALTIBARO_H_
 
 #include <stdint.h>
+#include "parameters.h"
 
 class AltiBaro {
 public:
@@ -36,7 +37,9 @@ private:
 	float correction;
 	float m_alti_f;
 	float m_va_f;
-	uint32_t nb_filtering;
+	uint16_t nb_filtering;
+
+	float m_meas_buff[FILTRE_NB];
 
 	void runFilter(void);
 	float pressureToAltitude(float atmospheric);
