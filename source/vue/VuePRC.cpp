@@ -73,7 +73,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			this->cadran(3, VUE_PRC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 			this->cadran(3, VUE_PRC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-			this->cadran(4, VUE_PRC_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+			this->cadran(4, VUE_PRC_NB_LINES, 1, "SL", _imkstr(att.slope), "%");
 			this->cadran(4, VUE_PRC_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 			// display parcours

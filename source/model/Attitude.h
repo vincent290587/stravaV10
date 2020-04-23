@@ -30,6 +30,7 @@ typedef struct {
 	SDate date;
 	float climb;
 	float vit_asc;
+	int8_t slope;
 	float dist;
 	int16_t pwr;
 	uint16_t nbpts;

@@ -124,14 +124,17 @@ void VueCRS::afficheScreen1(void) {
 		this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+		this->cadran(4, VUE_CRS_NB_LINES, 1, "SL", _imkstr(att.slope), "%");
 		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
-		this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
+		this->cadran(5, VUE_CRS_NB_LINES, 1, "Next", _imkstr(att.next), "m");
+		this->cadran(5, VUE_CRS_NB_LINES, 2, "Alt" , _fmkstr(att.loc.alt, 1U), "m");
 
 		float avg_speed = 0.;
-		if (att.nbsec_act) avg_speed = att.dist * 3.6f / att.nbsec_act;
-		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg", _fmkstr(avg_speed, 2U), "km/h");
+		if (att.nbsec_act) {
+			avg_speed = att.dist * 3.6f / att.nbsec_act;
+		}
+		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg"  , _fmkstr(avg_speed, 2U), "km/h");
 		this->cadran(6, VUE_CRS_NB_LINES, 2, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
 
 		this->cadran(7, VUE_CRS_NB_LINES, 1, "STC", _imkstr((int)stc.getCurrent()), "mA");
@@ -150,7 +153,7 @@ void VueCRS::afficheScreen1(void) {
 		this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+		this->cadran(4, VUE_CRS_NB_LINES, 1, "SL", _imkstr(att.slope), "%");
 		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 		ASSERT(segMngr.getSeg(0));
@@ -180,14 +183,13 @@ void VueCRS::afficheScreen1(void) {
 
 			// all segments are OFF
 			this->cadran(2, VUE_CRS_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
-			this->cadran(2, VUE_CRS_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
+			this->cadran(2, VUE_CRS_NB_LINES, 2, "Pwr"  , _imkstr(att.pwr), "W");
 
-			this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
+			this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD"  , _imkstr(bsc_info.cadence), "rpm");
 			this->cadran(3, VUE_CRS_NB_LINES, 2, "Climb", _fmkstr(att.climb, 1U), "m");
 
 			this->cadran(4, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000.f, 1U), "km");
-
-			this->cadran(4, VUE_CRS_NB_LINES, 2, "STC", _imkstr((int)stc.getCurrent()), "mA");
+			this->cadran(4, VUE_CRS_NB_LINES, 2, "SL"  , _imkstr(att.slope), "%");
 
 			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(0)->p_seg);
 			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(1)->p_seg);

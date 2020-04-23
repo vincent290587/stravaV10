@@ -241,7 +241,9 @@ void Attitude::computeFusion(void) {
 
 	// update vertical speed after 3 mins
 	if (att.nbsec_act > 3.f * 60.f) {
-		att.vit_asc = tanf(alpha_bar - alpha_zero) * m_speed_ms;
+		const float slope = tanf(alpha_bar - alpha_zero);
+		att.slope = (int8_t)(100.f * slope);
+		att.vit_asc = slope * m_speed_ms;
 	}
 
 	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
