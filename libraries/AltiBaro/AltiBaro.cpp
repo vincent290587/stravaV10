@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <cmath>
 #include "bme280.h"
 #include "ms5637.h"
 #include "AltiBaro.h"
@@ -80,6 +81,22 @@ void AltiBaro::sensorRefresh() {
 	if (++nb_filtering >= FILTRE_NB) {
 		nb_filtering = 0;
 	}
+}
+
+/**
+ *
+ * @return True if updated
+ */
+float AltiBaro::getRoughness() {
+
+	float res = 0.f;
+
+	for (int i=1; i< FILTRE_NB; i++) {
+
+		res += 100.f * fabsf(m_meas_buff[i] - m_meas_buff[0]) / FILTRE_NB;
+	}
+
+	return res;
 }
 
 /**

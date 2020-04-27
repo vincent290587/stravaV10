@@ -177,9 +177,11 @@ void simulator_simulate_altitude(float alti) {
 
 	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
 	static std::default_random_engine generator;
-	static std::normal_distribution<float> distr_alt(0.0, 0.4f);
+	static std::normal_distribution<float> distr_alt(0.0, 0.25f);
 
 	alti += distr_alt(generator);
+
+	tdd_logger_log_float(TDD_LOGGING_ALT_SIM, alti);
 
 	bme280_set_pressure(sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f));
 
@@ -306,7 +308,6 @@ static void _sensors_sim(void) {
 	last_point_ms = millis();
 
 	tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE, 100 * tanf(cur_a));
-	tdd_logger_log_float(TDD_LOGGING_ALT_SIM, alt_sim);
 
 	tdd_logger_flush();
 }

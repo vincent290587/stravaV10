@@ -273,15 +273,6 @@ void VueCRS::afficheSensors(void) {
 	(void)fxos_get_yaw(yaw_rad);
 	(void)fxos_get_pitch(pitch_rad);
 
-	// mag heading
-	const uint16_t radius = 50;
-	this->drawCircle(this->width()/2, 300, radius, LS027_PIXEL_BLACK);
-
-	int16_t x2, y2;
-	rotate_point(yaw_rad * 180. / 3.1415, this->width()/2, 300,
-			this->width()/2, 300 - radius, x2, y2);
-	this->drawLine(this->width()/2, 300, x2, y2, LS027_PIXEL_BLACK);
-
 	// pitch
 	const uint16_t bar_len = 140;
 	float val = regFenLim(pitch_rad, -0.24, 0.24, -bar_len/2, bar_len/2);
@@ -305,6 +296,26 @@ void VueCRS::afficheSensors(void) {
 	h_config.p_f_read    = fxos_histo_read;
 
 	this->HistoH(3, 6, h_config);
+
+	// mag heading
+	const uint16_t radius = 50;
+	this->drawCircle(this->width()/2, 300, radius, LS027_PIXEL_BLACK);
+
+	int16_t x2, y2;
+	rotate_point(yaw_rad * 180. / 3.1415, this->width()/2, 300,
+			this->width()/2, 300 - radius, x2, y2);
+	this->drawLine(this->width()/2, 300, x2, y2, LS027_PIXEL_BLACK, 3);
+
+	// Text info
+	float roughness[4];
+	fxos_get_roughness(roughness);
+	roughness[3] = baro.getRoughness();
+
+	this->setTextSize(2);
+	for (int i=0; i < 4; i++) {
+		this->setCursor(10, 300 + 15 * i);
+		this->print(_fmkstr(roughness[i], 1));
+	}
 }
 
 

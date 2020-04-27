@@ -151,8 +151,8 @@ void Attitude::computeFusion(void) {
 
 		// set R: observations noise
 		m_k_lin.ker.matR.unity(1);
-		m_k_lin.ker.matR.set(0, 0, 500.f); // 700 for barometer, 200 for GPS (not enough)
-		m_k_lin.ker.matR.set(1, 1, 100.f); // 100 for barometer
+		m_k_lin.ker.matR.set(0, 0, 400.f); // 300/300 is a good setting for acc_n = 1600, 400/400 fits all
+		m_k_lin.ker.matR.set(1, 1, 400.f);  //
 
 		// init X
 		m_k_lin.ker.matX.zeros();

@@ -22,6 +22,8 @@ public:
     void seaLevelForAltitude(float altitude);
 	void setCorrection(float cor_) {correction = cor_;}
 
+	float getRoughness();
+
 	bool hasSeaLevelRef(void) {return m_is_init;}
 
 
