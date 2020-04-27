@@ -6,7 +6,14 @@ GPXService.setAuthor("Vincent Golle");
 const fs = require('fs');
 const readline = require('readline');
 
-var f_name = '@100420.TXT';
+if (process.argv.length === 2) {
+    console.error('Expected at least one argument!');
+    process.exit(1);
+}
+
+var f_name = process.argv[2];
+
+console.info('Processing file ' + f_name);
 
 const readInterface = readline.createInterface({
     input: fs.createReadStream(f_name),
@@ -29,24 +36,28 @@ readInterface
     d_fields = d_fields.slice(0, -2);
     var jour = Number(d_fields);
 
-    var arr = line.split(";").map(val => Number(val));
+    if (line.charAt(0) != 'l') {
 
-    var secj = Number(arr[3]);
-    var hours = secj / 3600;
-    var mins = (secj % 3600) / 60;
-    secj = secj % 60;
+        var arr = line.split(";").map(val => Number(val));
 
-    var date_ = new Date(Date.UTC(annee, mois, jour, Math.floor(hours), Math.floor(mins), Math.floor(secj)));
-    //console.debug('date: ' + annee + ' ' + mois + ' ' + jour + ' ' + Math.floor(hours) + ' ' + Math.floor(mins) + ' ' + Math.floor(secj));
+        var secj = Number(arr[3]);
+        var hours = secj / 3600;
+        var mins = (secj % 3600) / 60;
+        secj = secj % 60;
 
-    GPXService.addPoint({
-        lat: arr[0],
-        lon: arr[1],
-        date: date_,
-        elevation: arr[2],
-        hrm: arr[5],
-        cad: arr[6],
-    });
+        var date_ = new Date(Date.UTC(annee, mois, jour, Math.floor(hours), Math.floor(mins), Math.floor(secj)));
+        //console.debug('date: ' + annee + ' ' + mois + ' ' + jour + ' ' + Math.floor(hours) + ' ' + Math.floor(mins) + ' ' + Math.floor(secj));
+
+        GPXService.addPoint({
+            lat: arr[0],
+            lon: arr[1],
+            date: date_,
+            elevation: arr[2],
+            hrm: arr[5],
+            cad: arr[6],
+        });
+
+    }
 })
 .on('close', function(line) {
 
