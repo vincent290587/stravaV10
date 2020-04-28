@@ -87,6 +87,7 @@ public:
 	float computePower(float speed_);
 
 private:
+	float dv;
 	float m_climb;
 	float m_speed_ms;
 	float m_last_save_dist;

@@ -36,6 +36,8 @@ static sKalmanDescr m_k_lin;
 
 
 Attitude::Attitude(AltiBaro &_baro) : m_baro(_baro) {
+
+	dv = 0.f;
 	m_last_save_dist = 0.;
 	m_last_stored_ele = 0.;
 	m_cur_ele = 0.;
@@ -151,8 +153,8 @@ void Attitude::computeFusion(void) {
 
 		// set R: observations noise
 		m_k_lin.ker.matR.unity(1);
-		m_k_lin.ker.matR.set(0, 0, 400.f); // 300/300 is a good setting for acc_n = 1600, 400/400 fits all
-		m_k_lin.ker.matR.set(1, 1, 400.f);  //
+		m_k_lin.ker.matR.set(0, 0, 1000.f); // 400/400 is a good setting for acc_n = 1600, 800
+		m_k_lin.ker.matR.set(1, 1, 600.f);  // 1000/600 is for oversampling limited to 1sec. of data
 
 		// init X
 		m_k_lin.ker.matX.zeros();
@@ -204,39 +206,43 @@ void Attitude::computeFusion(void) {
 
 #else
 
-	// 2 seconds time constant
-	const float taub = 2 / (2 + BARO_REFRESH_PER_MS / 1000.f);
+	static uint32_t m_update_time = 0;
+
+	// 7 seconds time constant
+	const float taub = 40 / (40 + 1.f);
 	m_cur_ele = taub * m_cur_ele + (1 - taub) * (ele);
 
-	float alti = ele;
-	static float alti_prev = ele;
+	static float alti_prev = m_cur_ele;
 
 	float pitch_rad;
 	fxos_get_pitch(pitch_rad);
 
-	// 3 seconds time constant
+	// 7 seconds time constant
 	static float alpha_bar;
-	const float tau = 3 / (3 + SENSORS_REFRESH_PER_MS / 1000.f);
-	float innov = pitch_rad;
+	const float tau = 40 / (40 + 1.f);
+	float innov = tanf(pitch_rad);
 	alpha_bar = tau * alpha_bar + (1 - tau) * (innov);
 
-	// work on alpha zero
-	if (m_speed_ms < 1.5f) {
+	float dl = m_speed_ms * 0.001f * (float)(millis() - m_update_time); // in seconds
+
+	if (dl < 1.5f) {
 		return;
 	}
+	m_update_time = millis();
 
+	// work on alpha zero
 	// about 40 seconds time constant
-	float new_alpha_z = pitch_rad - atan2f((alti - alti_prev) * 1000.f , (m_speed_ms * SENSORS_REFRESH_PER_MS));
+	float new_alpha_z = alpha_bar - (m_cur_ele - alti_prev) / dl;
 	static float alpha_zero = 0;
 	alpha_zero = new_alpha_z * 0.003f + 0.997f * alpha_zero;
 
-	alti_prev = alti;
+	alti_prev = m_cur_ele;
 
 #endif
 
 	// update vertical speed after 3 mins
 	if (att.nbsec_act > 3.f * 60.f) {
-		const float slope = tanf(alpha_bar - alpha_zero);
+		const float slope = (alpha_bar - alpha_zero);
 		att.slope = (int8_t)(100.f * slope);
 		att.vit_asc = slope * m_speed_ms;
 	}
@@ -257,19 +263,19 @@ void Attitude::computeFusion(void) {
 
 #ifdef TDD
 		tdd_logger_log_float(TDD_LOGGING_HP    , att.vit_asc);
-		tdd_logger_log_float(TDD_LOGGING_ALPHA , 180.f * (alpha_bar - alpha_zero)/3.1415f);
+		tdd_logger_log_float(TDD_LOGGING_ALPHA , 180.f * alpha_bar /3.1415f);
 		tdd_logger_log_float(TDD_LOGGING_ALPHA0, 180.f * alpha_zero / 3.1415f);
-		tdd_logger_log_float(TDD_LOGGING_EST_SLOPE, 100.0f * tanf(alpha_bar - alpha_zero));
+		tdd_logger_log_float(TDD_LOGGING_EST_SLOPE, 100.0f * (alpha_bar - alpha_zero));
 		tdd_logger_log_float(TDD_LOGGING_ALT_EST, m_cur_ele);
 #endif
 
 #ifdef USE_JSCOPE
 	{
 		// output some results to Segger JSCOPE
-		jscope.inputData(att.vit_asc, 								0);
-		jscope.inputData(180.f * (alpha_bar - alpha_zero)/3.1415f,	4);
-		jscope.inputData(180.f * alpha_zero / 3.1415f, 				8);
-		jscope.inputData(100.0f * tanf(alpha_bar - alpha_zero),		12);
+		jscope.inputData(att.vit_asc,								0);
+		jscope.inputData(180.f * alpha_bar / 3.1415f,				4);
+		jscope.inputData(180.f * alpha_zero / 3.1415f,				8);
+		jscope.inputData(100.0f * (alpha_bar - alpha_zero),			12);
 	}
 
 	jscope.flush();
@@ -491,7 +497,10 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 		this->computeDistance(loc_, date_);
 	}
 
-	m_speed_ms = loc_.speed / 3.6f;
+	// update speed and acceleration
+	const float n_speed = loc_.speed / 3.6f;
+	dv = n_speed - m_speed_ms;
+	m_speed_ms = n_speed;
 
 #ifdef TDD
 	tdd_logger_log_float(TDD_LOGGING_CUR_SPEED, loc_.speed);
@@ -533,6 +542,7 @@ float Attitude::computePower(float speed_) {
 	power += 9.81f * weight * att.vit_asc; // gravity
 	power += 0.004f * 9.81f * weight * m_speed_ms; // sol + meca
 	power += 0.204f * m_speed_ms * m_speed_ms * m_speed_ms; // air
+	power += weight * m_speed_ms * dv; // acceleration
 	power *= 1.025f; // transmission (rendement velo)
 
 #ifdef TDD

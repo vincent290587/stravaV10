@@ -69,7 +69,7 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
 
 #define MAG_CAL_ID          0xCF
 
-#define MAX_ACCEL_AVG_COUNT 75U
+#define MAX_ACCEL_AVG_COUNT 50U
 
 /* multiplicative conversion constants */
 #define DegToRad 0.017453292f

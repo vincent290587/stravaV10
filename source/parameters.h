@@ -55,7 +55,7 @@
 
 #define ATT_BUFFER_NB_ELEM             5
 
-#define FILTRE_NB                      30
+#define FILTRE_NB                      10
 
 #define USER_WEIGHT                    79U
 
