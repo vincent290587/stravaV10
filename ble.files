@@ -1,6 +1,7 @@
 
 # Source files common to all targets
 SRC_FILES += \
+  $(wildcard $(PROJ_DIR)/libraries/ble_services/ble_cp_c/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/ble_services/ble_lns_c/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/ble_services/ble_komoot_c/*.c) \
   $(wildcard $(SDK_ROOT)/components/ble/ble_services/ble_ancs_c/*.c) \
@@ -34,5 +35,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_soc.c
   
 INC_FOLDERS += \
+  $(PROJ_DIR)/libraries/ble_services/ble_cp_c \
   $(PROJ_DIR)/libraries/ble_services/ble_lns_c \
   $(PROJ_DIR)/libraries/ble_services/ble_komoot_c

@@ -11300,11 +11300,11 @@
 #define BLE_IAS_BLE_OBSERVER_PRIO 2
 #endif
 
-// <o> BLE_IAS_C_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the Immediate Alert Service Client.
+// <o> BLE_CP_C_BLE_OBSERVER_PRIO
+// <i> Priority with which BLE events are dispatched.
 
-#ifndef BLE_IAS_C_BLE_OBSERVER_PRIO
-#define BLE_IAS_C_BLE_OBSERVER_PRIO 2
+#ifndef BLE_CP_C_BLE_OBSERVER_PRIO
+#define BLE_CP_C_BLE_OBSERVER_PRIO 2
 #endif
 
 // <o> BLE_LBS_BLE_OBSERVER_PRIO  

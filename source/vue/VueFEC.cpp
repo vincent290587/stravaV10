@@ -80,6 +80,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
 		this->cadranRR(4, VUE_FEC_NB_LINES, 2, "RR", rrZones);
 
+#if 0
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();
 		h_config.ref_value   = (tHistoValue)210;
@@ -88,12 +89,72 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		h_config.p_f_read    = _vue_fec_pw_rb_read;
 
 		this->HistoH(5, VUE_FEC_NB_LINES, h_config);
+#else
+		this->cadranPowerVector(5, VUE_FEC_NB_LINES, NULL, powerVector);
+#endif
 	}
 
-	this->cadran(6, VUE_FEC_NB_LINES, 1, "Cur", _imkstr((int)stc.getCurrent()), "mA");
-	this->cadran(6, VUE_FEC_NB_LINES, 2, "SOC", _imkstr((int)percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
+#if 0
+	this->cadran(7, VUE_FEC_NB_LINES, 1, "Cur", _imkstr((int)stc.getCurrent()), "mA");
+	this->cadran(7, VUE_FEC_NB_LINES, 2, "SOC", _imkstr((int)percentageBatt(stc.getVoltage(), stc.getCurrent())), "%");
+#endif
 
 	return res;
+}
+
+// Unit is in newton/meter with a resolution of 1/32
+#define SCALE_TORQUE(X, Y)         (((X) * 80) / (Y))     /* 4 LSB is one pixel */
+
+void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ, sPowerVector &vector) {
+
+	// center coordinates
+	const int16_t xc = _width / 2;
+	const int16_t yc = _height / nb_lig * p_lig;
+
+	// calculate max torque for scale
+	int16_t max_torque = vector.inst_torque_mag_array[0];
+	for (int i=1; i < vector.array_size; i++) {
+
+		if (vector.inst_torque_mag_array[i] > max_torque) {
+			max_torque = vector.inst_torque_mag_array[i];
+		}
+	}
+
+	// empty array
+	if (!vector.array_size ||
+			max_torque == 0) {
+		return;
+	}
+
+	// first point coordinates
+	int16_t x1;
+	int16_t y1;
+	int16_t ppower = vector.inst_torque_mag_array[0];
+	rotate_point((float)vector.first_crank_angle,
+			xc, yc,
+			xc, yc - SCALE_TORQUE(ppower, max_torque),
+			x1, y1);
+
+	int16_t xp, yp;
+	int16_t x2=x1, y2=y1;
+	for (int i=1; i < vector.array_size; i++) {
+
+		int16_t ppower = vector.inst_torque_mag_array[i];
+		int16_t y2 = yc - SCALE_TORQUE(ppower, max_torque);
+		rotate_point((float)vector.first_crank_angle + i * 360.f / vector.array_size,
+				xc, yc,
+				xc, y2,
+				xp, yp);
+
+		this->drawLine(x1, y1, xp, yp, LS027_PIXEL_BLACK, 3);
+
+		x1 = xp;
+		y1 = yp;
+	}
+
+	// close the figure
+	this->drawLine(xp, yp, x2, y2, LS027_PIXEL_BLACK, 2);
+
 }
 
 void VueFEC::cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, BinnedData &data) {

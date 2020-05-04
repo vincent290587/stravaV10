@@ -90,6 +90,8 @@ extern PowerZone     zPower;
 
 extern RRZone        rrZones;
 
+extern sPowerVector  powerVector;
+
 extern UserSettings   u_settings;
 
 extern "C" {

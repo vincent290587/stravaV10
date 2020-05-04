@@ -17,7 +17,7 @@
 /**
  * rotation d'angle angle et de centre (cx, cy)
  *
- * @param angle
+ * @param angle in degrees
  * @param cx
  * @param cy
  * @param x1

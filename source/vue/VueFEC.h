@@ -32,6 +32,8 @@ public:
 
 	void cadranZones(uint8_t p_lig, uint8_t nb_lig, uint8_t p_col, const char *champ, BinnedData &data);
 
+	void cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ, sPowerVector &vector);
+
 protected:
 	eVueFECScreenModes m_fec_screen_mode;
 

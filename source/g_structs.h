@@ -25,6 +25,17 @@ typedef struct {
 } sKomootNavigation;
 
 typedef struct {
+	uint16_t cumul_crank_rev;
+	uint16_t last_crank_evt;       // Unit is in seconds with a resolution of 1/1024.
+	uint16_t first_crank_angle;    // Unit is in degrees with a resolution of 1, starts at midnight for right pedal
+	union {
+		int16_t inst_force_mag_array[64];  // The unit is in newtons with a resolution of 1
+		int16_t inst_torque_mag_array[64]; // Unit is in newton/meter with a resolution of 1/32
+	};
+	uint16_t array_size;
+} sPowerVector;
+
+typedef struct {
 	uint8_t bpm;
 	uint16_t rr;
 	uint32_t timestamp;

@@ -25,6 +25,7 @@
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_scan.h"
 #include "helper.h"
+#include "ble_cp_c.h"
 #include "ble_bas_c.h"
 #include "ble_nus_c.h"
 #include "ble_advdata.h"
@@ -67,7 +68,6 @@
 #define SLAVE_LATENCY               2                                   /**< Determines slave latency in counts of connection events. */
 #define SUPERVISION_TIMEOUT         MSEC_TO_UNITS(4000, UNIT_10_MS)     /**< Determines supervision time-out in units of 10 millisecond. */
 
-#define TARGET_UUID                 BLE_UUID_LOCATION_AND_NAVIGATION_SERVICE         /**< Target device name that application is looking for. */
 #define TARGET_NAME                 "stravaAP"
 
 
@@ -82,6 +82,7 @@ typedef enum {
 
 NRF_BLE_SCAN_DEF(m_scan);
 BLE_NUS_C_DEF(m_ble_nus_c);
+BLE_CP_C_DEF(m_ble_cp_c);
 BLE_KOMOOT_C_DEF(m_ble_komoot_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
@@ -103,6 +104,7 @@ static uint16_t m_mtu_length = 20;
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
+sPowerVector powerVector;
 
 static void scan_start(void);
 
@@ -118,6 +120,7 @@ static void scan_start(void);
  */
 static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
+	ble_cp_c_on_db_disc_evt(&m_ble_cp_c, p_evt);
 	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
 	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
 	ble_komoot_c_on_db_disc_evt(&m_ble_komoot_c, p_evt);
@@ -287,6 +290,61 @@ static void ble_stack_init(void)
 	memcpy(device_name, BLE_DEVICE_NAME, strlen(BLE_DEVICE_NAME));
 	err_code = sd_ble_gap_device_name_set(&sec_mode, device_name, strlen(BLE_DEVICE_NAME));
 }
+
+/**@brief Heart Rate Collector Handler.
+ */
+static void cp_c_evt_handler(ble_cp_c_t * p_cp_c, ble_cp_c_evt_t * p_cp_c_evt)
+{
+    ret_code_t err_code;
+
+    switch (p_cp_c_evt->evt_type)
+    {
+        case BLE_CP_C_EVT_DISCOVERY_COMPLETE:
+        {
+            NRF_LOG_DEBUG("FTMS service discovered.");
+
+            err_code = ble_cp_c_handles_assign(p_cp_c,
+            		p_cp_c_evt->conn_handle,
+					&p_cp_c_evt->params.char_handles);
+            APP_ERROR_CHECK(err_code);
+
+//#if SEC_PARAM_BOND
+//            // Initiate bonding.
+//            err_code = pm_conn_secure(p_cp_c_evt->conn_handle, false);
+//            if (err_code != NRF_ERROR_BUSY)
+//            {
+//                APP_ERROR_CHECK(err_code);
+//            }
+//#endif
+
+            // FTMS discovered. Enable notifications
+            err_code = ble_cp_c_pv_notif_enable(p_cp_c);
+            APP_ERROR_CHECK(err_code);
+        } break;
+
+        case BLE_CP_C_EVT_VECTOR_RECV:
+        {
+            NRF_LOG_INFO("Crank revs: %u", p_cp_c_evt->params.vector_evt.cumul_crank_rev);
+            NRF_LOG_INFO("Array pos : %u", p_cp_c_evt->params.vector_evt.array_size);
+
+            powerVector.array_size = p_cp_c_evt->params.vector_evt.array_size;
+            powerVector.cumul_crank_rev = p_cp_c_evt->params.vector_evt.cumul_crank_rev;
+            powerVector.first_crank_angle = p_cp_c_evt->params.vector_evt.first_crank_angle;
+            powerVector.last_crank_evt = p_cp_c_evt->params.vector_evt.last_crank_evt;
+            memcpy(powerVector.inst_torque_mag_array, p_cp_c_evt->params.vector_evt.inst_torque_mag_array, sizeof(powerVector.inst_torque_mag_array));
+
+        } break;
+
+        case BLE_CP_C_EVT_POWER_RECV:
+        {
+            NRF_LOG_DEBUG("BLE_CP_C_EVT_POWER_RECV");
+        } break;
+
+        default:
+            break;
+    }
+}
+
 
 /**@brief Heart Rate Collector Handler.
  */
@@ -492,6 +550,23 @@ static void _service_c_error_handler(uint32_t nrf_error)
 /**
  * @brief Heart rate collector initialization.
  */
+static void cp_c_init(void)
+{
+    ble_cp_c_init_t cp_c_init_obj;
+
+    cp_c_init_obj.evt_handler   = cp_c_evt_handler;
+    cp_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+    cp_c_init_obj.error_handler = _service_c_error_handler;
+
+    memset(&m_ble_cp_c, 0, sizeof(m_ble_cp_c));
+
+    ret_code_t err_code = ble_cp_c_init(&m_ble_cp_c, &cp_c_init_obj);
+    APP_ERROR_CHECK(err_code);
+}
+
+/**
+ * @brief Heart rate collector initialization.
+ */
 static void lns_c_init(void)
 {
 	ble_lns_c_init_t lns_c_init_obj;
@@ -614,9 +689,16 @@ static void scan_init(void)
 	init_scan.conn_cfg_tag     = APP_BLE_CONN_CFG_TAG;
 
 	/**@brief NUS UUID. */
+	ble_uuid_t const m_cp_uuid =
+	{
+			.uuid = BLE_UUID_CYCLING_POWER_SERVICE,
+			.type = BLE_UUID_TYPE_BLE,
+	};
+
+	/**@brief NUS UUID. */
 	ble_uuid_t const m_lns_uuid =
 	{
-			.uuid = TARGET_UUID,
+			.uuid = BLE_UUID_LOCATION_AND_NAVIGATION_SERVICE,
 			.type = m_ble_lns_c.uuid_type
 	};
 
@@ -631,6 +713,9 @@ static void scan_init(void)
 	APP_ERROR_CHECK(err_code);
 
 	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_NAME_FILTER, TARGET_NAME);
+	APP_ERROR_CHECK(err_code);
+
+	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_UUID_FILTER, &m_cp_uuid);
 	APP_ERROR_CHECK(err_code);
 
 	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_UUID_FILTER, &m_lns_uuid);
@@ -751,6 +836,7 @@ void ble_init(void)
 	gatt_init();
 	db_discovery_init();
 
+	cp_c_init();
 	lns_c_init();
 	nus_c_init();
 	komoot_c_init();

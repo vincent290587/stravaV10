@@ -41,7 +41,7 @@ PowerZone     zPower;
 
 RRZone        rrZones;
 
-UserSettings   u_settings;
+UserSettings  u_settings;
 
 ListeSegments mes_segments;
 
@@ -307,7 +307,7 @@ void boucle_task(void * p_context)
 
 	// potentially change mode
 //	vue.setCurrentMode(eVueGlobalScreenFEC);
-//	boucle.changeMode(eBoucleGlobalModesFEC);
+//	boucle__change_mode(eBoucleGlobalModesFEC);
 
 	for (;;)
 	{
