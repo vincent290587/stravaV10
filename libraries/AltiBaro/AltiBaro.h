@@ -34,7 +34,7 @@ public:
 	void sensorInit(void);
 
 private:
-	bool m_is_init;
+	bool  m_is_init;
 	float sea_level_pressure;
 	float correction;
 	float m_alti_f;

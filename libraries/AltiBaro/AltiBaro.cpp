@@ -91,9 +91,23 @@ float AltiBaro::getRoughness() {
 
 	float res = 0.f;
 
-	for (int i=1; i< FILTRE_NB; i++) {
+	// calculate the average
+	float press = 0.f;
+	for (int i=0; i< FILTRE_NB; i++) {
 
-		res += 100.f * fabsf(m_meas_buff[i] - m_meas_buff[0]) / FILTRE_NB;
+		// check that buffer is filled
+		if (m_meas_buff[i] > 0.f) {
+			press += m_meas_buff[i];
+		} else {
+			return res;
+		}
+	}
+	press /= (float)FILTRE_NB;
+
+	// calculate difference to the average
+	for (int i=0; i< FILTRE_NB; i++) {
+
+		res += 100.f * fabsf(m_meas_buff[i] - press) / FILTRE_NB;
 	}
 
 	return res;
@@ -129,11 +143,12 @@ bool AltiBaro::computeAlti(float& alti_) {
 
 		// check that buffer is filled
 		if (m_meas_buff[i] > 0.f) {
-			press += m_meas_buff[i] / (float)FILTRE_NB;
+			press += m_meas_buff[i];
 		} else {
 			return false;
 		}
 	}
+	press /= (float)FILTRE_NB;
 
 	alti_ = this->pressureToAltitude(press);
 
