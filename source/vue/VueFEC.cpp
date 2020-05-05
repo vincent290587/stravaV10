@@ -112,8 +112,8 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	const int16_t yc = _height / nb_lig * p_lig;
 
 	// calculate max torque for scale
-	int16_t max_torque = vector.inst_torque_mag_array[0];
-	for (int i=1; i < vector.array_size; i++) {
+	int16_t max_torque = 100;
+	for (int i=0; i < vector.array_size; i++) {
 
 		if (vector.inst_torque_mag_array[i] > max_torque) {
 			max_torque = vector.inst_torque_mag_array[i];
@@ -121,8 +121,7 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	}
 
 	// empty array
-	if (!vector.array_size ||
-			max_torque == 0) {
+	if (!vector.array_size) {
 		return;
 	}
 

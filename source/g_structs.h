@@ -33,6 +33,7 @@ typedef struct {
 		int16_t inst_torque_mag_array[64]; // Unit is in newton/meter with a resolution of 1/32
 	};
 	uint16_t array_size;
+	int16_t inst_power;
 } sPowerVector;
 
 typedef struct {

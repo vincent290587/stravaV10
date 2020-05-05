@@ -19,6 +19,9 @@
 #if defined (BLE_STACK_SUPPORT_REQD)
 #include "ble_api_base.h"
 #endif
+#if defined(ANT_STACK_SUPPORT_REQD) || defined(TDD)
+#include "fec.h"
+#endif
 
 static tHistoValue m_st_buffer[FEC_PW_BUFFER_NB_ELEM];
 
@@ -40,6 +43,10 @@ void BoucleFEC::init_internal(void) {
 
 	// turn GPS OFF
 	gps_mgmt.standby();
+
+#if defined(ANT_STACK_SUPPORT_REQD) || defined(TDD)
+	fec_profile_start();
+#endif
 }
 
 void BoucleFEC::invalidate_internal(void) {

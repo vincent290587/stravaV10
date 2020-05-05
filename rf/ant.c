@@ -357,7 +357,7 @@ void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id)
 	// Open the ANT channels
 	hrm_profile_start();
 	bsc_profile_start();
-	fec_profile_start();
+//	fec_profile_start();
 
 //	glasses_profile_start();
 

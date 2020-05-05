@@ -92,7 +92,6 @@ static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  
 
 static volatile bool m_nus_cts = false;
 static volatile bool m_connected = false;
-static bool m_rssi_changed = false;
 static uint16_t m_nus_packet_nb = 0;
 static uint16_t m_mtu_length = 20;
 
@@ -136,7 +135,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	case BLE_GAP_EVT_CONNECTED:
 	{
 		LOG_INFO("Connected handle 0x%x.", p_gap_evt->conn_handle);
-		m_connected = true;
 
 		m_retry_db_disc = false;
 		m_pending_db_disc_conn = p_gap_evt->conn_handle;
@@ -163,14 +161,11 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 				p_gap_evt->conn_handle,
 				p_ble_evt->evt.gap_evt.params.disconnected.reason);
 
-		m_connected = false;
-
 		scan_start();
 
 	} break;
 
 	case BLE_GAP_EVT_RSSI_CHANGED:
-		m_rssi_changed = true;
 		break;
 
 	case BLE_GAP_EVT_TIMEOUT:
@@ -331,16 +326,8 @@ static void cp_c_evt_handler(ble_cp_c_t * p_cp_c, ble_cp_c_evt_t * p_cp_c_evt)
 	{
 		NRF_LOG_DEBUG("BLE_CP_C_EVT_POWER_RECV");
 
-		if (m_rssi_changed) {
-			m_rssi_changed = false;
+		powerVector.inst_power = p_cp_c_evt->params.power_meas.inst_power;
 
-			int8_t rssi;
-			uint8_t ch_index;
-			err_code = sd_ble_gap_rssi_get(p_cp_c->conn_handle, &rssi, &ch_index);
-			APP_ERROR_CHECK(err_code);
-
-			NRF_LOG_INFO("FTMS RSSI: %d", rssi);
-		}
 	} break;
 
 	default:
@@ -443,6 +430,8 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		LOG_INFO("Requesting long NUS MTU");
 		err_code = nrf_ble_gatt_data_length_set(&m_gatt, p_evt->conn_handle, 200);      // UPDATE MTU HERE
 		APP_ERROR_CHECK(err_code);
+
+		m_connected = true;
 		break;
 
 	case BLE_NUS_C_EVT_NUS_TX_EVT:
@@ -473,6 +462,7 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		break;
 
 	case BLE_NUS_C_EVT_DISCONNECTED:
+		m_connected = false;
 		if (m_nus_xfer_state == eNusTransferStateRun) m_nus_xfer_state = eNusTransferStateFinish;
 		break;
 	}
