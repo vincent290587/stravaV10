@@ -290,6 +290,30 @@ void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
 
 /**
  *
+ * Limits ANT+ search disruptions to BLE
+ *
+ * https://www.thisisant.com/forum/viewthread/6768/
+ */
+static void _ant_coex_setup(uint8_t ucChannel) {
+
+	ret_code_t err_code;
+	ANT_BUFFER_PTR readCfg;
+	uint8_t buffer[10];
+
+	readCfg.ucBufferSize = 10;
+	readCfg.pucBuffer = &buffer[0];
+
+	err_code = sd_ant_coex_config_get(ucChannel, &readCfg, NULL);
+	APP_ERROR_CHECK(err_code);
+
+	readCfg.pucBuffer[0] &= ~0x08; // disable fixed search hp interval priority config
+
+	err_code = sd_ant_coex_config_set(ucChannel, &readCfg, NULL);
+	APP_ERROR_CHECK(err_code);
+}
+
+/**
+ *
  */
 void ant_setup_init(void) {
 
@@ -324,6 +348,11 @@ void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id)
 			FEC_DEVICE_TYPE,
 			WILDCARD_TRANSMISSION_TYPE);
 	APP_ERROR_CHECK(err_code);
+
+	// setup BLE coexistence
+	_ant_coex_setup(HRM_CHANNEL_NUMBER);
+	_ant_coex_setup(BSC_CHANNEL_NUMBER);
+	_ant_coex_setup(FEC_CHANNEL_NUMBER);
 
 	// Open the ANT channels
 	hrm_profile_start();

@@ -8,6 +8,8 @@
 #ifndef SOURCE_PARAMETERS_H_
 #define SOURCE_PARAMETERS_H_
 
+#define USE_ANT_SEARCH
+
 #define APP_TIMEOUT_DELAY_MS           5
 
 #define S_TO_MS(X)                     ((X)*1000)
