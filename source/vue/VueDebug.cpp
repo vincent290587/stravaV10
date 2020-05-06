@@ -24,8 +24,20 @@ void VueDebug::displayDebug() {
 
 	locator.displayGPS2();
 
-	info = String("STC: ") + String((int)stc.getCurrent());
+	vue.println("  ----- SNS -----");
+
+	info = String(" STC: ") + String((int)stc.getCurrent());
+	info += "mA @ ";
+	info += String((int)(stc.getVoltage()*1000.f));
+	info += "mV";
 	vue.println(info);
+
+	vue.println("  ----- MEM -----");
+
+	String segs = " ";
+	segs += mes_segments.size();
+	segs += " segments loaded";
+	vue.println(segs);
 
 	this->cadranH(6, VUE_GPS_NB_LINES, "Time", _timemkstr(att.date, ':'), NULL);
 

@@ -443,8 +443,6 @@ void Locator::displayGPS2(void) {
 		vue.println(line);
 	}
 
-	vue.println("  ----- MEM -----");
-
 	sysview_task_void_exit(Ls027Print);
 
 }

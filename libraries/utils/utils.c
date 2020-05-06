@@ -13,7 +13,7 @@
 #include "segger_wrapper.h"
 
 
-#define BATT_INT_RES                   0.155f
+#define BATT_INT_RES                   0.273f
 
 #define FACTOR 100000.0f
 
@@ -305,7 +305,7 @@ float percentageBatt(float tensionValue, float current) {
     } else if (tensionValue > 3.2f) {
         fp_ = powf(10.f, -11.4f) * powf(tensionValue, 22.315f);
     } else {
-        fp_ = -1.f;
+        fp_ = 0.f;
     }
 
     return fp_;
