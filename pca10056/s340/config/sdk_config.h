@@ -11648,7 +11648,7 @@
 // <i> Priority for dispatching the BLE events to the Scanning Module.
 
 #ifndef NRF_BLE_SCAN_OBSERVER_PRIO
-#define NRF_BLE_SCAN_OBSERVER_PRIO 1
+#define NRF_BLE_SCAN_OBSERVER_PRIO 0
 #endif
 
 // </h> 
