@@ -31,8 +31,6 @@ extern ant_fec_message_layout_t m_fec_message_payload;
 
 /////////////  FUNCTIONS
 
-#ifdef ANT_STACK_SUPPORT_REQD
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,7 +41,11 @@ void fec_set_control(sFecControl* tbc);
 
 void roller_manager_tasks(void);
 
+#ifdef ANT_STACK_SUPPORT_REQD
+
 void ant_evt_fec (ant_evt_t * p_ant_evt);
+
+#endif
 
 void fec_profile_setup(void);
 
@@ -51,8 +53,6 @@ void fec_profile_start(void);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
 
 #endif /* FEC_H_ */

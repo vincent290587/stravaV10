@@ -39,8 +39,6 @@ protected:
 
 	eVueFECScreenModes tasksFEC();
 
-private:
-	uint32_t m_el_time;
 };
 
 #endif /* SOURCE_VUE_VUEFEC_H_ */

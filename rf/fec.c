@@ -111,6 +111,8 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
  */
 static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 {
+	static uint16_t old_time = 0;
+
 	switch (event)
 	{
 	case ANT_FEC_PAGE_1_UPDATED:
@@ -125,8 +127,22 @@ static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t eve
 
 	case ANT_FEC_PAGE_16_UPDATED:
 	{
-		fec_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
 		fec_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
+
+		uint16_t new_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
+
+		if (new_time < old_time) {
+			// treat rollover
+			uint8_t diff = (uint8_t)new_time - (uint8_t)old_time;
+			fec_info.el_time += diff;
+		} else if (old_time < new_time) {
+
+			fec_info.el_time += new_time - old_time;
+		} else {
+			return;
+		}
+		old_time = new_time;
+
 		w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	}
 	break;

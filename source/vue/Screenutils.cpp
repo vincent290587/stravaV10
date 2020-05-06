@@ -15,7 +15,8 @@
 
 
 /**
- * rotation d'angle angle et de centre (cx, cy)
+ * rotation of angle "angle" around the point (cx, cy)
+ * Positive right-handed
  *
  * @param angle in degrees
  * @param cx

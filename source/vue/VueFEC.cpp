@@ -16,7 +16,7 @@
 #define VUE_FEC_NB_LINES            6
 
 VueFEC::VueFEC() : Adafruit_GFX(0, 0) {
-	m_el_time = 0;
+
 	m_fec_screen_mode = eVueFECScreenInit;
 }
 
@@ -33,8 +33,6 @@ static tHistoValue _vue_fec_pw_rb_read(uint16_t ind_) {
 
 eVueFECScreenModes VueFEC::tasksFEC() {
 
-	static uint8_t el_time_prev = 0;
-
 	eVueFECScreenModes res = m_fec_screen_mode;
 
 	if (m_fec_screen_mode == eVueFECScreenInit) {
@@ -46,30 +44,19 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 
 		LOG_INFO("VueFEC waiting for sensors");
 
-		if (!m_el_time) vue.addNotif("FEC", "Connecting...", 5, eNotificationTypeComplete);
-
-		m_el_time = 1;
-
 		if (fec_info.el_time) {
 			// FEC just became active
 			m_fec_screen_mode = eVueFECScreenDataFull;
-			el_time_prev = fec_info.el_time;
+			return m_fec_screen_mode;
 		}
+
+		vue.addNotif("FEC", "Connecting...", 5, eNotificationTypeComplete);
 
 	} else if (m_fec_screen_mode == eVueFECScreenDataFull) {
 
 		LOG_INFO("VueFEC update full data");
 
-		// treat rollover
-		int16_t rollof = (int16_t)fec_info.el_time - el_time_prev;
-		m_el_time += rollof;
-		if (el_time_prev > fec_info.el_time) {
-			m_el_time += 0xFF + 1;
-			LOG_DEBUG("Rollover %u %u %lu %lu", el_time_prev, fec_info_el_time, m_el_time, m_el_time_ref);
-		}
-		el_time_prev = fec_info.el_time;
-
-		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(m_el_time, ':'), NULL);
+		this->cadranH(1, VUE_FEC_NB_LINES, "Time", _secjmkstr(fec_info.el_time, ':'), NULL);
 
 		this->cadran(2, VUE_FEC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(2, VUE_FEC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
@@ -129,7 +116,8 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	int16_t x1;
 	int16_t y1;
 	int16_t ppower = vector.inst_torque_mag_array[0];
-	rotate_point((float)vector.first_crank_angle,
+	float angle = - (float)vector.first_crank_angle;
+	rotate_point(angle,
 			xc, yc,
 			xc, yc - SCALE_TORQUE(ppower, max_torque),
 			x1, y1);
@@ -140,7 +128,8 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 
 		int16_t ppower = vector.inst_torque_mag_array[i];
 		int16_t y2 = yc - SCALE_TORQUE(ppower, max_torque);
-		rotate_point((float)vector.first_crank_angle + i * 360.f / vector.array_size,
+		float angle = - ((float)vector.first_crank_angle + i * 360.f / vector.array_size);
+		rotate_point(angle,
 				xc, yc,
 				xc, y2,
 				xp, yp);
@@ -152,7 +141,7 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	}
 
 	// close the figure
-	this->drawLine(xp, yp, x2, y2, LS027_PIXEL_BLACK, 2);
+	this->drawLine(xp, yp, x2, y2, LS027_PIXEL_BLACK, 3);
 
 }
 

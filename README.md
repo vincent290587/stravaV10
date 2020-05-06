@@ -45,6 +45,7 @@ make flash            (or) make dfu
 - [x] User settings (FTP, weight)
 - [x] Better LED interaction
 - [x] Connection to a BLE AP to unload recorded data
+- [x] BLE Cycling power vector (same as ANT+ cycling dynamics)
 
 
 ## Screenshots
