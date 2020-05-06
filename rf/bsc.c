@@ -226,8 +226,6 @@ static void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t eve
  */
 void ant_evt_bsc (ant_evt_t * p_ant_evt)
 {
-	ret_code_t err_code = NRF_SUCCESS;
-
 	uint16_t pusDeviceNumber = 0;
 	uint8_t pucDeviceType    = 0;
 	uint8_t pucTransmitType  = 0;
