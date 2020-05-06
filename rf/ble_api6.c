@@ -48,7 +48,7 @@
 #define APP_BLE_OBSERVER_PRIO       0                                   /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 #define APP_SOC_OBSERVER_PRIO       1                                   /**< Applications' SoC observer priority. You shoulnd't need to modify this value. */
 
-#define SCAN_DURATION               0x0000                              /**< Duration of the scanning in units of 10 milliseconds. If set to 0x0000, scanning will continue until it is explicitly disabled. */
+#define SCAN_DURATION               MSEC_TO_UNITS(3*60000, UNIT_10_MS)     /**< Duration of the scanning in units of 10 milliseconds. If set to 0x0000, scanning will continue until it is explicitly disabled. */
 
 #define TARGET_NAME                 "stravaAP"
 
@@ -649,8 +649,8 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 
 	case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT:
 	{
-		NRF_LOG_INFO("Scan timed out.");
-		scan_start();
+		NRF_LOG_INFO("BLE Scan timed out.");
+		//scan_start();
 	} break;
 
 	default:

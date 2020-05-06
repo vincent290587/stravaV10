@@ -11,7 +11,6 @@
 #include "nrf_soc.h"
 #include "nrf_sdh.h"
 #include "millis.h"
-#include "app_timer.h"
 #include "ant_device_manager.h"
 #include "parameters.h"
 
@@ -25,10 +24,6 @@
 
 #include "hrm.h"
 
-#define ANT_DELAY                       APP_TIMER_TICKS(30000)
-
-APP_TIMER_DEF(m_sec_hrm);
-
 
 /** @snippet [ANT HRM RX Instance] */
 HRM_DISP_CHANNEL_CONFIG_DEF(m_ant_hrm,
@@ -39,6 +34,7 @@ HRM_DISP_CHANNEL_CONFIG_DEF(m_ant_hrm,
 		HRM_MSG_PERIOD_4Hz);
 ant_hrm_profile_t           m_ant_hrm;
 
+static uint8_t m_reconn_counts = 0;
 static uint8_t is_hrm_init = 0;
 
 /**
@@ -50,6 +46,8 @@ static void hrm_connect(void * p_context)
 
 	err_code = ant_hrm_disp_open(&m_ant_hrm);
 	APP_ERROR_CHECK(err_code);
+
+	NRF_LOG_INFO("HRM Search restarted");
 }
 
 /**@brief Handle received ANT+ HRM data.
@@ -70,7 +68,9 @@ static void ant_hrm_evt_handler(ant_hrm_profile_t * p_profile, ant_hrm_evt_t eve
 	{
 	case ANT_HRM_PAGE_0_UPDATED:
 
+		m_reconn_counts = 0;
 		hrm_info.bpm = p_profile->page_0.computed_heart_rate;
+		break;
 
 		/* fall through */
 	case ANT_HRM_PAGE_1_UPDATED:
@@ -127,18 +127,28 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
 
 			if (pusDeviceNumber) is_hrm_init = 1;
 		}
-		LOG_INFO("HRM RX\r\n");
+		NRF_LOG_INFO("HRM RX");
 		ant_hrm_disp_evt_handler(p_ant_evt, &m_ant_hrm);
 		break;
 	case EVENT_RX_FAIL:
 		break;
 	case EVENT_RX_FAIL_GO_TO_SEARCH:
+		NRF_LOG_INFO("HRM EVENT_RX_SEARCH_TIMEOUT");
 		break;
 	case EVENT_RX_SEARCH_TIMEOUT:
+		NRF_LOG_INFO("HRM EVENT_RX_SEARCH_TIMEOUT");
 		break;
 	case EVENT_CHANNEL_CLOSED:
+		NRF_LOG_INFO("HRM EVENT_CHANNEL_CLOSED");
 		is_hrm_init = 0;
-		err_code = app_timer_start(m_sec_hrm, ANT_DELAY, NULL);
+		if (m_reconn_counts < 5) {
+			m_reconn_counts++;
+			hrm_connect(NULL);
+		}
+		break;
+
+	default:
+		NRF_LOG_INFO("HRM evt %u", p_ant_evt->event);
 		break;
 	}
 
@@ -149,10 +159,6 @@ void ant_evt_hrm (ant_evt_t * p_ant_evt)
  */
 void hrm_init(void)
 {
-	ret_code_t err_code;
-
-	err_code = app_timer_create(&m_sec_hrm, APP_TIMER_MODE_SINGLE_SHOT, hrm_connect);
-	APP_ERROR_CHECK(err_code);
 
 }
 
@@ -164,7 +170,7 @@ void hrm_profile_setup(void) {
 
 	// Disable high priority search to minimize disruption to other channels while searching
 	ant_search_config.high_priority_timeout = ANT_HIGH_PRIORITY_SEARCH_DISABLE;
-	ant_search_config.low_priority_timeout  = 80;
+	ant_search_config.low_priority_timeout  = 80; ///< Low priority time-out (in 2.5 second increments).
 	ant_search_config.search_sharing_cycles = 3;
 	ant_search_config.search_priority       = ANT_SEARCH_PRIORITY_LOWEST;
 #endif

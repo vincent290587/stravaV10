@@ -78,8 +78,8 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 		if (pusDeviceNumber && !is_fec_init) {
 			is_fec_init = 1;
 
-			err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
-			APP_ERROR_CHECK(err_code);
+//			err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
+//			APP_ERROR_CHECK(err_code);
 		}
 	}
 	ant_fec_disp_evt_handler(p_ant_evt, &m_ant_fec);

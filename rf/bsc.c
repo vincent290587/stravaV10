@@ -18,7 +18,6 @@
 #include "app_error.h"
 #include "nrf_soc.h"
 #include "nrf_sdh.h"
-#include "app_timer.h"
 #include "ant_device_manager.h"
 
 #ifdef ANT_STACK_SUPPORT_REQD
@@ -31,8 +30,6 @@
 #include "segger_wrapper.h"
 
 #include "bsc.h"
-
-#define ANT_DELAY                       APP_TIMER_TICKS(30000)
 
 
 /** @snippet [ANT BSC RX Instance] */
@@ -48,7 +45,6 @@
 #define SPEED_COEFFICIENT           (WHEEL_CIRCUMFERENCE * BSC_EVT_TIME_FACTOR * BSC_MS_TO_KPH_NUM \
 		/ BSC_MS_TO_KPH_DEN)                      /**< Coefficient for speed value calculation */
 
-APP_TIMER_DEF(m_sec_bsc);
 
 static void ant_bsc_evt_handler(ant_bsc_profile_t * p_profile, ant_bsc_evt_t event);
 
@@ -80,6 +76,7 @@ typedef struct
 static bsc_disp_calc_data_t m_speed_calc_data   = {0};
 static bsc_disp_calc_data_t m_cadence_calc_data = {0};
 
+static uint8_t m_reconn_counts = 0;
 static uint8_t is_cad_init = 0;
 
 
@@ -92,6 +89,8 @@ static void bsc_connect(void * p_context)
 
 	err_code = ant_bsc_disp_open(&m_ant_bsc);
 	APP_ERROR_CHECK(err_code);
+
+	NRF_LOG_INFO("BSC Search restarted");
 }
 
 static inline uint32_t calculate_cadence(int32_t rev_cnt, int32_t evt_time)
@@ -236,6 +235,7 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
 	switch (p_ant_evt->event)
 	{
 	case EVENT_RX:
+		m_reconn_counts = 0;
 		if (!is_cad_init) {
 			sd_ant_channel_id_get (BSC_CHANNEL_NUMBER,
 					&pusDeviceNumber, &pucDeviceType, &pucTransmitType);
@@ -259,8 +259,10 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
 		break;
 	case EVENT_CHANNEL_CLOSED:
 		is_cad_init = 0;
-		err_code = app_timer_start(m_sec_bsc, ANT_DELAY, NULL);
-		APP_ERROR_CHECK(err_code);
+		if (m_reconn_counts < 5) {
+			m_reconn_counts++;
+			bsc_connect(NULL);
+		}
 		break;
 	}
 
@@ -270,10 +272,6 @@ void ant_evt_bsc (ant_evt_t * p_ant_evt)
  */
 void bsc_init(void)
 {
-	ret_code_t err_code;
-
-	err_code = app_timer_create(&m_sec_bsc, APP_TIMER_MODE_SINGLE_SHOT, bsc_connect);
-	APP_ERROR_CHECK(err_code);
 
 }
 
