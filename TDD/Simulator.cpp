@@ -49,6 +49,9 @@ static uint32_t nb_gps_loc = 0;
 static float cur_speed = 20.0f;
 static float alt_sim = 100.0f;
 
+static std::default_random_engine s_generator;
+static std::normal_distribution<float> distr_speed(20.f, .4f);
+
 static void simulator_modes(void) {
 
 	enum eSimulationStep {
@@ -288,6 +291,7 @@ static void _sensors_sim(void) {
 
 	if (millis() - last_point_ms < BARO_REFRESH_PER_MS) return;
 
+	cur_speed = distr_speed(s_generator);
 	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
 
 	if (++sim_nb > 2000) {
@@ -321,7 +325,7 @@ static void _loc_sim(void) {
 
 	static uint32_t last_point_ms = 0;
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
-	if (millis() < 20000) {
+	if (millis() < 10000) {
 
 		gpio_clear(FIX_PIN);
 
