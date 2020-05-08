@@ -1,7 +1,7 @@
 /*
  * VueFEC.cpp
  *
- *  Created on: 12 déc. 2017
+ *  Created on: 12 dec. 2017
  *      Author: Vincent
  */
 
@@ -116,8 +116,8 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	int16_t x1;
 	int16_t y1;
 	int16_t ppower = vector.inst_torque_mag_array[0];
-	float angle = - (float)vector.first_crank_angle;
-	rotate_point(angle,
+	float first_angle = 90.f - (float)vector.first_crank_angle;
+	rotate_point(first_angle,
 			xc, yc,
 			xc, yc - SCALE_TORQUE(ppower, max_torque),
 			x1, y1);
@@ -128,7 +128,7 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 
 		int16_t ppower = vector.inst_torque_mag_array[i];
 		int16_t y2 = yc - SCALE_TORQUE(ppower, max_torque);
-		float angle = - ((float)vector.first_crank_angle + i * 360.f / vector.array_size);
+		float angle = (first_angle + i * 360.f / vector.array_size);
 		rotate_point(angle,
 				xc, yc,
 				xc, y2,

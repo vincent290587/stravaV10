@@ -60,7 +60,7 @@ typedef struct {
 typedef struct {
 	uint16_t power;
 	uint16_t speed;
-	uint8_t el_time;
+	uint16_t el_time;
 } sFecInfo;
 
 typedef struct {
