@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <string.h>
 #include "millis.h"
 #include "boards.h"
 #include "Model.h"
@@ -32,6 +33,10 @@ void power_scheduler__run(void) {
 
 void power_scheduler__shutdown(void) {
 
+	// clear the saved attitude
+	memset(&m_app_error.saved_data.att, 0, sizeof(m_app_error.saved_data.att));
+
+	// shutdown system
 #if defined (PROTO_V11)
 	stc.shutdown();
 #else

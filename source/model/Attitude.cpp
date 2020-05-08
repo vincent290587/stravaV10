@@ -378,19 +378,26 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 
 		if (m_app_error.saved_data.crc == calculate_crc((uint8_t*)&m_app_error.saved_data.att, sizeof(m_app_error.saved_data.att))) {
 
-			// restoring position and accumulated climb
-			att.climb = m_app_error.saved_data.att.climb;
-			m_climb = att.climb;
+			// compare dates
+			if (att.date.date == m_app_error.saved_data.att.date.date) {
 
-			att.dist = m_app_error.saved_data.att.dist;
-			m_last_save_dist = att.dist;
+				// restoring position and accumulated climb
+				att.climb = m_app_error.saved_data.att.climb;
+				m_climb = att.climb;
 
-			att.pr = m_app_error.saved_data.att.pr;
-			att.nbsec_act = m_app_error.saved_data.att.nbsec_act;
+				att.dist = m_app_error.saved_data.att.dist;
+				m_last_save_dist = att.dist;
 
-			LOG_WARNING("Last stored date: %u", m_app_error.saved_data.att.date.date);
-			LOG_WARNING("Last stored dist: %f", att.dist);
+				att.pr = m_app_error.saved_data.att.pr;
+				att.nbsec_act = m_app_error.saved_data.att.nbsec_act;
 
+				LOG_WARNING("Last stored dist: %f", att.dist);
+
+				vue.addNotif("FDIR", "Attitude restored", 6, eNotificationTypeComplete);
+			} else {
+				// that block comes from another date ..?? or is invalid
+				LOG_ERROR("Last stored date: %u", m_app_error.saved_data.att.date.date);
+			}
 		}
 
 		m_app_error.saved_data.crc = 0x00;
