@@ -197,14 +197,6 @@ static void model_perform_virtual_tasks(void) {
 	else if (m_vparser_event == 17) {
 
 		// TODO go to DFU
-#ifndef TDD
-		ret_code_t err_code = sd_power_gpregret_set(1, BOOTLOADER_DFU_START);
-		APP_ERROR_CHECK(err_code);
-
-		//nrf_power_gpregret_set(BOOTLOADER_DFU_START);
-
-		// TODO reboot ..?
-#endif
 
 	}
 	else if (m_vparser_event == 16) {
