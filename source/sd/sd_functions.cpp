@@ -625,12 +625,14 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 				"%.3f;%.3f;%.3f;%.2f;"
 				"%.1f;%.2f;%.2f;%.2f;"
 				"%.0f;%.0f;%.0f;"
+				"%.1f;"
 				"\r\n",
 				att[i].loc.lat, att[i].loc.lon, att[i].loc.alt, att[i].date.secj,
 				att[i].sensors.pwr, att[i].sensors.bpm, att[i].sensors.cadence,
 				att[i].alti.alpha_bar, att[i].alti.alpha_zero, att[i].alti.baro_ele, att[i].alti.baro_corr,
 				att[i].alti.climb, att[i].alti.filt_ele, att[i].alti.gps_ele, att[i].alti.vit_asc,
-				att[i].alti.rough[0], att[i].alti.rough[1], att[i].alti.rough[2]
+				att[i].alti.rough[0], att[i].alti.rough[1], att[i].alti.rough[2],
+				att[i].alti.b_rough
 				);
 
 		if (to_wr > 0 && to_wr < (int)sizeof(g_bufferWrite)) {

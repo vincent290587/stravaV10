@@ -88,7 +88,7 @@ standard_input.on('data', function (data) {
         f_name = '' + data;
         f_name = f_name.replace("\r\n", "");
         port.write('$QRY,2,' + f_name + '\r\n');
-        fs.writeFileSync(f_name, 'lat;lon;alt;secj;pwr;hrm;cad;alpha_bar;alpha_zero;baro_alt;baro_corr;climb;f_ele;gps_alt;v_asc;n_x;n_y;n_z;\r\n');
+        fs.writeFileSync(f_name, 'lat;lon;alt;secj;pwr;hrm;cad;alpha_bar;alpha_zero;baro_alt;baro_corr;climb;f_ele;gps_alt;v_asc;n_x;n_y;n_z;r_b;\r\n');
 
         has_started = 1;
     }
