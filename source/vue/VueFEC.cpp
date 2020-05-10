@@ -116,7 +116,7 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	int16_t x1;
 	int16_t y1;
 	int16_t ppower = vector.inst_torque_mag_array[0];
-	float first_angle = 90.f - (float)vector.first_crank_angle;
+	float first_angle = (float)vector.first_crank_angle;
 	rotate_point(first_angle,
 			xc, yc,
 			xc, yc - SCALE_TORQUE(ppower, max_torque),
@@ -139,6 +139,13 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 		x1 = xp;
 		y1 = yp;
 	}
+
+	// Print the data
+	const int y = _height / nb_lig * (p_lig - 1);
+	this->setCursor(0, y - 20 + (_height / (nb_lig*2)));
+	this->setTextSize(2);
+	this->println(max_torque);
+	this->println(vector.first_crank_angle);
 
 	// close the figure
 	this->drawLine(xp, yp, x2, y2, LS027_PIXEL_BLACK, 3);

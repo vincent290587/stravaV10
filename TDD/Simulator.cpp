@@ -252,7 +252,6 @@ static void _fec_sim(void) {
 
 	// FEC simulation
 	fec_info.power = rand() % 500;
-	fec_info.speed = 20.;
 	uint32_t millis_ = millis() / 1000;
 	fec_info.el_time = (uint8_t)(millis_ & 0xFF);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);

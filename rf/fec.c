@@ -1,7 +1,7 @@
 /*
  * fec.c
  *
- *  Created on: 9 déc. 2017
+ *  Created on: 9 dec. 2017
  *      Author: Vincent
  */
 
@@ -41,6 +41,7 @@ ant_fec_profile_t        m_ant_fec;
 APP_TIMER_DEF(m_fec_update);
 
 static bool is_fec_init = false;
+static uint16_t fec_time = 0;
 
 static bool is_fec_tx_pending = false;
 
@@ -77,7 +78,6 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 
 		if (pusDeviceNumber && !is_fec_init) {
 			is_fec_init = 1;
-
 //			err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
 //			APP_ERROR_CHECK(err_code);
 		}
@@ -111,7 +111,7 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
  */
 static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 {
-	static uint16_t old_time = 0;
+	static uint8_t old_time = 0;
 
 	switch (event)
 	{
@@ -127,21 +127,21 @@ static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t eve
 
 	case ANT_FEC_PAGE_16_UPDATED:
 	{
-		fec_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
-
-		uint16_t new_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
+		uint8_t new_time = p_profile->page_16.elapsed_time;
 
 		if (new_time < old_time) {
 			// treat rollover
-			uint8_t diff = (uint8_t)new_time - (uint8_t)old_time;
-			fec_info.el_time += diff;
+			uint8_t diff = new_time - old_time;
+			fec_time += diff;
 		} else if (old_time < new_time) {
 
-			fec_info.el_time += new_time - old_time;
+			fec_time += new_time - old_time;
 		} else {
 			return;
 		}
 		old_time = new_time;
+		// convert from LSB to seconds
+		fec_info.el_time = fec_time / 4;
 
 		w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	}
@@ -306,6 +306,8 @@ void fec_profile_setup(void) {
 void fec_profile_start(void) {
 
 	ret_code_t err_code;
+
+	fec_time = 0;
 
 	err_code = ant_fec_disp_open(&m_ant_fec);
 	APP_ERROR_CHECK(err_code);
