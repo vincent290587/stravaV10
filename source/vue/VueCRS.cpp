@@ -172,7 +172,7 @@ void VueCRS::afficheScreen1(void) {
 
 	case eVueCRSScreenDataDS:
 	{
-		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
+		this->cadran(1, VUE_CRS_NB_LINES, 1, "SL",  _imkstr(att.slope), "%");
 		this->cadran(1, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		ASSERT(segMngr.getSeg(0));

@@ -98,8 +98,8 @@ void model_dispatch_sensors_update(void) {
 	if (backlight.freq == 0) {
 		// setup backlight
 		if (light_level < BACKLIGHT_AUTO_START_RAW_VIS) {
-			// TODO il fait tout noir: TG
-			backlight.state = 0;
+			// il fait tout noir: TG
+			backlight.state = 1;
 		} else {
 			// sun is shining
 			backlight.state = 0;
