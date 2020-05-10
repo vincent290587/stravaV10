@@ -173,7 +173,6 @@ void Attitude::computeFusion(void) {
 	fxos_get_pitch(pitch_rad);
 
 	feed.dt = m_speed_ms * 0.001f * (float)(millis() - m_update_time); // in seconds
-	m_update_time = millis();
 
 	// set measures: Z
 	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
@@ -247,7 +246,10 @@ void Attitude::computeFusion(void) {
 		att.vit_asc = slope * m_speed_ms;
 	}
 
-	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f", att.vit_asc,
+	m_update_time = millis();
+
+	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f",
+			att.vit_asc,
 			180.f*(alpha_bar-alpha_zero)/3.1415f,
 			180.f*alpha_zero/3.1415f);
 
@@ -259,6 +261,8 @@ void Attitude::computeFusion(void) {
 
 		// log fxos roughness
 		fxos_get_roughness(m_st_buffer[m_st_buffer_nb_elem].alti.rough);
+		// log baro roughness
+		m_st_buffer[m_st_buffer_nb_elem].alti.b_rough = baro.getRoughness();
 	}
 
 #ifdef TDD
@@ -292,7 +296,10 @@ float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 
 		m_is_alt_init = true;
 
-		return 0.f;
+#if USE_KALMAN
+		m_k_lin.is_init = 0;
+#endif
+
 	}
 
 	// high-pass on the difference baro/GPS to remove air pressure drifts
@@ -342,6 +349,11 @@ float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 		m_last_stored_ele = m_cur_ele;
 	}
 
+	if (m_climb < 0) {
+		// reset it
+		m_is_alt_init = 0;
+	}
+
 #ifdef TDD
 	tdd_logger_log_float(TDD_LOGGING_TOT_CLIMB, m_climb);
 #endif
@@ -364,7 +376,8 @@ float Attitude::computeElevation(SLoc& loc_, eLocationSource source_) {
 	// init the altitude model
 	if (eLocationSourceNone != source_ &&
 			m_baro.isDataReady() &&
-			!m_baro.hasSeaLevelRef()) {
+			!m_baro.hasSeaLevelRef() &&
+			att.nbpts > 15) {
 
 		// init sea level pressure
 		m_baro.seaLevelForAltitude(loc_.alt);
@@ -549,7 +562,7 @@ float Attitude::computePower(float speed_) {
 	power += 9.81f * weight * att.vit_asc; // gravity
 	power += 0.004f * 9.81f * weight * m_speed_ms; // sol + meca
 	power += 0.204f * m_speed_ms * m_speed_ms * m_speed_ms; // air
-	power += weight * m_speed_ms * dv; // acceleration
+	//power += weight * m_speed_ms * dv; // acceleration ---> too noisy
 	power *= 1.025f; // transmission (rendement velo)
 
 #ifdef TDD
