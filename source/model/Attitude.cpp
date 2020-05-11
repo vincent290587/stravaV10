@@ -1,7 +1,7 @@
 /*
  * Attitude.cpp
  *
- *  Created on: 29 déc. 2017
+ *  Created on: 29 dec. 2017
  *      Author: Vincent
  */
 
@@ -144,8 +144,8 @@ void Attitude::computeFusion(void) {
 		m_k_lin.ker.matB.print();
 
 		// set Q: model noise
-		m_k_lin.ker.matQ.set(0, 0, 0.02f);
-		m_k_lin.ker.matQ.set(1, 1, 0.01f);
+		m_k_lin.ker.matQ.set(0, 0, 0.03f);
+		m_k_lin.ker.matQ.set(1, 1, 0.20f);
 		m_k_lin.ker.matQ.set(2, 2, 0.0002f);
 
 		// set P
