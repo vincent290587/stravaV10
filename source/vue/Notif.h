@@ -1,7 +1,7 @@
 /*
  * Notif.h
  *
- *  Created on: 12 déc. 2017
+ *  Created on: 12 dec. 2017
  *      Author: Vincent
  */
 
@@ -10,15 +10,9 @@
 
 #include <list>
 #include <stdint.h>
+#include "notifications.h"
 #include "WString.h"
 
-/**
- *
- */
-typedef enum {
-	eNotificationTypePartial, //!< eNotificationTypePartial
-	eNotificationTypeComplete,//!< eNotificationTypeComplete
-} eNotificationType;
 
 class Notif {
 public:

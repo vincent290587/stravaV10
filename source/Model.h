@@ -97,6 +97,8 @@ extern UserSettings   u_settings;
 extern "C" {
 #endif // defined C++
 
+void model_add_notification(const char *title_, const char *msg_, uint8_t persist_, eNotificationType type_);
+
 void model_input_virtual_uart(char c);
 
 void model_go_to_msc_mode(void);

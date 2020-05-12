@@ -116,6 +116,10 @@ void model_get_navigation(sKomootNavigation *nav) {
 
 }
 
+void model_add_notification(const char *title_, const char *msg_, uint8_t persist_, eNotificationType type_) {
+
+	vue.addNotif(title_, msg_, persist_, type_);
+}
 
 void model_input_virtual_uart(char c) {
 
