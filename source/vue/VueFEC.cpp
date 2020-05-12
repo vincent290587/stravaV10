@@ -98,12 +98,26 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	const int16_t xc = _width / 2;
 	const int16_t yc = _height / nb_lig * p_lig;
 
-	// calculate max torque for scale
-	int16_t max_torque = 100;
+	// calculate current max torque for scale
+	uint8_t trq_ind = 0;
+	int16_t arr_torque[5] = { 350 };
 	for (int i=0; i < vector.array_size; i++) {
 
-		if (vector.inst_torque_mag_array[i] > max_torque) {
-			max_torque = vector.inst_torque_mag_array[i];
+		if (vector.inst_torque_mag_array[i] > arr_torque[trq_ind]) {
+			arr_torque[trq_ind] = vector.inst_torque_mag_array[i];
+		}
+	}
+
+	if (++trq_ind >= sizeof(arr_torque) / sizeof(arr_torque[0])) {
+		trq_ind = 0;
+	}
+
+	// 5 seconds max moving average
+	int16_t max_torque = arr_torque[0];
+	for (uint32_t i=1; i < sizeof(arr_torque) / sizeof(arr_torque[0]); i++) {
+
+		if (max_torque < arr_torque[i]) {
+			max_torque = arr_torque[i];
 		}
 	}
 
@@ -144,8 +158,9 @@ void VueFEC::cadranPowerVector(uint8_t p_lig, uint8_t nb_lig, const char *champ,
 	const int y = _height / nb_lig * (p_lig - 1);
 	this->setCursor(0, y - 20 + (_height / (nb_lig*2)));
 	this->setTextSize(2);
-	this->println(max_torque);
-	this->println(vector.first_crank_angle);
+	this->print(" ");this->println(max_torque);
+	this->print(" ");this->println(vector.first_crank_angle);
+	this->print(" ");this->println(vector.array_size);
 
 	// close the figure
 	this->drawLine(xp, yp, x2, y2, LS027_PIXEL_BLACK, 3);
