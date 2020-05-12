@@ -145,7 +145,7 @@ void Attitude::computeFusion(void) {
 
 		// set Q: model noise
 		m_k_lin.ker.matQ.set(0, 0, 0.03f);
-		m_k_lin.ker.matQ.set(1, 1, 0.20f);
+		m_k_lin.ker.matQ.set(1, 1, 0.10f); // 0.01 is too slow, 0.2 is too fast
 		m_k_lin.ker.matQ.set(2, 2, 0.0002f);
 
 		// set P
@@ -178,6 +178,7 @@ void Attitude::computeFusion(void) {
 	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
 	feed.matZ.zeros();
 	feed.matZ.set(0, 0, ele);
+	// seems to work with A_longi / 2048
 	feed.matZ.set(1, 0, pitch_rad);
 
 	// measures mapping (Z = C.X)
@@ -240,7 +241,7 @@ void Attitude::computeFusion(void) {
 #endif
 
 	// update vertical speed after 3 mins
-	if (att.nbsec_act > 3.f * 60.f) {
+	if (att.nbpts > 60) {
 		const float slope = (alpha_bar - alpha_zero);
 		att.slope = (int8_t)(100.f * slope);
 		att.vit_asc = slope * m_speed_ms;
@@ -320,7 +321,7 @@ float Attitude::filterElevation(SLoc& loc_, eLocationSource source_) {
 		float input = ele - loc_.alt;
 		static float alt_div = input;
 
-		const float taub = 400.f / (400.f + 1.f);
+		const float taub = 800.f / (800.f + 1.f);
 		alt_div = taub * alt_div + (1 - taub) * (input);
 
 		// set barometer correction
