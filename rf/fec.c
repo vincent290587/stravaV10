@@ -38,8 +38,6 @@ FEC_DISP_PROFILE_CONFIG_DEF(m_ant_fec,
 
 ant_fec_profile_t        m_ant_fec;
 
-APP_TIMER_DEF(m_fec_update);
-
 static bool is_fec_init = false;
 static uint16_t fec_time = 0;
 
@@ -76,20 +74,13 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 
 		ant_device_manager_search_add(pusDeviceNumber, -5);
 
-		if (pusDeviceNumber && !is_fec_init) {
-			is_fec_init = 1;
-//			err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
-//			APP_ERROR_CHECK(err_code);
-		}
 	}
 	ant_fec_disp_evt_handler(p_ant_evt, &m_ant_fec);
 	break;
 	case EVENT_RX_FAIL:
 		break;
 	case EVENT_RX_FAIL_GO_TO_SEARCH:
-		is_fec_init = 0;
-		err_code = app_timer_stop(m_fec_update);
-		APP_ERROR_CHECK(err_code);
+		model_add_notification("FEC", "EVENT_RX_FAIL_GO_TO_SEARCH", 4, eNotificationTypeComplete);
 		NRF_LOG_WARNING("ANT FEC EVENT_RX_FAIL_GO_TO_SEARCH");
 		break;
 	case EVENT_RX_SEARCH_TIMEOUT:
@@ -129,17 +120,22 @@ static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t eve
 	{
 		uint8_t new_time = p_profile->page_16.elapsed_time;
 
+		if (!is_fec_init) {
+
+			is_fec_init = 1;
+			old_time = new_time;
+		}
+
 		if (new_time < old_time) {
 			// treat rollover
 			uint8_t diff = new_time - old_time;
 			fec_time += diff;
-		} else if (old_time < new_time) {
+		} else {
 
 			fec_time += new_time - old_time;
-		} else {
-			return;
 		}
 		old_time = new_time;
+
 		// convert from LSB to seconds
 		fec_info.el_time = fec_time / 4;
 
@@ -251,10 +247,6 @@ void roller_manager_tasks(void) {
 
 
 void fec_init(void) {
-
-	// Create timer.
-	ret_code_t err_code = app_timer_create(&m_fec_update, APP_TIMER_MODE_REPEATED, roller_manager);
-	APP_ERROR_CHECK(err_code);
 
 	memset(&m_fec_message_payload, 0, sizeof(m_fec_message_payload));
 
