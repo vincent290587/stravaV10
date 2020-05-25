@@ -108,7 +108,7 @@ void fxos_tasks()
 
 	m_pitch = g_Pitch;
 
-	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57f) * 100.);
+	int16_t integ_pitch = (int16_t)((g_Pitch + 0.4f) * 100.f);
 	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
 
 	if (m_pitch_buffer.isFull()) {
