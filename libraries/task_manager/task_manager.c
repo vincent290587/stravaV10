@@ -532,7 +532,13 @@ void task_events_set(task_id_t task_id, uint32_t evt_mask)
     W_SYSVIEW_RecordU32x2(TASK_RECV_EVENT, TASK_BASE_NRF + task_id, evt_mask);
 
     (void)nrf_atomic_u32_or(&s_task_state[task_id].flags, evt_mask);
-    TASK_STATE_RUNNABLE(task_id);
+
+    // Atomically fetch list of delayed tasks.
+    uint32_t delayed_tasks_mask = s_delayed_tasks_mask;
+    // release tje task if it is not on the list
+    if (!(delayed_tasks_mask & TASK_ID_TO_MASK(task_id))) {
+    	TASK_STATE_RUNNABLE(task_id);
+    }
 }
 
 void task_exit(void)
