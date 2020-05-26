@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.5.1)
 
 project (stravaV10 LANGUAGES C CXX)
 
+set(CMAKE_COLOR_MAKEFILE                        OFF)
+
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
@@ -65,6 +67,7 @@ include_directories(
 	libraries/utils
     libraries/filters
     libraries/komoot
+    libraries/kalman
 	libraries/TinyGPSPlus
 	libraries/VParser
 	rf
@@ -113,6 +116,8 @@ set(SRCS
 	libraries/AltiBaro/AltiBaro.cpp
 	libraries/utils/utils.c
     libraries/komoot/komoot_nav.c
+    libraries/kalman/kalman_ext.cpp
+    libraries/kalman/UDMatrix.cpp
 	libraries/GlobalTop/EPONmeaPacket.cpp
 	libraries/TinyGPSPlus/TinyGPS++.cpp
 	libraries/VParser/VParser.cpp

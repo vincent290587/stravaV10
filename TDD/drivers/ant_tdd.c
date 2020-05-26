@@ -40,3 +40,8 @@ void ant_setup_init(void) {
 void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id) {
 	LOG_INFO("ANT started");
 }
+
+
+void fec_profile_start(void) {
+
+}

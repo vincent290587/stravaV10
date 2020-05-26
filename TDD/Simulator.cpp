@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <random>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,6 +48,9 @@ static uint32_t nb_gps_loc = 0;
 
 static float cur_speed = 20.0f;
 static float alt_sim = 100.0f;
+
+static std::default_random_engine s_generator;
+static std::normal_distribution<float> distr_speed(20.f, .4f);
 
 static void simulator_modes(void) {
 
@@ -175,6 +179,12 @@ void simulator_simulate_altitude(float alti) {
 	const float sea_level_pressure = 1015.0f;
 
 	// res = 44330.0f * (1.0f - powf(atmospheric / sea_level_pressure, 0.1903f));
+	static std::default_random_engine generator;
+	static std::normal_distribution<float> distr_alt(0.0, 0.25f);
+
+	alti += distr_alt(generator);
+
+	tdd_logger_log_float(TDD_LOGGING_ALT_SIM, alti);
 
 	bme280_set_pressure(sea_level_pressure * powf(1.0f - alti / 44330.0f, 1.0f / 0.1903f));
 
@@ -197,6 +207,7 @@ void simulator_init(void) {
 	tdd_logger_log_name(TDD_LOGGING_ALT_SIM, "alti_sim");
 	tdd_logger_log_name(TDD_LOGGING_ALT_EST, "alti_est");
 	tdd_logger_log_name(TDD_LOGGING_TOT_CLIMB, "climb");
+	tdd_logger_log_name(TDD_LOGGING_BARO_DIFF, "baro_corr");
 	tdd_logger_log_name(TDD_LOGGING_CUR_POWER, "power");
 	tdd_logger_log_name(TDD_LOGGING_CUR_SPEED, "speed");
 
@@ -241,22 +252,45 @@ static void _fec_sim(void) {
 
 	// FEC simulation
 	fec_info.power = rand() % 500;
-	fec_info.speed = 20.;
 	uint32_t millis_ = millis() / 1000;
 	fec_info.el_time = (uint8_t)(millis_ & 0xFF);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_POWER);
 }
 
+static void _fxos_sim(float cur_a, float cur_a0) {
+
+	static uint32_t last_point_ms = 0;
+	if (millis() - last_point_ms < 40) return;
+
+	static std::default_random_engine generator;
+	static std::normal_distribution<float> distr_alt_x(0.0, 800);
+	static std::normal_distribution<float> distr_alt_y(0.0, 400);
+	static std::normal_distribution<float> distr_alt_z(0.0, 800);
+
+	float val_x = 2048.f * sinf(cur_a + cur_a0);
+	float val_z = 2048.f * cosf(cur_a + cur_a0);
+
+	val_x += distr_alt_x(generator);
+	float val_y = distr_alt_y(generator);
+	val_z += distr_alt_z(generator);
+
+	// add noise
+	fxos_set_xyz(val_x, val_y, val_z);
+}
+
 static void _sensors_sim(void) {
 
 	static uint32_t last_point_ms = 0;
-	if (millis() - last_point_ms < SENSORS_REFRESH_PER_MS) return;
-
-	static float cur_a = toRadians(5.0f);
+	static float cur_a = toRadians(5.0f); // = 8.75 %
 	static const float cur_a0 = toRadians(3.4f);
 	static uint32_t sim_nb = 0;
 
+	_fxos_sim(cur_a, cur_a0);
+
+	if (millis() - last_point_ms < BARO_REFRESH_PER_MS) return;
+
+	cur_speed = distr_speed(s_generator);
 	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
 
 	if (++sim_nb > 2000) {
@@ -266,15 +300,17 @@ static void _sensors_sim(void) {
 		sim_nb = 0;
 	}
 
-	fxos_set_pitch(cur_a + cur_a0);
 	simulator_simulate_altitude(alt_sim);
 
-	LOG_DEBUG("Simulating sensors");
+	LOG_DEBUG("Simulating sensors loop");
+
+	// have to simulate the baro sleep...
+	extern void timer_handler(void * p_context);
+	timer_handler(NULL);
 
 	last_point_ms = millis();
 
 	tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE, 100 * tanf(cur_a));
-	tdd_logger_log_float(TDD_LOGGING_ALT_SIM, alt_sim);
 
 	tdd_logger_flush();
 }
@@ -288,7 +324,7 @@ static void _loc_sim(void) {
 
 	static uint32_t last_point_ms = 0;
 	if (millis() - last_point_ms < NEW_POINT_PERIOD_MS) return;
-	if (millis() < 20000) {
+	if (millis() < 10000) {
 
 		gpio_clear(FIX_PIN);
 
@@ -353,14 +389,26 @@ static void _loc_sim(void) {
 		lon += (float)rnd_add / 150000.;
 #endif
 
+		static std::default_random_engine generator;
+		static std::normal_distribution<float> distr_alt(0.0, 0.1f);
+
 		if (millis() < 60000 &&
 				(gpio_get(GPS_R) && gpio_get(GPS_S)) ) {
 
 			gpio_set(FIX_PIN);
 
 			// build make NMEA sentence
-			GPRMC gprmc_(lat, lon, 0., (int)rtime);
+			GPRMC gprmc_(lat, lon, cur_speed, (int)rtime);
 			int nmea_length = gprmc_.toString(g_bufferWrite, sizeof(g_bufferWrite));
+
+			LOG_WARNING("Sentence: %s", g_bufferWrite);
+
+			// send to uart_tdd
+			for (int i=0; i < nmea_length; i++)
+				uart_rx_handler(g_bufferWrite[i]);
+
+			GPGGA gpgga_(lat, lon, alt_sim + 32.3f + distr_alt(generator), (int)rtime);
+			nmea_length = gpgga_.toString(g_bufferWrite, sizeof(g_bufferWrite));
 
 			LOG_WARNING("Sentence: %s", g_bufferWrite);
 
@@ -388,7 +436,7 @@ static void _loc_sim(void) {
 			sLnsInfo lns_info;
 			lns_info.lat = lat * 10000000.;
 			lns_info.lon = lon * 10000000.;
-			lns_info.ele = (alt_sim + 32.3f) * 100.;
+			lns_info.ele = (alt_sim + 32.3f + distr_alt(generator)) * 100.;
 			lns_info.secj = (int)rtime;
 			lns_info.date = 11218;
 			lns_info.heading = 5;
@@ -519,7 +567,87 @@ int GPRMC::toString(char *buffer_, size_t max_size_) {
 
 	res += tmp;
 
-	res += ",231.8,171115,004.2,W";
+	res += ",231.8,11218,004.2,W";
+
+	int sum = 0;
+	for (int i = 1; i < res.length(); i++) {
+		sum ^= (uint8_t) res[i];
+	}
+
+	sprintf(x, "*%02X\r\n", sum);
+	res += x;
+
+	res.toCharArray(buffer_, max_size_);
+
+	return res.length();
+}
+
+GPGGA::GPGGA(float latitude, float longitude, float altitude, int sec_jour) {
+
+	c_latitude = latitude;
+	c_longitude = longitude;
+	_altitude = altitude;
+	_date = sec_jour;
+
+}
+
+void GPGGA::coordtoString(char* buffer_, size_t max_size_, uint16_t prec, float value) {
+
+	float val1, val2;
+
+	String format = "%";
+	format += prec;
+	format += ".4f";
+
+	val1 = (int)value;
+	val2 = value - val1;
+	val1 *= 100;
+	val2 *= 60;
+
+	sprintf(buffer_, format.c_str(), val1 + val2);
+
+}
+
+int GPGGA::toString(char *buffer_, size_t max_size_) {
+
+	int heure, minute, sec;
+	char x[256];
+	String tmp, res = "$GPGGA,";
+
+	memset(buffer_, 0, max_size_);
+
+	heure = _date / 3600;
+	minute = (_date % 3600) / 60;
+	sec = _date % 60;
+
+	sprintf(x, "%02d%02d%02d,", heure, minute, sec);
+	res += x;
+
+	this->coordtoString(x, 256, 8, c_latitude);
+	res += x;
+	res += ",N,";
+	this->coordtoString(x, 256, 9, c_longitude);
+	res += x;
+	if (c_longitude > 0) res += ",E,";
+	else res += ",W,";
+
+	res.replace(" ", "0");
+
+	// fix quality + sats in view + hdop
+	res += "1,05,2.5,";
+
+	// altitude in meters
+	sprintf(x, "%5.1f", _altitude);
+	tmp = x;
+
+	tmp.replace(",", ".");
+	tmp.replace(" ", "0");
+
+	res += tmp;
+	res += ",M";
+
+	// height of geoid + blank + blank
+	res += ",0.0,M,,,";
 
 	int sum = 0;
 	for (int i = 1; i < res.length(); i++) {

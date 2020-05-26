@@ -177,46 +177,95 @@ void Adafruit_GFX::fillCircleHelper(int16_t x0, int16_t y0, int16_t r,
 	}
 }
 
-// Bresenham's algorithm - thx wikpedia
+/**************************************************************************/
+/*!
+   @brief    Write a line.  Bresenham's algorithm - thx wikpedia
+    @param    x0  Start point x coordinate
+    @param    y0  Start point y coordinate
+    @param    x1  End point x coordinate
+    @param    y1  End point y coordinate
+    @param    color 16-bit 5-6-5 Color to draw with
+*/
+/**************************************************************************/
+void Adafruit_GFX::writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
+                             uint16_t color, int16_t thick) {
+
+
+  int16_t steep = abs(y1 - y0) > abs(x1 - x0);
+  if (steep) {
+    _swap_int16_t(x0, y0);
+    _swap_int16_t(x1, y1);
+  }
+
+  if (x0 > x1) {
+    _swap_int16_t(x0, x1);
+    _swap_int16_t(y0, y1);
+  }
+
+  int16_t dx, dy;
+  dx = x1 - x0;
+  dy = abs(y1 - y0);
+
+  int16_t err = dx / 2;
+  int16_t ystep;
+
+  if (y0 < y1) {
+    ystep = 1;
+  } else {
+    ystep = -1;
+  }
+
+  for (; x0 <= x1; x0++) {
+	  if (thick == 1) {
+		  if (steep) {
+			  drawPixel(y0, x0, color);
+		  } else {
+			  drawPixel(x0, y0, color);
+		  }
+	  } else {
+		  if (steep) {
+			  drawRect(y0 - (thick >> 1), x0, thick, thick, color);
+		  } else {
+			  drawRect(x0 - (thick >> 1), y0, thick, thick, color);
+		  }
+	  }
+    err -= dy;
+    if (err < 0) {
+      y0 += ystep;
+      err += dx;
+    }
+  }
+}
+
+
 void Adafruit_GFX::drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,
-		uint16_t color) {
-	int16_t steep = abs(y1 - y0) > abs(x1 - x0);
-	if (steep) {
-		_swap_int16_t(x0, y0);
-		_swap_int16_t(x1, y1);
-	}
+                            uint16_t color, int16_t thick) {
+	// Update in subclasses if desired!
+	if (x0 == x1) {
+		if (y0 > y1)
+			_swap_int16_t(y0, y1);
 
-	if (x0 > x1) {
-		_swap_int16_t(x0, x1);
-		_swap_int16_t(y0, y1);
-	}
+		while (thick) {
 
-	int16_t dx, dy;
-	dx = x1 - x0;
-	dy = abs(y1 - y0);
+			thick --;
+			drawFastVLine(x0 + thick, y0, y1 - y0 + 1, color);
+		}
+	} else if (y0 == y1) {
+		if (x0 > x1)
+			_swap_int16_t(x0, x1);
 
-	int16_t err = dx / 2;
-	int16_t ystep;
+		while (thick) {
 
-	if (y0 < y1) {
-		ystep = 1;
+			thick --;
+			drawFastHLine(x0, y0 + thick, x1 - x0 + 1, color);
+		}
 	} else {
-		ystep = -1;
-	}
 
-	for (; x0<=x1; x0++) {
-		if (steep) {
-			drawPixel(y0, x0, color);
-		} else {
-			drawPixel(x0, y0, color);
-		}
-		err -= dy;
-		if (err < 0) {
-			y0 += ystep;
-			err += dx;
-		}
+		writeLine(x0, y0, x1, y1, color, thick);
+
 	}
 }
+
 
 // Draw a rectangle
 void Adafruit_GFX::drawRect(int16_t x, int16_t y, int16_t w, int16_t h,

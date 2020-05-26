@@ -687,14 +687,6 @@
 #define A_TRAN_INIT_Y_LSB 0x7B
 #define A_TRAN_INIT_Z_LSB 0x7C
 
-/*! @brief fxos8700cq configure definition. This structure should be global.*/
-typedef struct _fxos_handle
-{
-	uint8_t acc_buffer[6];
-	uint8_t mag_buffer[6];
-	uint8_t acc_range[1];
-} fxos_handle_t;
-
 typedef struct _fxos8700cq_data
 {
     uint8_t accelXMSB;
@@ -710,6 +702,13 @@ typedef struct _fxos8700cq_data
     uint8_t magZMSB;
     uint8_t magZLSB;
 } fxos_data_t;
+
+/*! @brief fxos8700cq configure definition. This structure should be global.*/
+typedef struct _fxos_handle
+{
+	uint8_t status;
+	fxos_data_t data;
+} fxos_handle_t;
 
 /*!
  * @addtogroup fxos_common

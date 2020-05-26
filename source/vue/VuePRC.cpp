@@ -73,7 +73,7 @@ eVuePRCScreenModes VuePRC::tasksPRC() {
 			this->cadran(3, VUE_PRC_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 			this->cadran(3, VUE_PRC_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-			this->cadran(4, VUE_PRC_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+			this->cadran(4, VUE_PRC_NB_LINES, 1, "SL", _imkstr(att.slope), "%");
 			this->cadran(4, VUE_PRC_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 			// display parcours
@@ -200,10 +200,18 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
+			int16_t thickness = 1;
+			if (points_nb >= p_liste->idx_P1 &&
+					points_nb < p_liste->idx_P1 + 30) {
+				// show which path to take
+				thickness = 2;
+			}
+
 			drawLine(regFenLim(pCourant._lon, minLon, maxLon, 0.f, _width),
 					regFenLim(pCourant._lat, minLat, maxLat, fin_cadran, debut_cadran),
 					regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), LS027_PIXEL_BLACK);
+					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran),
+					LS027_PIXEL_BLACK, thickness);
 
 			printed_nb++;
 		}

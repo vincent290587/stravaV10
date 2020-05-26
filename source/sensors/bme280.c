@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <stdint.h>
 #include "i2c.h"
 #include "nrf_twi_mngr.h"
 #include "bme280.h"
@@ -105,7 +106,15 @@ static void bme280_meas_config(void) {
 			I2C_WRITE(BME280_TWI_ADDRESS, meas_config, 2)
 	};
 
-	i2c_perform(NULL, bme280_meas_transfer, sizeof(bme280_meas_transfer) / sizeof(bme280_meas_transfer[0]), NULL);
+	static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
+	{
+			.callback            = NULL,
+			.p_user_data         = NULL,
+			.p_transfers         = bme280_meas_transfer,
+			.number_of_transfers = sizeof(bme280_meas_transfer) / sizeof(bme280_meas_transfer[0])
+	};
+
+	i2c_schedule(&transaction);
 
 	LOG_INFO("BME measurement configured");
 
@@ -294,6 +303,21 @@ void bme280_init_sensor() {
 		parse_humidity_calib_data  (buffer2);
 	}
 
+	// t_meas = 33,5 ms
+
+	// IIR x16:
+	// t_sleep = 250 ms
+	// ODR = 3,52 Hz
+	// tau = 6,2 s
+
+	// t_sleep = 20 ms
+	// ODR = 18,7 Hz
+	// tau = 1,1 s
+
+	// t_sleep = 62,5 ms
+	// ODR = 10,4 Hz
+	// tau = 2,1 s
+
 	m_meas_config.osrs_p = SAMPLING_X16;
 	m_meas_config.osrs_t = SAMPLING_X1;
 
@@ -307,7 +331,7 @@ void bme280_init_sensor() {
 	bme280_hum_config();
 
 	m_cfg_config.filter = FILTER_X16;
-	m_cfg_config.t_sb = STANDBY_MS_250;
+	m_cfg_config.t_sb = STANDBY_MS_62_5;
 
 	bme280_cfg_config();
 
@@ -317,6 +341,16 @@ void bme280_init_sensor() {
 
 	LOG_INFO("BME init done");
 
+}
+
+void bme280_sleep(void) {
+
+	m_meas_config.osrs_p = SAMPLING_NONE;
+	m_meas_config.osrs_t = SAMPLING_NONE;
+
+	// set to sleep
+	m_meas_config.mode = MODE_SLEEP;
+	bme280_meas_config();
 }
 
 void bme280_read_sensor(void) {

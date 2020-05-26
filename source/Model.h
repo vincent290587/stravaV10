@@ -90,10 +90,14 @@ extern PowerZone     zPower;
 
 extern RRZone        rrZones;
 
+extern sPowerVector  powerVector;
+
 extern UserSettings   u_settings;
 
 extern "C" {
 #endif // defined C++
+
+void model_add_notification(const char *title_, const char *msg_, uint8_t persist_, eNotificationType type_);
 
 void model_input_virtual_uart(char c);
 

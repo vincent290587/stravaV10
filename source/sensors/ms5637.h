@@ -30,6 +30,8 @@ extern "C" {
 
 void ms5637_init_sensor(void);
 
+void ms5637_sleep(void);
+
 void ms5637_read_sensor(void);
 
 void ms5637_refresh(void);

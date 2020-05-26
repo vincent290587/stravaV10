@@ -23,7 +23,6 @@
 #define I2C_SCHEDULING_PERIOD_MS      (BARO_REFRESH_PER_MS)
 
 static uint32_t m_last_polled_index = 0;
-static uint8_t m_fxos_updated = 0;
 
 APP_TIMER_DEF(m_timer);
 
@@ -70,10 +69,22 @@ static void timer_handler(void * p_context)
 {
 	W_SYSVIEW_RecordEnterISR();
 
-	if (boucle__get_mode() != eBoucleGlobalModesFEC) baro.sensorRead();
+	if (boucle__get_mode() == eBoucleGlobalModesCRS ||
+			boucle__get_mode() == eBoucleGlobalModesPRC) {
+		baro.sensorRead();
+	} else {
+		//baro.sleep();
+	}
 
 	if (++m_last_polled_index >= SENSORS_REFRESH_PER_MS / I2C_SCHEDULING_PERIOD_MS) {
 		m_last_polled_index = 0;
+
+		if (boucle__get_mode() == eBoucleGlobalModesCRS ||
+				boucle__get_mode() == eBoucleGlobalModesPRC) {
+			//baro.sensorRead();
+		} else {
+			baro.sleep();
+		}
 
 		stc.readChip();
 
@@ -81,7 +92,6 @@ static void timer_handler(void * p_context)
 		veml.readChip();
 #endif
 
-		if (boucle__get_mode() != eBoucleGlobalModesFEC) fxos_readChip();
 	}
 
     W_SYSVIEW_RecordExitISR();
@@ -121,18 +131,6 @@ void i2c_scheduling_tasks(void) {
 		sysview_task_void_enter(I2cMgmtReadMs);
 		baro.sensorRefresh();
 		sysview_task_void_exit(I2cMgmtReadMs);
-
-		if (m_fxos_updated) {
-			m_fxos_updated = 0;
-
-			attitude.computeFusion();
-		}
-	}
-	if (is_fxos_updated()) {
-		sysview_task_void_enter(I2cMgmtRead1);
-		fxos_tasks();
-		m_fxos_updated = 1;
-		sysview_task_void_exit(I2cMgmtRead1);
 	}
 #ifdef VEML_PRESENT
 	if (is_veml_updated()) {

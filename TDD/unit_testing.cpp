@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "Model.h"
 #include "Screenutils.h"
+#include "ant_device_manager.h"
 #include "fram.h"
 #include "bme280.h"
 #include "utils.h"
@@ -19,7 +20,7 @@
 
 #define TEST_FILTRE_NB    15
 
-#define TEST_ROLLOF_NB    1024
+#define TEST_ROLLOF_NB    1047
 
 extern void simulator_simulate_altitude(float alti);
 
@@ -81,8 +82,9 @@ bool test_rollover(void) {
 
 	LOG_INFO("Testing overflow...");
 
-	uint8_t el_time_prev = 0;
 	uint8_t fec_info_el_time = 0;
+
+	uint16_t old_time = 0;
 	uint32_t m_el_time = 0;
 	uint32_t m_el_time_ref = 0;
 
@@ -95,17 +97,18 @@ bool test_rollover(void) {
 
 		fec_info_el_time = (uint8_t)(m_el_time_ref & 0xFF);
 
-		// WORKS
-		int16_t rollof = (int16_t)fec_info_el_time - el_time_prev;
-		m_el_time += rollof;
+		uint16_t new_time = fec_info_el_time;
+		// treat rollover
+		if (new_time < old_time) {
 
-		if (el_time_prev > fec_info_el_time) {
-			m_el_time += 0xFF + 1;
-			LOG_INFO("Rollover %u %u %lu %lu", el_time_prev, fec_info_el_time, m_el_time, m_el_time_ref);
+			uint8_t diff = (uint8_t)new_time - (uint8_t)old_time;
+			m_el_time += diff;
+		} else if (old_time < new_time) {
+
+			m_el_time += new_time - old_time;
 		}
 
-		el_time_prev = fec_info_el_time;
-
+		old_time = new_time;
 	}
 
 	if (m_el_time != m_el_time_ref) {
@@ -154,7 +157,7 @@ bool test_fram(void) {
 	if (!u_settings.resetConfig())
 		return false;
 
-	if (u_settings.getFECdevID() != 2846U)
+	if (u_settings.getFECdevID() != TACX_DEVICE_NUMBER)
 		return false;
 
 	params->fec_devid = 1234u;
@@ -170,7 +173,7 @@ bool test_fram(void) {
 	if (!u_settings.resetConfig())
 		return false;
 
-	if (u_settings.getFECdevID() != 2846U)
+	if (u_settings.getFECdevID() != TACX_DEVICE_NUMBER)
 		return false;
 
 	LOG_INFO("FRAM OK");

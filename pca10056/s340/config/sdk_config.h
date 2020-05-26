@@ -211,12 +211,12 @@
 #endif
 // <o> NRF_BLE_SCAN_UUID_CNT - Number of filters for UUIDs.
 #ifndef NRF_BLE_SCAN_UUID_CNT
-#define NRF_BLE_SCAN_UUID_CNT 2
+#define NRF_BLE_SCAN_UUID_CNT 3
 #endif
 
 // <o> NRF_BLE_SCAN_NAME_CNT - Number of name filters.
 #ifndef NRF_BLE_SCAN_NAME_CNT
-#define NRF_BLE_SCAN_NAME_CNT 1
+#define NRF_BLE_SCAN_NAME_CNT 2
 #endif
 
 // <o> NRF_BLE_SCAN_SHORT_NAME_CNT - Number of short name filters.
@@ -631,7 +631,7 @@
 // <e> NRF_STACK_GUARD_ENABLED - nrf_stack_guard - Module for Protecting Stack
 //==========================================================
 #ifndef NRF_STACK_GUARD_ENABLED
-#define NRF_STACK_GUARD_ENABLED 0
+#define NRF_STACK_GUARD_ENABLED 1
 #endif
 // <o> NRF_STACK_GUARD_CONFIG_SIZE  - Size of stack guard
  
@@ -645,7 +645,7 @@
 // <12=> 4096 bytes 
 
 #ifndef NRF_STACK_GUARD_CONFIG_SIZE
-#define NRF_STACK_GUARD_CONFIG_SIZE 7
+#define NRF_STACK_GUARD_CONFIG_SIZE 5
 #endif
 
 // </e>
@@ -11111,14 +11111,14 @@
 
 // <o> NRF_SDH_BLE_CENTRAL_LINK_COUNT - Maximum number of central links. 
 #ifndef NRF_SDH_BLE_CENTRAL_LINK_COUNT
-#define NRF_SDH_BLE_CENTRAL_LINK_COUNT 1
+#define NRF_SDH_BLE_CENTRAL_LINK_COUNT 2
 #endif
 
 // <o> NRF_SDH_BLE_TOTAL_LINK_COUNT - Total link count. 
 // <i> Maximum number of total concurrent connections using the default configuration.
 
 #ifndef NRF_SDH_BLE_TOTAL_LINK_COUNT
-#define NRF_SDH_BLE_TOTAL_LINK_COUNT 1
+#define NRF_SDH_BLE_TOTAL_LINK_COUNT 2
 #endif
 
 // <o> NRF_SDH_BLE_GAP_EVENT_LENGTH - GAP event length. 
@@ -11300,11 +11300,11 @@
 #define BLE_IAS_BLE_OBSERVER_PRIO 2
 #endif
 
-// <o> BLE_IAS_C_BLE_OBSERVER_PRIO  
-// <i> Priority with which BLE events are dispatched to the Immediate Alert Service Client.
+// <o> BLE_CP_C_BLE_OBSERVER_PRIO
+// <i> Priority with which BLE events are dispatched.
 
-#ifndef BLE_IAS_C_BLE_OBSERVER_PRIO
-#define BLE_IAS_C_BLE_OBSERVER_PRIO 2
+#ifndef BLE_CP_C_BLE_OBSERVER_PRIO
+#define BLE_CP_C_BLE_OBSERVER_PRIO 2
 #endif
 
 // <o> BLE_LBS_BLE_OBSERVER_PRIO  
@@ -11623,7 +11623,7 @@
 // <i> Zero is the highest priority.
 
 #ifndef NRF_SDH_ANT_STACK_OBSERVER_PRIO
-#define NRF_SDH_ANT_STACK_OBSERVER_PRIO 0
+#define NRF_SDH_ANT_STACK_OBSERVER_PRIO 1
 #endif
 
 // <o> NRF_SDH_BLE_STACK_OBSERVER_PRIO  
@@ -11648,7 +11648,7 @@
 // <i> Priority for dispatching the BLE events to the Scanning Module.
 
 #ifndef NRF_BLE_SCAN_OBSERVER_PRIO
-#define NRF_BLE_SCAN_OBSERVER_PRIO 1
+#define NRF_BLE_SCAN_OBSERVER_PRIO 0
 #endif
 
 // </h> 

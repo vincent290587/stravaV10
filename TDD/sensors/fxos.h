@@ -28,7 +28,9 @@ void fxos_set_yaw(float yaw_rad);
 
 bool fxos_get_pitch(float &);
 
-void fxos_set_pitch(float );
+bool fxos_get_roughness(float roughness[3]);
+
+void fxos_set_xyz(float g_Ax_Raw, float g_Ay_Raw, float g_Az_Raw);
 
 tHistoValue fxos_histo_read(uint16_t ind_);
 

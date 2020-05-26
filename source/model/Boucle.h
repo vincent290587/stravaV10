@@ -11,6 +11,7 @@
 #include <model/BoucleInterface.h>
 #include <model/BoucleCRS.h>
 #include <model/BoucleFEC.h>
+#include <model/BoucleZwift.h>
 #include "parameters.h"
 
 
@@ -20,6 +21,7 @@ typedef enum {
 	eBoucleGlobalModesFEC,
 	eBoucleGlobalModesPRC,
 	eBoucleGlobalModesMSC,
+	eBoucleGlobalModesZwift,
 } eBoucleGlobalModes;
 
 

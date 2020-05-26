@@ -28,7 +28,7 @@ class Adafruit_GFX : public Print {
   // These MAY be overridden by the subclass to provide device-specific
   // optimized code.  Otherwise 'generic' versions are used.
   virtual void
-    drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color),
+    drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color, int16_t thick=1),
     drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color),
     drawFastPHLine(int16_t x, int16_t y, int16_t h, uint16_t color),
     drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color),
@@ -39,6 +39,7 @@ class Adafruit_GFX : public Print {
 
   // These exist only with Adafruit_GFX (no subclass overrides)
   void
+    writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color, int16_t thick),
     drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color),
     drawCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername,
       uint16_t color),

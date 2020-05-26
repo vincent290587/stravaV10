@@ -1,7 +1,7 @@
 /*
  * fec.c
  *
- *  Created on: 9 déc. 2017
+ *  Created on: 9 dec. 2017
  *      Author: Vincent
  */
 
@@ -38,9 +38,8 @@ FEC_DISP_PROFILE_CONFIG_DEF(m_ant_fec,
 
 ant_fec_profile_t        m_ant_fec;
 
-APP_TIMER_DEF(m_fec_update);
-
 static bool is_fec_init = false;
+static uint16_t fec_time = 0;
 
 static bool is_fec_tx_pending = false;
 
@@ -75,21 +74,13 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 
 		ant_device_manager_search_add(pusDeviceNumber, -5);
 
-		if (pusDeviceNumber && !is_fec_init) {
-			is_fec_init = 1;
-
-			err_code = app_timer_start(m_fec_update, FEC_CONTROL_DELAY, &fec_control);
-			APP_ERROR_CHECK(err_code);
-		}
 	}
 	ant_fec_disp_evt_handler(p_ant_evt, &m_ant_fec);
 	break;
 	case EVENT_RX_FAIL:
 		break;
 	case EVENT_RX_FAIL_GO_TO_SEARCH:
-		is_fec_init = 0;
-		err_code = app_timer_stop(m_fec_update);
-		APP_ERROR_CHECK(err_code);
+		model_add_notification("FEC", "EVENT_RX_FAIL_GO_TO_SEARCH", 4, eNotificationTypeComplete);
 		NRF_LOG_WARNING("ANT FEC EVENT_RX_FAIL_GO_TO_SEARCH");
 		break;
 	case EVENT_RX_SEARCH_TIMEOUT:
@@ -111,6 +102,8 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
  */
 static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t event)
 {
+	static uint8_t old_time = 0;
+
 	switch (event)
 	{
 	case ANT_FEC_PAGE_1_UPDATED:
@@ -125,8 +118,27 @@ static void ant_fec_evt_handler(ant_fec_profile_t * p_profile, ant_fec_evt_t eve
 
 	case ANT_FEC_PAGE_16_UPDATED:
 	{
-		fec_info.el_time = ant_fec_utils_raw_time_to_uint16_t(p_profile->page_16.elapsed_time);
-		fec_info.speed   = ant_fec_utils_raw_speed_to_uint16_t(p_profile->page_16.speed);
+		uint8_t new_time = p_profile->page_16.elapsed_time;
+
+		if (!is_fec_init) {
+
+			is_fec_init = 1;
+			old_time = new_time;
+		}
+
+		if (new_time < old_time) {
+			// treat rollover
+			uint8_t diff = new_time - old_time;
+			fec_time += diff;
+		} else {
+
+			fec_time += new_time - old_time;
+		}
+		old_time = new_time;
+
+		// convert from LSB to seconds
+		fec_info.el_time = fec_time / 4;
+
 		w_task_events_set(m_tasks_id.boucle_id, TASK_EVENT_FEC_INFO);
 	}
 	break;
@@ -236,10 +248,6 @@ void roller_manager_tasks(void) {
 
 void fec_init(void) {
 
-	// Create timer.
-	ret_code_t err_code = app_timer_create(&m_fec_update, APP_TIMER_MODE_REPEATED, roller_manager);
-	APP_ERROR_CHECK(err_code);
-
 	memset(&m_fec_message_payload, 0, sizeof(m_fec_message_payload));
 
 	fec_control.type = eFecControlTargetNone;
@@ -261,13 +269,15 @@ void fec_set_control(sFecControl* tbc) {
 void fec_profile_setup(void) {
 
 	ret_code_t err_code;
+#if defined( USE_ANT_SEARCH )
 	ant_search_config_t ant_search_config   = DEFAULT_ANT_SEARCH_CONFIG(0);
 
 	// Disable high priority search to minimize disruption to other channels while searching
 	ant_search_config.high_priority_timeout = ANT_HIGH_PRIORITY_SEARCH_DISABLE;
 	ant_search_config.low_priority_timeout  = 80;
-	ant_search_config.search_sharing_cycles = 0x10;
+	ant_search_config.search_sharing_cycles = 3;
 	ant_search_config.search_priority       = ANT_SEARCH_PRIORITY_LOWEST;
+#endif
 
 	// FEC
 	err_code = ant_fec_disp_init(&m_ant_fec,
@@ -275,9 +285,11 @@ void fec_profile_setup(void) {
 			FEC_DISP_PROFILE_CONFIG(m_ant_fec));
 	APP_ERROR_CHECK(err_code);
 
+#if defined( USE_ANT_SEARCH )
 	ant_search_config.channel_number = FEC_CHANNEL_NUMBER;
 	err_code = ant_search_init(&ant_search_config);
 	APP_ERROR_CHECK(err_code);
+#endif
 }
 
 /**
@@ -286,6 +298,8 @@ void fec_profile_setup(void) {
 void fec_profile_start(void) {
 
 	ret_code_t err_code;
+
+	fec_time = 0;
 
 	err_code = ant_fec_disp_open(&m_ant_fec);
 	APP_ERROR_CHECK(err_code);

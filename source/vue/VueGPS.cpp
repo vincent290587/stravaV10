@@ -28,6 +28,8 @@ void VueGPS::displayGPS() {
 		vue.println("EPO update in progress");
 	}
 
+	vue.println("  ----- MEM -----");
+
 	String segs = " ";
 	segs += mes_segments.size();
 	segs += " segments loaded";

@@ -180,14 +180,21 @@ flash: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	nrfjprog --reset -f nrf52
 	nrfjprog --run
 
+# Flash the program and the DFU settings so that
+flash_dfu: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
+	@echo Generating DFU settings...
+	nrfutil settings generate --family NRF52840 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex  --bootloader-version 1 --bl-settings-version 2 settings_dfu.hex
+	mergehex --merge $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex settings_dfu.hex --output app_dfu_settings.hex
+	@echo Flashing: app_dfu_settings.hex
+	nrfjprog --program app_dfu_settings.hex -f nrf52 --sectorerase
+	nrfjprog --reset -f nrf52
+	nrfjprog --run
+
 # Flash softdevice
 flash_softdevice:
 	@echo Flashing
 	nrfjprog --program $(SDK_ROOT)/$(SOFTDEVICE) -f nrf52 --sectorerase 
 #	nrfjprog --reset -f nrf52
-
-settings:
-	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
 
 dfu_softdevice:
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip

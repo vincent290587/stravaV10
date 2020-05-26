@@ -24,7 +24,7 @@
  ******************************************************************************/
 
 /* buffer size (in byte) for read/write operations */
-#define BUFFER_SIZE (128U)
+#define BUFFER_SIZE (192U)
 
 #define HISTO_MARKER_CHAR          '@'
 
@@ -366,6 +366,8 @@ void uninit_liste_segments(void)
 
 	mes_parcours._parcs.clear();
 
+	m_list_histo.clear();
+
 	return;
 }
 
@@ -389,7 +391,6 @@ int load_segment(Segment& seg) {
 	String fat_name = seg.getName();
 
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
-	if (error) error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
 		LOG_ERROR("Open file failed. (error %u)", error);
@@ -408,8 +409,20 @@ int load_segment(Segment& seg) {
 			// meta data
 		} else if (strstr(g_bufferRead, ";")) {
 			// on est pret a charger le point
-			if (!chargerPointSeg(g_bufferRead, seg, time_start))
+			if (!chargerPointSeg(g_bufferRead, seg, time_start)) {
 				res++;
+#if defined( DEBUG_NRF_USER ) || defined( TDD )
+				if (res == 1 &&
+						seg.getFirstPoint()) {
+
+					float tmp_lat, tmp_lon, dist;
+					parseSegmentName(seg.getName(), &tmp_lat, &tmp_lon);
+					dist = seg.getFirstPoint()->dist(tmp_lat, tmp_lon);
+
+					LOG_INFO("Distance to seg name: %d ", (int)dist);
+				}
+#endif
+			}
 		}
 
 		if (check_memory_exception()) return -1;
@@ -604,11 +617,23 @@ void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
 	}
 
 	for (uint16_t i=0; i< nb_pos; i++) {
+
 		// print histo
-		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite), "%f;%f;%f;%lu;%d\r\n",
-				att[i].loc.lat, att[i].loc.lon,
-				att[i].loc.alt, att[i].date.secj,
-				att[i].pwr);
+		int to_wr = snprintf(g_bufferWrite, sizeof(g_bufferWrite),
+				"%f;%f;%.2f;%lu;"
+				"%d;%u;%lu;"
+				"%.3f;%.3f;%.3f;%.2f;"
+				"%.1f;%.2f;%.2f;%.2f;"
+				"%.0f;%.0f;%.0f;"
+				"%.1f;"
+				"\r\n",
+				att[i].loc.lat, att[i].loc.lon, att[i].loc.alt, att[i].date.secj,
+				att[i].sensors.pwr, att[i].sensors.bpm, att[i].sensors.cadence,
+				att[i].alti.alpha_bar, att[i].alti.alpha_zero, att[i].alti.baro_ele, att[i].alti.baro_corr,
+				att[i].alti.climb, att[i].alti.filt_ele, att[i].alti.gps_ele, att[i].alti.vit_asc,
+				att[i].alti.rough[0], att[i].alti.rough[1], att[i].alti.rough[2],
+				att[i].alti.b_rough
+				);
 
 		if (to_wr > 0 && to_wr < (int)sizeof(g_bufferWrite)) {
 			f_write(&g_fileObject, g_bufferWrite, to_wr, NULL);

@@ -66,11 +66,22 @@
 
 #endif
 
-#if NRF_LOG_ENABLED
+#if USE_VCOM_LOGS
+
+#define LOG_INFO(...)                  USB_PRINTF(__VA_ARGS__)
+#define LOG_RAW_INFO(X)                USB_PRINTC(X)
+#define LOG_WARNING(...)               LOG_WARNING_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
+#define LOG_DEBUG(...)                 EMPTY_MACRO
+#define LOG_ERROR(...)                 LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
+#define LOG_GRAPH(...)                 EMPTY_MACRO
+#define LOG_FLUSH(...)                 EMPTY_MACRO
+#define LOG_SET_TERM(X)                EMPTY_MACRO
+
+#elif NRF_LOG_ENABLED
 
 #include "SEGGER_RTT.h"
 #define LOG_INFO(...)                  SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
-#define LOG_RAW_INFO(X)                EMPTY_MACRO
+#define LOG_RAW_INFO(X)                SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, X);
 #define LOG_WARNING(...)               SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
@@ -78,10 +89,10 @@
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 
-#else // NRF_LOG_ENABLED
+#else
 
-#define LOG_INFO(...)                  USB_PRINTF(__VA_ARGS__)
-#define LOG_RAW_INFO(X)                USB_PRINTC(X)
+#define LOG_INFO(...)                  EMPTY_MACRO
+#define LOG_RAW_INFO(X)                EMPTY_MACRO
 #define LOG_WARNING(...)               LOG_WARNING_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)

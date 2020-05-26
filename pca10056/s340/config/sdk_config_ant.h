@@ -1004,7 +1004,7 @@
 //==========================================================
 // <o> NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED - Allocated ANT channels. 
 #ifndef NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED
-#define NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED 5
+#define NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED 4
 #endif
 
 // <o> NRF_SDH_ANT_ENCRYPTED_CHANNELS - Encrypted ANT channels. 
@@ -1094,13 +1094,5 @@
 #define BSP_BTN_ANT_OBSERVER_PRIO 1
 #endif
 
-// <o> NRF_SDH_ANT_STACK_OBSERVER_PRIO  
-// <i> This setting configures the priority with which ANT events are processed with respect to other events coming from the stack.
-// <i> Modify this setting if you need to have ANT events dispatched before or after other stack events, such as BLE or SoC.
-// <i> Zero is the highest priority.
-
-#ifndef NRF_SDH_ANT_STACK_OBSERVER_PRIO
-#define NRF_SDH_ANT_STACK_OBSERVER_PRIO 0
-#endif
 
 // </h> 

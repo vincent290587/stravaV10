@@ -14,6 +14,8 @@ BoucleCRS boucle_crs;
 
 BoucleFEC boucle_fec;
 
+BoucleZwift boucle_zwift;
+
 static eBoucleGlobalModes m_global_mode = eBoucleGlobalModesInit;
 
 
@@ -82,6 +84,11 @@ void boucle__run(void) {
 		boucle_crs.run();
 	}
 	break;
+	case eBoucleGlobalModesZwift:
+	{
+		boucle_zwift.run();
+	}
+	break;
 
 	default:
 	{
@@ -117,6 +124,11 @@ void boucle__change_mode(eBoucleGlobalModes new_mode) {
 	case eBoucleGlobalModesPRC:
 	{
 		boucle_crs.invalidate();
+	}
+	break;
+	case eBoucleGlobalModesZwift:
+	{
+		boucle_zwift.invalidate();
 	}
 	break;
 

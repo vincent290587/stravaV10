@@ -5,6 +5,12 @@
 #include <stdint.h>
 #include "mk64f_parser.h"
 
+
+typedef enum {
+	eNotificationTypePartial, //!< eNotificationTypePartial
+	eNotificationTypeComplete,//!< eNotificationTypeComplete
+} eNotificationType;
+
 typedef enum {
 	eNeoEventEmpty       = 0U,
 	eNeoEventWeakNotify  = 1U,

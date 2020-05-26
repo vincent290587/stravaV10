@@ -13,7 +13,7 @@
 #include "segger_wrapper.h"
 
 
-#define BATT_INT_RES                   0.155f
+#define BATT_INT_RES                   0.273f
 
 #define FACTOR 100000.0f
 
@@ -305,7 +305,7 @@ float percentageBatt(float tensionValue, float current) {
     } else if (tensionValue > 3.2f) {
         fp_ = powf(10.f, -11.4f) * powf(tensionValue, 22.315f);
     } else {
-        fp_ = -1.f;
+        fp_ = 0.f;
     }
 
     return fp_;
@@ -409,12 +409,20 @@ float simpLinReg(float* x, float* y, float* lrCoef, int n) {
 /**
  * Calculates the CRC of an array
  */
-uint8_t calculate_crc(uint8_t input_a[], uint16_t length) {
-	int sum = 0;
-	for (int i = 1; i < length; i++) {
-		sum ^= (uint8_t) input_a[i];
+uint8_t calculate_crc(uint8_t *addr, uint16_t len) {
+	uint8_t crc=0;
+	for (uint8_t i=0; i<len;i++) {
+		uint8_t inbyte = addr[i];
+		for (uint8_t j=0;j<8;j++) {
+			uint8_t mix = (crc ^ inbyte) & 0x01;
+			crc >>= 1;
+			if (mix)
+				crc ^= 0x8C;
+			inbyte >>= 1;
+		}
 	}
-	return sum;
+
+	return crc;
 }
 
 

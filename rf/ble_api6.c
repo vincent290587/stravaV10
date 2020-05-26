@@ -25,6 +25,7 @@
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_scan.h"
 #include "helper.h"
+#include "ble_cp_c.h"
 #include "ble_bas_c.h"
 #include "ble_nus_c.h"
 #include "ble_advdata.h"
@@ -44,30 +45,11 @@
 
 #define APP_BLE_CONN_CFG_TAG        1                                   /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define APP_BLE_OBSERVER_PRIO       1                                   /**< Application's BLE observer priority. You shouldn't need to modify this value. */
+#define APP_BLE_OBSERVER_PRIO       0                                   /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 #define APP_SOC_OBSERVER_PRIO       1                                   /**< Applications' SoC observer priority. You shoulnd't need to modify this value. */
 
+#define SCAN_DURATION               MSEC_TO_UNITS(3*60000, UNIT_10_MS)     /**< Duration of the scanning in units of 10 milliseconds. If set to 0x0000, scanning will continue until it is explicitly disabled. */
 
-#define SEC_PARAM_BOND              1                                   /**< Perform bonding. */
-#define SEC_PARAM_MITM              0                                   /**< Man In The Middle protection not required. */
-#define SEC_PARAM_LESC              0                                   /**< LE Secure Connections not enabled. */
-#define SEC_PARAM_KEYPRESS          0                                   /**< Keypress notifications not enabled. */
-#define SEC_PARAM_IO_CAPABILITIES   BLE_GAP_IO_CAPS_NONE                /**< No I/O capabilities. */
-#define SEC_PARAM_OOB               0                                   /**< Out Of Band data not available. */
-#define SEC_PARAM_MIN_KEY_SIZE      7                                   /**< Minimum encryption key size in octets. */
-#define SEC_PARAM_MAX_KEY_SIZE      16                                  /**< Maximum encryption key size in octets. */
-
-#define SCAN_INTERVAL               0x00A0                              /**< Determines scan interval in units of 0.625 millisecond. */
-#define SCAN_WINDOW                 0x0050                              /**< Determines scan window in units of 0.625 millisecond. */
-#define SCAN_DURATION               0x0000                              /**< Duration of the scanning in units of 10 milliseconds. If set to 0x0000, scanning will continue until it is explicitly disabled. */
-#define SCAN_DURATION_WITELIST      600                                /**< Duration of the scanning in units of 10 milliseconds. */
-
-#define MIN_CONNECTION_INTERVAL     MSEC_TO_UNITS(7.5, UNIT_1_25_MS)    /**< Determines minimum connection interval in millisecond. */
-#define MAX_CONNECTION_INTERVAL     MSEC_TO_UNITS(30, UNIT_1_25_MS)     /**< Determines maximum connection interval in millisecond. */
-#define SLAVE_LATENCY               2                                   /**< Determines slave latency in counts of connection events. */
-#define SUPERVISION_TIMEOUT         MSEC_TO_UNITS(4000, UNIT_10_MS)     /**< Determines supervision time-out in units of 10 millisecond. */
-
-#define TARGET_UUID                 BLE_UUID_LOCATION_AND_NAVIGATION_SERVICE         /**< Target device name that application is looking for. */
 #define TARGET_NAME                 "stravaAP"
 
 
@@ -82,13 +64,25 @@ typedef enum {
 
 NRF_BLE_SCAN_DEF(m_scan);
 BLE_NUS_C_DEF(m_ble_nus_c);
+BLE_CP_C_DEF(m_ble_cp_c);
 BLE_KOMOOT_C_DEF(m_ble_komoot_c);
 BLE_LNS_C_DEF(m_ble_lns_c);                                             /**< Structure used to identify the heart rate client module. */
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
-BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
+BLE_DB_DISCOVERY_ARRAY_DEF(m_db_disc, NRF_SDH_BLE_CENTRAL_LINK_COUNT);  /**< Database discovery module instances. */
 NRF_BLE_GQ_DEF(m_ble_gatt_queue,                                /**< BLE GATT Queue instance. */
-        NRF_SDH_BLE_CENTRAL_LINK_COUNT,
-        NRF_BLE_GQ_QUEUE_SIZE);
+		NRF_SDH_BLE_CENTRAL_LINK_COUNT,
+		NRF_BLE_GQ_QUEUE_SIZE);
+
+/**< Scan parameters requested for scanning and connection. */
+static ble_gap_scan_params_t const m_scan_param =
+{
+		.active        = 0x01,
+		.interval      = 320,  /**< Determines scan interval in units of 0.625 millisecond. */
+		.window        = 8,    /**< Determines scan window in units of 0.625 millisecond. */
+		.filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL,
+		.timeout       = SCAN_DURATION,
+		.scan_phys     = BLE_GAP_PHY_AUTO,
+};
 
 #define NUS_RB_SIZE      1024
 RING_BUFFER_DEF(nus_rb1, NUS_RB_SIZE);
@@ -103,6 +97,7 @@ static uint16_t m_mtu_length = 20;
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
+sPowerVector powerVector;
 
 static void scan_start(void);
 
@@ -118,6 +113,7 @@ static void scan_start(void);
  */
 static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
+	ble_cp_c_on_db_disc_evt(&m_ble_cp_c, p_evt);
 	ble_lns_c_on_db_disc_evt(&m_ble_lns_c, p_evt);
 	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
 	ble_komoot_c_on_db_disc_evt(&m_ble_komoot_c, p_evt);
@@ -138,15 +134,16 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 	case BLE_GAP_EVT_CONNECTED:
 	{
-		LOG_INFO("Connected.");
-		m_connected = true;
-		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
+		LOG_INFO("Connected handle 0x%x.", p_gap_evt->conn_handle);
+
 		m_retry_db_disc = false;
-		// Discover peer's services.
-		err_code = ble_db_discovery_start(&m_db_disc, m_pending_db_disc_conn);
+		m_pending_db_disc_conn = p_gap_evt->conn_handle;
+
+		err_code = ble_db_discovery_start(&m_db_disc[p_gap_evt->conn_handle],
+				p_gap_evt->conn_handle);
 		if (err_code == NRF_ERROR_BUSY)
 		{
-			LOG_INFO("ble_db_discovery_start() returned busy, will retry later.");
+			LOG_WARNING("ble_db_discovery_start() returned busy, will retry later.");
 			m_retry_db_disc = true;
 		}
 		else
@@ -154,50 +151,43 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 			APP_ERROR_CHECK(err_code);
 		}
 
-        const uint16_t mtu_desired = 200;
-
-        LOG_INFO("mtu of %d requested", mtu_desired);
-        err_code = nrf_ble_gatt_data_length_set(&m_gatt, p_ble_evt->evt.gap_evt.conn_handle, mtu_desired);      // UPDATE MTU HERE
-        APP_ERROR_CHECK(err_code);
+		scan_start();
 
 	} break;
 
 	case BLE_GAP_EVT_DISCONNECTED:
 	{
-		LOG_INFO("Disconnected, reason 0x%x.",
+		LOG_INFO("Disconnected handle 0x%x, reason 0x%x.",
+				p_gap_evt->conn_handle,
 				p_ble_evt->evt.gap_evt.params.disconnected.reason);
-
-		m_connected = false;
-
-		// Reset DB discovery structure.
-		memset(&m_db_disc, 0 , sizeof (m_db_disc));
 
 		scan_start();
 
 	} break;
 
+	case BLE_GAP_EVT_RSSI_CHANGED:
+		break;
+
 	case BLE_GAP_EVT_TIMEOUT:
 	{
-		if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_SCAN)
+		if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN)
 		{
-			NRF_LOG_DEBUG("Scan timed out.");
-			scan_start();
-		}
-		else if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN)
-		{
-			LOG_INFO("Connection Request timed out.");
+			NRF_LOG_INFO("Connection Request timed out.");
 		}
 	} break;
 
 
 	case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
 		// Pairing not supported.
+		NRF_LOG_INFO("BLE_GAP_EVT_SEC_PARAMS_REQUEST");
 		err_code = sd_ble_gap_sec_params_reply(p_ble_evt->evt.gap_evt.conn_handle, BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP, NULL, NULL);
 		APP_ERROR_CHECK(err_code);
 		break;
 
 	case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST:
 		// Accepting parameters requested by peer.
+		NRF_LOG_INFO("BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST %u",
+				p_gap_evt->params.conn_param_update_request.conn_params.slave_latency);
 		err_code = sd_ble_gap_conn_param_update(p_gap_evt->conn_handle,
 				&p_gap_evt->params.conn_param_update_request.conn_params);
 		APP_ERROR_CHECK(err_code);
@@ -205,7 +195,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 	case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
 	{
-		NRF_LOG_DEBUG("PHY update request.");
+		NRF_LOG_INFO("PHY update request.");
 		ble_gap_phys_t const phys =
 		{
 				.rx_phys = BLE_GAP_PHY_AUTO,
@@ -230,6 +220,14 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 				BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
 		APP_ERROR_CHECK(err_code);
 		break;
+
+	case BLE_GAP_EVT_AUTH_STATUS:
+		NRF_LOG_INFO("BLE_GAP_EVT_AUTH_STATUS: status=0x%x bond=0x%x lv4: %d kdist_own:0x%x kdist_peer:0x%x",
+				p_ble_evt->evt.gap_evt.params.auth_status.auth_status,
+				p_ble_evt->evt.gap_evt.params.auth_status.bonded,
+				p_ble_evt->evt.gap_evt.params.auth_status.sm1_levels.lv4,
+				*((uint8_t *)&p_ble_evt->evt.gap_evt.params.auth_status.kdist_own),
+				*((uint8_t *)&p_ble_evt->evt.gap_evt.params.auth_status.kdist_peer));
 
 	case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
 		LOG_DEBUG("GATTC WRITE_CMD_TX Complete %u", m_nus_cts);
@@ -286,7 +284,57 @@ static void ble_stack_init(void)
 	memset(device_name, 0, sizeof(device_name));
 	memcpy(device_name, BLE_DEVICE_NAME, strlen(BLE_DEVICE_NAME));
 	err_code = sd_ble_gap_device_name_set(&sec_mode, device_name, strlen(BLE_DEVICE_NAME));
+	APP_ERROR_CHECK(err_code);
 }
+
+/**@brief Heart Rate Collector Handler.
+ */
+static void cp_c_evt_handler(ble_cp_c_t * p_cp_c, ble_cp_c_evt_t * p_cp_c_evt)
+{
+	ret_code_t err_code;
+
+	switch (p_cp_c_evt->evt_type)
+	{
+	case BLE_CP_C_EVT_DISCOVERY_COMPLETE:
+	{
+		NRF_LOG_DEBUG("FTMS service discovered.");
+
+		err_code = ble_cp_c_handles_assign(p_cp_c,
+				p_cp_c_evt->conn_handle,
+				&p_cp_c_evt->params.char_handles);
+		APP_ERROR_CHECK(err_code);
+
+		// FTMS discovered. Enable notifications
+		err_code = ble_cp_c_pv_notif_enable(p_cp_c);
+		APP_ERROR_CHECK(err_code);
+	} break;
+
+	case BLE_CP_C_EVT_VECTOR_RECV:
+	{
+		NRF_LOG_INFO("Crank revs: %u", p_cp_c_evt->params.vector_evt.cumul_crank_rev);
+		NRF_LOG_INFO("Array pos : %u", p_cp_c_evt->params.vector_evt.array_size);
+
+		powerVector.array_size      = p_cp_c_evt->params.vector_evt.array_size;
+		powerVector.cumul_crank_rev = p_cp_c_evt->params.vector_evt.cumul_crank_rev;
+		powerVector.first_crank_angle = p_cp_c_evt->params.vector_evt.first_crank_angle;
+		powerVector.last_crank_evt  = p_cp_c_evt->params.vector_evt.last_crank_evt;
+		memcpy(powerVector.inst_torque_mag_array, p_cp_c_evt->params.vector_evt.inst_torque_mag_array, sizeof(powerVector.inst_torque_mag_array));
+
+	} break;
+
+	case BLE_CP_C_EVT_POWER_RECV:
+	{
+		NRF_LOG_DEBUG("BLE_CP_C_EVT_POWER_RECV");
+
+		powerVector.inst_power = p_cp_c_evt->params.power_meas.inst_power;
+
+	} break;
+
+	default:
+		break;
+	}
+}
+
 
 /**@brief Heart Rate Collector Handler.
  */
@@ -304,18 +352,11 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 				&p_lns_c_evt->params.peer_db);
 		APP_ERROR_CHECK(err_code);
 
-		// Initiate bonding.
-		err_code = pm_conn_secure(p_lns_c_evt->conn_handle, false);
-		if (err_code != NRF_ERROR_INVALID_STATE)
-		{
-			APP_ERROR_CHECK(err_code);
-		}
-
 		// LNS service discovered. Enable notification of LNS.
 		err_code = ble_lns_c_pos_notif_enable(p_lns_c);
 		APP_ERROR_CHECK(err_code);
 
-		LOG_INFO("LNS service discovered.");
+		NRF_LOG_INFO("LNS service discovered.");
 		break;
 
 	case BLE_LNS_C_EVT_LNS_NOTIFICATION:
@@ -356,7 +397,7 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 
 		locator_dispatch_lns_update(&lns_info);
 
-		LOG_INFO("Sec jour = %d %d %d", p_lns_c_evt->params.lns.utc_time.hours,
+		NRF_LOG_INFO("Sec jour = %d %d %d", p_lns_c_evt->params.lns.utc_time.hours,
 				p_lns_c_evt->params.lns.utc_time.minutes,
 				p_lns_c_evt->params.lns.utc_time.seconds);
 
@@ -385,6 +426,12 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
 		APP_ERROR_CHECK(err_code);
 		LOG_INFO("Connected to stravaAP");
+
+		LOG_INFO("Requesting long NUS MTU");
+		err_code = nrf_ble_gatt_data_length_set(&m_gatt, p_evt->conn_handle, 200);      // UPDATE MTU HERE
+		APP_ERROR_CHECK(err_code);
+
+		m_connected = true;
 		break;
 
 	case BLE_NUS_C_EVT_NUS_TX_EVT:
@@ -415,6 +462,7 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		break;
 
 	case BLE_NUS_C_EVT_DISCONNECTED:
+		m_connected = false;
 		if (m_nus_xfer_state == eNusTransferStateRun) m_nus_xfer_state = eNusTransferStateFinish;
 		break;
 	}
@@ -438,18 +486,11 @@ static void komoot_c_evt_handler(ble_komoot_c_t * p_komoot_c, ble_komoot_c_evt_t
 				&p_komoot_c_evt->params.peer_db);
 		APP_ERROR_CHECK(err_code);
 
-		// Initiate bonding.
-		err_code = pm_conn_secure(p_komoot_c_evt->conn_handle, false);
-		if (err_code != NRF_ERROR_INVALID_STATE)
-		{
-			APP_ERROR_CHECK(err_code);
-		}
-
 		// service discovered. Enable notification
 		err_code = ble_komoot_c_pos_notif_enable(p_komoot_c);
 		APP_ERROR_CHECK(err_code);
 
-		LOG_INFO("KOMOOT service discovered.");
+		NRF_LOG_INFO("KOMOOT service discovered.");
 		break;
 
 	case BLE_KOMOOT_C_EVT_KOMOOT_NOTIFICATION:
@@ -487,6 +528,23 @@ static void _service_c_error_handler(uint32_t nrf_error)
 		return;
 	}
 	APP_ERROR_HANDLER(nrf_error);
+}
+
+/**
+ * @brief Heart rate collector initialization.
+ */
+static void cp_c_init(void)
+{
+	ble_cp_c_init_t cp_c_init_obj;
+
+	cp_c_init_obj.evt_handler   = cp_c_evt_handler;
+	cp_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	cp_c_init_obj.error_handler = _service_c_error_handler;
+
+	memset(&m_ble_cp_c, 0, sizeof(m_ble_cp_c));
+
+	ret_code_t err_code = ble_cp_c_init(&m_ble_cp_c, &cp_c_init_obj);
+	APP_ERROR_CHECK(err_code);
 }
 
 /**
@@ -565,7 +623,7 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 	{
 	case NRF_BLE_SCAN_EVT_FILTER_MATCH:
 	{
-		NRF_LOG_INFO("Filter match: %x", p_scan_evt->params.filter_match.filter_match.uuid_filter_match);
+		NRF_LOG_DEBUG("Filter match: %x", p_scan_evt->params.filter_match.filter_match.uuid_filter_match);
 	} break;
 
 	case NRF_BLE_SCAN_EVT_CONNECTING_ERROR:
@@ -591,8 +649,8 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 
 	case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT:
 	{
-		NRF_LOG_INFO("Scan timed out.");
-		scan_start();
+		NRF_LOG_INFO("BLE Scan timed out.");
+		//scan_start();
 	} break;
 
 	default:
@@ -610,17 +668,22 @@ static void scan_init(void)
 
 	memset(&init_scan, 0, sizeof(init_scan));
 
+	init_scan.p_scan_param     = &m_scan_param;
 	init_scan.connect_if_match = true;
 	init_scan.conn_cfg_tag     = APP_BLE_CONN_CFG_TAG;
 
-	/**@brief NUS UUID. */
+	ble_uuid_t const m_cp_uuid =
+	{
+			.uuid = BLE_UUID_CYCLING_POWER_SERVICE,
+			.type = BLE_UUID_TYPE_BLE,
+	};
+
 	ble_uuid_t const m_lns_uuid =
 	{
-			.uuid = TARGET_UUID,
+			.uuid = BLE_UUID_LOCATION_AND_NAVIGATION_SERVICE,
 			.type = m_ble_lns_c.uuid_type
 	};
 
-	/**@brief NUS UUID. */
 	ble_uuid_t const m_komoot_uuid =
 	{
 			.uuid = BLE_UUID_KOMOOT_SERVICE,
@@ -631,6 +694,12 @@ static void scan_init(void)
 	APP_ERROR_CHECK(err_code);
 
 	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_NAME_FILTER, TARGET_NAME);
+	APP_ERROR_CHECK(err_code);
+
+	//	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_NAME_FILTER, "Tacx Neo 2T 15568");
+	//	APP_ERROR_CHECK(err_code);
+
+	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_UUID_FILTER, &m_cp_uuid);
 	APP_ERROR_CHECK(err_code);
 
 	err_code = nrf_ble_scan_filter_set(&m_scan, SCAN_UUID_FILTER, &m_lns_uuid);
@@ -647,10 +716,14 @@ static void scan_init(void)
  */
 static void scan_start(void)
 {
-	ret_code_t ret;
 
-	ret = nrf_ble_scan_start(&m_scan);
-	APP_ERROR_CHECK(ret);
+	if (ble_conn_state_central_conn_count() < NRF_SDH_BLE_CENTRAL_LINK_COUNT)
+	{
+		ret_code_t ret;
+		ret = nrf_ble_scan_start(&m_scan);
+		APP_ERROR_CHECK(ret);
+	}
+
 }
 
 /**@brief GATT module event handler.
@@ -662,20 +735,23 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 	case NRF_BLE_GATT_EVT_ATT_MTU_UPDATED:
 	{
 
-		LOG_INFO("Desired MTU: central %u peripheral %u",
+		NRF_LOG_INFO("Desired MTU: central %u peripheral %u",
 				p_gatt->att_mtu_desired_central,
 				p_gatt->att_mtu_desired_periph);
 
-		LOG_INFO("ATT MTU exchange completed. MTU set to %u bytes.",
+		NRF_LOG_INFO("ATT MTU exchange completed. MTU set to %u bytes.",
 				p_evt->params.att_mtu_effective);
 
-		m_mtu_length = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+		if (p_evt->conn_handle == m_ble_nus_c.conn_handle) {
+			m_mtu_length = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+			NRF_LOG_INFO("NUS MTU set to %u", m_mtu_length);
+		}
 
 	} break;
 
 	case NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED:
 	{
-		LOG_INFO("Data length for connection 0x%x updated to %d.",
+		NRF_LOG_INFO("Data length for connection 0x%x updated to %d.",
 				p_evt->conn_handle,
 				p_evt->params.data_length);
 	} break;
@@ -684,26 +760,6 @@ static void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const *
 		break;
 	}
 
-	if (m_retry_db_disc)
-	{
-		LOG_INFO("Retrying DB discovery.");
-
-		m_retry_db_disc = false;
-
-		// Discover peer's services.
-		ret_code_t err_code;
-		err_code = ble_db_discovery_start(&m_db_disc, m_pending_db_disc_conn);
-
-		if (err_code == NRF_ERROR_BUSY)
-		{
-			LOG_INFO("ble_db_discovery_start() returned busy, will retry later.");
-			m_retry_db_disc = true;
-		}
-		else
-		{
-			APP_ERROR_CHECK(err_code);
-		}
-	}
 }
 
 
@@ -714,7 +770,7 @@ static void gatt_init(void)
 	ret_code_t err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
 	APP_ERROR_CHECK(err_code);
 
-    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
+	err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -751,6 +807,7 @@ void ble_init(void)
 	gatt_init();
 	db_discovery_init();
 
+	cp_c_init();
 	lns_c_init();
 	nus_c_init();
 	komoot_c_init();

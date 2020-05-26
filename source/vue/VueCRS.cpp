@@ -124,14 +124,17 @@ void VueCRS::afficheScreen1(void) {
 		this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+		this->cadran(4, VUE_CRS_NB_LINES, 1, "SL", _imkstr(att.slope), "%");
 		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
-		this->cadranH(5, VUE_CRS_NB_LINES, "Next", _imkstr(att.next), "m");
+		this->cadran(5, VUE_CRS_NB_LINES, 1, "Next", _imkstr(att.next), "m");
+		this->cadran(5, VUE_CRS_NB_LINES, 2, "Alt" , _fmkstr(att.loc.alt, 1U), "m");
 
 		float avg_speed = 0.;
-		if (att.nbsec_act) avg_speed = att.dist * 3.6f / att.nbsec_act;
-		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg", _fmkstr(avg_speed, 2U), "km/h");
+		if (att.nbsec_act) {
+			avg_speed = att.dist * 3.6f / att.nbsec_act;
+		}
+		this->cadran(6, VUE_CRS_NB_LINES, 1, "Avg"  , _fmkstr(avg_speed, 2U), "km/h");
 		this->cadran(6, VUE_CRS_NB_LINES, 2, "Score", _fmkstr(suffer_score.getScore(), 1U), NULL);
 
 		this->cadran(7, VUE_CRS_NB_LINES, 1, "STC", _imkstr((int)stc.getCurrent()), "mA");
@@ -150,7 +153,7 @@ void VueCRS::afficheScreen1(void) {
 		this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
 		this->cadran(3, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
-		this->cadran(4, VUE_CRS_NB_LINES, 1, "PR", _imkstr(att.pr), 0);
+		this->cadran(4, VUE_CRS_NB_LINES, 1, "SL", _imkstr(att.slope), "%");
 		this->cadran(4, VUE_CRS_NB_LINES, 2, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
 
 		ASSERT(segMngr.getSeg(0));
@@ -169,7 +172,7 @@ void VueCRS::afficheScreen1(void) {
 
 	case eVueCRSScreenDataDS:
 	{
-		this->cadran(1, VUE_CRS_NB_LINES, 1, "VA", _fmkstr(att.vit_asc, 2U), "m/s");
+		this->cadran(1, VUE_CRS_NB_LINES, 1, "SL",  _imkstr(att.slope), "%");
 		this->cadran(1, VUE_CRS_NB_LINES, 2, "HRM", _imkstr(hrm_info.bpm), "bpm");
 
 		ASSERT(segMngr.getSeg(0));
@@ -180,14 +183,13 @@ void VueCRS::afficheScreen1(void) {
 
 			// all segments are OFF
 			this->cadran(2, VUE_CRS_NB_LINES, 1, "Speed", _fmkstr(att.loc.speed, 1U), "km/h");
-			this->cadran(2, VUE_CRS_NB_LINES, 2, "Pwr", _imkstr(att.pwr), "W");
+			this->cadran(2, VUE_CRS_NB_LINES, 2, "Pwr"  , _imkstr(att.pwr), "W");
 
-			this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD", _imkstr(bsc_info.cadence), "rpm");
+			this->cadran(3, VUE_CRS_NB_LINES, 1, "CAD"  , _imkstr(bsc_info.cadence), "rpm");
 			this->cadran(3, VUE_CRS_NB_LINES, 2, "Climb", _fmkstr(att.climb, 1U), "m");
 
 			this->cadran(4, VUE_CRS_NB_LINES, 1, "Dist", _fmkstr(att.dist / 1000.f, 1U), "km");
-
-			this->cadran(4, VUE_CRS_NB_LINES, 2, "STC", _imkstr((int)stc.getCurrent()), "mA");
+			this->cadran(4, VUE_CRS_NB_LINES, 2, "SL"  , _imkstr(att.slope), "%");
 
 			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(0)->p_seg);
 			this->afficheSegment(VUE_CRS_NB_LINES - 2, segMngr.getSeg(1)->p_seg);
@@ -271,18 +273,9 @@ void VueCRS::afficheSensors(void) {
 	(void)fxos_get_yaw(yaw_rad);
 	(void)fxos_get_pitch(pitch_rad);
 
-	// mag heading
-	const uint16_t radius = 50;
-	this->drawCircle(this->width()/2, 300, radius, LS027_PIXEL_BLACK);
-
-	int16_t x2, y2;
-	rotate_point(yaw_rad * 180. / 3.1415, this->width()/2, 300,
-			this->width()/2, 300 - radius, x2, y2);
-	this->drawLine(this->width()/2, 300, x2, y2, LS027_PIXEL_BLACK);
-
 	// pitch
 	const uint16_t bar_len = 140;
-	float val = regFenLim(pitch_rad, -1.6, 1.6, -bar_len/2, bar_len/2);
+	float val = regFenLim(pitch_rad, -0.24, 0.24, -bar_len/2, bar_len/2);
 	if (val > 0.) {
 		this->fillRect(this->width()/2, 53, val, 8, LS027_PIXEL_BLACK);
 	} else {
@@ -297,12 +290,32 @@ void VueCRS::afficheSensors(void) {
 	// pitch #2
 	sVueHistoConfiguration h_config;
 	h_config.cur_elem_nb = fxos_histo_size();
-	h_config.ref_value   = (tHistoValue)157;
-	h_config.max_value   = (tHistoValue)314;
+	h_config.ref_value   = (tHistoValue)40;
+	h_config.max_value   = (tHistoValue)80;
 	h_config.nb_elem_tot = PITCH_BUFFER_SIZE;
 	h_config.p_f_read    = fxos_histo_read;
 
 	this->HistoH(3, 6, h_config);
+
+	// mag heading
+	const uint16_t radius = 50;
+	this->drawCircle(this->width()/2, 300, radius, LS027_PIXEL_BLACK);
+
+	int16_t x2, y2;
+	rotate_point(yaw_rad * 180. / 3.1415, this->width()/2, 300,
+			this->width()/2, 300 - radius, x2, y2);
+	this->drawLine(this->width()/2, 300, x2, y2, LS027_PIXEL_BLACK, 3);
+
+	// Text info
+	float roughness[4];
+	fxos_get_roughness(roughness);
+	roughness[3] = baro.getRoughness();
+
+	this->setTextSize(2);
+	for (int i=0; i < 4; i++) {
+		this->setCursor(10, 300 + 15 * i);
+		this->print(_fmkstr(roughness[i], 1));
+	}
 }
 
 

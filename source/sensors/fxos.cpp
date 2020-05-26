@@ -9,6 +9,7 @@
 #include "nrf_twi_mngr.h"
 #include "fsl_fxos.h"
 #include "gpio.h"
+#include "nrfx_gpiote.h"
 #include "boards.h"
 #include "RingBuffer.h"
 #include "UserSettings.h"
@@ -18,17 +19,20 @@
 #include <math.h>
 #include <millis.h>
 
+#define EN_INTERRUPTS
+#define LPSLEEP_HIRES
+
 #define kStatus_Fail    1
 #define kStatus_Success 0
 
 // Buffer for data read from sensors.
 static fxos_handle_t m_fxos_handle;
-static volatile bool m_is_updated = false;
-
 
 static tHistoValue _pi_buffer[PITCH_BUFFER_SIZE];
 RingBuffer<tHistoValue> m_pitch_buffer(PITCH_BUFFER_SIZE, _pi_buffer);
 
+
+static void _convert_samples(fxos_data_t *fxos_data, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz);
 
 ret_code_t FXOS_ReadReg(fxos_handle_t *handle, uint8_t reg, uint8_t *val, uint8_t bytesNumber)
 {
@@ -63,7 +67,9 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
  * Definitions
  ******************************************************************************/
 
-#define MAX_ACCEL_AVG_COUNT 5U
+#define MAG_CAL_ID          0xCF
+
+#define MAX_ACCEL_AVG_COUNT 50U
 
 /* multiplicative conversion constants */
 #define DegToRad 0.017453292f
@@ -74,44 +80,27 @@ ret_code_t FXOS_WriteReg(fxos_handle_t *handle, uint8_t reg, uint8_t val)
  * Variables
  ******************************************************************************/
 
-volatile uint16_t SampleEventFlag;
-uint8_t g_sensorRange = FULL_SCALE_2G;
-uint8_t g_dataScale = 0;
+static int16_t l_Mx = 0;
+static int16_t l_My = 0;
+static int16_t l_Mz = 0;
 
-int16_t g_Ax_Raw = 0;
-int16_t g_Ay_Raw = 0;
-int16_t g_Az_Raw = 0;
+static float g_Yaw = 0;
+static float g_Pitch = 0;
+static float g_Roll = 0;
 
-float g_Ax = 0;
-float g_Ay = 0;
-float g_Az = 0;
+static uint16_t int_buff_index = 0;
 
-int16_t g_Ax_buff[MAX_ACCEL_AVG_COUNT] = {0};
-int16_t g_Ay_buff[MAX_ACCEL_AVG_COUNT] = {0};
-int16_t g_Az_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Ax_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Ay_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Az_buff[MAX_ACCEL_AVG_COUNT] = {0};
 
-int16_t g_Mx_Raw = 0;
-int16_t g_My_Raw = 0;
-int16_t g_Mz_Raw = 0;
+static int16_t g_Mx_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_My_buff[MAX_ACCEL_AVG_COUNT] = {0};
+static int16_t g_Mz_buff[MAX_ACCEL_AVG_COUNT] = {0};
 
-int16_t g_Mx_Offset = 0;
-int16_t g_My_Offset = 0;
-int16_t g_Mz_Offset = 0;
-
-float g_Mx = 0;
-float g_My = 0;
-float g_Mz = 0;
-
-float g_Mx_LP = 0;
-float g_My_LP = 0;
-float g_Mz_LP = 0;
-
-float g_Yaw = 0;
-float g_Yaw_LP = 0;
-float g_Pitch = 0;
-float g_Roll = 0;
-
-bool g_FirstRun = true;
+static int16_t g_Mx_Offset = 0;
+static int16_t g_My_Offset = 0;
+static int16_t g_Mz_Offset = 0;
 
 
 static int16_t Mx_max = 0;
@@ -121,24 +110,67 @@ static int16_t Mx_min = 0;
 static int16_t My_min = 0;
 static int16_t Mz_min = 0;
 
-bool g_Calibration_Done = false;
+static float m_roughness[3] = { 0 , 0 , 0 };
+
+static int16_t m_calibration_step = 0;
 
 
 /***************************************************************************
  C FUNCTIONS
  ***************************************************************************/
 
+static inline void _process_fxos_measures(fxos_handle_t *p_fxosHandle) {
+
+	int16_t _Ax_Raw = 0;
+	int16_t _Ay_Raw = 0;
+	int16_t _Az_Raw = 0;
+
+	int16_t _Mx_Raw = 0;
+	int16_t _My_Raw = 0;
+	int16_t _Mz_Raw = 0;
+
+	/* Read sensor data */
+	_convert_samples(&p_fxosHandle->data, &_Ax_Raw, &_Ay_Raw, &_Az_Raw, &_Mx_Raw, &_My_Raw, &_Mz_Raw);
+
+	LOG_DEBUG("FXOS process %d %d %d", _Ax_Raw, _Ay_Raw, _Az_Raw);
+
+	g_Ax_buff[int_buff_index] = _Ax_Raw;
+	g_Ay_buff[int_buff_index] = _Ay_Raw;
+	g_Az_buff[int_buff_index] = _Az_Raw;
+
+	g_Mx_buff[int_buff_index] = _Mx_Raw;
+	g_My_buff[int_buff_index] = _My_Raw;
+	g_Mz_buff[int_buff_index] = _Mz_Raw;
+
+	l_Mx = _Mx_Raw;
+	l_My = _My_Raw;
+	l_Mz = _Mz_Raw;
+
+	if (++int_buff_index >= MAX_ACCEL_AVG_COUNT) {
+		int_buff_index = 0;
+	}
+
+}
+
+static void _int_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+{
+	W_SYSVIEW_RecordEnterISR();
+
+	LOG_DEBUG("FXOS int %u", millis());
+
+	fxos_readChip();
+
+	W_SYSVIEW_RecordEnterISR();
+}
+
 static void _fxos_read_cb(ret_code_t result, void * p_user_data) {
 
 	APP_ERROR_CHECK(result);
 	if (result) return;
 
-	m_is_updated = true;
+	// we fill the internal buffers, using oversampling
+	_process_fxos_measures(&m_fxos_handle);
 
-}
-
-bool is_fxos_updated(void) {
-	return m_is_updated;
 }
 
 void fxos_readChip(void) {
@@ -147,11 +179,11 @@ void fxos_readChip(void) {
     //  since the transaction is scheduled and these structures most likely
     //  will be referred after this function returns]
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[2] = FXOS_READ_ALL_REGS;
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND fxos_regs[] = { STATUS_00_REG };
 
     static nrf_twi_mngr_transfer_t const transfers[] =
     {
-		FXOS_READ_ALL    (&fxos_regs[0], &m_fxos_handle.mag_buffer[0], &m_fxos_handle.acc_buffer[0])
+    		I2C_READ_REG(FXOS_7BIT_ADDRESS, fxos_regs, &m_fxos_handle, sizeof(m_fxos_handle)),
     };
     static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
     {
@@ -165,10 +197,6 @@ void fxos_readChip(void) {
 
 }
 
-/*******************************************************************************
- * Code
- ******************************************************************************/
-
 /*!
  * @brief Read all data from sensor function
  *
@@ -180,15 +208,14 @@ void fxos_readChip(void) {
  * @param Mz The pointer store z axis magnetic value
  * @note Must calculate g_dataScale before use this function.
  */
-static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz)
+static void _convert_samples(fxos_data_t *fxos_data, int16_t *Ax, int16_t *Ay, int16_t *Az, int16_t *Mx, int16_t *My, int16_t *Mz)
 {
-	fxos_data_t fxos_data;
 #ifdef _DEBUG_TWI
-	if (FXOS_ReadReg(nullptr, OUT_X_MSB_REG, &fxos_data.accelXMSB, 6)) {
+	if (FXOS_ReadReg(nullptr, OUT_X_MSB_REG, &fxos_data->accelXMSB, 6)) {
 		LOG_ERROR("Error reading OUT_X_MSB_REG");
 		return;
 	}
-	if (FXOS_ReadReg(nullptr, M_OUT_X_MSB_REG, &fxos_data.magXMSB, 6)) {
+	if (FXOS_ReadReg(nullptr, M_OUT_X_MSB_REG, &fxos_data->magXMSB, 6)) {
 		LOG_ERROR("Error reading M_OUT_X_MSB_REG");
 		return;
 	}
@@ -201,107 +228,112 @@ static void Sensor_ReadData(fxos_handle_t *g_fxosHandle, int16_t *Ax, int16_t *A
 	}
 
 #else
-	ASSERT(g_fxosHandle);
-	memcpy(&fxos_data.accelXMSB, g_fxosHandle->acc_buffer, 6);
-	memcpy(&fxos_data.magXMSB  , g_fxosHandle->mag_buffer, 6);
+	ASSERT(fxos_data);
 #endif
-	/* Get the accel data from the sensor data structure in 14 bit left format data*/
-	*Ax = (int16_t)((uint16_t)((uint16_t)fxos_data.accelXMSB << 8) | (uint16_t)fxos_data.accelXLSB)/4U;
-	*Ay = (int16_t)((uint16_t)((uint16_t)fxos_data.accelYMSB << 8) | (uint16_t)fxos_data.accelYLSB)/4U;
-	*Az = (int16_t)((uint16_t)((uint16_t)fxos_data.accelZMSB << 8) | (uint16_t)fxos_data.accelZLSB)/4U;
 
-	*Ax *= g_dataScale;
-	*Ay *= g_dataScale;
-	*Az *= g_dataScale;
-	*Mx = (int16_t)((uint16_t)((uint16_t)fxos_data.magXMSB << 8) | (uint16_t)fxos_data.magXLSB);
-	*My = (int16_t)((uint16_t)((uint16_t)fxos_data.magYMSB << 8) | (uint16_t)fxos_data.magYLSB);
-	*Mz = (int16_t)((uint16_t)((uint16_t)fxos_data.magZMSB << 8) | (uint16_t)fxos_data.magZLSB);
+	/* Get the accel data from the sensor data structure in 14 bit left format data*/
+	*Ax = (int16_t)(((fxos_data->accelXMSB << 8) | fxos_data->accelXLSB)) >> 2u;
+	*Ay = (int16_t)(((fxos_data->accelYMSB << 8) | fxos_data->accelYLSB)) >> 2u;
+	*Az = (int16_t)(((fxos_data->accelZMSB << 8) | fxos_data->accelZLSB)) >> 2u;
+
+	*Mx = (int16_t)((fxos_data->magXMSB << 8) | (uint16_t)fxos_data->magXLSB);
+	*My = (int16_t)((fxos_data->magYMSB << 8) | (uint16_t)fxos_data->magYLSB);
+	*Mz = (int16_t)((fxos_data->magZMSB << 8) | (uint16_t)fxos_data->magZLSB);
 
 }
 
-static int Magnetometer_Calibrate_Task(void)
+static inline void Magnetometer_Calibrate_Task(int16_t g_Mx_Raw, int16_t g_My_Raw, int16_t g_Mz_Raw)
 {
 
-	//if (!g_Calibration_Done)
+	if (g_Mx_Raw > Mx_max)
 	{
-		if (g_Mx_Raw > Mx_max)
-		{
-			Mx_max = g_Mx_Raw;
-		}
-		if (g_My_Raw > My_max)
-		{
-			My_max = g_My_Raw;
-		}
-		if (g_Mz_Raw > Mz_max)
-		{
-			Mz_max = g_Mz_Raw;
-		}
-		if (g_Mx_Raw < Mx_min)
-		{
-			Mx_min = g_Mx_Raw;
-		}
-		if (g_My_Raw < My_min)
-		{
-			My_min = g_My_Raw;
-		}
-		if (g_Mz_Raw < Mz_min)
-		{
-			Mz_min = g_Mz_Raw;
-		}
-
-		g_Mx_Offset = (Mx_max + Mx_min) / 2;
-		g_My_Offset = (My_max + My_min) / 2;
-		g_Mz_Offset = (Mz_max + Mz_min) / 2;
-
-		if (g_Calibration_Done) return 0;
-
-		if (millis() > FXOS_MEAS_CAL_LIM_MS &&
-				(Mx_max > (Mx_min + 500)) && (My_max > (My_min + 500)) && (Mz_max > (Mz_min + 500)))
-		{
-			LOG_INFO("\r\nCalibrate magnetometer successfully!");
-			LOG_INFO("Magnetometer offset Mx: %d - My: %d - Mz: %d", g_Mx_Offset, g_My_Offset, g_Mz_Offset);
-			LOG_INFO("Magnetometer diff Mx: %d - My: %d - Mz: %d",
-					Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
-
-			char buff[128];
-			memset(buff, 0, sizeof(buff));
-			snprintf(buff, sizeof(buff), "Mag cal OK: Mx: %d - My: %d - Mz: %d",
-					Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
-			vue.addNotif("Event", buff, 4, eNotificationTypeComplete);
-
-			// save calibration to settings
-			sUserParameters *settings = user_settings_get();
-			settings->mag_cal.calib[0] = g_Mx_Offset;
-			settings->mag_cal.calib[1] = g_My_Offset;
-			settings->mag_cal.calib[2] = g_Mz_Offset;
-			settings->mag_cal.is_present = 1;
-
-			LOG_WARNING("Saving Mag Cal. to flash...");
-
-			u_settings.writeConfig();
-
-			g_Calibration_Done = true;
-
-		} else if (millis() > FXOS_MEAS_CAL_LIM_MS) {
-
-			LOG_INFO("Mag cal failure");
-			LOG_INFO("Magnetometer diff Mx: %d - My: %d - Mz: %d",
-					Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
-		} else {
-			return -1;
-		}
-
+		Mx_max = g_Mx_Raw;
+	}
+	if (g_My_Raw > My_max)
+	{
+		My_max = g_My_Raw;
+	}
+	if (g_Mz_Raw > Mz_max)
+	{
+		Mz_max = g_Mz_Raw;
+	}
+	if (g_Mx_Raw < Mx_min)
+	{
+		Mx_min = g_Mx_Raw;
+	}
+	if (g_My_Raw < My_min)
+	{
+		My_min = g_My_Raw;
+	}
+	if (g_Mz_Raw < Mz_min)
+	{
+		Mz_min = g_Mz_Raw;
 	}
 
-	return 0;
+	g_Mx_Offset = (Mx_max + Mx_min) / 2;
+	g_My_Offset = (My_max + My_min) / 2;
+	g_Mz_Offset = (Mz_max + Mz_min) / 2;
+
+	m_calibration_step += 1;
+
+	if (m_calibration_step > FXOS_MEAS_CAL_LIM_IDX &&
+			(Mx_max > (Mx_min + 100)) && (My_max > (My_min + 100)) && (Mz_max > (Mz_min + 100)))
+	{
+		LOG_INFO("\r\nCalibrate magnetometer successfully!");
+		LOG_INFO("Magnetometer offset Mx: %d - My: %d - Mz: %d", g_Mx_Offset, g_My_Offset, g_Mz_Offset);
+		LOG_INFO("Magnetometer diff Mx: %d - My: %d - Mz: %d",
+				Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+
+		char buff[128];
+		memset(buff, 0, sizeof(buff));
+		snprintf(buff, sizeof(buff), "MG cal OK: Mx: %d - My: %d - Mz: %d",
+				Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+		vue.addNotif("Event", buff, 8, eNotificationTypeComplete);
+
+		// save calibration to settings
+		sUserParameters *settings = user_settings_get();
+		settings->mag_cal.calib[0] = g_Mx_Offset;
+		settings->mag_cal.calib[1] = g_My_Offset;
+		settings->mag_cal.calib[2] = g_Mz_Offset;
+		settings->mag_cal.is_present = MAG_CAL_ID;
+
+		LOG_WARNING("Saving Mag Cal. to flash...");
+
+		u_settings.writeConfig();
+
+		// stop calibration
+		m_calibration_step = -1;
+
+	} else if (m_calibration_step > FXOS_MEAS_CAL_LIM_IDX) {
+
+		LOG_INFO("Mag cal failure");
+		LOG_INFO("Magnetometer diff Mx: %d - My: %d - Mz: %d",
+				Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+
+		char buff[128];
+		memset(buff, 0, sizeof(buff));
+		snprintf(buff, sizeof(buff), "MG cal ERROR: Mx: %d - My: %d - Mz: %d",
+				Mx_max - Mx_min, My_max - My_min, Mz_max - Mz_min);
+		vue.addNotif("Event", buff, 8, eNotificationTypeComplete);
+
+		// stop calibration
+		m_calibration_step = -1;
+	}
+
+	return ;
 }
 
-void fxos_calibration_start(void) {
-	g_Calibration_Done = false;
+/*******************************************************************************
+ * Code
+ ******************************************************************************/
 
-	Mx_max = Mx_min = g_Mx_Raw;
-	My_max = My_min = g_My_Raw;
-	Mz_max = Mz_min = g_Mz_Raw;
+void fxos_calibration_start(void) {
+
+	m_calibration_step = 0;
+
+	Mx_max = Mx_min = l_Mx;
+	My_max = My_min = l_My;
+	Mz_max = Mz_min = l_Mz;
 
 	LOG_INFO("Calibrating magnetometer...");
 
@@ -528,7 +560,7 @@ bool fxos_init(void) {
 #endif
 			/* set up Mag OSR and Hybrid mode using M_CTRL_REG1, use default for Acc */
 			{M_CTRL_REG1, (M_RST_MASK | M_OSR_MASK | M_HMS_MASK)},
-			/* Enable hyrid mode auto increment using M_CTRL_REG2 */
+			/* Enable hybrid mode auto increment using M_CTRL_REG2 */
 			{M_CTRL_REG2, (M_HYB_AUTOINC_MASK)},
 
 #ifdef EN_FFMT
@@ -550,14 +582,22 @@ bool fxos_init(void) {
 			/* set auto-sleep wait period to 5s (=5/0.64=~8) */
 			{ASLP_COUNT_REG, 8},
 #endif
-			/* default set to 4g mode with HPF */
+			/* default set to 4g mode */
 			{XYZ_DATA_CFG_REG, FULL_SCALE_4G},
 
-			/* Use LPF, HPF bypassed */
-			{HP_FILTER_CUTOFF_REG, PULSE_HPF_BYP_MASK | PULSE_LPF_EN_MASK},
+#ifdef EN_INTERRUPTS
+			/* enable data-ready, auto-sleep and motion detection interrupts */
+			/* FXOS1_WriteRegister(CTRL_REG4, INT_EN_DRDY_MASK | INT_EN_ASLP_MASK | INT_EN_FF_MT_MASK); */
+			{CTRL_REG4, INT_EN_DRDY_MASK},
+			/* route data-ready interrupts to INT1, others INT2 (default) */
+			{CTRL_REG5, INT_CFG_DRDY_MASK},
+#endif
 
-			/* Setup the ODR for 25 Hz and activate the accelerometer */
-			{CTRL_REG1, (HYB_DATA_RATE_25HZ | ACTIVE_MASK)},
+			/* HPF bypassed */
+			{HP_FILTER_CUTOFF_REG, PULSE_HPF_BYP_MASK },
+
+			/* Setup the ODR activate the accelerometer */
+			{CTRL_REG1, (HYB_DATA_RATE_50HZ | ACTIVE_MASK)},
 	};
 
 	uint16_t cur_ind = 0;
@@ -590,6 +630,7 @@ bool fxos_init(void) {
 
 #ifdef SET_DEBOUNCE
 			/* set debounce to zero */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
 #endif
 
 #ifdef EN_AUTO_SLEEP
@@ -598,6 +639,14 @@ bool fxos_init(void) {
 #endif
 			/* default set to 4g mode */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+
+#ifdef EN_INTERRUPTS
+			/* enable data-ready, auto-sleep and motion detection interrupts */
+			/* FXOS1_WriteRegister(CTRL_REG4, INT_EN_DRDY_MASK | INT_EN_ASLP_MASK | INT_EN_FF_MT_MASK); */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+			/* route data-ready interrupts to INT1, others INT2 (default) */
+			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
+#endif
 
 			/* Use LPF */
 			I2C_WRITE(FXOS_7BIT_ADDRESS, &fxos_config[cur_ind++][0], 2),
@@ -612,6 +661,53 @@ bool fxos_init(void) {
 
 	i2c_perform(NULL, fxos_init_transfers2, sizeof(fxos_init_transfers2) / sizeof(fxos_init_transfers2[0]), NULL);
 #endif
+
+
+#ifdef EN_INTERRUPTS
+
+#ifdef _DEBUG_TWI
+#error "Incompatible SW modes"
+#endif
+
+	// Configure INT pin
+	nrfx_gpiote_in_config_t in_config;
+	in_config.is_watcher = true;
+	in_config.hi_accuracy = true;
+	in_config.skip_gpio_setup = false;
+	in_config.pull = NRF_GPIO_PIN_PULLUP;
+	in_config.sense = NRF_GPIOTE_POLARITY_HITOLO;
+
+	ret_code_t err_code = nrfx_gpiote_in_init(FXOS_INT1, &in_config, _int_handler);
+	APP_ERROR_CHECK(err_code);
+
+	nrfx_gpiote_in_event_enable(FXOS_INT1, true);
+
+	nrf_gpio_cfg_sense_input(FXOS_INT1, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_SENSE_LOW);
+
+#endif
+
+	// get the mag. cal. in the settings
+	if (u_settings.isConfigValid()) {
+
+		sMagCal &mag_cal = u_settings.getMagCal();
+		// check if we have a previous calibration
+		if (mag_cal.is_present == MAG_CAL_ID) {
+
+			g_Mx_Offset = mag_cal.calib[0];
+			g_My_Offset = mag_cal.calib[1];
+			g_Mz_Offset = mag_cal.calib[2];
+
+			m_calibration_step = -1;
+
+			LOG_INFO("Magnetometer calibration found");
+
+			//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
+
+		}
+
+	}
+
+
 	return kStatus_Success;
 }
 
@@ -620,170 +716,121 @@ bool fxos_init(void) {
  * @param g_fxosHandle
  * @return
  */
-void fxos_tasks()
+void fxos_tasks(void)
 {
-	if (!m_is_updated) return;
-	m_is_updated = false;
-
 	uint16_t i = 0;
-	float sinAngle = 0;
-	float cosAngle = 0;
-	float Bx = 0;
-	float By = 0;
 
-	SampleEventFlag = 0;
-	g_Ax_Raw = 0;
-	g_Ay_Raw = 0;
-	g_Az_Raw = 0;
+//	float sinAngle = 0;
+//	float cosAngle = 0;
+//	float Bx = 0;
+//	float By = 0;
+
+	float g_Ax = 0;
+	float g_Ay = 0;
+	float g_Az = 0;
+
+	float g_Mx = 0;
+	float g_My = 0;
+	float g_Mz = 0;
+
 	g_Ax = 0;
 	g_Ay = 0;
 	g_Az = 0;
-	g_Mx_Raw = 0;
-	g_My_Raw = 0;
-	g_Mz_Raw = 0;
-	g_Mx = 0;
-	g_My = 0;
-	g_Mz = 0;
 
-	/* Read sensor data */
-	Sensor_ReadData(&m_fxos_handle, &g_Ax_Raw, &g_Ay_Raw, &g_Az_Raw, &g_Mx_Raw, &g_My_Raw, &g_Mz_Raw);
-
-	/* Average accel value */
-	for (i = 1; i < MAX_ACCEL_AVG_COUNT; i++)
-	{
-		g_Ax_buff[i] = g_Ax_buff[i - 1];
-		g_Ay_buff[i] = g_Ay_buff[i - 1];
-		g_Az_buff[i] = g_Az_buff[i - 1];
-	}
-
-	g_Ax_buff[0] = g_Ax_Raw;
-	g_Ay_buff[0] = g_Ay_Raw;
-	g_Az_buff[0] = g_Az_Raw;
-
+	/* Read buffered sensor data */
 	for (i = 0; i < MAX_ACCEL_AVG_COUNT; i++)
 	{
 		g_Ax += (float)g_Ax_buff[i];
 		g_Ay += (float)g_Ay_buff[i];
 		g_Az += (float)g_Az_buff[i];
+
+		g_Mx += (float)g_Mx_buff[i];
+		g_My += (float)g_My_buff[i];
+		g_Mz += (float)g_Mz_buff[i];
 	}
 
 	g_Ax /= MAX_ACCEL_AVG_COUNT;
 	g_Ay /= MAX_ACCEL_AVG_COUNT;
 	g_Az /= MAX_ACCEL_AVG_COUNT;
 
-	LOG_INFO("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
+	g_Mx /= MAX_ACCEL_AVG_COUNT;
+	g_My /= MAX_ACCEL_AVG_COUNT;
+	g_Mz /= MAX_ACCEL_AVG_COUNT;
 
-	if (g_FirstRun) {
-
-		if(g_sensorRange == 0x00)
-		{
-			g_dataScale = 2U;
-		}
-		else if(g_sensorRange == 0x01)
-		{
-			g_dataScale = 4U;
-		}
-		else if(g_sensorRange == 0x10)
-		{
-			g_dataScale = 8U;
-		}
-		else
-		{
-		}
-
-		if (u_settings.isConfigValid()) {
-
-			sMagCal &mag_cal = u_settings.getMagCal();
-			// check if we have a previous calibration
-			if (mag_cal.is_present) {
-
-				g_Mx_Offset = mag_cal.calib[0];
-				g_My_Offset = mag_cal.calib[1];
-				g_Mz_Offset = mag_cal.calib[2];
-
-				g_Calibration_Done = true;
-
-				LOG_INFO("Magnetometer calibration found");
-
-				//vue.addNotif("Event", "Magnetometer calibration found", 4, eNotificationTypeComplete);
-
-			}
-
-		}
-
-
-
+	/* Calculate statistical params */
+	memset(m_roughness, 0, sizeof(m_roughness));
+	for (i = 0; i < MAX_ACCEL_AVG_COUNT; i++)
+	{
+		m_roughness[0] += fabsf((float)g_Ax_buff[i] - g_Ax) / MAX_ACCEL_AVG_COUNT;
+		m_roughness[1] += fabsf((float)g_Ay_buff[i] - g_Ay) / MAX_ACCEL_AVG_COUNT;
+		m_roughness[2] += fabsf((float)g_Az_buff[i] - g_Az) / MAX_ACCEL_AVG_COUNT;
 	}
 
-	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
-	g_Roll = atan2f(g_Ay, g_Az) * RadToDeg;
-	sinAngle = sinf(g_Roll * DegToRad);
-	cosAngle = cosf(g_Roll * DegToRad);
+	LOG_DEBUG("Accel: %d %d %d", (int)g_Ax, (int)g_Ay, (int)g_Az);
 
-	g_Az = g_Ay * sinAngle + g_Az * cosAngle;
+	if (m_calibration_step >= 0) {
+		Magnetometer_Calibrate_Task(l_Mx, l_My, l_Mz);
+	}
+
+	/* Calculate magnetometer values */
+	g_Mx -= g_Mx_Offset;
+	g_My -= g_My_Offset;
+//	g_Mz -= g_Mz_Offset;
+
+	LOG_DEBUG("Mag. comp.: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
+
+	/* Calculate roll angle g_Roll (-180deg, 180deg) and sin, cos */
+#if defined( PROTO_V11)
+	g_Roll = atan2f(g_Ax, g_Az);
+//	sinAngle = sinf(g_Roll);
+//	cosAngle = cosf(g_Roll);
+#else
+	g_Roll = atan2f(g_Ay, g_Az);
+//	sinAngle = sinf(g_Roll);
+//	cosAngle = cosf(g_Roll);
+#endif
+
+	LOG_DEBUG("Roll: %d deg/10", (int)(g_Roll*RadToDeg*10.f));
+
+	/* De-rotate by roll angle g_Roll */
+	//By = g_My * cosAngle - g_Mz * sinAngle;
+	//g_Mz = g_Mz * cosAngle + g_My * sinAngle;
+	//g_Az = g_Ay * sinAngle + g_Az * cosAngle;
 
 	/* Calculate pitch angle g_Pitch and sin, cos*/
 #if defined( PROTO_V11)
-	g_Pitch = atan2f(-g_Ay , g_Az);
-	sinAngle = sinf(g_Pitch);
-	cosAngle = cosf(g_Pitch);
+	g_Pitch = -atan2f( g_Ay , -g_Az);
+//	sinAngle = sinf(g_Pitch);
+//	cosAngle = cosf(g_Pitch);
 #else
 	g_Pitch = atan2f( g_Ax , g_Az);
-	sinAngle = sinf(g_Pitch);
-	cosAngle = cosf(g_Pitch);
+//	sinAngle = sinf(g_Pitch);
+//	cosAngle = cosf(g_Pitch);
 #endif
 
-	int16_t integ_pitch = (int16_t)((g_Pitch + 1.57) * 100.);
+	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10.f));
+
+	/* De-rotate by pitch angle g_Pitch */
+	//Bx = g_Mx * cosAngle + g_Mz * sinAngle;
+
+	/* Calculate yaw = ecompass angle psi (-180deg, 180deg) */
+#if defined( PROTO_V11)
+	// top view: y to bottom, x to the right
+	g_Yaw = atan2f( g_My, g_Mx) + 1.57f;
+#else
+	g_Yaw = atan2f(-g_My, g_Mx);
+#endif
+
+	LOG_DEBUG("Compass Angle raw   : %d  ", (int)(g_Yaw * RadToDeg * 10.f));
+
+	// store pitch
+	int16_t integ_pitch = (int16_t)((g_Pitch + 0.4f) * 100.f);
 	uint16_t u_integ_pitch = (uint16_t)integ_pitch;
 
 	if (m_pitch_buffer.isFull()) {
 		m_pitch_buffer.popLast();
 	}
 	m_pitch_buffer.add(&u_integ_pitch);
-
-	LOG_INFO("Pitch: %d deg/10", (int)(g_Pitch*RadToDeg*10.f));
-
-	if (!g_Calibration_Done)
-		Magnetometer_Calibrate_Task();
-
-	if(g_FirstRun)
-	{
-		g_Mx_LP = g_Mx_Raw;
-		g_My_LP = g_My_Raw;
-		g_Mz_LP = g_Mz_Raw;
-	}
-
-	// filtre ?
-	g_Mx_LP += ((float)g_Mx_Raw - g_Mx_LP) * FXOS_MAG_FILTER_COEFF;
-	g_My_LP += ((float)g_My_Raw - g_My_LP) * FXOS_MAG_FILTER_COEFF;
-	g_Mz_LP += ((float)g_Mz_Raw - g_Mz_LP) * FXOS_MAG_FILTER_COEFF;
-
-	/* Calculate magnetometer values */
-	g_Mx = g_Mx_LP - g_Mx_Offset;
-	g_My = g_My_LP - g_My_Offset;
-	g_Mz = g_Mz_LP - g_Mz_Offset;
-
-	LOG_INFO("Mag: %d %d %d", (int)g_Mx, (int)g_My, (int)g_Mz);
-
-	/* De-rotate by roll angle g_Roll */
-	By = g_My * cosAngle - g_Mz * sinAngle;
-	g_Mz = g_Mz * cosAngle + g_My * sinAngle;
-
-	/* De-rotate by pitch angle g_Pitch */
-	Bx = g_Mx * cosAngle + g_Mz * sinAngle;
-
-	/* Calculate yaw = ecompass angle psi (-180deg, 180deg) */
-	g_Yaw = atan2f(-By, Bx) * RadToDeg;
-	if(g_FirstRun)
-	{
-		g_Yaw_LP = g_Yaw;
-		g_FirstRun = false;
-	}
-
-	g_Yaw_LP += (g_Yaw - g_Yaw_LP) * FXOS_MAG_FILTER_COEFF;
-
-	LOG_INFO("Compass Angle raw   : %d", (int)g_Yaw);
-	LOG_INFO("Compass Angle filtered: %d", (int)g_Yaw_LP);
 
 }
 
@@ -797,6 +844,13 @@ bool fxos_get_yaw(float &yaw_rad) {
 bool fxos_get_pitch(float &pitch_rad) {
 
 	pitch_rad = g_Pitch;
+
+	return true;
+}
+
+bool fxos_get_roughness(float roughness[3]) {
+
+	memcpy(roughness, m_roughness, sizeof(m_roughness));
 
 	return true;
 }

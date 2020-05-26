@@ -8,6 +8,8 @@
 #ifndef SOURCE_PARAMETERS_H_
 #define SOURCE_PARAMETERS_H_
 
+#define USE_ANT_SEARCH
+
 #define APP_TIMEOUT_DELAY_MS           5
 
 #define S_TO_MS(X)                     ((X)*1000)
@@ -26,9 +28,7 @@
 
 #define STC3100_CUR_SENS_RES_MO        100
 
-#define FXOS_MEAS_CAL_LIM_MS           60000
-
-#define FXOS_MAG_FILTER_COEFF          0.5f
+#define FXOS_MEAS_CAL_LIM_IDX          (20 * 3)
 
 #define SEG_OFF_NB_POINTS              30
 
@@ -51,13 +51,13 @@
 
 #define TOT_HEAP_MEM_AVAILABLE         __HEAP_SIZE
 
-#define BARO_REFRESH_PER_MS            250
+#define BARO_REFRESH_PER_MS            100
 
-#define SENSORS_REFRESH_PER_MS         BARO_REFRESH_PER_MS
+#define SENSORS_REFRESH_PER_MS         1000
 
 #define ATT_BUFFER_NB_ELEM             5
 
-#define FILTRE_NB                      15
+#define FILTRE_NB                      10
 
 #define USER_WEIGHT                    79U
 

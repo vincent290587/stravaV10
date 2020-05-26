@@ -14,17 +14,18 @@
 #define ANT_DEVICE_MANAGER_MAX_SENSORS_NB    8
 
 
-#define HRM_CHANNEL_NUMBER              0x00
+#define HRM_CHANNEL_NUMBER              0x02
 #define HRM_DEVICE_NUMBER               17334U    /**< Device Number. */
 
 #define BSC_CHANNEL_NUMBER              0x01
-#define BSC_DEVICE_NUMBER               0xB02B    /**< Device Number. */
+#define BSC_DEVICE_NUMBER               15568U    /**< Device Number. */
 #define BSC_DEVICE_TYPE                 0x79
 
+#define GLASSES_CHANNEL_NUMBER          0x04
 #define GLASSES_DEVICE_NUMBER           0xFDDA
 
 #define FEC_CHANNEL_NUMBER              0x03
-#define TACX_DEVICE_NUMBER              2846U
+#define TACX_DEVICE_NUMBER              15568U
 
 
 typedef struct {

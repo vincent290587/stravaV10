@@ -40,7 +40,13 @@ void BoucleCRS::init_internal(void) {
 
 	m_dist_next_seg = 9999;
 
-	if (m_s_parcours) this->loadPRC();
+	baro.sensorInit();
+
+	attitude.reset();
+
+	if (m_s_parcours) {
+		this->loadPRC();
+	}
 
 }
 
@@ -72,7 +78,38 @@ void BoucleCRS::run_internal(void) {
 
 	if (eLocationSourceNone == loc_source) return;
 
-	attitude.addNewLocation(loc, dat, loc_source);
+	// altitude / distance computation
+	if (eBoucleGlobalModesZwift != boucle__get_mode()) {
+
+		// no more trigger on the SIM source, only trigger on LNS and GPS
+		if (eLocationSourceSIM == loc_source) return;
+
+		attitude.addNewLocation(loc, dat, loc_source);
+
+		// process FXOS measurements
+		fxos_tasks();
+
+		// fuse measurements for slope estimation
+		attitude.computeFusion();
+	} else {
+
+		// trigger only on the SIM source
+		if (eLocationSourceSIM != loc_source) return;
+
+		attitude.addNewSIMPoint(loc, dat);
+	}
+
+	if (eBoucleGlobalModesPRC == boucle__get_mode()) {
+
+		Parcours *p_parcours = boucle_crs.m_s_parcours;
+
+		// update PRC
+		if (p_parcours) {
+
+			Point2D pcur(loc.lat, loc.lon);
+			p_parcours->updatePosAuParcours(pcur);
+		}
+	}
 
 	// update segments
 
@@ -192,4 +229,5 @@ void BoucleCRS::invalidate_internal(void) {
 
 	if (m_s_parcours) m_s_parcours->desallouerPoints();
 	m_s_parcours = nullptr;
+
 }

@@ -55,13 +55,13 @@ void fxos_calibration_start(void);
 
 void fxos_readChip(void);
 
-bool is_fxos_updated(void);
-
 void fxos_tasks(void);
 
 bool fxos_get_yaw(float &yaw_rad);
 
 bool fxos_get_pitch(float &yaw_rad);
+
+bool fxos_get_roughness(float roughness[3]);
 
 tHistoValue fxos_histo_read(uint16_t ind_);
 

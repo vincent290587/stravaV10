@@ -24,6 +24,25 @@ typedef struct {
 } SLoc;
 
 typedef struct {
+	float gps_ele;
+	float baro_ele;
+	float baro_corr;
+	float filt_ele;
+	float alpha_bar;
+	float alpha_zero;
+	float climb;
+	float vit_asc;
+	float rough[3];
+	float b_rough;
+} SEle;
+
+typedef struct {
+	uint8_t bpm;
+	uint32_t cadence;
+	int16_t pwr;
+} SSensors;
+
+typedef struct {
 	uint32_t secj;
 	uint32_t date;
 	uint32_t timestamp;
@@ -35,13 +54,12 @@ typedef struct
 	int elevation;
 	int azimuth;
 	int snr;
+	int no;
 } sSatellite;
-
-extern sSatellite sats[MAX_SATELLITES];
 
 typedef enum {
 	eLocationSourceNone,
-	eLocationSourceSimu,
+	eLocationSourceSIM,
 	eLocationSourceNRF,
 	eLocationSourceGPS,
 } eLocationSource;
@@ -77,7 +95,7 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info);
 class Locator {
 public:
 	Locator();
-
+	void init();
 	void tasks();
 
 	void displayGPS2(void);

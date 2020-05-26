@@ -657,15 +657,18 @@ void ListePoints2D::updateRelativePosition(Point& point) {
 
 	Point P1, P2;
 	float p1p2_dist, tmp_dist, distP1_=0., distP2_=0.;
-	int init = 0;
+	uint16_t init = 0;
+	uint16_t tmp_idx = 0;
 
 	if (m_lpoints.size() < 5) {
 		return;
 	}
 
 	// on cherche les deux plus proches points
+	idx_P1 = 0;
 	for (auto& tmpPT : m_lpoints) {
 
+		tmp_idx++;
 		tmp_dist = tmpPT.dist(&point);
 
 		if (init == 0) {
@@ -690,6 +693,8 @@ void ListePoints2D::updateRelativePosition(Point& point) {
 			if (tmp_dist < distP1_) {
 				P2 = P1;
 				distP2_ = P2.dist(&point);
+
+				idx_P1 = tmp_idx;
 
 				P1 = tmpPT;
 				distP1_ = P1.dist(&point);

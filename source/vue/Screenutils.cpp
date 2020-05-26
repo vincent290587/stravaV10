@@ -1,7 +1,7 @@
 /*
  * Screenutils.cpp
  *
- *  Created on: 13 déc. 2017
+ *  Created on: 13 dec. 2017
  *      Author: Vincent
  */
 
@@ -15,9 +15,10 @@
 
 
 /**
- * rotation d'angle angle et de centre (cx, cy)
+ * rotation of angle "angle" around the point (cx, cy)
+ * /!\ Positive clockwise
  *
- * @param angle
+ * @param angle in degrees
  * @param cx
  * @param cy
  * @param x1

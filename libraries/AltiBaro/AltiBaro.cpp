@@ -5,6 +5,7 @@
  *      Author: Vincent
  */
 
+#include <cmath>
 #include "bme280.h"
 #include "ms5637.h"
 #include "AltiBaro.h"
@@ -40,6 +41,16 @@ AltiBaro::AltiBaro() {
 	m_alti_f = 0.;
 	m_va_f = 0.;
 
+	for (size_t i=0; i< FILTRE_NB; i++) {
+		m_meas_buff[i] = -1.f;
+	}
+}
+
+void AltiBaro::sleep(void) {
+	// force re-acquisition of sea level ref.
+	m_is_init = false;
+	// sleep sensor
+	BARO_WRAPPER(_sleep());
 }
 
 /**
@@ -64,6 +75,42 @@ bool AltiBaro::isUpdated() {
  */
 void AltiBaro::sensorRefresh() {
 	BARO_WRAPPER(_refresh());
+
+	// store value in buffer
+	m_meas_buff[nb_filtering] = BARO_WRAPPER(_get_pressure());
+	if (++nb_filtering >= FILTRE_NB) {
+		nb_filtering = 0;
+	}
+}
+
+/**
+ *
+ * @return True if updated
+ */
+float AltiBaro::getRoughness() {
+
+	float res = 0.f;
+
+	// calculate the average
+	float press = 0.f;
+	for (int i=0; i< FILTRE_NB; i++) {
+
+		// check that buffer is filled
+		if (m_meas_buff[i] > 0.f) {
+			press += m_meas_buff[i];
+		} else {
+			return res;
+		}
+	}
+	press /= (float)FILTRE_NB;
+
+	// calculate difference to the average
+	for (int i=0; i< FILTRE_NB; i++) {
+
+		res += 100.f * fabsf(m_meas_buff[i] - press) / FILTRE_NB;
+	}
+
+	return res;
 }
 
 /**
@@ -91,12 +138,19 @@ bool AltiBaro::computeAlti(float& alti_) {
 
 	if (!m_is_init) return false;
 
-	// m_temperature, m_pressure;
-	if (nb_filtering <= FILTRE_NB) {
-		alti_ = this->pressureToAltitude(BARO_WRAPPER(_get_pressure()));
-	} else {
-		alti_ = m_alti_f;
+	float press = 0.f;
+	for (size_t i=0; i< FILTRE_NB; i++) {
+
+		// check that buffer is filled
+		if (m_meas_buff[i] > 0.f) {
+			press += m_meas_buff[i];
+		} else {
+			return false;
+		}
 	}
+	press /= (float)FILTRE_NB;
+
+	alti_ = this->pressureToAltitude(press);
 
 	return true;
 }

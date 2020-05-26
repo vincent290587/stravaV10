@@ -21,7 +21,8 @@
 typedef struct {
 	SLoc  loc;
 	SDate date;
-	int16_t pwr;
+	SSensors sensors;
+	SEle  alti;
 } SAttTime;
 
 typedef struct {
@@ -29,6 +30,7 @@ typedef struct {
 	SDate date;
 	float climb;
 	float vit_asc;
+	int8_t slope;
 	float dist;
 	int16_t pwr;
 	uint16_t nbpts;
@@ -72,15 +74,20 @@ class Attitude {
 public:
 	Attitude(AltiBaro &_baro);
 
+	void reset(void);
+
 	void addNewDate(SDate *date_);
 	void addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_);
 
 	void addNewFECPoint(sFecInfo& fec_);
 
+	void addNewSIMPoint(SLoc& loc_, SDate& date_);
+
 	void  computeFusion(void);
 	float computePower(float speed_);
 
 private:
+	float dv;
 	float m_climb;
 	float m_speed_ms;
 	float m_last_save_dist;
@@ -90,16 +97,15 @@ private:
 	bool m_is_init;
 	bool m_is_acc_init;
 	bool m_is_alt_init;
-	bool m_is_pw_init;
 
 	AltiBaro &m_baro;
 
 	SAttTime m_st_buffer[ATT_BUFFER_NB_ELEM];
 	uint16_t m_st_buffer_nb_elem;
 
-	float filterElevation(SLoc& loc_);
+	float filterElevation(SLoc& loc_, eLocationSource source_);
 	float computeElevation(SLoc& loc_, eLocationSource source_);
-	void  computeDistance(SLoc& loc_, SDate &date_, eLocationSource source_);
+	void  computeDistance(SLoc& loc_, SDate &date_);
 };
 #endif
 

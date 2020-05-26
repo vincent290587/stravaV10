@@ -41,7 +41,7 @@ PowerZone     zPower;
 
 RRZone        rrZones;
 
-UserSettings   u_settings;
+UserSettings  u_settings;
 
 ListeSegments mes_segments;
 
@@ -98,8 +98,8 @@ void model_dispatch_sensors_update(void) {
 	if (backlight.freq == 0) {
 		// setup backlight
 		if (light_level < BACKLIGHT_AUTO_START_RAW_VIS) {
-			// TODO il fait tout noir: TG
-			backlight.state = 0;
+			// il fait tout noir: TG
+			backlight.state = 1;
 		} else {
 			// sun is shining
 			backlight.state = 0;
@@ -116,6 +116,10 @@ void model_get_navigation(sKomootNavigation *nav) {
 
 }
 
+void model_add_notification(const char *title_, const char *msg_, uint8_t persist_, eNotificationType type_) {
+
+	vue.addNotif(title_, msg_, persist_, type_);
+}
 
 void model_input_virtual_uart(char c) {
 
@@ -124,12 +128,18 @@ void model_input_virtual_uart(char c) {
 
 		locator.sim_loc.data.lat = (float)vparser.getLat() / 10000000.f;
 		locator.sim_loc.data.lon = (float)vparser.getLon() / 10000000.f;
-		locator.sim_loc.data.alt = (float)vparser.getEle();
-		locator.sim_loc.data.utc_time = vparser.getSecJ();
+		locator.sim_loc.data.alt = (float)vparser.getEle() / 100.f;
+		locator.sim_loc.data.speed = (float)vparser.getGpsSpeed() * 3.6f / 100.f;
+
+		// we base it on the first GPS time that was hopefully read at the device init
+		locator.sim_loc.data.utc_time = locator.gps_loc.data.utc_time + vparser.getSecJ();
+		locator.sim_loc.data.date = locator.gps_loc.data.date;
+
+		locator.sim_loc.data.utc_timestamp = millis();
 
 		locator.sim_loc.setIsUpdated();
 
-		LOG_INFO("New sim loc received");
+		LOG_INFO("New sim loc received (GPS: %u %u)", locator.gps_loc.data.utc_time, locator.gps_loc.data.date);
 
 		// notify task
 		if (m_tasks_id.boucle_id != TASK_ID_INVALID) {
@@ -191,14 +201,6 @@ static void model_perform_virtual_tasks(void) {
 	else if (m_vparser_event == 17) {
 
 		// TODO go to DFU
-#ifndef TDD
-		ret_code_t err_code = sd_power_gpregret_set(1, BOOTLOADER_DFU_START);
-		APP_ERROR_CHECK(err_code);
-
-		//nrf_power_gpregret_set(BOOTLOADER_DFU_START);
-
-		// TODO reboot ..?
-#endif
 
 	}
 	else if (m_vparser_event == 16) {
@@ -294,13 +296,14 @@ void idle_task(void * p_context)
  */
 void boucle_task(void * p_context)
 {
+	locator.init();
 
 	boucle__run(); // init
 	boucle__run(); // run once
 
 	// potentially change mode
 //	vue.setCurrentMode(eVueGlobalScreenFEC);
-//	boucle.changeMode(eBoucleGlobalModesFEC);
+//	boucle__change_mode(eBoucleGlobalModesFEC);
 
 	for (;;)
 	{
@@ -399,7 +402,7 @@ void peripherals_task(void * p_context)
 
 		power_scheduler__run();
 
-		w_task_delay(100);
+		w_task_delay(50);
 
 	}
 }

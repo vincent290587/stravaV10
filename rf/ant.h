@@ -9,7 +9,7 @@
 #define WILDCARD_TRANSMISSION_TYPE      0x00
 #define ANTPLUS_NETWORK_NUMBER          0x00      /**< Network number. */
 
-#define BS_CHANNEL_NUMBER               0x04
+#define BS_CHANNEL_NUMBER               0x00
 
 
 typedef enum {

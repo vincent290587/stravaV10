@@ -199,7 +199,7 @@ void GPS_MGMT::standby(bool is_standby) {
 		m_is_stdby = true;
 
 		// set to standby
-		SEND_TO_GPS(PMTK_STANDBY);
+		//SEND_TO_GPS(PMTK_STANDBY);
 
 		gpio_clear(GPS_S);
 	} else {
@@ -208,7 +208,7 @@ void GPS_MGMT::standby(bool is_standby) {
 
 		m_is_stdby = false;
 
-		SEND_TO_GPS(PMTK_AWAKE);
+		//SEND_TO_GPS(PMTK_AWAKE);
 	}
 
 }
@@ -398,6 +398,36 @@ uint32_t gps_encode_char(char c) {
 
 		LOG_RAW_INFO(c);
 
+	}
+
+	return 0;
+}
+
+/**
+ *
+ * @param c Input character
+ * @return Error code
+ */
+uint32_t gps_encode_array(char p_array[], size_t length) {
+
+
+	if (eGPSMgmtEPOIdle == m_epo_state) {
+
+		for (size_t i=0; i < length; i++) {
+
+			//LOG_RAW_INFO(p_array[i]);
+
+			locator_encode_char(p_array[i]);
+		}
+
+	}
+
+	if (gps_mgmt.isStandby()) {
+
+		// handle this weird case
+		gps_mgmt.standby(false);
+		delay_ms(3);
+		gps_mgmt.standby(true);
 	}
 
 	return 0;

@@ -7,3 +7,4 @@ CMakeFiles/
 *.d
 *.xml
 /TEST/
+node_modules/
