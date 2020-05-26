@@ -464,7 +464,6 @@ int main(void)
 	// Initialize timer module
 #ifdef USB_ENABLED
 	usb_cdc_init();
-	usb_cdc_process();
 #endif
 
 	nrf_pwr_mgmt_init();
@@ -490,11 +489,6 @@ int main(void)
 #endif
 #if defined (ANT_STACK_SUPPORT_REQD)
 	ant_device_manager_init();
-#endif
-
-	// turn USB events ON
-#ifdef USB_ENABLED
-	usb_cdc_event_enable();
 #endif
 
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
