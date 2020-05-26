@@ -51,6 +51,8 @@ int sd_functions__unlink(const char * const fname);
 
 uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t max_size);
 
+uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t max_size);
+
 int   sd_functions__query_file_start(const char * const fname);
 char* sd_functions__query_file_run(sCharArray *p_array, size_t max_size);
 int   sd_functions__query_file_stop(bool toBeDeleted);

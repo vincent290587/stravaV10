@@ -46,12 +46,20 @@ class HistoFile {
 public:
 	HistoFile(const char * const name) {
 		_name = name;
+		fsize = 0;
+	};
+	HistoFile(const char * const name, uint32_t length) {
+		_name = name;
+		fsize = length;
 	};
 
+
 	String _name;
+	uint32_t fsize;
 private:
 };
 
+static std::vector<HistoFile> m_list_fit;
 static std::vector<HistoFile> m_list_histo;
 static uint16_t cur_idx = 0;
 
@@ -199,6 +207,50 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 /**
  *
  */
+uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t max_size) {
+
+	if (!is_fat_init()) return 0;
+
+	sysview_task_void_enter(SdFunction);
+
+	size_t rem_size = 0;
+	size_t cur_size = 0;
+
+	if (restart) {
+		cur_idx = 0;
+		// number of FIT files
+		p_array->str[cur_size++] = (char)m_list_fit.size();
+	}
+
+	while (cur_idx < m_list_fit.size() &&
+			cur_size + 4 < max_size) {
+
+	    char tab[15];
+	    memset(tab, 0, sizeof(tab));
+	    m_list_fit[cur_idx]._name.toCharArray(tab, sizeof(tab));
+	    tab[8] = 0;
+	    uint32_t l_value = strtoul(tab, NULL, 16);
+
+		LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
+
+		encode_uint32((uint8_t*)p_array->str + cur_size, l_value);
+
+		cur_size += 4;
+		cur_idx  += 1;
+	}
+
+	rem_size = 4 * m_list_fit.size() - 4 * cur_idx;
+
+	p_array->length = cur_size;
+
+	sysview_task_void_exit(SdFunction);
+
+	return rem_size;
+}
+
+/**
+ *
+ */
 uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t max_size) {
 
 	if (!is_fat_init()) return 0;
@@ -321,8 +373,14 @@ int init_liste_segments(void)
 			} else if (fileInformation.fname[0] == HISTO_MARKER_CHAR) {
 
 				LOG_INFO("Histo added");
-				HistoFile h_file(fileInformation.fname);
+				HistoFile h_file(fileInformation.fname, fileInformation.fsize);
 				m_list_histo.push_back(h_file);
+
+			} else if (memcmp(&fileInformation.fname[8], (const char *)".FIT ", 4)==0) {
+
+				LOG_INFO("FIT added %s size %lu", fileInformation.fname, fileInformation.fsize);
+				HistoFile h_file(fileInformation.fname, fileInformation.fsize);
+				m_list_fit.push_back(h_file);
 
 			} else {
 
