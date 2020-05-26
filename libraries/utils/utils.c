@@ -200,7 +200,7 @@ float distance_between4(float lat1, float long1, float lat2, float long2) {
 
 void calculePos (const char *nom, float *lat, float *lon) {
 
-    static char tab[15];
+    char tab[15];
     int iLat;
     int iLon;
     
@@ -229,7 +229,7 @@ void calculePos (const char *nom, float *lat, float *lon) {
 
 long unsigned int toBase10 (char *entree) {
 
-    static char tab[15];
+    char tab[15];
 
     if (!entree) {
         return 0;

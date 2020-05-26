@@ -12,19 +12,22 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#ifndef PACKED
+#define PACKED __attribute__((packed))
+#endif
 
 typedef struct {
 	char*    str;
 	size_t length;
 } sCharArray;
 
-typedef struct {
+typedef struct PACKED {
 	bool isUpdated;
 	uint8_t direction;
 	uint32_t distance;
 } sKomootNavigation;
 
-typedef struct {
+typedef struct PACKED {
 	uint16_t cumul_crank_rev;
 	uint16_t last_crank_evt;       // Unit is in seconds with a resolution of 1/1024.
 	uint16_t first_crank_angle;    // Unit is in degrees with a resolution of 1, starts at midnight for right pedal
@@ -36,18 +39,18 @@ typedef struct {
 	int16_t inst_power;
 } sPowerVector;
 
-typedef struct {
+typedef struct PACKED {
 	uint8_t bpm;
 	uint16_t rr;
 	uint32_t timestamp;
 } sHrmInfo;
 
-typedef struct {
+typedef struct PACKED {
 	uint32_t cadence;
 	uint32_t speed;
 } sBscInfo;
 
-typedef struct {
+typedef struct PACKED {
 	int32_t lat;
 	int32_t lon;
 	int32_t ele;
@@ -58,18 +61,18 @@ typedef struct {
 	uint32_t utc_timestamp;
 } sLnsInfo;
 
-typedef struct {
+typedef struct PACKED {
 	uint16_t power;
 	uint16_t el_time;
 } sFecInfo;
 
-typedef struct {
+typedef struct PACKED {
 	int16_t calib[3];
 	uint16_t is_present;
 } sMagCal;
 
-typedef union {
-	struct {
+typedef union PACKED {
+	struct PACKED {
 		uint16_t hrm_devid;
 		uint16_t bsc_devid;
 		uint16_t gla_devid;

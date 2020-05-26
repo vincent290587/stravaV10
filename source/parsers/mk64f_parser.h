@@ -1,7 +1,7 @@
 /*
  * mk64f_parser.h
  *
- *  Created on: 6 déc. 2017
+ *  Created on: 6 dec. 2017
  *      Author: Vincent
  */
 
@@ -10,13 +10,6 @@
 
 #include <stdint.h>
 
-typedef enum {
-	eSpiRxPageInv  = 0xFF,
-	eSpiRxPage0    = 0U,
-	eSpiRxPage1    = 1U,
-} eSpisRxPages;
-
-////////////// RX SPIS
 
 typedef struct {
 	uint8_t event_type;
@@ -68,40 +61,6 @@ typedef struct {
 typedef struct {
 	uint8_t  state;
 } sPowerOrders;
-
-////////////// TX SPIS
-
-typedef enum {
-	eMk64fInterrupt       = 1U,
-	eMk64fLeftButton      = 2U,
-	eMk64fCentralButton   = 3U,
-	eMk64fRightButton     = 4U,
-} eMk64fLineToggle;
-
-////////////// RX PAGES
-
-typedef struct {
-	sBatteryOrders  batt_info;
-	sGlassesOrders  glasses_info;
-	sNeopixelOrders neo_info;
-	sFecControl     fec_info;
-	sBacklightOrders back_info;
-	sPowerOrders     power_info;
-} sSpisRxInfoPage0;
-
-typedef struct {
-	uint8_t dummy;
-} sSpisRxInfoPage1;
-
-typedef union {
-	sSpisRxInfoPage0 page0;
-	sSpisRxInfoPage1 page1;
-} sSpisRxPages;
-
-typedef struct {
-	eSpisRxPages page_id;
-	sSpisRxPages pages;
-} sSpisRxInfo;
 
 
 #endif /* MK64F_PARSER_H_ */
