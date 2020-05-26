@@ -135,7 +135,7 @@ void model_input_virtual_uart(char c) {
 		locator.sim_loc.data.utc_time = locator.gps_loc.data.utc_time + vparser.getSecJ();
 		locator.sim_loc.data.date = locator.gps_loc.data.date;
 
-		locator.sim_loc.data.utc_timestamp = millis();
+		locator.sim_loc.data.utc_timestamp = date_to_timestamp(locator.sim_loc.data.utc_time, gps.date.day(), gps.date.month(), gps.date.year());
 
 		locator.sim_loc.setIsUpdated();
 

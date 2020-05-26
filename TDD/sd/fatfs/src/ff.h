@@ -305,6 +305,8 @@ int f_puts (const TCHAR* str, FIL* cp);								/* Put a string to the file */
 int f_printf (FIL* fp, const TCHAR* str, ...);						/* Put a formatted string to the file */
 TCHAR* f_gets (TCHAR* buff, int len, FIL* fp);						/* Get a string from the file */
 
+FRESULT f_tell (FIL* fp); // vg: removed macro
+
 static inline int f_eof(FIL *p_file) {
 	return feof(p_file);
 }
@@ -330,7 +332,7 @@ static inline FRESULT f_unlink (const TCHAR* path) {
 
 //#define f_eof(fp) ((int)((fp)->fptr == (fp)->obj.objsize))
 //#define f_error(fp) ((fp)->err)
-#define f_tell(fp) ((fp)->fptr)
+//#define f_tell(fp) ftell(fp)
 #define f_size(fp) ((fp)->obj.objsize)
 #define f_rewind(fp) f_lseek((fp), 0)
 #define f_rewinddir(dp) f_readdir((dp), 0)

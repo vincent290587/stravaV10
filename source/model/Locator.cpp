@@ -69,9 +69,11 @@ void locator_dispatch_lns_update(sLnsInfo *lns_info) {
 	locator.nrf_loc.data.lon = (float)(lns_info->lon / 10000000.f);
 	locator.nrf_loc.data.speed = (float)(lns_info->speed / 10.f);
 
-	locator.nrf_loc.data.course = (float)(lns_info->heading);
+	locator.nrf_loc.data.course   = (float)(lns_info->heading);
 	locator.nrf_loc.data.utc_time = lns_info->secj;
-	locator.nrf_loc.data.date = lns_info->date;
+	locator.nrf_loc.data.date     = lns_info->date;
+
+	locator.nrf_loc.data.utc_timestamp = lns_info->utc_timestamp;
 
 	locator.nrf_loc.setIsUpdated();
 
@@ -308,7 +310,7 @@ void Locator::tasks() {
 		if (gps.time.isValid()) {
 			gps_loc.data.utc_time = get_sec_jour(gps.time.hour(), gps.time.minute(), gps.time.second());
 
-			gps_loc.data.utc_timestamp = millis();
+			gps_loc.data.utc_timestamp = date_to_timestamp(gps_loc.data.utc_time, gps.date.day(), gps.date.month(), gps.date.year());
 
 			gps_loc.data.date = gps.date.year()   % 100;
 			gps_loc.data.date += gps.date.day()   * 10000;

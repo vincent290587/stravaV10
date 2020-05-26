@@ -36,9 +36,7 @@ static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
 static TCHAR g_bufferReadPRC[BUFFER_SIZE];  /* Read buffer */
-static FIL g_fileObjectPRC;   /* File object */
 
-static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
 static FIL g_LogFileObject;   /* File object */
 
@@ -390,6 +388,7 @@ int load_segment(Segment& seg) {
 
 	String fat_name = seg.getName();
 
+	FIL g_fileObject;   /* File object */
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
@@ -462,6 +461,7 @@ int load_parcours(Parcours& mon_parcours) {
 
 	sysview_task_void_enter(SdFunction);
 
+	FIL g_fileObjectPRC;   /* File object */
 	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 
 	if (error)
@@ -602,12 +602,15 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  * @param att
  * @param nb_pos
  */
-void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
+void sd_save_pos_buffer(SAttTime att[], uint16_t nb_pos) {
+
+	fit_save_pos_buffer(att, nb_pos);
 
 	String fname = HISTO_MARKER_CHAR;
 	fname += att->date.date;
 	fname += ".txt";
 
+	FIL g_fileObject;
 	FRESULT error = f_open(&g_fileObject, fname.c_str(), FA_OPEN_APPEND | FA_WRITE);
 	APP_ERROR_CHECK(error);
 	if (error)

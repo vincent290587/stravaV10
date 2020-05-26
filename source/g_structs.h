@@ -55,6 +55,7 @@ typedef struct {
 	uint16_t heading;
 	uint32_t secj;
 	uint32_t date;
+	uint32_t utc_timestamp;
 } sLnsInfo;
 
 typedef struct {

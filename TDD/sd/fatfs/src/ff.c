@@ -3231,10 +3231,15 @@ FRESULT f_open (
 {
 	char *o_type = "r";
 
-	if (mode & FA_OPEN_APPEND) {
+	if (mode & FA_WRITE) {
 
-		o_type = "a+";
+		o_type = "wb+";
 
+		if (mode & FA_OPEN_APPEND) {
+
+			o_type = "ab+";
+
+		}
 	}
 
 	// f_open
@@ -3482,6 +3487,16 @@ FRESULT f_getcwd (
 /* Seek File R/W Pointer                                                 */
 /*-----------------------------------------------------------------------*/
 
+FRESULT f_tell (
+	FIL* fp
+)
+{
+
+	ftell(m_o_file);
+
+	return FR_OK;
+}
+
 FRESULT f_lseek (
 	FIL* fp,		/* Pointer to the file object */
 	FSIZE_t ofs		/* File pointer from top of file */
@@ -3628,7 +3643,7 @@ FRESULT f_lseek (
 //
 //	LEAVE_FF(fs, res);
 
-	fseek(fp, ofs, SEEK_SET);
+	fseek(m_o_file, ofs, SEEK_SET);
 
 	return FR_OK;
 }
