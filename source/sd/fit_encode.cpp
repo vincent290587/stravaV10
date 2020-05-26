@@ -146,6 +146,8 @@ void fit_save_pos_buffer(SAttTime att[], uint16_t nb_pos) {
 		encode_process(&e_data);
 	}
 
+	int8_t cur_temp = (int8_t)stc.getTemperature();
+
 	// save all buffers
 	for (uint16_t i=0; i< nb_pos; i++) {
 
@@ -166,7 +168,7 @@ void fit_save_pos_buffer(SAttTime att[], uint16_t nb_pos) {
 		e_data.alt_cm = alt;
 		e_data.hrm = att[i].sensors.bpm;
 		e_data.cad = att[i].sensors.cadence;
-		e_data.temp_c = 19;
+		e_data.temp_c = cur_temp;
 		e_data.timestamp = unix_timestamp;
 
 		encode_process(&e_data);

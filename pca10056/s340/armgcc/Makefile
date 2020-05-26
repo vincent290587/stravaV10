@@ -215,7 +215,7 @@ dfu_softdevice:
 	nrfutil pkg display stravaV10_soft.zip
 	nrfutil dfu usb-serial -pkg stravaV10_soft.zip -p $(COM_PORT)
 
-dfu:
+dfu: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
 	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
