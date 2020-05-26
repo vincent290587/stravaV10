@@ -16,8 +16,8 @@
 #define PACKED __attribute__((packed))
 #endif
 
-typedef struct {
-	char*    str;
+typedef struct PACKED {
+	char*  str;
 	size_t length;
 } sCharArray;
 
