@@ -19,6 +19,7 @@
 #include "usb_cdc.h"
 #include "Model.h"
 #include "Simulator.h"
+#include "sd_functions.h"
 #include "segger_wrapper.h"
 #include "assert_wrapper.h"
 
@@ -36,7 +37,7 @@
 static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 
-static FIL* g_fileObject;   /* File object */
+static FILE* g_fileObject;   /* File object */
 
 #ifdef LS027_GUI
 #define NEW_POINT_PERIOD_MS       400
@@ -438,6 +439,7 @@ static void _loc_sim(void) {
 			lns_info.lon = lon * 10000000.;
 			lns_info.ele = (alt_sim + 32.3f + distr_alt(generator)) * 100.;
 			lns_info.secj = (int)rtime;
+			lns_info.utc_timestamp = date_to_timestamp(lns_info.secj, 1, 12, 2018);
 			lns_info.date = 11218;
 			lns_info.heading = 5;
 			lns_info.speed = cur_speed * 10.;
@@ -476,6 +478,8 @@ static void _loc_sim(void) {
 		mes_segments.clear();
 		mes_parcours._parcs.clear();
 		mes_points.removeAll();
+
+		fit_terminate();
 
 		// print memory state
 		print_mem_state();

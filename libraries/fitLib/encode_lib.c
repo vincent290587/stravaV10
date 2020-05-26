@@ -14,6 +14,7 @@
 
 #include "stdio.h"
 #include "string.h"
+#include "assert_wrapper.h"
 
 #include "fit_product.h"
 #include "fit_crc.h"
@@ -85,6 +86,7 @@ void WriteFileHeader(void)
 {
 	FIT_FILE_HDR file_header;
 
+	file_header.data_size   = 0;
 	file_header.header_size = FIT_FILE_HDR_SIZE;
 	file_header.profile_version = FIT_PROFILE_VERSION;
 	file_header.protocol_version = FIT_PROTOCOL_VERSION_20;
@@ -94,7 +96,9 @@ void WriteFileHeader(void)
 	long f_size = UserData_Ftell();
 	UserData_GoTo(eUserDataPosStart); // fseek (fp , 0 , SEEK_SET);
 
-	file_header.data_size = f_size - FIT_FILE_HDR_SIZE - sizeof(FIT_UINT16);
+	if (f_size > FIT_FILE_HDR_SIZE + sizeof(FIT_UINT16)) {
+		file_header.data_size = f_size - FIT_FILE_HDR_SIZE - sizeof(FIT_UINT16);
+	}
 	file_header.crc = FitCRC_Calc16(&file_header, FIT_STRUCT_OFFSET(crc, FIT_FILE_HDR));
 
 	WriteDataBare((void *)&file_header, FIT_FILE_HDR_SIZE);
@@ -105,10 +109,34 @@ void WriteFileHeader(void)
 // Public functions
 ///////////////////////////////////////////////////////////////////////
 
+
 int encode_process(sEncodingData * const p_data)
 {
 	static FIT_UINT8 local_mesg_number = 0;
 	static FIT_DATE_TIME start_time = 0;
+
+	ASSERT(sizeof(FIT_FILE_HDR) == FIT_FILE_HDR_SIZE);
+
+	ASSERT(sizeof(FIT_FILE_ID_MESG_DEF) == FIT_FILE_ID_MESG_DEF_SIZE);
+	ASSERT(sizeof(FIT_FILE_ID_MESG) == FIT_FILE_ID_MESG_SIZE);
+
+	ASSERT(sizeof(FIT_FILE_CREATOR_MESG_DEF) == FIT_FILE_CREATOR_MESG_DEF_SIZE);
+	ASSERT(sizeof(FIT_FILE_CREATOR_MESG) == FIT_FILE_CREATOR_MESG_SIZE);
+
+	ASSERT(sizeof(FIT_EVENT_MESG_DEF) == FIT_EVENT_MESG_DEF_SIZE);
+	ASSERT(sizeof(FIT_EVENT_MESG) == FIT_EVENT_MESG_SIZE);
+
+	ASSERT(sizeof(FIT_RECORD_MESG_DEF) == FIT_RECORD_MESG_DEF_SIZE);
+	ASSERT(sizeof(FIT_RECORD_MESG) == FIT_RECORD_MESG_SIZE);
+
+	ASSERT(sizeof(FIT_LAP_MESG_DEF) == FIT_LAP_MESG_DEF_SIZE);
+	ASSERT(sizeof(FIT_LAP_MESG) == FIT_LAP_MESG_SIZE);
+
+	ASSERT(sizeof(FIT_SESSION_MESG_DEF) == FIT_SESSION_MESG_DEF_SIZE);
+	ASSERT(sizeof(FIT_SESSION_MESG) == FIT_SESSION_MESG_SIZE);
+
+	ASSERT(sizeof(FIT_ACTIVITY_MESG_DEF) == FIT_ACTIVITY_MESG_DEF_SIZE);
+	ASSERT(sizeof(FIT_ACTIVITY_MESG) == FIT_ACTIVITY_MESG_SIZE);
 
 	// reset recording
 	if (p_data->cmd == eEncodingCommandStart) {
@@ -160,8 +188,8 @@ int encode_process(sEncodingData * const p_data)
 		record_msg.grade       = p_data->grade_pc;
 		record_msg.heart_rate  = p_data->hrm;
 		record_msg.cadence     = p_data->cad;
-		WriteMessageDefinition(local_mesg_number, fit_mesg_defs[FIT_MESG_RECORD], sizeof(FIT_RECORD_MESG_DEF));
-		WriteMessage(local_mesg_number, &record_msg, sizeof(FIT_RECORD_MESG));
+		WriteMessageDefinition(local_mesg_number, fit_mesg_defs[FIT_MESG_RECORD], FIT_RECORD_MESG_DEF_SIZE);
+		WriteMessage(local_mesg_number, &record_msg, FIT_RECORD_MESG_SIZE);
 	}
 
 	// Write event

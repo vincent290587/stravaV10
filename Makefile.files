@@ -106,6 +106,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/jscope \
   $(PROJ_DIR)/libraries/filters \
   $(PROJ_DIR)/libraries/sysview \
+  $(PROJ_DIR)/libraries/fitLib \
   $(PROJ_DIR)/libraries/task_manager \
   $(PROJ_DIR)/libraries/komoot \
   $(PROJ_DIR)/libraries/kalman \

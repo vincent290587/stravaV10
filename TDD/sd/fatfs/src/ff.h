@@ -207,7 +207,11 @@ typedef struct {
 #endif
 } FILINFO;
 
-typedef FILE FIL;
+
+//typedef FILE FIL;
+typedef struct {
+	FILE* p_file;
+} FIL;
 
 //typedef struct dirent FILINFO;
 
@@ -305,24 +309,20 @@ int f_puts (const TCHAR* str, FIL* cp);								/* Put a string to the file */
 int f_printf (FIL* fp, const TCHAR* str, ...);						/* Put a formatted string to the file */
 TCHAR* f_gets (TCHAR* buff, int len, FIL* fp);						/* Get a string from the file */
 
-FRESULT f_tell (FIL* fp); // vg: removed macro
+long int f_tell (FIL* fp); // vg: removed macro
 
 static inline int f_eof(FIL *p_file) {
-	return feof(p_file);
+	return feof(p_file->p_file);
 }
 
 static inline int f_error(FIL *p_file) {
-	return ferror(p_file);
+	return ferror(p_file->p_file);
 }
 
-static inline FRESULT f_stat (
+FRESULT f_stat (
 	const TCHAR* path,	/* Pointer to the file path */
 	FILINFO* fno		/* Pointer to file information to return */
-)
-{
-
-	return FR_OK;
-}
+);
 
 static inline FRESULT f_unlink (const TCHAR* path) {
 

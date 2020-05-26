@@ -11,19 +11,19 @@
 #include <stdint.h>
 
 typedef enum {
-	eEncodingCommandNone,
+	eEncodingCommandNone=0,
 	eEncodingCommandStart,
 	eEncodingCommandStop,
 } eEncodingCommand;
 
 typedef enum {
-	eUserDataPosStart,
+	eUserDataPosStart=0,
 	eUserDataPosEnd,
 } eUserDataPos;
 
 
-typedef struct {
-	eEncodingCommand cmd;
+typedef struct __attribute__((packed)) {
+	uint8_t cmd;
 	uint32_t timestamp;
 	int32_t lat;
 	int32_t lon;
