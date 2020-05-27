@@ -74,7 +74,7 @@
 #include "task_manager.h"
 
 #include "ble_api_base.h"
-#include "lezyne_protocol.h"
+#include "l_protocol.h"
 #include "app_packets_handler.h"
 
 #include "peer_manager.h"
