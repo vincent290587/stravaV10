@@ -30,7 +30,7 @@ void ant_device_manager_init(void) {
 	if (u_settings.isConfigValid()) {
 		ant_setup_start(u_settings.getHRMdevID(), u_settings.getBSCdevID(), u_settings.getFECdevID());
 	} else {
-		LOG_ERROR("Impossible to start ANT channels: wrong configuration");
+		LOG_ERROR("Impossible to start ANT channels: wrong user configuration");
 	}
 }
 

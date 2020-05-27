@@ -71,9 +71,7 @@
 #include "lezyne_protocol.h"
 #include "app_packets_handler.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
+#include "segger_wrapper.h"
 
 
 typedef struct {
@@ -595,6 +593,8 @@ static void _handle_nav_file(uint8_t const *p_data, uint16_t  length) {
 	//// street_name[1..X]
 	//// nav_len16
 	//// crc16
+
+	NRF_LOG_INFO("_handle_nav_file %u", p_data[0]);
 
 	switch (p_data[0]) {
 

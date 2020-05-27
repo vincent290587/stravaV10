@@ -28,10 +28,11 @@
 #define SCAN_DURATION               MSEC_TO_UNITS(3*60000, UNIT_10_MS)     /**< Duration of the scanning in units of 10 milliseconds. If set to 0x0000, scanning will continue until it is explicitly disabled. */
 
 BLE_CP_C_DEF(m_ble_cp_c);
-BLE_DB_DISCOVERY_DEF(m_db_disc);                                        /**< Database discovery module instance. */
+BLE_DB_DISCOVERY_ARRAY_DEF(m_db_disc,
+		NRF_SDH_BLE_CENTRAL_LINK_COUNT);  /**< Database discovery module instances. */
 NRF_BLE_GQ_DEF(m_ble_gatt_queue_c,                                        /**< BLE GATT Queue instance. */
-               NRF_SDH_BLE_CENTRAL_LINK_COUNT,
-               NRF_BLE_GQ_QUEUE_SIZE);
+		NRF_SDH_BLE_CENTRAL_LINK_COUNT,
+		NRF_BLE_GQ_QUEUE_SIZE);
 NRF_BLE_SCAN_DEF(m_scan);                                               /**< Scanning Module instance. */
 
 /**< Scan parameters requested for scanning and connection. */
@@ -205,6 +206,32 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 	}
 }
 
+void app_ble_central_ble_evt_handler(ble_evt_t const * p_ble_evt)
+{
+	ret_code_t            err_code;
+	ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;
+
+	switch (p_ble_evt->header.evt_id)
+	{
+	case BLE_GAP_EVT_CONNECTED:
+		if(p_gap_evt->params.connected.role == BLE_GAP_ROLE_CENTRAL)
+		{
+    		NRF_LOG_INFO("CR Connected");
+
+			// start discovery of services. The NUS Client waits for a discovery result
+			err_code = ble_db_discovery_start(&m_db_disc[p_gap_evt->conn_handle], p_ble_evt->evt.gap_evt.conn_handle);
+			APP_ERROR_CHECK(err_code);
+		}
+		break;
+
+    case BLE_GAP_EVT_DISCONNECTED:
+    	if(p_gap_evt->params.connected.role == BLE_GAP_ROLE_CENTRAL) {
+    		NRF_LOG_INFO("CR Disconnected");
+    	}
+        break;
+	}
+}
+
 /**@brief Function to start scanning.
  */
 static void scan_init(void)
@@ -250,6 +277,10 @@ static void scan_start(void)
 
 void app_ble_central_init(void)
 {
+
+    // Register a handler for BLE events.
+    NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, app_ble_central_ble_evt_handler, NULL);
+
 //    m_on_data_received = on_data_received;
     db_discovery_init();
     services_c_init();

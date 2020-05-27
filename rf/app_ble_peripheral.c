@@ -80,11 +80,9 @@
 #include "peer_manager.h"
 #include "peer_manager_handler.h"
 
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
+#include "segger_wrapper.h"
 
-#define ADV_FOR_IPHONE     0
+#define ADV_FOR_IPHONE                  1
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
@@ -104,11 +102,6 @@
 #define NEXT_CONN_PARAMS_UPDATE_DELAY   APP_TIMER_TICKS(30000)                      /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
 #define MAX_CONN_PARAMS_UPDATE_COUNT    3                                           /**< Number of attempts before giving up the connection parameter negotiation. */
 
-#define DEAD_BEEF                       0xDEADBEEF                                  /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
-
-#define UART_TX_BUF_SIZE                256                                         /**< UART TX buffer size. */
-#define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
-
 #define LESC_DEBUG_MODE                     0                                       /**< Set to 1 to use LESC debug keys, allows you to use a sniffer to inspect traffic. */
 
 #define SEC_PARAM_BOND                      1                                       /**< Perform bonding. */
@@ -122,12 +115,12 @@
 
 BLE_LNS_DEF(m_lns);                                         /**< Location and navigation service instance. */
 BLE_BAS_DEF(m_bas);
-BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
+BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                              /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                                                             /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
 NRF_BLE_GQ_DEF(m_ble_gatt_queue,                            /**< BLE GATT queue instance. */
-        NRF_SDH_BLE_PERIPHERAL_LINK_COUNT,
+		NRF_SDH_BLE_TOTAL_LINK_COUNT,
         NRF_BLE_GQ_QUEUE_SIZE);
 
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
@@ -301,7 +294,7 @@ void nrf_qwr_error_reset(void)
  */
 void lns_error_handler(uint32_t err_code)
 {
-    app_error_handler(DEAD_BEEF, 0, 0);
+	APP_ERROR_HANDLER(err_code);
 }
 
 /**@brief Location Navigation event handler.
@@ -641,26 +634,29 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
  * @param[in]   p_ble_evt   Bluetooth stack event.
  * @param[in]   p_context   Unused.
  */
-static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
+static void app_ble_peripheral_ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 {
     uint32_t err_code;
+    ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;
 
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-            NRF_LOG_INFO("Connected");
+        	if(p_gap_evt->params.connected.role == BLE_GAP_ROLE_PERIPH) {
+        		NRF_LOG_INFO("PR Connected");
 
-            m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-            err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
-            APP_ERROR_CHECK(err_code);
-
-            app_handler__on_connected();
+        		m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+        		err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
+        		APP_ERROR_CHECK(err_code);
+        	}
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
-            NRF_LOG_INFO("Disconnected");
-            // LED indication will be changed when advertising starts.
-            m_conn_handle = BLE_CONN_HANDLE_INVALID;
+        	if(p_gap_evt->params.connected.role == BLE_GAP_ROLE_PERIPH) {
+        		NRF_LOG_INFO("PR Disconnected");
+        		// LED indication will be changed when advertising starts.
+        		m_conn_handle = BLE_CONN_HANDLE_INVALID;
+        	}
             break;
 
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
@@ -729,9 +725,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     }
 }
 
-// Register a handler for BLE events.
-NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
-
 
 /**@brief Function for handling events from the GATT library. */
 void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const * p_evt)
@@ -781,6 +774,7 @@ static void peer_manager_init(void)
 }
 #endif
 
+
 /**@brief Function for initializing the GATT library. */
 void gatt_init(void)
 {
@@ -790,6 +784,9 @@ void gatt_init(void)
     APP_ERROR_CHECK(err_code);
 
     err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -813,15 +810,6 @@ static void advertising_init(void)
 
     memset(&init, 0, sizeof(init));
     memset(&manuf_data, 0, sizeof(manuf_data));
-
-    // manufacturer specific data
-//    uint8_t data[]                = "Lezyne"; //Our data to advertise
-//    manuf_data.company_identifier = 0x37B5; // reverse order
-//    manuf_data.data.p_data        = data;
-//    manuf_data.data.size          = sizeof(data);
-//
-////    init.advdata.p_manuf_specific_data = &manuf_data;
-//    init.srdata.p_manuf_specific_data = &manuf_data;
 
 #if ADV_FOR_IPHONE
 
@@ -882,13 +870,35 @@ static void advertising_start(void)
 }
 
 
-/**@brief Application main function.
+/**@brief Function for initializing the BLE stack.
+ *
+ * @details Initializes the SoftDevice and the BLE event interrupt.
  */
-void ble_init(void)
+static void ble_stack_init(void)
 {
+    ret_code_t err_code;
+
+    // Configure the BLE stack using the default settings.
+    // Fetch the start address of the application RAM.
+    uint32_t ram_start = 0;
+    err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
+    APP_ERROR_CHECK(err_code);
+    // Enable BLE stack.
+    err_code = nrf_sdh_ble_enable(&ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    NRF_LOG_WARNING("RAM REQ: 0x%lX", ram_start);
+}
+
+
+void app_ble_peripheral_init(void) {
+
+    // Register a handler for BLE events.
+    NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, app_ble_peripheral_ble_evt_handler, NULL);
+
+    gatt_init();
 
     gap_params_init();
-    gatt_init();
     services_init();
     advertising_init();
     conn_params_init();
@@ -897,9 +907,18 @@ void ble_init(void)
     peer_manager_init();
 #endif
 
-    app_ble_central_init();
-
 	advertising_start();
+
+}
+
+/**@brief Application main function.
+ */
+void ble_init(void)
+{
+	ble_stack_init();
+
+    app_ble_peripheral_init();
+    app_ble_central_init();
 
     (void)task_create(app_handler__task, "lezyne_task", NULL);
 
