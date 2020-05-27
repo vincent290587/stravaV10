@@ -5143,9 +5143,9 @@ typedef struct PACKED
 // session message
 
 // TODO custom that
-#define FIT_SESSION_USER_MSG_FIELDS_NB      3
+#define FIT_SESSION_USER_MSG_FIELDS_NB      5
 
-#define FIT_SESSION_MESG_SIZE                                                   12
+#define FIT_SESSION_MESG_SIZE                                                   14
 #define FIT_SESSION_MESG_DEF_SIZE                                               ((FIT_SESSION_USER_MSG_FIELDS_NB*FIT_FIELD_DEF_SIZE) + 5)
 #define FIT_SESSION_MESG_TIME_IN_HR_ZONE_COUNT                                  1
 #define FIT_SESSION_MESG_TIME_IN_SPEED_ZONE_COUNT                               1
@@ -5226,8 +5226,8 @@ typedef struct PACKED
 //   FIT_UINT16 avg_vam; // 1000 * m/s + 0,
 //   FIT_EVENT event; // session
 //   FIT_EVENT_TYPE event_type; // stop
-//   FIT_SPORT sport; //
-//   FIT_SUB_SPORT sub_sport; //
+   FIT_SPORT sport; //
+   FIT_SUB_SPORT sub_sport; //
 //   FIT_UINT8 avg_heart_rate; // 1 * bpm + 0, average heart rate (excludes pause time)
 //   FIT_UINT8 max_heart_rate; // 1 * bpm + 0,
 //   FIT_UINT8 avg_cadence; // 1 * rpm + 0, total_cycles / total_timer_time if non_zero_avg_cadence otherwise total_cycles / total_elapsed_time

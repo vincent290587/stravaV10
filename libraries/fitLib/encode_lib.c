@@ -224,6 +224,8 @@ int encode_process(sEncodingData * const p_data)
 		session_msg.timestamp  = p_data->timestamp;
 		session_msg.start_time = start_time;
 		session_msg.total_elapsed_time = (p_data->timestamp - start_time)*1000;
+		session_msg.sport     = FIT_SPORT_CYCLING;
+		session_msg.sub_sport = FIT_SUB_SPORT_MOUNTAIN;
 		WriteMessageDefinition(local_mesg_number, fit_mesg_defs[FIT_MESG_SESSION], FIT_SESSION_MESG_DEF_SIZE);
 		WriteMessage(local_mesg_number, &session_msg, FIT_SESSION_MESG_SIZE);
 
