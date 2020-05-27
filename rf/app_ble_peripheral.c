@@ -124,7 +124,7 @@ NRF_BLE_GQ_DEF(m_ble_gatt_queue,                            /**< BLE GATT queue 
         NRF_BLE_GQ_QUEUE_SIZE);
 
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
-static uint16_t   m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+static uint16_t   m_ble_nus_max_data_len = 20;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 
 static ble_lns_loc_speed_t   m_sim_location_speed;          /**< Location and speed simulation. */
 static ble_lns_pos_quality_t m_sim_position_quality;        /**< Position measurement quality simulation. */
@@ -924,5 +924,8 @@ void ble_init(void)
 
 }
 
+uint16_t ble_get_mtu(void) {
 
+	return m_ble_nus_max_data_len;
+}
 

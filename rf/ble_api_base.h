@@ -20,6 +20,7 @@ extern "C" {
 
 
 void ble_init(void);
+uint16_t ble_get_mtu(void);
 
 void app_ble_central_init(void);
 

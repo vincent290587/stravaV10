@@ -62,41 +62,48 @@
 #include <stdbool.h>
 #include "millis.h"
 #include "ble_nus.h"
+#include "ble_api_base.h"
 #include "nrf_queue.h"
 #include "g_structs.h"
 #include "sd_functions.h"
 
 #include "task_manager.h"
 
-#include "lezyne_protocol.h"
+#include "l_protocol.h"
 #include "app_packets_handler.h"
 
 #include "segger_wrapper.h"
 
+#define NUS_LONG_PACKETS_SIZE     20
 
 typedef struct {
 	uint32_t cur_size;
 	uint32_t total_size;
 	uint8_t  seg_id[8];
-	uint8_t  buffer[10000];
+	uint8_t  buffer[1000];
 } sUploadSegment;
 
 
 typedef struct {
-	uint8_t nus_data[BLE_NUS_MAX_DATA_LEN];
+	uint8_t nus_data[BLE_NUS_STD_DATA_LEN];
 	uint16_t data_length;
 } sNusPacket;
 
+typedef struct {
+	uint8_t  nus_data[NUS_LONG_PACKETS_SIZE];
+	uint16_t data_length;
+} sNusLongPacket;
+
 task_id_t m_rx_task_id = TASK_ID_INVALID;
 
-NRF_QUEUE_DEF(sNusPacket, m_nus_tx_queue, 4, NRF_QUEUE_MODE_NO_OVERFLOW);
+NRF_QUEUE_DEF(sNusLongPacket, m_nus_tx_queue, 4, NRF_QUEUE_MODE_NO_OVERFLOW);
 NRF_QUEUE_DEF(sNusPacket, m_nus_rx_queue, 20, NRF_QUEUE_MODE_NO_OVERFLOW);
 
 
 static sUploadSegment m_cur_u_seg;
 
+static uint8_t  m_fit_up = 0;
 static uint16_t m_nb_segs = 0;
-static uint8_t m_fit_up = 0;
 
 // 631065600uL is GMT: Sunday 31 December 1989 00:00:00
 
@@ -104,7 +111,7 @@ static uint8_t m_fit_up = 0;
 // 958 647 620uL + 631 065 600uL = 1 589 713 220 ===> GMT: Sunday 17 May 2020 11:00:20 :  GOOD !
 //static uint32_t m_fake_name = 958647621uL + 1; // FIT timestamp
 
-// 959358152 <===> 392EA4C7 from Lezyne device
+// 959358152 <===> 392EA4C7 from device
 
 //static uint32_t m_fake_name = 1590002145uL - 631 065 600uL;
 
@@ -144,9 +151,9 @@ static uint16_t _decode_uint16_little(uint8_t const *p_data) {
 
 static void _queue_nus(uint8_t const *p_data, uint16_t length) {
 
-	sNusPacket data_array;
+	sNusLongPacket data_array;
 
-	memcpy(&data_array, p_data, length);
+	memcpy(&data_array.nus_data, p_data, length);
 	data_array.data_length = length;
 
 	NRF_LOG_HEXDUMP_DEBUG(p_data, length);
@@ -166,13 +173,13 @@ static void _queue_nus(uint8_t const *p_data, uint16_t length) {
 
 static void _handle_send_command(uint8_t cmd) {
 
-	sNusPacket data_array;
+	sNusLongPacket data_array;
 
 	memset(&data_array, 0x00, sizeof(data_array));
 
 	// command
 	data_array.nus_data[0] = cmd;
-	data_array.data_length = 20;
+	data_array.data_length = BLE_NUS_STD_DATA_LEN;
 
 	//NRF_LOG_INFO("Queuing cmd %u", cmd);
 
@@ -189,12 +196,12 @@ static void _handle_send_command(uint8_t cmd) {
 
 static void _handle_file_list(void) {
 
-	uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
+	uint8_t data_array[BLE_NUS_STD_DATA_LEN];
 	uint16_t rem_bytes;
 
 	do {
 
-		memset(data_array, 0x00, BLE_NUS_MAX_DATA_LEN);
+		memset(data_array, 0x00, BLE_NUS_STD_DATA_LEN);
 
 		// command
 		data_array[0] = FileListSending;
@@ -202,11 +209,11 @@ static void _handle_file_list(void) {
 		sCharArray c_array;
 		c_array.str = (char*)&data_array[1];
 
-		rem_bytes = sd_functions__query_fit_list(1, &c_array, BLE_NUS_MAX_DATA_LEN - 1);
+		rem_bytes = sd_functions__query_fit_list(1, &c_array, BLE_NUS_STD_DATA_LEN - 1);
 
 		NRF_LOG_INFO("Transmitting file list");
 
-		_queue_nus(data_array, BLE_NUS_MAX_DATA_LEN);
+		_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
 	} while (rem_bytes > 0);
 
@@ -214,7 +221,7 @@ static void _handle_file_list(void) {
 
 static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 
-	uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
+	uint8_t data_array[NUS_LONG_PACKETS_SIZE];
 
 	memset(&data_array, 0x00, sizeof(data_array));
 
@@ -223,8 +230,11 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 		sCharArray c_array;
 		c_array.length = 0;
 		c_array.str = (char*)&data_array[1];
-		int res = sd_functions__run_query(0, &c_array, 19);
-		if (res || c_array.length < 19) {
+		uint16_t mtu_length = ble_get_mtu();
+		uint16_t long_packet_len = mtu_length < NUS_LONG_PACKETS_SIZE ? mtu_length : NUS_LONG_PACKETS_SIZE;
+		long_packet_len -= 1;
+		int res = sd_functions__run_query(0, &c_array, long_packet_len);
+		if (res || c_array.length < long_packet_len) {
 			// we can be here in case of error or if we reached the EOF
 			(void)sd_functions__stop_query();
 			m_fit_up = FitFileTransferEnd;
@@ -240,14 +250,12 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 		// data[1..19]
 		data_array[0] = m_fit_up;
 
-		_queue_nus(data_array, 20);
+		_queue_nus(data_array, c_array.length);
 
 		if (m_fit_up == FitFileTransferEnd) {
-			//NRF_LOG_HEXDUMP_INFO(data_array.nus_data, 20);
+			//NRF_LOG_HEXDUMP_INFO(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 
 			m_fit_up = 0;
-
-			NRF_LOG_INFO("%u bytes xferred", c_array.length);
 
 			_handle_send_command(SwitchingToLowSpeed);
 			_handle_send_command(ConnectedInLowSpeed);
@@ -290,11 +298,11 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 		_encode_uint32_little(f_size, data_array+index);
 		index+=4;
 
-		NRF_LOG_HEXDUMP_INFO(data_array, sizeof(data_array));
+		NRF_LOG_HEXDUMP_INFO(data_array, BLE_NUS_STD_DATA_LEN);
 
 		task_delay(500);
 
-		_queue_nus(data_array, 20);
+		_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
 		m_fit_up = FitFileTransferData;
 	}
@@ -302,10 +310,10 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 
 static void _handle_file_delete(uint8_t const *p_data, uint16_t  length) {
 
-	uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
+	uint8_t data_array[BLE_NUS_STD_DATA_LEN];
 	uint8_t index = 0;
 
-	memset(data_array, 0x00, BLE_NUS_MAX_DATA_LEN);
+	memset(data_array, 0x00, BLE_NUS_STD_DATA_LEN);
 
 	// command
 	data_array[index++] = FileDeleteConfirmation;
@@ -322,7 +330,7 @@ static void _handle_file_delete(uint8_t const *p_data, uint16_t  length) {
 		_encode_uint32_little(_decode_uint32_little(p_data+1), data_array+index);
 		index += 4;
 
-		_queue_nus(data_array, BLE_NUS_MAX_DATA_LEN);
+		_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
 		NRF_LOG_INFO("Deleting file");
 	}
@@ -337,10 +345,10 @@ static void _handle_phone_status(uint8_t const *p_data, uint16_t  length) {
 
 static void _send_status_packet(void) {
 
-	uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
+	uint8_t data_array[BLE_NUS_STD_DATA_LEN];
 	uint8_t index = 0;
 
-	memset(data_array, 0x00, BLE_NUS_MAX_DATA_LEN);
+	memset(data_array, 0x00, BLE_NUS_STD_DATA_LEN);
 
 	// command
 	data_array[index++] = RequestPhoneStatus;
@@ -370,7 +378,7 @@ static void _send_status_packet(void) {
 	// ble_speed8
 	//data_array[index++] = 0;
 
-	_queue_nus(data_array, BLE_NUS_MAX_DATA_LEN);
+	_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
 	NRF_LOG_INFO("RequestPhoneStatus");
 }
@@ -428,10 +436,10 @@ static void _handle_segment_list_item(uint8_t const *p_data, uint16_t  length) {
 
 		if (m_nb_segs > 0) {
 
-			uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
+			uint8_t data_array[BLE_NUS_STD_DATA_LEN];
 			index = 0;
 
-			memset(&data_array, 0x00, BLE_NUS_MAX_DATA_LEN);
+			memset(&data_array, 0x00, BLE_NUS_STD_DATA_LEN);
 
 			// command
 			data_array[0] = SegmentFileRequest;
@@ -439,11 +447,11 @@ static void _handle_segment_list_item(uint8_t const *p_data, uint16_t  length) {
 			memcpy(m_cur_u_seg.seg_id, p_data+1, sizeof(m_cur_u_seg.seg_id));
 			memcpy(&data_array[1], m_cur_u_seg.seg_id, sizeof(m_cur_u_seg.seg_id));
 
-			//NRF_LOG_HEXDUMP_INFO(data_array, 20);
+			//NRF_LOG_HEXDUMP_INFO(data_array, BLE_NUS_STD_DATA_LEN);
 
 			task_delay(300);
 
-			_queue_nus(data_array, 20);
+			_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
 			NRF_LOG_INFO("Sending SegmentFileRequest ...");
 		}
@@ -477,7 +485,7 @@ static void _handle_segment_upload_start(uint8_t const *p_data, uint16_t  length
 	NRF_LOG_INFO("SegmentFileUploadStart tot. size=%lu", m_cur_u_seg.total_size);
 
 	// dump ID
-	//NRF_LOG_HEXDUMP_INFO(p_data, 20);
+	//NRF_LOG_HEXDUMP_INFO(p_data, BLE_NUS_STD_DATA_LEN);
 }
 
 //static void _handle_setting_request(uint8_t const *p_data, uint16_t  length) {
@@ -523,9 +531,9 @@ static void _handle_segment_upload_data(uint8_t const *p_data, uint16_t  length)
 	} else {
 
 		// copy segment data
-		memcpy(m_cur_u_seg.buffer+m_cur_u_seg.cur_size, p_data + 1, 19);
+		memcpy(m_cur_u_seg.buffer+m_cur_u_seg.cur_size, p_data + 1, length-1);
 
-		m_cur_u_seg.cur_size += 19;
+		m_cur_u_seg.cur_size += length-1;
 
 		NRF_LOG_INFO("SegmentFileUploadData %lu / %lu", m_cur_u_seg.cur_size, m_cur_u_seg.total_size);
 	}
@@ -623,7 +631,7 @@ static void _handle_nav_file(uint8_t const *p_data, uint16_t  length) {
 static uint8_t _process_tx(void) {
 
 	uint8_t cur_event = 0;
-	sNusPacket data_array;
+	sNusLongPacket data_array;
 
 	if (!nrf_queue_is_empty(&m_nus_tx_queue)) {
 
@@ -633,11 +641,15 @@ static uint8_t _process_tx(void) {
 		ret_code_t err_code = nrf_queue_pop(&m_nus_tx_queue, &data_array);
 		APP_ERROR_CHECK(err_code);
 
-//		NRF_LOG_HEXDUMP_INFO(data_array.nus_data, 20);
+//		NRF_LOG_HEXDUMP_INFO(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 //		NRF_LOG_FLUSH();
 
 		do
 		{
+			if (data_array.data_length == 0) {
+				NRF_LOG_ERROR("Empty NUS packet %u", data_array.nus_data[0]);
+				break;
+			}
 
 			err_code = nus_data_send(data_array.nus_data, data_array.data_length);
 			if ((err_code != NRF_ERROR_INVALID_STATE) &&
@@ -661,8 +673,8 @@ static uint8_t _process_tx(void) {
 			//artificial delay
 			if (err_code == NRF_SUCCESS) {
 
-				NRF_LOG_INFO("Sending packet %u (%lu)",
-						data_array.nus_data[0], millis());
+				NRF_LOG_INFO("Sending packet %u (%lu) size %u",
+						data_array.nus_data[0], millis(), data_array.data_length);
 
 				//task_delay(20);
 			}
@@ -692,7 +704,7 @@ void app_handler__nus_data_handler(uint8_t const *p_data, uint16_t length)
 	memset(&data_array, 0x00, sizeof(sNusPacket));
 	memcpy(&data_array, p_data, length);
 
-	NRF_LOG_INFO("RECV %lu (%u)", millis(), p_data[0]);
+	NRF_LOG_INFO("RECV %lu (%u) (%u)", millis(), p_data[0], length);
 
 	uint32_t err_code = nrf_queue_push(&m_nus_rx_queue, &data_array);
 	APP_ERROR_CHECK(err_code);
@@ -723,8 +735,6 @@ void app_handler__task(void * p_context) {
 
 	task_delay(2000);
 
-	NRF_LOG_INFO("handler starting iD %u", m_rx_task_id);
-
 	// Start execution.
 
 	while (1) {
@@ -739,7 +749,7 @@ void app_handler__task(void * p_context) {
 			ret_code_t err_code = nrf_queue_pop(&m_nus_rx_queue, &data_array);
 			APP_ERROR_CHECK(err_code);
 
-//			NRF_LOG_HEXDUMP_INFO(data_array.nus_data, 20);
+//			NRF_LOG_HEXDUMP_INFO(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 //			NRF_LOG_FLUSH();
 
 			switch (data_array.nus_data[0]) {
@@ -749,11 +759,11 @@ void app_handler__task(void * p_context) {
 				break;
 
 			case RequestFitFileDownload:
-				_handle_file_upload(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_file_upload(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case RequestFitFileDelete:
-				_handle_file_delete(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_file_delete(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case SettingsRequestV1:
@@ -761,42 +771,42 @@ void app_handler__task(void * p_context) {
 				break;
 
 			case NewSegmentListReady:
-				_handle_segment_list(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_segment_list(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case SegmentListItem:
 			case SegmentListItemDone:
-				_handle_segment_list_item(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_segment_list_item(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case SegmentFileUploadStart:
-				_handle_segment_upload_start(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_segment_upload_start(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case SegmentFileUploadData:
 			case SegmentFileUploadEnd:
-				_handle_segment_upload_data(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_segment_upload_data(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case NavigationNewFile:
 			case NavigationNewFileDest:
-				_handle_nav(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_nav(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case NavFileUploadDataStart:
 			case NavFileUploadData:
 			case NavFileUploadEnd:
-				_handle_nav_file(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_nav_file(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case PhoneStatus:
-				_handle_phone_status(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				_handle_phone_status(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			default:
 			{
 				NRF_LOG_INFO("Received data from BLE NUS => cmd=%u", data_array.nus_data[0]);
-				NRF_LOG_HEXDUMP_INFO(data_array.nus_data, BLE_NUS_MAX_DATA_LEN);
+				NRF_LOG_HEXDUMP_INFO(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 			}
 			break;
 			}
