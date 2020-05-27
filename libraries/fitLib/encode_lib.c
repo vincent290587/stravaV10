@@ -175,6 +175,10 @@ int encode_process(sEncodingData * const p_data)
 		WriteMessage(local_mesg_number, &event_msg, FIT_EVENT_MESG_SIZE);
 	}
 
+	if (start_time == 0) {
+		return -1;
+	}
+
 	// write record
 	if (p_data->cmd == eEncodingCommandNone) {
 
@@ -239,6 +243,8 @@ int encode_process(sEncodingData * const p_data)
 
 		// Update file header with data size.
 		WriteFileHeader();
+
+		start_time = 0;
 	}
 
 	return 0;
