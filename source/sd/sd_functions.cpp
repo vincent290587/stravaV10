@@ -92,7 +92,8 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname, uint
 			// get out file size
 			for (auto fit_file : m_list_fit) {
 
-				if (fit_file._name.equals(fname)) {
+				if (fit_file._name.equals(fname) &&
+						fit_file.fsize > 0) {
 					*f_size = fit_file.fsize;
 
 					int ret = 0;
@@ -241,23 +242,34 @@ uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t m
 	if (restart) {
 		cur_idx = 0;
 		// number of FIT files
-		p_array->str[cur_size++] = (char)m_list_fit.size();
+		uint8_t nb_fit_files = m_list_fit.size();
+		for (auto fit_file : m_list_fit) {
+
+			if (fit_file.fsize == 0 && nb_fit_files) {
+				nb_fit_files--;
+			}
+		}
+
+		p_array->str[cur_size++] = (char)nb_fit_files;
+
 	}
 
 	while (cur_idx < m_list_fit.size() &&
 			cur_size + 4 < max_size) {
 
-	    char tab[15];
-	    memset(tab, 0, sizeof(tab));
-	    m_list_fit[cur_idx]._name.toCharArray(tab, sizeof(tab));
-	    tab[8] = 0;
-	    uint32_t l_value = strtoul(tab, NULL, 16);
+		if (m_list_fit[cur_idx].fsize > 0) {
+			char tab[15];
+			memset(tab, 0, sizeof(tab));
+			m_list_fit[cur_idx]._name.toCharArray(tab, sizeof(tab));
+			tab[8] = 0;
+			uint32_t l_value = strtoul(tab, NULL, 16);
 
-		LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
+			LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
 
-		encode_uint32((uint8_t*)p_array->str + cur_size, l_value);
+			encode_uint32((uint8_t*)p_array->str + cur_size, l_value);
 
-		cur_size += 4;
+			cur_size += 4;
+		}
 		cur_idx  += 1;
 	}
 
@@ -953,10 +965,20 @@ int sd_functions__unlink(const char * const fname) {
 
 	if (!is_fat_init() || !fname) return -3;
 
+	// get out file size
+	for (auto& fit_file : m_list_fit) {
+
+		if (fit_file._name.equals(fname)) {
+
+			// remove from fit list
+			fit_file.fsize = 0;
+		}
+	}
+
 	FRESULT error = f_unlink(fname);
 	if (error)
 	{
-		LOG_INFO("Unlink file failed.");
+		LOG_INFO("Unlink file %s failed.", fname);
 		return -2;
 	}
 
