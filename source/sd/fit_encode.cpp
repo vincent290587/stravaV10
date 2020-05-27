@@ -63,7 +63,6 @@ void fit_terminate(void) {
 	FRESULT error;
 
 	if (m_nb_pos_saved == 0) {
-		LOG_ERROR("fit_terminate failed !");
 		return;
 	}
 

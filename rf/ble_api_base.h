@@ -21,11 +21,18 @@ extern "C" {
 
 void ble_init(void);
 
-void ble_nus_tasks(void);
+static inline void ble_nus_tasks(void) {
 
-void ble_start_evt(eBleEventType evt);
+}
 
-void ble_get_navigation(sKomootNavigation *nav);
+static inline void ble_start_evt(eBleEventType evt) {
+
+}
+
+static inline void ble_get_navigation(sKomootNavigation *nav) {
+
+	nav->isUpdated = false;
+}
 
 
 #ifdef __cplusplus
