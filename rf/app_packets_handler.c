@@ -63,6 +63,8 @@
 #include "millis.h"
 #include "ble_nus.h"
 #include "nrf_queue.h"
+#include "g_structs.h"
+#include "sd_functions.h"
 
 #include "task_manager.h"
 
@@ -96,14 +98,13 @@ NRF_QUEUE_DEF(sNusPacket, m_nus_rx_queue, 20, NRF_QUEUE_MODE_NO_OVERFLOW);
 static sUploadSegment m_cur_u_seg;
 
 static uint16_t m_nb_segs = 0;
-static int8_t m_fit_up = 0;
-static uint16_t m_fit_ptr = 0;
+static uint8_t m_fit_up = 0;
 
 // 631065600uL is GMT: Sunday 31 December 1989 00:00:00
 
 // left part is unix timestamp in SECONDS
 // 958 647 620uL + 631 065 600uL = 1 589 713 220 ===> GMT: Sunday 17 May 2020 11:00:20 :  GOOD !
-static uint32_t m_fake_name = 958647621uL + 1; // FIT timestamp
+//static uint32_t m_fake_name = 958647621uL + 1; // FIT timestamp
 
 // 959358152 <===> 392EA4C7 from Lezyne device
 
@@ -191,64 +192,64 @@ static void _handle_send_command(uint8_t cmd) {
 static void _handle_file_list(void) {
 
 	uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
-	uint8_t index = 0;
+	uint16_t rem_bytes;
 
-	memset(data_array, 0x00, BLE_NUS_MAX_DATA_LEN);
+	do {
 
-	// command
-	data_array[index++] = FileListSending;
+		memset(data_array, 0x00, BLE_NUS_MAX_DATA_LEN);
 
-	// TODO nb files
-	data_array[index++] = 1;
+		// command
+		data_array[0] = FileListSending;
 
-	// file id #1
-	// --> 20 mai 2020
-	_encode_uint32_little(m_fake_name, data_array+index);
+		sCharArray c_array;
+		c_array.str = (char*)&data_array[1];
 
-	NRF_LOG_INFO("Transmitting file list");
+		rem_bytes = sd_functions__query_fit_list(1, &c_array, BLE_NUS_MAX_DATA_LEN - 1);
 
-	_queue_nus(data_array, BLE_NUS_MAX_DATA_LEN);
+		NRF_LOG_INFO("Transmitting file list");
+
+		_queue_nus(data_array, BLE_NUS_MAX_DATA_LEN);
+
+	} while (rem_bytes > 0);
 
 }
 
 static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 
-	sNusPacket data_array;
+	uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
 
 	memset(&data_array, 0x00, sizeof(data_array));
 
 	if (!p_data && m_fit_up == FitFileTransferData && !nrf_queue_is_full(&m_nus_tx_queue)) {
 
-		int16_t incr = 19;
+		sCharArray c_array;
+		c_array.length = 0;
+		c_array.str = (char*)&data_array[1];
+		int res = sd_functions__run_query(0, &c_array, 19);
+		if (res || c_array.length < 19) {
+			// we can be here in case of error or if we reached the EOF
+			(void)sd_functions__stop_query();
+			m_fit_up = FitFileTransferEnd;
+
+			NRF_LOG_INFO("File transfer end (%d)", c_array.length);
+		} else {
+
+			NRF_LOG_INFO("File transfer continue (%d)", c_array.length);
+		}
 
 		// FIT data / end
 		// cmd
 		// data[1..19]
-		if (m_fit_ptr + incr >= sizeof(m_fit_file)) {
+		data_array[0] = m_fit_up;
 
-			incr = sizeof(m_fit_file) - m_fit_ptr;
-			m_fit_up = FitFileTransferEnd;
-
-			NRF_LOG_INFO("File transfer end %u (%d)", m_fit_ptr, incr);
-
-		} else {
-
-			NRF_LOG_INFO("File transfer continue %u (%d)", m_fit_ptr, incr);
-		}
-
-		data_array.nus_data[0] = m_fit_up;
-		for (int16_t i=0; i< incr; i++) {
-			data_array.nus_data[1+i] = m_fit_file[m_fit_ptr++];
-		}
-
-		_queue_nus(data_array.nus_data, 20);
+		_queue_nus(data_array, 20);
 
 		if (m_fit_up == FitFileTransferEnd) {
 			//NRF_LOG_HEXDUMP_INFO(data_array.nus_data, 20);
 
 			m_fit_up = 0;
 
-			NRF_LOG_INFO("%u bytes xferred", m_fit_ptr);
+			NRF_LOG_INFO("%u bytes xferred", c_array.length);
 
 			_handle_send_command(SwitchingToLowSpeed);
 			_handle_send_command(ConnectedInLowSpeed);
@@ -262,33 +263,40 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 
 		NRF_LOG_INFO("File transfer start");
 
+		uint32_t f_size = 0;
+		char fname[20];
+		memset(fname, 0, sizeof(fname));
+		snprintf(fname, sizeof(fname), "%08lX.FIT", _decode_uint32_little(p_data+1));
+		int res = sd_functions__start_query(eSDTaskQueryFit, fname, &f_size);
+
+		if (res) {
+			NRF_LOG_ERROR("FIT file query failed");
+			return;
+		}
+
 		_handle_send_command(SwitchingToHighSpeed);
 		_handle_send_command(ConnectedInHighSpeed);
 
 		// set transfer as started
 		m_fit_up  = FitFileTransferStart;
-		m_fit_ptr = 0;
 
 		// Start FIT Xfer
 		// cmd
-		data_array.nus_data[index++] = m_fit_up;
+		data_array[index++] = m_fit_up;
 
 		// file id #1
-		// --> 20 mai 2020
-		_encode_uint32_little(m_fake_name, data_array.nus_data+index);
+		_encode_uint32_little(_decode_uint32_little(p_data+1), data_array+index);
 		index+=4;
 
 		// size[4]
-		// we want a multiple of 19 here
-		uint32_t length = sizeof(m_fit_file);
-		_encode_uint32_little(length, data_array.nus_data+index);
+		_encode_uint32_little(f_size, data_array+index);
 		index+=4;
 
-		NRF_LOG_HEXDUMP_INFO(data_array.nus_data, sizeof(data_array));
+		NRF_LOG_HEXDUMP_INFO(data_array, sizeof(data_array));
 
 		task_delay(500);
 
-		_queue_nus(data_array.nus_data, 20);
+		_queue_nus(data_array, 20);
 
 		m_fit_up = FitFileTransferData;
 	}
@@ -304,14 +312,22 @@ static void _handle_file_delete(uint8_t const *p_data, uint16_t  length) {
 	// command
 	data_array[index++] = FileDeleteConfirmation;
 
+	// handle delete
+	char fname[20];
+	memset(fname, 0, sizeof(fname));
+	snprintf(fname, sizeof(fname), "%08lX.FIT", _decode_uint32_little(p_data+1));
+	int res = sd_functions__start_query(eSDTaskQueryDelete, fname, NULL);
+
+	if (res == 0) {
 	// file id #1
 	// --> 20 mai 2020
-	_encode_uint32_little(m_fake_name, data_array+index);
-	index += 4;
+		_encode_uint32_little(_decode_uint32_little(p_data+1), data_array+index);
+		index += 4;
 
-	_queue_nus(data_array, BLE_NUS_MAX_DATA_LEN);
+		_queue_nus(data_array, BLE_NUS_MAX_DATA_LEN);
 
-	NRF_LOG_INFO("Deleting file");
+		NRF_LOG_INFO("Deleting file");
+	}
 }
 
 static void _handle_phone_status(uint8_t const *p_data, uint16_t  length) {
@@ -440,82 +456,9 @@ static void _handle_segment_list_item(uint8_t const *p_data, uint16_t  length) {
 
 static void _handle_segment_parse(void) {
 
-	uint8_t index = 0;
+	// TODO
+	NRF_LOG_INFO("_handle_segment_parse");
 
-	// start_lat32
-	// start_lon32
-	// end_lat32
-	// end_lon32
-	// grade16
-	// 00 00 00
-	// name_length8
-	// name[1..19]
-	// poly_length16
-	// poly[]
-	// pr_time16
-	// kom_time16
-	// isHazardous16
-	// tot_compressed_nb_words16
-	// cStrDist_length16
-	// compressedStreamDistance[]
-	// cStrEffort_length16
-	// compressedStreamEffort[]
-
-	int32_t i_lat = (int32_t)_decode_uint32_little(m_cur_u_seg.buffer+index) / 119;
-	index+=4;
-	int32_t i_lon = (int32_t)_decode_uint32_little(m_cur_u_seg.buffer+index) / 119;
-	index+=4;
-
-	index+=8; // not interested..?
-
-	int16_t grade = (int16_t)_decode_uint16_little(m_cur_u_seg.buffer+index);
-	index+=2;
-
-	index+=3; // padding 0
-
-	// dump name
-	uint16_t name_length = m_cur_u_seg.buffer[index];
-	index+=1;
-
-	NRF_LOG_HEXDUMP_INFO(m_cur_u_seg.buffer+index, name_length); // name
-	index+=name_length;
-
-	uint16_t poly_length = _decode_uint16_little(m_cur_u_seg.buffer+index);
-	index+=2;
-
-	NRF_LOG_HEXDUMP_INFO(m_cur_u_seg.buffer+index, poly_length);
-	index+=poly_length;
-
-	NRF_LOG_INFO("Polyline length: %u", poly_length);
-
-	// pr time
-	uint16_t pr_time =  _decode_uint16_little(m_cur_u_seg.buffer+index);
-	index+=2;
-
-	// kom time
-	uint16_t kom_time =  _decode_uint16_little(m_cur_u_seg.buffer+index);
-	index+=2;
-
-	NRF_LOG_INFO("PR/KOM times: %u %u", pr_time, kom_time);
-
-	index+=2; // hazardous
-
-	uint16_t words_comp =  _decode_uint16_little(m_cur_u_seg.buffer+index);
-	index+=2;
-
-	uint16_t comp_dist_length = _decode_uint16_little(m_cur_u_seg.buffer+index);
-	index+=2;
-
-	NRF_LOG_INFO("Dist stream length: %u", comp_dist_length);
-
-	index+=comp_dist_length;
-
-	uint16_t comp_stream_length = _decode_uint16_little(m_cur_u_seg.buffer+index);
-	index+=2;
-
-	NRF_LOG_INFO("Effort stream length: %u", comp_dist_length);
-
-	index+=comp_stream_length;
 }
 
 static void _handle_segment_upload_start(uint8_t const *p_data, uint16_t  length) {
@@ -539,15 +482,15 @@ static void _handle_segment_upload_start(uint8_t const *p_data, uint16_t  length
 	//NRF_LOG_HEXDUMP_INFO(p_data, 20);
 }
 
-static void _handle_setting_request(uint8_t const *p_data, uint16_t  length) {
-
-	//    wrap.put(OutgoingCommands.SettingsRequest.byteValue());
-	//    for (SettingsParser.SettingCategory byteValue : settingCategoryArr) {
-	//        wrap.put(byteValue.byteValue());
-	//    }
-
-
-}
+//static void _handle_setting_request(uint8_t const *p_data, uint16_t  length) {
+//
+//    wrap.put(OutgoingCommands.SettingsRequest.byteValue());
+//    for (SettingsParser.SettingCategory byteValue : settingCategoryArr) {
+//        wrap.put(byteValue.byteValue());
+//    }
+//
+//
+//}
 
 static void _handle_segment_req_end(void) {
 
@@ -866,7 +809,7 @@ void app_handler__task(void * p_context) {
 		_handle_file_upload(NULL, 0);
 
 		if (cur_event == 0) {
-			task_delay(20);
+			task_delay(100);
 		}
 
 	}

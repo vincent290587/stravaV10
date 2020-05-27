@@ -161,7 +161,7 @@ void model_input_virtual_uart(char c) {
 
 		// filename argument
 		vparser._qy_msg.toCharArray(fname, sizeof(fname));
-		if ((ret = sd_functions__start_query((eSDTaskQuery)vparser._qy, fname)) == 0) {
+		if ((ret = sd_functions__start_query((eSDTaskQuery)vparser._qy, fname, NULL)) == 0) {
 
 			LOG_INFO("SD function query start success");
 

@@ -729,31 +729,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
     }
 }
 
-
-/**@brief Function for the SoftDevice initialization.
- *
- * @details This function initializes the SoftDevice and the BLE event interrupt.
- */
-static void ble_stack_init(void)
-{
-//    ret_code_t err_code;
-//
-//    err_code = nrf_sdh_enable_request();
-//    APP_ERROR_CHECK(err_code);
-//
-//    // Configure the BLE stack using the default settings.
-//    // Fetch the start address of the application RAM.
-//    uint32_t ram_start = 0;
-//    err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
-//    APP_ERROR_CHECK(err_code);
-//
-//    // Enable BLE stack.
-//    err_code = nrf_sdh_ble_enable(&ram_start);
-//    APP_ERROR_CHECK(err_code);
-
-    // Register a handler for BLE events.
-    NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
-}
+// Register a handler for BLE events.
+NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 
 
 /**@brief Function for handling events from the GATT library. */
@@ -910,23 +887,23 @@ static void advertising_start(void)
 void ble_init(void)
 {
 
-    ble_stack_init();
-
     gap_params_init();
     gatt_init();
     services_init();
     advertising_init();
     conn_params_init();
+
 #if SEC_PARAM_BOND
     peer_manager_init();
 #endif
 
-	advertising_start();
+    app_ble_central_init();
 
-    NRF_LOG_INFO("Go !");
-    NRF_LOG_FLUSH();
+	advertising_start();
 
     (void)task_create(app_handler__task, "lezyne_task", NULL);
 
 }
+
+
 

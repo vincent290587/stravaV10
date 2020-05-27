@@ -67,7 +67,7 @@ static uint16_t cur_idx = 0;
 /**
  *
  */
-int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
+int sd_functions__start_query(eSDTaskQuery query, const char * const fname, uint32_t *f_size) {
 
 	LOG_INFO("SD function query start !");
 
@@ -84,6 +84,26 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
 
 	case eSDTaskQueryNone: {
 
+	} break;
+
+	case eSDTaskQueryFit:
+	{
+		if (f_size) {
+			// get out file size
+			for (auto fit_file : m_list_fit) {
+
+				if (fit_file._name.equals(fname)) {
+					*f_size = fit_file.fsize;
+
+					int ret = 0;
+					if ((ret = sd_functions__query_file_start(fname)) != 0) {
+						return ret;
+					}
+					LOG_INFO("SD function query FIT file");
+					return 0;
+				}
+			}
+		}
 	} break;
 
 	case eSDTaskQueryFile: {
@@ -106,7 +126,7 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
 		int ret = 0;
 		ret = sd_functions__unlink(fname);
 		m_cur_query = eSDTaskQueryNone;
-		LOG_INFO("SD function unlink");
+		LOG_INFO("SD function unlink res=%d", ret);
 		return ret;
 	} break;
 
@@ -136,6 +156,7 @@ int sd_functions__stop_query(void) {
 
 	} break;
 
+	case eSDTaskQueryFit:
 	case eSDTaskQueryFile: {
 		if (sd_functions__query_file_stop(false)) {
 			ret = -2;
@@ -178,6 +199,7 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 
 	} break;
 
+	case eSDTaskQueryFit:
 	case eSDTaskQueryFile: {
 		if (!sd_functions__query_file_run(p_array, max_size)) {
 			return -2;

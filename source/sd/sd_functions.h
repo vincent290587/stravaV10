@@ -15,6 +15,7 @@ typedef enum {
 	eSDTaskQueryNone,
 	eSDTaskQueryHisto,
 	eSDTaskQueryFile,
+	eSDTaskQueryFit,
 	eSDTaskQueryDelete,
 } eSDTaskQuery;
 
@@ -43,7 +44,7 @@ int init_liste_segments(void);
 
 void uninit_liste_segments(void);
 
-int sd_functions__start_query(eSDTaskQuery query, const char * const fname);
+int sd_functions__start_query(eSDTaskQuery query, const char * const fname, uint32_t *f_size);
 int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size);
 int sd_functions__stop_query(void);
 
@@ -52,6 +53,7 @@ int sd_functions__unlink(const char * const fname);
 uint16_t sd_functions__query_histo_list(int restart, sCharArray *p_array, size_t max_size);
 
 uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t max_size);
+uint16_t sd_functions__query_fit_bin_file(int restart, sCharArray *p_array, size_t max_size);
 
 int   sd_functions__query_file_start(const char * const fname);
 char* sd_functions__query_file_run(sCharArray *p_array, size_t max_size);

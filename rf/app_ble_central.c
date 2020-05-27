@@ -11,6 +11,7 @@
 #include "app_error.h"
 #include "bsp_btn_ble.h"
 #include "ble_db_discovery.h"
+#include "ble_conn_state.h"
 #include "nrf_ble_scan.h"
 #include "nrf_ble_gatt.h"
 #include "ble_cp_c.h"
@@ -253,5 +254,7 @@ void app_ble_central_init(void)
     db_discovery_init();
     services_c_init();
     scan_init();
+
+    // TODO scan on demand
     scan_start();
 }

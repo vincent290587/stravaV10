@@ -16,7 +16,8 @@ SRC_FILES += \
   $(PROJ_DIR)/rf/hrm.c \
   $(PROJ_DIR)/rf/bsc.c \
   $(PROJ_DIR)/rf/glasses.c \
-  $(PROJ_DIR)/rf/ble_api6.c \
+  $(PROJ_DIR)/rf/app_ble_central.c \
+  $(PROJ_DIR)/rf/app_ble_peripheral.c \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   $(wildcard $(PROJ_DIR)/source/usb/*.c) \

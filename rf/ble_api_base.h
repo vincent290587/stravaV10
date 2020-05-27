@@ -21,6 +21,8 @@ extern "C" {
 
 void ble_init(void);
 
+void app_ble_central_init(void);
+
 static inline void ble_nus_tasks(void) {
 
 }

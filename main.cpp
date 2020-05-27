@@ -384,7 +384,6 @@ int main(void)
 	ret_code_t err_code;
 
 	m_tasks_id.boucle_id = TASK_ID_INVALID;
-	m_tasks_id.system_id = TASK_ID_INVALID;
 	m_tasks_id.peripherals_id = TASK_ID_INVALID;
 	m_tasks_id.ls027_id = TASK_ID_INVALID;
 	m_tasks_id.uart_id  = TASK_ID_INVALID;
