@@ -229,7 +229,7 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 			(void)sd_functions__stop_query();
 			m_fit_up = FitFileTransferEnd;
 
-			NRF_LOG_INFO("File transfer end (%d)", c_array.length);
+			NRF_LOG_INFO("File transfer end (%d) %lu", res, c_array.length);
 		} else {
 
 			NRF_LOG_INFO("File transfer continue (%d)", c_array.length);

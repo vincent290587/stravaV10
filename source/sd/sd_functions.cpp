@@ -100,7 +100,6 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname, uint
 						return ret;
 					}
 					LOG_INFO("SD function query FIT file");
-					return 0;
 				}
 			}
 		}
@@ -217,6 +216,7 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 	} break;
 
 	default:
+		LOG_ERROR("sd_functions__run_query: NO query started !");
 		m_cur_query = eSDTaskQueryNone;
 		return -1;
 		break;
@@ -888,6 +888,7 @@ int sd_functions__query_file_start(const char * const fname) {
 		LOG_INFO("Open file failed.");
 		return -2;
 	}
+	LOG_INFO("sd_functions__query_file_start %s", fname);
 
 	return 0;
 }
