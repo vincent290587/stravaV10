@@ -77,13 +77,6 @@
 
 #define NUS_LONG_PACKETS_SIZE     20
 
-typedef struct {
-	uint32_t cur_size;
-	uint32_t total_size;
-	uint8_t  seg_id[8];
-	uint8_t  buffer[1000];
-} sUploadSegment;
-
 
 typedef struct {
 	uint8_t nus_data[BLE_NUS_STD_DATA_LEN];
@@ -100,8 +93,6 @@ task_id_t m_rx_task_id = TASK_ID_INVALID;
 NRF_QUEUE_DEF(sNusLongPacket, m_nus_tx_queue, 4, NRF_QUEUE_MODE_NO_OVERFLOW);
 NRF_QUEUE_DEF(sNusPacket, m_nus_rx_queue, 20, NRF_QUEUE_MODE_NO_OVERFLOW);
 
-
-static sUploadSegment m_cur_u_seg;
 
 static uint8_t  m_fit_up = 0;
 static uint16_t m_nb_segs = 0;
@@ -412,29 +403,20 @@ static void _handle_segment_list_item(uint8_t const *p_data, uint16_t  length) {
 
 	NRF_LOG_HEXDUMP_DEBUG(p_data+9, 8);
 
+	// start LatLon
+	index = 9;
+	float f_lat = (float)_decode_uint32_little(p_data+index) / 119.30464f;
+	index+=4;
+	float f_lon = (float)_decode_uint32_little(p_data+index) / 119.30464f;
+	index+=4;
+
+	inseg_handler_list_input(&p_data[1], f_lat, f_lon);
+
 	if (p_data[0] == SegmentListItem) {
-
-		// start LatLon
-		index = 9;
-		float f_lat = (float)_decode_uint32_little(p_data+index) / 119.30464f;
-		index+=4;
-		float f_lon = (float)_decode_uint32_little(p_data+index) / 119.30464f;
-		index+=4;
-
-		inseg_handler_list_input(&p_data[1], f_lat, f_lon);
 
 		NRF_LOG_INFO("SegmentListItem (%ld %ld)", (int32_t)f_lat, (int32_t)f_lon);
 
 	} else {
-
-		// stop LatLon
-		index = 9;
-		float f_lat = (float)_decode_uint32_little(p_data+index) / 119.30464f;
-		index+=4;
-		float f_lon = (float)_decode_uint32_little(p_data+index) / 119.30464f;
-		index+=4;
-
-		inseg_handler_list_input(&p_data[1], f_lat, f_lon);
 
 		NRF_LOG_INFO("SegmentListItemDone (%ld %ld) %u", (int32_t)f_lat, (int32_t)f_lon, m_nb_segs);
 

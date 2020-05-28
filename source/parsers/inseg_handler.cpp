@@ -11,21 +11,15 @@
 
 #include "segger_wrapper.h"
 
-typedef struct {
-	uint32_t cur_size;
-	uint32_t total_size;
-	uint64_t seg_id;
-	uint8_t  *buffer;
-} sUploadSegment;
 
 class UploadSegment {
 public:
 	UploadSegment(uint8_t const id[], const float lat, const float lon) : startPnt(lat, lon) {
 
 		memcpy(seg_id, id, 8);
-		cur_size = 0;
+		cur_size   = 0;
 		total_size = 0;
-		buffer   = nullptr;
+		buffer     = nullptr;
 	}
 	~UploadSegment() {
 		deallocate();
@@ -35,17 +29,26 @@ public:
 		return memcmp(seg_id, id, 8) == 0;
 	}
 
+	void copyID(uint8_t id[]) {
+		memcpy(id, seg_id, 8);
+	}
+
 	void allocate(const uint32_t size) {
-		total_size = size+20;
-		if (total_size) buffer = new uint8_t[total_size];
+		if (!total_size) {
+			total_size = size+20;
+			buffer = new uint8_t[total_size];
+		}
 
 	}
 
 	void deallocate() {
-		if (buffer) delete[] buffer;
+		if (buffer) {
+			delete[] buffer;
+			total_size = 0;
+		}
 	}
 
-	uint8_t seg_id[8];
+	uint8_t  seg_id[8];
 	uint32_t cur_size;
 	uint32_t total_size;
 	uint8_t  *buffer;
@@ -53,6 +56,7 @@ public:
 };
 
 
+static uint8_t  m_is_downloading = 0;
 static uint32_t m_cur_seg_idx;
 static std::vector<UploadSegment> m_list_segs;
 
@@ -63,7 +67,7 @@ static void _dump_as_char(uint8_t const *p_data, uint16_t length) {
 	if (!p_data) return;
 
 	NRF_LOG_RAW_INFO("{");
-	for (uint16_t i=0; i< length && i < 32; i++) {
+	for (uint16_t i=0; i< length && i < MAX_ARRAY_PRINTF; i++) {
 		NRF_LOG_RAW_INFO("%c", p_data[i]);
 		if (i< length-1 && i < MAX_ARRAY_PRINTF-1) {
 			NRF_LOG_RAW_INFO(",");
@@ -126,19 +130,19 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 	index+=4;
 	NRF_LOG_INFO("dist : %lu", dist);
 
+	float f_lat = (float)_decode_uint32_little(cur_u_seg.buffer+index) / 119.30464f;
+	index+=4;
+	NRF_LOG_INFO("i_lat: %ld", (int32_t)f_lat);
+
+	float f_lon = (float)_decode_uint32_little(cur_u_seg.buffer+index) / 119.30464f;
+	index+=4;
+	NRF_LOG_INFO("i_lon: %ld", (int32_t)f_lon);
+
 	int32_t i_lat = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
 	index+=4;
 	NRF_LOG_INFO("i_lat: %ld", i_lat);
 
 	int32_t i_lon = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
-	index+=4;
-	NRF_LOG_INFO("i_lon: %ld", i_lon);
-
-	i_lat = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
-	index+=4;
-	NRF_LOG_INFO("i_lat: %ld", i_lat);
-
-	i_lon = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
 	index+=4;
 	NRF_LOG_INFO("i_lon: %ld", i_lon);
 
@@ -246,6 +250,7 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 void inseg_handler_list_reset(void) {
 
 	m_list_segs.clear();
+	m_is_downloading = 0;
 }
 
 void inseg_handler_list_input(uint8_t const seg_id[], float lat, float lon) {
@@ -259,8 +264,6 @@ void inseg_handler_list_input(uint8_t const seg_id[], float lat, float lon) {
 
 	m_list_segs.push_back(UploadSegment(seg_id, lat, lon));
 }
-
-static uint8_t m_is_downloading = 0;
 
 void inseg_handler_list_process_start(void) {
 
@@ -280,7 +283,8 @@ int inseg_handler_list_process_tasks(uint8_t seg_id[]) {
 
 	if (m_cur_seg_idx < m_list_segs.size()) {
 
-		// TODO copy ID
+		// copy ID
+		m_list_segs[m_cur_seg_idx].copyID(seg_id);
 
 		m_cur_seg_idx++;
 		return 0;
@@ -314,17 +318,27 @@ void inseg_handler_segment_start(uint8_t const seg_id[], uint32_t size) {
 
 void inseg_handler_segment_data(uint8_t is_end, uint8_t const p_data[], uint32_t length) {
 
+	if (m_is_downloading == 0) {
+		NRF_LOG_ERROR("inseg_handler_segment_data wrong state");
+		return;
+	}
+
 	// get current segment
 	UploadSegment &cur_u_seg = m_list_segs[m_cur_seg_idx];
 
 	// copy segment data
-	memcpy(cur_u_seg.buffer+cur_u_seg.cur_size, p_data + 1, length);
+	if (length + cur_u_seg.cur_size <= cur_u_seg.total_size) {
 
-	cur_u_seg.cur_size += length;
+		memcpy(cur_u_seg.buffer+cur_u_seg.cur_size, p_data + 1, length);
+
+		cur_u_seg.cur_size += length;
+	}
 
 	if (is_end) {
 		_handler_segment_parse(cur_u_seg);
 
 		cur_u_seg.deallocate();
+
+		m_is_downloading = 0;
 	}
 }
