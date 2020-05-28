@@ -190,6 +190,7 @@ static void _handle_file_list(void) {
 
 	uint8_t data_array[BLE_NUS_STD_DATA_LEN];
 	uint16_t rem_bytes;
+	int restart = 1;
 
 	do {
 
@@ -201,13 +202,14 @@ static void _handle_file_list(void) {
 		sCharArray c_array;
 		c_array.str = (char*)&data_array[1];
 
-		rem_bytes = sd_functions__query_fit_list(1, &c_array, BLE_NUS_STD_DATA_LEN - 1);
+		rem_bytes = sd_functions__query_fit_list(restart, &c_array, BLE_NUS_STD_DATA_LEN - 1);
+		restart = 0;
 
 		NRF_LOG_INFO("Transmitting file list");
 
 		_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
-	} while (rem_bytes > 0);
+	} while (rem_bytes > 0); // TODO handle more than 3 files
 
 }
 
