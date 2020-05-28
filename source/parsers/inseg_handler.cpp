@@ -7,6 +7,9 @@
 
 #include "fit_crc.h"
 #include "PolyLine.h"
+#include "ff.h"
+#include "WString.h"
+#include "sd_functions.h"
 #include "inseg_handler.h"
 #include "SequenceUnpacker.h"
 
@@ -108,6 +111,42 @@ static uint16_t _decode_uint16_little(uint8_t const *p_data) {
 	res |= p_data[1] << 8;
 
 	return res;
+}
+
+
+void sd_save_seg(UploadSegment &cur_u_seg) {
+
+	static uint16_t nb = 0;
+
+	char fname[20];
+	snprintf(fname, sizeof(fname), "SEG_%04X.TXT", nb++);
+	fname[12] = 0;
+
+	if (!cur_u_seg.total_size) {
+		NRF_LOG_ERROR("sd_save_seg empty file");
+	}
+
+	FIL g_fileObject;
+	FRESULT error = f_open(&g_fileObject, fname, FA_WRITE | FA_CREATE_ALWAYS);
+	APP_ERROR_CHECK(error);
+	if (error)
+	{
+		NRF_LOG_ERROR("sd_save_seg open file failed.");
+		return;
+	}
+
+	f_write(&g_fileObject, cur_u_seg.buffer, cur_u_seg.total_size, NULL);
+
+	error = f_close(&g_fileObject);
+	APP_ERROR_CHECK(error);
+	if (error)
+	{
+		NRF_LOG_ERROR("sd_save_seg close file failed.");
+		return;
+	}
+
+	NRF_LOG_INFO("sd_save_seg Saved as %s", fname);
+
 }
 
 void _handler_segment_parse(UploadSegment &cur_u_seg) {
@@ -225,6 +264,10 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 
 	NRF_LOG_INFO("Dist stream length: %u", comp_dist_length);
 
+	// TODO save it as a blob
+	sd_save_seg(cur_u_seg);
+	return;
+
 	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, comp_dist_length);
 	{
 		ByteBuffer bBuffer;
@@ -242,8 +285,6 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 
 	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, comp_stream_length);
 	//_dump_as_char(cur_u_seg.buffer+index, comp_stream_length);
-
-	return;
 
 	ByteBuffer bBuffer;
 	bBuffer.addU(cur_u_seg.buffer+index, comp_stream_length);
@@ -331,7 +372,7 @@ int inseg_handler_list_process_tasks(uint8_t seg_id[]) {
 		return 1;
 	}
 
-	// done
+	// unexpected
 	return -3;
 }
 

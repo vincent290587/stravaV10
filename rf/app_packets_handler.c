@@ -453,7 +453,8 @@ static void _handle__request_segment(void) {
 
 		NRF_LOG_INFO("Sending SegmentFileRequest ...");
 
-	} else if (res > 0 && prev_res == 0) {
+	} else if (res > 0 &&
+			(prev_res == 0 || prev_res == -2)) {
 
 		_handle_segment_req_end();
 	}
