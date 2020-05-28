@@ -11,6 +11,9 @@
 #include <stdint.h>
 
 
+#define FROM_SEMICIRCLES(X)	             (((float)((int32_t)X) / 119.30464f))
+
+
 #ifdef	__cplusplus
 extern "C" {
 #endif

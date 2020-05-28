@@ -401,14 +401,14 @@ static void _handle_segment_list_item(uint8_t const *p_data, uint16_t  length) {
 	// crc8
 	// goal8
 
-	NRF_LOG_HEXDUMP_DEBUG(p_data+9, 8);
-
 	// start LatLon
 	index = 9;
-	float f_lat = (float)_decode_uint32_little(p_data+index) / 119.30464f;
+	float f_lat = FROM_SEMICIRCLES(_decode_uint32_little(p_data+index));
 	index+=4;
-	float f_lon = (float)_decode_uint32_little(p_data+index) / 119.30464f;
+	float f_lon = FROM_SEMICIRCLES(_decode_uint32_little(p_data+index));
 	index+=4;
+
+	NRF_LOG_HEXDUMP_DEBUG(p_data+1, 19);
 
 	inseg_handler_list_input(&p_data[1], f_lat, f_lon);
 
@@ -422,8 +422,6 @@ static void _handle_segment_list_item(uint8_t const *p_data, uint16_t  length) {
 
 		inseg_handler_list_process_start();
 	}
-
-	NRF_LOG_HEXDUMP_DEBUG(p_data+1, 8);
 }
 
 static void _handle_segment_req_end(void) {
@@ -439,6 +437,7 @@ static void _handle__request_segment(void) {
 
 	memset(&data_array, 0x00, BLE_NUS_STD_DATA_LEN);
 
+	static int prev_res = 1;
 	int res = inseg_handler_list_process_tasks(&data_array[1]);
 
 	if (res == 0) {
@@ -454,10 +453,12 @@ static void _handle__request_segment(void) {
 
 		NRF_LOG_INFO("Sending SegmentFileRequest ...");
 
-	} else if (res > 0) {
+	} else if (res > 0 && prev_res == 0) {
 
 		_handle_segment_req_end();
 	}
+
+	prev_res = res;
 }
 
 static void _handle_segment_upload_start(uint8_t const *p_data, uint16_t  length) {
@@ -493,15 +494,12 @@ static void _handle_segment_upload_data(uint8_t const *p_data, uint16_t length) 
 
 		NRF_LOG_INFO("SegmentFileUploadEnd");
 
-		// ACK that the file was received
-		_handle_segment_req_end();
-
 	} else {
 
 		NRF_LOG_INFO("SegmentFileUploadData");
 	}
 
-	inseg_handler_segment_data(p_data[0] == SegmentFileUploadEnd, p_data, length);
+	inseg_handler_segment_data(p_data[0] == SegmentFileUploadEnd, p_data+1, length-1);
 }
 
 static void _handle_nav(uint8_t const *p_data, uint16_t  length) {
@@ -737,6 +735,10 @@ void app_handler__task(void * p_context) {
 
 			case NewSegmentListReady:
 				_handle_segment_list(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
+				break;
+
+			case SegmentUpdateCancel:
+				inseg_handler_list_reset();
 				break;
 
 			case SegmentListItem:

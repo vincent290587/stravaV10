@@ -5,6 +5,7 @@
 #include <vector>
 #include "utils.h"
 
+#include "fit_crc.h"
 #include "PolyLine.h"
 #include "inseg_handler.h"
 #include "SequenceUnpacker.h"
@@ -48,6 +49,16 @@ public:
 		}
 	}
 
+	int append(uint8_t const p_data[], uint32_t length) {
+
+		if (buffer && length + cur_size <= total_size) {
+			memcpy(buffer+cur_size, p_data, length);
+			cur_size += length;
+			return 0;
+		}
+		return -1;
+	}
+
 	uint8_t  seg_id[8];
 	uint32_t cur_size;
 	uint32_t total_size;
@@ -57,6 +68,7 @@ public:
 
 
 static uint8_t  m_is_downloading = 0;
+static uint32_t m_next_seg_idx;
 static uint32_t m_cur_seg_idx;
 static std::vector<UploadSegment> m_list_segs;
 
@@ -102,6 +114,7 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 
 	uint8_t index = 0;
 	uint16_t nb_points_seg = 0;
+	PolyLine myPoly;
 
 	// distance32
 	// start_lat32
@@ -126,15 +139,24 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 	// allocateSize16
 	// crc16
 
+	if (cur_u_seg.total_size == 0 ||
+			!cur_u_seg.buffer) {
+		NRF_LOG_ERROR("Empty segment");
+		return;
+	}
+
+
+	task_delay(10);
+
 	uint32_t dist = _decode_uint32_little(cur_u_seg.buffer+index);
 	index+=4;
 	NRF_LOG_INFO("dist : %lu", dist);
 
-	float f_lat = (float)_decode_uint32_little(cur_u_seg.buffer+index) / 119.30464f;
+	float f_lat = FROM_SEMICIRCLES(_decode_uint32_little(cur_u_seg.buffer+index));
 	index+=4;
 	NRF_LOG_INFO("i_lat: %ld", (int32_t)f_lat);
 
-	float f_lon = (float)_decode_uint32_little(cur_u_seg.buffer+index) / 119.30464f;
+	float f_lon = FROM_SEMICIRCLES(_decode_uint32_little(cur_u_seg.buffer+index));
 	index+=4;
 	NRF_LOG_INFO("i_lon: %ld", (int32_t)f_lon);
 
@@ -158,6 +180,8 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 
 	NRF_LOG_INFO("name_length: %u", name_length);
 
+	NRF_LOG_FLUSH();
+
 	_dump_as_char(cur_u_seg.buffer+index, name_length); // name
 	index+=name_length;
 
@@ -166,17 +190,18 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 
 	NRF_LOG_INFO("Polyline length: %u", poly_length);
 
-	NRF_LOG_HEXDUMP_INFO(cur_u_seg.buffer+index, poly_length);
+	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, poly_length);
 	{
 		ByteBuffer bBuffer;
 		bBuffer.addU(cur_u_seg.buffer+index, poly_length);
 
-		PolyLine myPoly;
 		myPoly.decodeBinaryPolyline(bBuffer);
 		nb_points_seg = myPoly._line.size();
-		myPoly.toString();
+		//myPoly.toString();
 	}
 	index+=poly_length;
+
+	NRF_LOG_FLUSH();
 
 	// pr time
 	uint16_t pr_time =  _decode_uint16_little(cur_u_seg.buffer+index);
@@ -200,15 +225,13 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 
 	NRF_LOG_INFO("Dist stream length: %u", comp_dist_length);
 
-	NRF_LOG_HEXDUMP_INFO(cur_u_seg.buffer+index, comp_dist_length);
+	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, comp_dist_length);
 	{
 		ByteBuffer bBuffer;
 		bBuffer.addU(cur_u_seg.buffer+index, comp_dist_length);
 		SequenceUnpacker unpacker(bBuffer, nb_points_seg-1);
 		unpacker.unpack();
-		for (size_t i=0; i < unpacker.original.size(); i++) {
-			printf("Ddist:  %ld \n", (int32_t)unpacker.original[i]);
-		}
+
 	}
 	index+=comp_dist_length;
 
@@ -217,19 +240,22 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 
 	NRF_LOG_INFO("Effort stream length: %u", comp_stream_length);
 
-	NRF_LOG_HEXDUMP_INFO(cur_u_seg.buffer+index, comp_stream_length);
+	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, comp_stream_length);
 	//_dump_as_char(cur_u_seg.buffer+index, comp_stream_length);
-	{
-		ByteBuffer bBuffer;
-		bBuffer.addU(cur_u_seg.buffer+index, comp_stream_length);
-		SequenceUnpacker unpacker(bBuffer, nb_points_seg-1);
-		unpacker.unpack();
-		for (size_t i=0; i < unpacker.original.size(); i++) {
-			printf("Dt:  %ld \n", (int32_t)unpacker.original[i]);
-		}
-	}
+
+	return;
+
+	ByteBuffer bBuffer;
+	bBuffer.addU(cur_u_seg.buffer+index, comp_stream_length);
+	SequenceUnpacker effort_unpacker(bBuffer, nb_points_seg-1);
+	effort_unpacker.unpack();
+//	for (size_t i=0; i < effort_unpacker.original.size(); i++) {
+//		NRF_LOG_INFO("Dt:  %ld", (int32_t)effort_unpacker.original[i]);
+//	}
 
 	index+=comp_stream_length;
+
+	NRF_LOG_FLUSH();
 
 	uint16_t nb_padding = ((words_comp-1) << 2) - (comp_dist_length + comp_stream_length);
 	NRF_LOG_INFO("Nb padding: %u", nb_padding);
@@ -244,12 +270,21 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
     	crc16 = FitCRC_Get16(crc16, cur_u_seg.buffer[i5]);
     }
 	NRF_LOG_INFO("CRC16 : %lu vs %lu", crc16, _decode_uint16_little(cur_u_seg.buffer + index));
+	NRF_LOG_FLUSH();
+
+	if (crc16 == _decode_uint16_little(cur_u_seg.buffer + index)) {
+
+		// TODO save segment
+		NRF_LOG_INFO("GOOD to save !");
+	}
 
 }
 
 void inseg_handler_list_reset(void) {
 
 	m_list_segs.clear();
+	m_cur_seg_idx    = 0;
+	m_next_seg_idx   = -1;
 	m_is_downloading = 0;
 }
 
@@ -267,7 +302,7 @@ void inseg_handler_list_input(uint8_t const seg_id[], float lat, float lon) {
 
 void inseg_handler_list_process_start(void) {
 
-	m_cur_seg_idx    = 0;
+	m_next_seg_idx   = 0;
 	m_is_downloading = 0;
 }
 
@@ -281,23 +316,29 @@ int inseg_handler_list_process_tasks(uint8_t seg_id[]) {
 		return -2;
 	}
 
-	if (m_cur_seg_idx < m_list_segs.size()) {
+	if (m_next_seg_idx < m_list_segs.size()) {
 
 		// copy ID
-		m_list_segs[m_cur_seg_idx].copyID(seg_id);
+		m_list_segs[m_next_seg_idx].copyID(seg_id);
 
-		m_cur_seg_idx++;
+		m_is_downloading = 1;
+
+		m_next_seg_idx++;
+
 		return 0;
+	} else {
+		// we are done
+		return 1;
 	}
 
-	// no more segments
-	return 1;
+	// done
+	return -3;
 }
 
 void inseg_handler_segment_start(uint8_t const seg_id[], uint32_t size) {
 
-	if (size > 12000) {
-		NRF_LOG_ERROR("inseg_handler_list_input: segment size too gret (%lu) !!", size);
+	if (size > 20000) {
+		NRF_LOG_ERROR("inseg_handler_segment_start: segment size too gret (%lu) !!", size);
 		return;
 	}
 
@@ -307,13 +348,14 @@ void inseg_handler_segment_start(uint8_t const seg_id[], uint32_t size) {
 
 		if (curSeg.isID(seg_id)) {
 
-			m_is_downloading = 1;
 			curSeg.allocate(size);
+			return;
 		}
 
 		m_cur_seg_idx++;
 	}
 
+	NRF_LOG_ERROR("inseg_handler_segment_start: segment not found !!");
 }
 
 void inseg_handler_segment_data(uint8_t is_end, uint8_t const p_data[], uint32_t length) {
@@ -327,12 +369,14 @@ void inseg_handler_segment_data(uint8_t is_end, uint8_t const p_data[], uint32_t
 	UploadSegment &cur_u_seg = m_list_segs[m_cur_seg_idx];
 
 	// copy segment data
-	if (length + cur_u_seg.cur_size <= cur_u_seg.total_size) {
-
-		memcpy(cur_u_seg.buffer+cur_u_seg.cur_size, p_data + 1, length);
-
-		cur_u_seg.cur_size += length;
+	int ret = cur_u_seg.append(p_data, length);
+	if (ret) {
+		NRF_LOG_ERROR("inseg_handler_segment_data: append failed");
+	} else {
+		NRF_LOG_INFO("inseg_handler_segment_data: append %lu", cur_u_seg.cur_size);
 	}
+
+	NRF_LOG_FLUSH();
 
 	if (is_end) {
 		_handler_segment_parse(cur_u_seg);
