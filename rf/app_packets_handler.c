@@ -70,6 +70,7 @@
 #include "task_manager.h"
 
 #include "l_protocol.h"
+#include "inseg_handler.h"
 #include "app_packets_handler.h"
 
 #include "segger_wrapper.h"
@@ -392,6 +393,8 @@ static void _handle_segment_list(uint8_t const *p_data, uint16_t  length) {
 
 	NRF_LOG_INFO("NewSegmentListReady (%u %u)", m_nb_segs);
 
+	inseg_handler_list_reset();
+
 	// command
 	_handle_send_command(GPSReadyToReceiveSegmentList);
 }
@@ -413,76 +416,77 @@ static void _handle_segment_list_item(uint8_t const *p_data, uint16_t  length) {
 
 		// start LatLon
 		index = 9;
-		int32_t i_lat = (int32_t)_decode_uint32_little(p_data+index) / 119;
+		float f_lat = (float)_decode_uint32_little(p_data+index) / 119.30464f;
 		index+=4;
-		int32_t i_lon = (int32_t)_decode_uint32_little(p_data+index) / 119;
+		float f_lon = (float)_decode_uint32_little(p_data+index) / 119.30464f;
 		index+=4;
 
-		NRF_LOG_INFO("SegmentListItem (%ld %ld)", i_lat, i_lon);
+		inseg_handler_list_input(&p_data[1], f_lat, f_lon);
+
+		NRF_LOG_INFO("SegmentListItem (%ld %ld)", (int32_t)f_lat, (int32_t)f_lon);
 
 	} else {
 
 		// stop LatLon
 		index = 9;
-		int32_t i_lat = (int32_t)_decode_uint32_little(p_data+index) / 119;
+		float f_lat = (float)_decode_uint32_little(p_data+index) / 119.30464f;
 		index+=4;
-		int32_t i_lon = (int32_t)_decode_uint32_little(p_data+index) / 119;
+		float f_lon = (float)_decode_uint32_little(p_data+index) / 119.30464f;
 		index+=4;
 
-		NRF_LOG_INFO("SegmentListItemDone (%ld %ld) %u", i_lat, i_lon, m_nb_segs);
+		inseg_handler_list_input(&p_data[1], f_lat, f_lon);
 
-		// TODO store all segs names
-		//uint64_t *seg_id = (uint64_t *)(m_cur_u_seg.seg_id);
+		NRF_LOG_INFO("SegmentListItemDone (%ld %ld) %u", (int32_t)f_lat, (int32_t)f_lon, m_nb_segs);
 
-		if (m_nb_segs > 0) {
-
-			uint8_t data_array[BLE_NUS_STD_DATA_LEN];
-			index = 0;
-
-			memset(&data_array, 0x00, BLE_NUS_STD_DATA_LEN);
-
-			// command
-			data_array[0] = SegmentFileRequest;
-
-			memcpy(m_cur_u_seg.seg_id, p_data+1, sizeof(m_cur_u_seg.seg_id));
-			memcpy(&data_array[1], m_cur_u_seg.seg_id, sizeof(m_cur_u_seg.seg_id));
-
-			//NRF_LOG_HEXDUMP_INFO(data_array, BLE_NUS_STD_DATA_LEN);
-
-			task_delay(300);
-
-			_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
-
-			NRF_LOG_INFO("Sending SegmentFileRequest ...");
-		}
+		inseg_handler_list_process_start();
 	}
 
 	NRF_LOG_HEXDUMP_DEBUG(p_data+1, 8);
 }
 
-static void _handle_segment_parse(void) {
+static void _handle_segment_req_end(void) {
 
-	// TODO
-	NRF_LOG_INFO("_handle_segment_parse");
+	_handle_send_command(SegmentFileRequestEnd);
 
+	NRF_LOG_INFO("SegmentFileRequestEnd");
+}
+
+static void _handle__request_segment(void) {
+
+	uint8_t data_array[BLE_NUS_STD_DATA_LEN];
+
+	memset(&data_array, 0x00, BLE_NUS_STD_DATA_LEN);
+
+	int res = inseg_handler_list_process_tasks(&data_array[1]);
+
+	if (res == 0) {
+
+		// command
+		data_array[0] = SegmentFileRequest;
+
+		//NRF_LOG_HEXDUMP_INFO(data_array, BLE_NUS_STD_DATA_LEN);
+
+		task_delay(200);
+
+		_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
+
+		NRF_LOG_INFO("Sending SegmentFileRequest ...");
+
+	} else if (res > 0) {
+
+		_handle_segment_req_end();
+	}
 }
 
 static void _handle_segment_upload_start(uint8_t const *p_data, uint16_t  length) {
 
-	uint8_t index = 1;
-
 	// cmd8
 	// id64
 	// size32
+	uint32_t seg_size = _decode_uint32_little(&p_data[9]);
+	inseg_handler_segment_start(&p_data[1], seg_size);
 
-	// copy segment ID
-	memcpy(m_cur_u_seg.seg_id, p_data + index, 8);
-	index+=8;
-
-	m_cur_u_seg.cur_size = 0;
-	m_cur_u_seg.total_size = _decode_uint32_little(p_data+index);
-
-	NRF_LOG_INFO("SegmentFileUploadStart tot. size=%lu", m_cur_u_seg.total_size);
+	NRF_LOG_INFO("SegmentFileUploadStart tot. size=%lu", seg_size);
 
 	// dump ID
 	//NRF_LOG_HEXDUMP_INFO(p_data, BLE_NUS_STD_DATA_LEN);
@@ -498,45 +502,24 @@ static void _handle_segment_upload_start(uint8_t const *p_data, uint16_t  length
 //
 //}
 
-static void _handle_segment_req_end(void) {
-
-
-	memset(&m_cur_u_seg, 0, sizeof(m_cur_u_seg));
-
-	_handle_send_command(SegmentFileRequestEnd);
-
-	NRF_LOG_INFO("SegmentFileRequestEnd");
-}
-
-static void _handle_segment_upload_data(uint8_t const *p_data, uint16_t  length) {
+static void _handle_segment_upload_data(uint8_t const *p_data, uint16_t length) {
 
 	// cmd8
 	// dataX
 
 	if (p_data[0] == SegmentFileUploadEnd) {
 
-		size_t incr = m_cur_u_seg.total_size - m_cur_u_seg.cur_size;
-
-		// copy segment data
-		memcpy(m_cur_u_seg.buffer+m_cur_u_seg.cur_size, p_data + 1, incr);
-
-		m_cur_u_seg.cur_size += incr;
-
-		NRF_LOG_INFO("SegmentFileUploadEnd %lu / %lu", m_cur_u_seg.cur_size, m_cur_u_seg.total_size);
-
-		_handle_segment_parse();
+		NRF_LOG_INFO("SegmentFileUploadEnd");
 
 		// ACK that the file was received
 		_handle_segment_req_end();
+
 	} else {
 
-		// copy segment data
-		memcpy(m_cur_u_seg.buffer+m_cur_u_seg.cur_size, p_data + 1, length-1);
-
-		m_cur_u_seg.cur_size += length-1;
-
-		NRF_LOG_INFO("SegmentFileUploadData %lu / %lu", m_cur_u_seg.cur_size, m_cur_u_seg.total_size);
+		NRF_LOG_INFO("SegmentFileUploadData");
 	}
+
+	inseg_handler_segment_data(p_data[0] == SegmentFileUploadEnd, p_data, length);
 }
 
 static void _handle_nav(uint8_t const *p_data, uint16_t  length) {
@@ -817,6 +800,8 @@ void app_handler__task(void * p_context) {
 
 		// possibly queue new packets
 		_handle_file_upload(NULL, 0);
+
+		_handle__request_segment();
 
 		if (cur_event == 0) {
 			task_delay(100);
