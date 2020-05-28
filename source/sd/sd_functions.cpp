@@ -236,21 +236,14 @@ uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t m
 
 	sysview_task_void_enter(SdFunction);
 
+	size_t nb_files = 0;
 	size_t rem_size = 0;
 	size_t cur_size = 0;
 
 	if (restart) {
 		cur_idx = 0;
 		// number of FIT files
-		uint8_t nb_fit_files = m_list_fit.size();
-		for (auto fit_file : m_list_fit) {
-
-			if (fit_file.fsize == 0 && nb_fit_files) {
-				nb_fit_files--;
-			}
-		}
-
-		p_array->str[cur_size++] = (char)nb_fit_files;
+		cur_size = 1;
 
 	}
 
@@ -264,14 +257,17 @@ uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t m
 			tab[8] = 0;
 			uint32_t l_value = strtoul(tab, NULL, 16);
 
-			LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
+			NRF_LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
 
 			encode_uint32((uint8_t*)p_array->str + cur_size, l_value);
 
 			cur_size += 4;
+			nb_files += 1;
 		}
 		cur_idx  += 1;
 	}
+
+	p_array->str[0] = nb_files;
 
 	rem_size = 4 * m_list_fit.size() - 4 * cur_idx;
 
