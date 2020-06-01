@@ -67,9 +67,11 @@
 #include "g_structs.h"
 #include "sd_functions.h"
 
+#include "Model.h"
 #include "task_manager.h"
 
 #include "l_protocol.h"
+#include "notifications.h"
 #include "inseg_handler.h"
 #include "app_packets_handler.h"
 
@@ -95,6 +97,7 @@ NRF_QUEUE_DEF(sNusPacket, m_nus_rx_queue, 20, NRF_QUEUE_MODE_NO_OVERFLOW);
 
 
 static uint8_t  m_fit_up = 0;
+static uint32_t m_fit_xfer_rem = 0;
 static uint16_t m_nb_segs = 0;
 
 // 631065600uL is GMT: Sunday 31 December 1989 00:00:00
@@ -108,6 +111,7 @@ static uint16_t m_nb_segs = 0;
 //static uint32_t m_fake_name = 1590002145uL - 631 065 600uL;
 
 static uint8_t _process_tx(void);
+static void _send_status_packet();
 
 static void _encode_uint32_little(uint32_t value, uint8_t p_data[]) {
 
@@ -217,23 +221,29 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 
 	uint8_t data_array[NUS_LONG_PACKETS_SIZE];
 
-	memset(&data_array, 0x00, sizeof(data_array));
-
 	if (!p_data && m_fit_up == FitFileTransferData && !nrf_queue_is_full(&m_nus_tx_queue)) {
+
+		memset(&data_array, 0x00, sizeof(data_array));
 
 		sCharArray c_array;
 		c_array.length = 0;
 		c_array.str = (char*)&data_array[1];
 		uint16_t mtu_length = ble_get_mtu();
 		uint16_t long_packet_len = mtu_length < NUS_LONG_PACKETS_SIZE ? mtu_length : NUS_LONG_PACKETS_SIZE;
-		long_packet_len -= 1;
-		int res = sd_functions__run_query(0, &c_array, long_packet_len);
-		if (res || c_array.length < long_packet_len) {
+
+		int res = sd_functions__run_query(0, &c_array, long_packet_len-1);
+
+		m_fit_xfer_rem -= c_array.length;
+
+		if (res || c_array.length < long_packet_len-1 || m_fit_xfer_rem == 0) {
 			// we can be here in case of error or if we reached the EOF
 			(void)sd_functions__stop_query();
+
 			m_fit_up = FitFileTransferEnd;
 
 			NRF_LOG_INFO("File transfer end (%d) %lu", res, c_array.length);
+
+			model_add_notification("APP", "File transfer end", 5, eNotificationTypeComplete);
 		} else {
 
 			NRF_LOG_INFO("File transfer continue (%d)", c_array.length);
@@ -244,7 +254,7 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 		// data[1..19]
 		data_array[0] = m_fit_up;
 
-		_queue_nus(data_array, c_array.length);
+		_queue_nus(data_array, long_packet_len);
 
 		if (m_fit_up == FitFileTransferEnd) {
 			//NRF_LOG_HEXDUMP_INFO(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
@@ -253,26 +263,37 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 
 			_handle_send_command(SwitchingToLowSpeed);
 			_handle_send_command(ConnectedInLowSpeed);
+			_send_status_packet();
 		}
 
 	}
 
 	if (p_data) {
 
+		memset(&data_array, 0x00, sizeof(data_array));
+
 		uint8_t index = 0;
 
 		NRF_LOG_INFO("File transfer start");
 
 		uint32_t f_size = 0;
-		char fname[20];
+		char fname[25];
 		memset(fname, 0, sizeof(fname));
 		snprintf(fname, sizeof(fname), "%08lX.FIT", _decode_uint32_little(p_data+1));
 		int res = sd_functions__start_query(eSDTaskQueryFit, fname, &f_size);
+
+		m_fit_xfer_rem = f_size;
 
 		if (res) {
 			NRF_LOG_ERROR("FIT file query failed");
 			return;
 		}
+
+		snprintf(fname, sizeof(fname), "%08lX.FIT (%lu)",
+				_decode_uint32_little(p_data+1),
+				f_size);
+
+		model_add_notification("APP", fname, 5, eNotificationTypeComplete);
 
 		_handle_send_command(SwitchingToHighSpeed);
 		_handle_send_command(ConnectedInHighSpeed);
