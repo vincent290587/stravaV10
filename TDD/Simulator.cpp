@@ -47,11 +47,12 @@ static FILE* g_fileObject;   /* File object */
 
 static uint32_t nb_gps_loc = 0;
 
+static float last_dl;
 static float cur_speed = 20.0f;
 static float alt_sim = 100.0f;
 
 static std::default_random_engine s_generator;
-static std::normal_distribution<float> distr_speed(20.f, .4f);
+static std::normal_distribution<float> distr_speed(0.f, .4f);
 
 static void simulator_modes(void) {
 
@@ -291,8 +292,7 @@ static void _sensors_sim(void) {
 
 	if (millis() - last_point_ms < BARO_REFRESH_PER_MS) return;
 
-	cur_speed = distr_speed(s_generator);
-	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
+	alt_sim += tanf(cur_a) * last_dl * (millis() - last_point_ms) / 1000.f; // over 1 second
 
 	if (++sim_nb > 2000) {
 
@@ -381,6 +381,24 @@ static void _loc_sim(void) {
 			// rtime is missing: generate it
 			rtime += 1.;
 		}
+
+		static Point lastPoint;
+
+		last_dl = lastPoint.dist(lat, lon);
+		if (last_dl > 50.f) {
+			last_dl = 50.f;
+		}
+
+		cur_speed = 3.6f * last_dl;
+		if (rtime - lastPoint._rtime > .5f) {
+			cur_speed /= (rtime - lastPoint._rtime);
+		}
+
+		cur_speed += distr_speed(s_generator);
+
+		lastPoint._lat = lat;
+		lastPoint._lon = lon;
+		lastPoint._rtime = rtime;
 
 #ifdef TDD_RANDOMIZE
 		int rnd_add;
@@ -485,7 +503,7 @@ static void _loc_sim(void) {
 		print_mem_state();
 
 		assert(Point2D::getObjectCount() == 1);
-		assert(Point::getObjectCount() == 2);
+		assert(Point::getObjectCount() == 3);
 
 		exit(0);
 

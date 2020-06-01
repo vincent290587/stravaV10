@@ -257,7 +257,7 @@ uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t m
 			tab[8] = 0;
 			uint32_t l_value = strtoul(tab, NULL, 16);
 
-			NRF_LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
+			LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
 
 			encode_uint32((uint8_t*)p_array->str + cur_size, l_value);
 
