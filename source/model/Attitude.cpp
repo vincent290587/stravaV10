@@ -172,8 +172,9 @@ void Attitude::computeFusion(void) {
 		feed.dt = lastPos.dist(att.loc.lat, att.loc.lon);
 	}
 
-	if (feed.dt < 2.f) {
-		return;
+	if (feed.dt < 4.f / 3.6f) {
+		// speed limit: we want the filter to run even when stopped completely
+		feed.dt = 4.f / 3.6f;
 	}
 
 	float pitch_rad;
