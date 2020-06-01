@@ -506,8 +506,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 	if (m_is_init) {
 
-		// small correction to allow time with millisecond precision
-		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000);
+		float cur_time = (float)date_.secj;
 
 		LOG_INFO("Adding location: %f", cur_time);
 

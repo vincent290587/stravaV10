@@ -266,7 +266,7 @@ eLocationSource Locator::getDate(SDate& date_) {
 		date_.secj = sim_loc.data.utc_time;
 		date_.date = 291217;
 
-		date_.timestamp = millis();
+		date_.timestamp = sim_loc.data.utc_timestamp;
 	}
 	break;
 	case eLocationSourceNRF:
