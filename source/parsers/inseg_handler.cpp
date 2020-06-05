@@ -24,6 +24,8 @@ public:
 		cur_size   = 0;
 		total_size = 0;
 		buffer     = nullptr;
+		poly_index = 0;
+		effort_index = 0;
 	}
 	~UploadSegment() {
 		deallocate();
@@ -38,7 +40,7 @@ public:
 	}
 
 	void allocate(const uint32_t size) {
-		if (!total_size) {
+		if (!total_size && size > 0) {
 			total_size = size+20;
 			buffer = new uint8_t[total_size];
 		}
@@ -67,6 +69,8 @@ public:
 	uint32_t total_size;
 	uint8_t  *buffer;
 	LatLng   startPnt;
+	uint16_t poly_index;
+	uint16_t effort_index;
 };
 
 
@@ -148,12 +152,11 @@ void sd_save_seg(UploadSegment &cur_u_seg) {
 	NRF_LOG_INFO("sd_save_seg Saved as %s", fname);
 
 }
+#define INCREMENT_INDEX(INCR)              do { index += (INCR); if (index > cur_u_seg.cur_size) return; } while(0)
 
-void _handler_segment_parse(UploadSegment &cur_u_seg) {
+static void _handler_segment_parse(UploadSegment& cur_u_seg) {
 
-	uint8_t index = 0;
-	uint16_t nb_points_seg = 0;
-	PolyLine myPoly;
+	uint32_t index = 0;
 
 	// distance32
 	// start_lat32
@@ -177,148 +180,151 @@ void _handler_segment_parse(UploadSegment &cur_u_seg) {
 	// padding_4_align
 	// allocateSize16
 	// crc16
-
-	if (cur_u_seg.total_size == 0 ||
-			!cur_u_seg.buffer) {
-		NRF_LOG_ERROR("Empty segment");
-		return;
-	}
-
-
-	task_delay(10);
+	NRF_LOG_INFO("TOT size : %lu", cur_u_seg.total_size);
 
 	uint32_t dist = _decode_uint32_little(cur_u_seg.buffer+index);
-	index+=4;
+	INCREMENT_INDEX(4);
 	NRF_LOG_INFO("dist : %lu", dist);
 
-	float f_lat = FROM_SEMICIRCLES(_decode_uint32_little(cur_u_seg.buffer+index));
-	index+=4;
-	NRF_LOG_INFO("i_lat: %ld", (int32_t)f_lat);
-
-	float f_lon = FROM_SEMICIRCLES(_decode_uint32_little(cur_u_seg.buffer+index));
-	index+=4;
-	NRF_LOG_INFO("i_lon: %ld", (int32_t)f_lon);
-
 	int32_t i_lat = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
-	index+=4;
+	INCREMENT_INDEX(4);
 	NRF_LOG_INFO("i_lat: %ld", i_lat);
 
 	int32_t i_lon = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
-	index+=4;
+	INCREMENT_INDEX(4);
 	NRF_LOG_INFO("i_lon: %ld", i_lon);
 
-	int16_t grade = (int16_t)_decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
-	NRF_LOG_INFO("grade * 10: %d", grade * 10 / 255);
+	i_lat = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
+	INCREMENT_INDEX(4);
+	NRF_LOG_INFO("i_lat: %ld", i_lat);
 
-	index+=6; // padding 0
+	i_lon = (int32_t)_decode_uint32_little(cur_u_seg.buffer+index) / 119;
+	INCREMENT_INDEX(4);
+	NRF_LOG_INFO("i_lon: %ld", i_lon);
+//
+//	int16_t grade = (int16_t)_decode_uint16_little(cur_u_seg.buffer+index);
+//	INCREMENT_INDEX(2);
+//	NRF_LOG_INFO("grade * 10: %d", grade * 10 / 255);
+
+	INCREMENT_INDEX(6); // padding 0
 
 	// dump name
 	uint16_t name_length = cur_u_seg.buffer[index];
-	index+=1;
+	INCREMENT_INDEX(1);
 
 	NRF_LOG_INFO("name_length: %u", name_length);
 
-	NRF_LOG_FLUSH();
-
 	_dump_as_char(cur_u_seg.buffer+index, name_length); // name
-	index+=name_length;
+	INCREMENT_INDEX(name_length);
 
 	uint16_t poly_length = _decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
+	INCREMENT_INDEX(2);
 
 	NRF_LOG_INFO("Polyline length: %u", poly_length);
 
-	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, poly_length);
-	{
-		ByteBuffer bBuffer;
-		bBuffer.addU(cur_u_seg.buffer+index, poly_length);
+	cur_u_seg.poly_index = index;
 
-		myPoly.decodeBinaryPolyline(bBuffer);
-		nb_points_seg = myPoly._line.size();
-		//myPoly.toString();
-	}
-	index+=poly_length;
-
-	NRF_LOG_FLUSH();
+	INCREMENT_INDEX(poly_length);
 
 	// pr time
 	uint16_t pr_time =  _decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
+	INCREMENT_INDEX(2);
 
 	// kom time
 	uint16_t kom_time =  _decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
+	INCREMENT_INDEX(2);
 
 	NRF_LOG_INFO("PR/KOM times: %u %u", pr_time, kom_time);
 
-	index+=2; // hazardous
+	INCREMENT_INDEX(2); // hazardous
 
-	uint16_t words_comp =  _decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
+	uint16_t bin_length =  _decode_uint16_little(cur_u_seg.buffer+index);
+	INCREMENT_INDEX(2);
 
-	NRF_LOG_INFO("words_sum: %u", words_comp);
+	NRF_LOG_INFO("bin_length: %u", bin_length);
 
-	uint16_t comp_dist_length = _decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
+//	uint16_t comp_dist_length = _decode_uint16_little(cur_u_seg.buffer+index);
+//	INCREMENT_INDEX(2);
+//
+//	NRF_LOG_INFO("Time stream length: %u", comp_dist_length);
+//
+//	cur_u_seg.dist_index = index;
+//	INCREMENT_INDEX(comp_dist_length);
 
-	NRF_LOG_INFO("Dist stream length: %u", comp_dist_length);
+	uint16_t stream_length = _decode_uint16_little(cur_u_seg.buffer+index);
+	INCREMENT_INDEX(2);
 
-	// TODO save it as a blob
-	sd_save_seg(cur_u_seg);
-	return;
+	NRF_LOG_INFO("Effort stream length: %u", stream_length);
 
-	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, comp_dist_length);
-	{
-		ByteBuffer bBuffer;
-		bBuffer.addU(cur_u_seg.buffer+index, comp_dist_length);
-		SequenceUnpacker unpacker(bBuffer, nb_points_seg-1);
-		unpacker.unpack();
+	cur_u_seg.effort_index = index;
 
-	}
-	index+=comp_dist_length;
+	INCREMENT_INDEX(bin_length);
 
-	uint16_t comp_stream_length = _decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
+//	uint16_t nb_padding = ((words_comp-1) << 2) - (comp_dist_length + comp_stream_length);
+//	NRF_LOG_INFO("Nb padding: %u", nb_padding);
+//	INCREMENT_INDEX(nb_padding);
 
-	NRF_LOG_INFO("Effort stream length: %u", comp_stream_length);
-
-	NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, comp_stream_length);
-	//_dump_as_char(cur_u_seg.buffer+index, comp_stream_length);
-
-	ByteBuffer bBuffer;
-	bBuffer.addU(cur_u_seg.buffer+index, comp_stream_length);
-	SequenceUnpacker effort_unpacker(bBuffer, nb_points_seg-1);
-	effort_unpacker.unpack();
-//	for (size_t i=0; i < effort_unpacker.original.size(); i++) {
-//		NRF_LOG_INFO("Dt:  %ld", (int32_t)effort_unpacker.original[i]);
-//	}
-
-	index+=comp_stream_length;
-
-	NRF_LOG_FLUSH();
-
-	uint16_t nb_padding = ((words_comp-1) << 2) - (comp_dist_length + comp_stream_length);
-	NRF_LOG_INFO("Nb padding: %u", nb_padding);
-	index+= nb_padding;
+	INCREMENT_INDEX(4);
 
 	uint16_t allocate_length = _decode_uint16_little(cur_u_seg.buffer+index);
-	index+=2;
+	INCREMENT_INDEX(2);
 	NRF_LOG_INFO("allocate_length: %u", allocate_length);
 
 	uint16_t crc16 = 0;
-    for (int i5 = 0; i5 < index; i5++) {
+    for (uint16_t i5 = 0; i5 < index; i5++) {
     	crc16 = FitCRC_Get16(crc16, cur_u_seg.buffer[i5]);
     }
 	NRF_LOG_INFO("CRC16 : %lu vs %lu", crc16, _decode_uint16_little(cur_u_seg.buffer + index));
-	NRF_LOG_FLUSH();
 
 	if (crc16 == _decode_uint16_little(cur_u_seg.buffer + index)) {
 
-		// TODO save segment
-		NRF_LOG_INFO("GOOD to save !");
-	}
+		index = cur_u_seg.poly_index;
+		PolyLine myPoly;
 
+		NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, poly_length);
+		//_dump_as_char(cur_u_seg.buffer+index, poly_length);
+		{
+			ByteBuffer bBuffer;
+			bBuffer.addU(cur_u_seg.buffer+index, poly_length);
+
+			(void)myPoly.decodeBinaryPolyline(bBuffer);
+			myPoly.toString();
+		}
+
+//		index = cur_u_seg.dist_index;
+//
+//		if (0) {
+//			NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, comp_dist_length);
+//			ByteBuffer bBuffer;
+//			bBuffer.addU(cur_u_seg.buffer+index, comp_dist_length);
+//			SequenceUnpacker unpacker(bBuffer, comp_dist_length);
+//			unpacker.unpack();
+//			for (size_t i=0; i < unpacker.original.size(); i++) {
+//				printf("Ddist:  %ld \n", (int32_t)unpacker.original[i]);
+//			}
+//		}
+
+		index = cur_u_seg.effort_index;
+
+		NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, stream_length);
+		//_dump_as_uint(cur_u_seg.buffer+index, comp_stream_length);
+		//_dump_as_char(cur_u_seg.buffer+index, comp_stream_length);
+		{
+			ByteBuffer bBuffer;
+			bBuffer.addU(cur_u_seg.buffer+index, bin_length);
+			SequenceUnpacker unpacker(bBuffer, stream_length);
+			unpacker.unpack();
+			NRF_LOG_INFO("SequenceUnpacker original size %lu", unpacker.original.size());
+			int32_t tot_time = (int32_t)unpacker.original[unpacker.original.size()-1] - (int32_t)unpacker.original[0];
+			NRF_LOG_INFO("TOT time = %lds vs. PR %u KOM %u", tot_time, pr_time, kom_time);
+		}
+
+		sd_save_seg(cur_u_seg);
+
+	} else {
+
+		NRF_LOG_INFO("CRC16 error : %lu vs %lu", crc16, _decode_uint16_little(cur_u_seg.buffer + index));
+	}
 }
 
 void inseg_handler_list_reset(void) {

@@ -36,15 +36,14 @@ public:
 
 	}
 
-	int decodeBinaryPolyline(ByteBuffer& bArr) {
+	int decodeBinaryPolyline(ByteBuffer& bArr2) {
 
 		_line.clear();
 
 		int i;
 		int i2;
-		ByteBuffer bArr2 = bArr;
-		int length = bArr2.length();
-		int i3 = 8;
+		size_t length = bArr2.length();
+		size_t i3 = 8;
 		int32_t b = (bArr2[0] & 255) | ((bArr2[1] & 255) << 8) | ((bArr2[2] & 255) << 16) | ((bArr2[3] & 255) << 24);
 		uint8_t b2 = 7;
 		int32_t i4 = (bArr2[4] & 255) | ((bArr2[5] & 255) << 8) | ((bArr2[6] & 255) << 16) | ((bArr2[7] & 255) << 24);

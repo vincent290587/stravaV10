@@ -243,7 +243,7 @@ public:
 		return original.size();
 	}
 
-	uint8_t operator [](uint8_t pos) {
+	uint8_t operator [](size_t pos) {
 		return original[pos];
 	}
 
