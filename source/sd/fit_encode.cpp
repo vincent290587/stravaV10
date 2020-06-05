@@ -62,6 +62,8 @@ void fit_terminate(void) {
 
 	FRESULT error;
 
+	if (!is_fat_init()) return;
+
 	if (m_nb_pos_saved == 0) {
 		return;
 	}
@@ -103,6 +105,8 @@ void fit_terminate(void) {
 void fit_save_pos_buffer(SAttTime att[], uint16_t nb_pos) {
 
 	BYTE mode = FA_OPEN_APPEND | FA_WRITE;
+
+	if (!is_fat_init()) return;
 
 	// calculate file name
 	if (m_nb_pos_saved == 0 &&

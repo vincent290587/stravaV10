@@ -20,14 +20,17 @@ public:
 	LatLng() {
 		lat=0;
 		lon=0;
+		rtime=0;
 	}
 	LatLng(float _lat, float _lon) {
 		lat=_lat;
 		lon=_lon;
+		rtime=0;
 	}
 
 	float lat;
 	float lon;
+	uint32_t rtime;
 };
 
 class PolyLine {

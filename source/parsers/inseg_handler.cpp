@@ -8,7 +8,10 @@
 #include "fit_crc.h"
 #include "PolyLine.h"
 #include "ff.h"
+#include "sd_hal.h"
 #include "WString.h"
+#include "Model.h"
+#include "ListePoints.h"
 #include "sd_functions.h"
 #include "inseg_handler.h"
 #include "SequenceUnpacker.h"
@@ -118,7 +121,65 @@ static uint16_t _decode_uint16_little(uint8_t const *p_data) {
 }
 
 
-void sd_save_seg(UploadSegment &cur_u_seg) {
+void sd_save_seg(PolyLine& poly) {
+
+	if (!is_fat_init()) return;
+
+	// calculate name
+	int32_t lat = (int32_t) ((poly._line[0].lat + 90) * 100000);
+	int32_t lon = (int32_t) ((poly._line[1].lon + 180) * 100000);
+
+	String lon36 = String(lon, 36);
+	String f_name;
+	f_name = String(lat, 36);
+	f_name += '#';
+	f_name += lon36.substring(0, 2);
+	f_name += ".";
+	f_name += lon36.substring(2, lon36.length());
+	f_name = f_name.toUpperCase();
+
+	String notif = "Saving file ";
+	notif += f_name;
+
+	model_add_notification("APP", notif.c_str(), 5, eNotificationTypeComplete);
+
+	FIL g_fileObject;
+	FRESULT error = f_open(&g_fileObject, f_name.c_str(), FA_WRITE | FA_CREATE_ALWAYS);
+	APP_ERROR_CHECK(error);
+	if (error)
+	{
+		NRF_LOG_ERROR("sd_save_seg open file failed.");
+		return;
+	}
+
+	char buffer[200];
+	for (uint16_t i=0; i < poly._line.size(); i++) {
+
+		// save points
+		int nb_written = snprintf(buffer, sizeof(buffer),
+				"%f ; %f ; %f ; 0.0\r\n",
+				poly._line[i].lat,
+				poly._line[i].lon,
+				(float)poly._line[i].rtime);
+
+		f_write(&g_fileObject, buffer, nb_written, NULL);
+	}
+
+	error = f_close(&g_fileObject);
+	APP_ERROR_CHECK(error);
+	if (error)
+	{
+		NRF_LOG_ERROR("sd_save_bin_seg close file failed.");
+		return;
+	}
+
+	NRF_LOG_INFO("sd_save_bin_seg Saved as %s", f_name.c_str());
+}
+
+
+void sd_save_bin_seg(UploadSegment &cur_u_seg) {
+
+	if (!is_fat_init()) return;
 
 	static uint16_t nb = 0;
 
@@ -127,7 +188,7 @@ void sd_save_seg(UploadSegment &cur_u_seg) {
 	fname[12] = 0;
 
 	if (!cur_u_seg.total_size) {
-		NRF_LOG_ERROR("sd_save_seg empty file");
+		NRF_LOG_ERROR("sd_save_bin_seg empty file");
 	}
 
 	FIL g_fileObject;
@@ -135,7 +196,7 @@ void sd_save_seg(UploadSegment &cur_u_seg) {
 	APP_ERROR_CHECK(error);
 	if (error)
 	{
-		NRF_LOG_ERROR("sd_save_seg open file failed.");
+		NRF_LOG_ERROR("sd_save_bin_seg open file failed.");
 		return;
 	}
 
@@ -145,11 +206,11 @@ void sd_save_seg(UploadSegment &cur_u_seg) {
 	APP_ERROR_CHECK(error);
 	if (error)
 	{
-		NRF_LOG_ERROR("sd_save_seg close file failed.");
+		NRF_LOG_ERROR("sd_save_bin_seg close file failed.");
 		return;
 	}
 
-	NRF_LOG_INFO("sd_save_seg Saved as %s", fname);
+	NRF_LOG_INFO("sd_save_bin_seg Saved as %s", fname);
 
 }
 #define INCREMENT_INDEX(INCR)              do { index += (INCR); if (index > cur_u_seg.cur_size) return; } while(0)
@@ -309,17 +370,21 @@ static void _handler_segment_parse(UploadSegment& cur_u_seg) {
 		NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, stream_length);
 		//_dump_as_uint(cur_u_seg.buffer+index, comp_stream_length);
 		//_dump_as_char(cur_u_seg.buffer+index, comp_stream_length);
-		{
-			ByteBuffer bBuffer;
-			bBuffer.addU(cur_u_seg.buffer+index, bin_length);
-			SequenceUnpacker unpacker(bBuffer, stream_length);
-			unpacker.unpack();
-			NRF_LOG_INFO("SequenceUnpacker original size %lu", unpacker.original.size());
-			int32_t tot_time = (int32_t)unpacker.original[unpacker.original.size()-1] - (int32_t)unpacker.original[0];
-			NRF_LOG_INFO("TOT time = %lds vs. PR %u KOM %u", tot_time, pr_time, kom_time);
+		ByteBuffer bBuffer;
+		bBuffer.addU(cur_u_seg.buffer+index, bin_length);
+		SequenceUnpacker unpacker(bBuffer, stream_length);
+		unpacker.unpack();
+		NRF_LOG_INFO("SequenceUnpacker original size %lu", unpacker.original.size());
+		int32_t tot_time = (int32_t)unpacker.original[unpacker.original.size()-1] - (int32_t)unpacker.original[0];
+		NRF_LOG_INFO("TOT time = %lds vs. PR %u KOM %u", tot_time, pr_time, kom_time);
+
+		for (uint16_t i=0; i < myPoly._line.size() && unpacker.original.size(); i++) {
+
+			myPoly._line[i].rtime = unpacker.original[i];
 		}
 
-		sd_save_seg(cur_u_seg);
+		sd_save_seg(myPoly);
+		sd_save_bin_seg(cur_u_seg);
 
 	} else {
 
