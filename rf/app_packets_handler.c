@@ -617,6 +617,7 @@ static void _handle_nav_file(uint8_t const *p_data, uint16_t  length) {
 
 static uint8_t _process_tx(void) {
 
+	static uint32_t _last_tx = 0;
 	uint8_t cur_event = 0;
 	sNusLongPacket data_array;
 
@@ -660,14 +661,18 @@ static uint8_t _process_tx(void) {
 			//artificial delay
 			if (err_code == NRF_SUCCESS) {
 
-				NRF_LOG_INFO("Sending packet %u (%lu) size %u",
+				NRF_LOG_INFO("Sent packet %u (%lu) size %u",
 						data_array.nus_data[0], millis(), data_array.data_length);
 
 				//task_delay(20);
+				_last_tx = millis();
 			}
 
 		} while (err_code == NRF_ERROR_RESOURCES);
 
+	} else if (millis() - _last_tx > 20000) {
+
+		_send_status_packet();
 	}
 
 	return cur_event;
