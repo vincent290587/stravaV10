@@ -24,6 +24,8 @@ public:
 	UploadSegment(uint8_t const id[], const float lat, const float lon) : startPnt(lat, lon) {
 
 		memcpy(seg_id, id, 8);
+		memset(name, 0,  sizeof(name));
+		kom_time   = 0;
 		cur_size   = 0;
 		total_size = 0;
 		buffer     = nullptr;
@@ -68,6 +70,8 @@ public:
 	}
 
 	uint8_t  seg_id[8];
+	uint8_t  name[21];
+	uint16_t kom_time;
 	uint32_t cur_size;
 	uint32_t total_size;
 	uint8_t  *buffer;
@@ -121,7 +125,7 @@ static uint16_t _decode_uint16_little(uint8_t const *p_data) {
 }
 
 
-void sd_save_seg(PolyLine& poly) {
+void sd_save_seg(UploadSegment& cur_u_seg, PolyLine& poly) {
 
 	if (!is_fat_init()) return;
 
@@ -153,11 +157,21 @@ void sd_save_seg(PolyLine& poly) {
 	}
 
 	char buffer[200];
+
+	// save metadata
+	int nb_written = snprintf(buffer, sizeof(buffer),
+			"<Name>%s</Name>\r\n"
+			"<Kom>%u</Kom>\r\n",
+			(char*)cur_u_seg.name,
+			cur_u_seg.kom_time);
+
+	f_write(&g_fileObject, buffer, nb_written, NULL);
+
 	for (uint16_t i=0; i < poly._line.size(); i++) {
 
 		// save points
 		int nb_written = snprintf(buffer, sizeof(buffer),
-				"%f ; %f ; %f ; 0.0\r\n",
+				"%f ; %f ; %.1f ; 0.0\r\n",
 				poly._line[i].lat,
 				poly._line[i].lon,
 				(float)poly._line[i].rtime);
@@ -275,6 +289,12 @@ static void _handler_segment_parse(UploadSegment& cur_u_seg) {
 
 	NRF_LOG_INFO("name_length: %u", name_length);
 
+	if (name_length >= sizeof(cur_u_seg.name)) {
+		name_length = sizeof(cur_u_seg.name) - 1;
+	}
+
+	memcpy(cur_u_seg.name, cur_u_seg.buffer+index, name_length);
+
 	_dump_as_char(cur_u_seg.buffer+index, name_length); // name
 	INCREMENT_INDEX(name_length);
 
@@ -294,6 +314,8 @@ static void _handler_segment_parse(UploadSegment& cur_u_seg) {
 	// kom time
 	uint16_t kom_time =  _decode_uint16_little(cur_u_seg.buffer+index);
 	INCREMENT_INDEX(2);
+
+	cur_u_seg.kom_time = kom_time;
 
 	NRF_LOG_INFO("PR/KOM times: %u %u", pr_time, kom_time);
 
@@ -383,7 +405,7 @@ static void _handler_segment_parse(UploadSegment& cur_u_seg) {
 			myPoly._line[i].rtime = unpacker.original[i];
 		}
 
-		sd_save_seg(myPoly);
+		sd_save_seg(cur_u_seg, myPoly);
 		sd_save_bin_seg(cur_u_seg);
 
 	} else {
