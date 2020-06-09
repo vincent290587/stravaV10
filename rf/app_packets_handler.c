@@ -485,6 +485,38 @@ static void _handle__request_segment(void) {
 	prev_res = res;
 }
 
+static void _handle_route_upload_start(uint8_t const *p_data, uint16_t  length) {
+
+	// cmd8
+	// id64
+	// size32
+	uint32_t route_size = _decode_uint32_little(&p_data[9]);
+
+	inseg_handler_route_start(&p_data[1], route_size);
+
+	NRF_LOG_INFO("RouteFileUploadStart tot. size=%lu", route_size);
+
+	// dump ID
+	//NRF_LOG_HEXDUMP_INFO(p_data, BLE_NUS_STD_DATA_LEN);
+}
+
+static void _handle_route_upload_data(uint8_t const *p_data, uint16_t length) {
+
+	// cmd8
+	// dataX
+
+	if (p_data[0] == RouteFileUploadEnd) {
+
+		NRF_LOG_INFO("RouteFileUploadEnd");
+
+	} else {
+
+		NRF_LOG_INFO("RouteFileUploadData");
+	}
+
+	inseg_handler_route_data(p_data[0] == RouteFileUploadEnd, p_data+1, length-1);
+}
+
 static void _handle_segment_upload_start(uint8_t const *p_data, uint16_t  length) {
 
 	// cmd8
@@ -716,6 +748,8 @@ void app_handler__on_connected(void)
 	_handle_send_command(ConnectedInLowSpeed);
 	_send_status_packet();
 
+	model_add_notification("APP", "Connected to phone", 3, eNotificationTypeComplete);
+
 	app_handler__signal();
 }
 
@@ -782,6 +816,15 @@ void app_handler__task(void * p_context) {
 			case SegmentFileUploadData:
 			case SegmentFileUploadEnd:
 				_handle_segment_upload_data(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
+				break;
+
+			case RouteFileUploadStart:
+				_handle_route_upload_start(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
+				break;
+
+			case RouteFileUploadData:
+			case RouteFileUploadEnd:
+				_handle_route_upload_data(data_array.nus_data, BLE_NUS_STD_DATA_LEN);
 				break;
 
 			case NavigationNewFile:

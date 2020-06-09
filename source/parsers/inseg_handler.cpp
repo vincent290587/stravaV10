@@ -21,7 +21,7 @@
 
 class UploadSegment {
 public:
-	UploadSegment(uint8_t const id[], const float lat, const float lon) : startPnt(lat, lon) {
+	UploadSegment(uint8_t const id[8], const float lat=0, const float lon=0) : startPnt(lat, lon) {
 
 		memcpy(seg_id, id, 8);
 		memset(name, 0,  sizeof(name));
@@ -85,6 +85,7 @@ static uint8_t  m_is_downloading = 0;
 static uint32_t m_next_seg_idx;
 static uint32_t m_cur_seg_idx;
 static std::vector<UploadSegment> m_list_segs;
+static UploadSegment *m_cur_route = nullptr;
 
 #define MAX_ARRAY_PRINTF        64
 
@@ -191,6 +192,80 @@ void sd_save_seg(UploadSegment& cur_u_seg, PolyLine& poly) {
 }
 
 
+void sd_save_route(UploadSegment& cur_u_seg, PolyLine& poly) {
+
+	if (!is_fat_init()) return;
+
+	// calculate name
+	char f_name[25];
+	memset(f_name, 0, sizeof(f_name));
+
+	// force .3 extension
+	const char * p_str = (const char *)".PAR";
+	for (int i=0; i < 12 + 1 && *p_str; i++) {
+
+		// force 8 as max name length
+		if (cur_u_seg.name[i] == 0 || i >= 8) {
+
+			f_name[i] = *p_str++;
+
+		} else if (cur_u_seg.name[i] == (uint8_t)' ') {
+
+			// space causes trouble...
+			f_name[i] = '-';
+		} else {
+
+			f_name[i] = (char)cur_u_seg.name[i];
+		}
+	}
+
+	String notif = "Saving PAR ";
+	notif += f_name;
+
+	model_add_notification("APP", notif.c_str(), 5, eNotificationTypeComplete);
+
+	FIL g_fileObject;
+	FRESULT error = f_open(&g_fileObject, f_name, FA_WRITE | FA_CREATE_ALWAYS);
+	APP_ERROR_CHECK(error);
+	if (error)
+	{
+		NRF_LOG_ERROR("sd_save_route open file failed.");
+		model_add_notification((const char *)"APP", "sd_save_route open file failed.", 5, eNotificationTypeComplete);
+		return;
+	}
+
+	char buffer[200];
+
+	// save metadata
+	int nb_written = snprintf(buffer, sizeof(buffer),
+			"<Name>%s</Name>\r\n",
+			(char*)cur_u_seg.name);
+
+	f_write(&g_fileObject, buffer, nb_written, NULL);
+
+	for (uint16_t i=0; i < poly._line.size(); i++) {
+
+		// save points
+		int nb_written = snprintf(buffer, sizeof(buffer),
+				"%f %f\r\n",
+				poly._line[i].lat,
+				poly._line[i].lon);
+
+		f_write(&g_fileObject, buffer, nb_written, NULL);
+	}
+
+	error = f_close(&g_fileObject);
+	APP_ERROR_CHECK(error);
+	if (error)
+	{
+		NRF_LOG_ERROR("sd_save_bin_seg close file failed.");
+		return;
+	}
+
+	NRF_LOG_INFO("sd_save_bin_seg Saved as %s", f_name);
+}
+
+
 void sd_save_bin_seg(UploadSegment &cur_u_seg) {
 
 	if (!is_fat_init()) return;
@@ -198,7 +273,7 @@ void sd_save_bin_seg(UploadSegment &cur_u_seg) {
 	static uint16_t nb = 0;
 
 	char fname[20];
-	snprintf(fname, sizeof(fname), "SEG_%04X.TXT", nb++);
+	snprintf(fname, sizeof(fname), "PRC_%04X.TXT", nb++);
 	fname[12] = 0;
 
 	if (!cur_u_seg.total_size) {
@@ -406,7 +481,91 @@ static void _handler_segment_parse(UploadSegment& cur_u_seg) {
 		}
 
 		sd_save_seg(cur_u_seg, myPoly);
-		sd_save_bin_seg(cur_u_seg);
+		//sd_save_bin_seg(cur_u_seg);
+
+	} else {
+
+		NRF_LOG_INFO("CRC16 error : %lu vs %lu", crc16, _decode_uint16_little(cur_u_seg.buffer + index));
+	}
+}
+
+static void _handler_route_parse(UploadSegment& cur_u_seg) {
+
+	uint32_t index = 0;
+
+	// distance32
+	// 00 00 00 00 00 00
+	// name_length8
+	// name[1..19]
+	// poly_length16
+	// poly[]
+	// padding_4
+	// allocateSize16
+	// crc16
+	NRF_LOG_INFO("TOT size : %lu", cur_u_seg.total_size);
+
+	uint32_t dist = _decode_uint32_little(cur_u_seg.buffer+index);
+	INCREMENT_INDEX(4);
+	NRF_LOG_INFO("dist : %lu", dist);
+
+	INCREMENT_INDEX(6); // padding 0
+
+	// dump name
+	uint16_t name_length = cur_u_seg.buffer[index];
+	INCREMENT_INDEX(1);
+
+	NRF_LOG_INFO("name_length: %u", name_length);
+
+	if (name_length >= sizeof(cur_u_seg.name)) {
+		name_length = sizeof(cur_u_seg.name) - 1;
+	}
+
+	memcpy(cur_u_seg.name, cur_u_seg.buffer+index, name_length);
+
+	_dump_as_char(cur_u_seg.buffer+index, name_length); // name
+	INCREMENT_INDEX(name_length);
+
+	uint16_t poly_length = _decode_uint16_little(cur_u_seg.buffer+index);
+	INCREMENT_INDEX(2);
+
+	NRF_LOG_INFO("Polyline length: %u", poly_length);
+
+	cur_u_seg.poly_index = index;
+
+	INCREMENT_INDEX(poly_length);
+
+	// padding
+	INCREMENT_INDEX(4);
+
+	uint16_t allocate_length = _decode_uint16_little(cur_u_seg.buffer+index);
+	INCREMENT_INDEX(2);
+
+	NRF_LOG_INFO("allocate_length: %u", allocate_length);
+
+	uint16_t crc16 = 0;
+    for (uint16_t i5 = 0; i5 < index; i5++) {
+    	crc16 = FitCRC_Get16(crc16, cur_u_seg.buffer[i5]);
+    }
+	NRF_LOG_INFO("CRC16 : %lu vs %lu", crc16, _decode_uint16_little(cur_u_seg.buffer + index));
+
+	sd_save_bin_seg(cur_u_seg);
+
+	if (crc16 == _decode_uint16_little(cur_u_seg.buffer + index)) {
+
+		index = cur_u_seg.poly_index;
+		PolyLine myPoly;
+
+		NRF_LOG_HEXDUMP_DEBUG(cur_u_seg.buffer+index, poly_length);
+		//_dump_as_char(cur_u_seg.buffer+index, poly_length);
+		{
+			ByteBuffer bBuffer;
+			bBuffer.addU(cur_u_seg.buffer+index, poly_length);
+
+			(void)myPoly.decodeBinaryPolyline(bBuffer);
+			myPoly.toString();
+		}
+
+		sd_save_route(cur_u_seg, myPoly);
 
 	} else {
 
@@ -519,4 +678,42 @@ void inseg_handler_segment_data(uint8_t is_end, uint8_t const p_data[], uint32_t
 
 		m_is_downloading = 0;
 	}
+}
+
+void inseg_handler_route_start(uint8_t const seg_id[], uint32_t size) {
+
+	if (size > 40000) {
+		NRF_LOG_ERROR("inseg_handler_route_start: route size too great (%lu) !!", size);
+		return;
+	}
+
+	m_cur_route = new UploadSegment(seg_id);
+	m_cur_route->allocate(size);
+}
+
+void inseg_handler_route_data(uint8_t is_end, uint8_t const p_data[], uint32_t length) {
+
+	if (!m_cur_route) {
+		NRF_LOG_ERROR("inseg_handler_route_data wrong state");
+		return;
+	}
+
+	// copy segment data
+	int ret = m_cur_route->append(p_data, length);
+	if (ret) {
+		NRF_LOG_ERROR("inseg_handler_route_data: append failed");
+	} else {
+		NRF_LOG_INFO("inseg_handler_route_data: append %lu", m_cur_route->cur_size);
+	}
+
+	NRF_LOG_FLUSH();
+
+	if (is_end) {
+		_handler_route_parse(*m_cur_route);
+
+		delete m_cur_route;
+
+		m_cur_route = nullptr;
+	}
+
 }

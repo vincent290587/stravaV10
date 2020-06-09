@@ -138,6 +138,10 @@ enum OutgoingCommands {
 	OutgoingMapFileError = 50,
 	MapFileListRequest = 51,
 	MapFileDelete = 52,
+	// User
+	RouteFileUploadStart = 53,
+	RouteFileUploadData = 54,
+	RouteFileUploadEnd = 55,
 };
 
 

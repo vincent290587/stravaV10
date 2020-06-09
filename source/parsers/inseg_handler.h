@@ -26,6 +26,9 @@ int inseg_handler_list_process_tasks(uint8_t seg_id[]);
 void inseg_handler_segment_start(uint8_t const seg_id[], uint32_t size);
 void inseg_handler_segment_data(uint8_t is_end, uint8_t const p_data[], uint32_t length);
 
+void inseg_handler_route_start(uint8_t const seg_id[], uint32_t size);
+void inseg_handler_route_data(uint8_t is_end, uint8_t const p_data[], uint32_t length);
+
 #ifdef	__cplusplus
 }
 #endif
