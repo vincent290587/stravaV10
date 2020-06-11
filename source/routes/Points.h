@@ -44,7 +44,7 @@ public:
 	Point2D(const Point2D&);
 	Point2D(const Point2D*);
 	Point2D(float lat, float lon);
-    ~Point2D();
+	virtual ~Point2D();
 
     Point2D & operator=(const Location &point);
     Point2D & operator=(const Location *point);
@@ -68,7 +68,7 @@ public:
 	Point(const Point&);
 	Point(const Point*);
     Point(float lat, float lon, float alt, float rtime);
-    ~Point();
+    virtual ~Point();
 
     Point & operator=(const Point &point);
     Point & operator=(const Point *point);

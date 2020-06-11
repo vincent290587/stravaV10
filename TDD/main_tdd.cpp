@@ -164,6 +164,11 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
+	if (!test_zoom()) {
+		LOG_ERROR("Unit test zoom failed !");
+		exit(-1);
+	}
+
 	if (!test_fusion()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);
