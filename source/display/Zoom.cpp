@@ -112,19 +112,19 @@ static inline uint8_t get_code(const float h_zoom_m, const float v_zoom_m, const
 	return code;
 }
 
-int Zoom::includes(Location& center, Location& location1, int16_t h_pixels, PixelPoint& point) {
+int Zoom::includes(Location& center, Location& location1, int16_t h_pixels, int16_t v_pixels, PixelPoint& point) {
 
 	Vecteur pos_to_loc1(center, location1);
 
-	float ratio = (float)m_v_size / (float)m_h_size;
+	// convert vector from meters to pixels
+	pos_to_loc1.operator /(m_last_zoom / h_pixels);
 
-	uint8_t outcode0 = get_code(m_last_zoom, ratio * m_last_zoom, pos_to_loc1);
+	uint8_t outcode0 = get_code(h_pixels, v_pixels, pos_to_loc1);
 
 	if (outcode0 == eCohenSutherlandCodeInside) {
 
-		pos_to_loc1.operator /(m_last_zoom / h_pixels);
 		point.x =  (int16_t)pos_to_loc1._x;
-		point.y = -(int16_t)pos_to_loc1._x;
+		point.y = -(int16_t)pos_to_loc1._y;
 
 		return 1;
 	}
@@ -193,7 +193,7 @@ int Zoom::intersects(Location& center, int16_t h_pixels, int16_t v_pixels, Locat
 		} else {
 			// failed both tests, so calculate the line segment to clip
 			// from an outside point to an intersection with clip edge
-			float x, y;
+			float x=x0, y=y0;
 
 			// At least one endpoint is outside the clip rectangle; pick it.
 			uint8_t outcodeOut = outcode1 > outcode0 ? outcode1 : outcode0;

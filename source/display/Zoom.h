@@ -74,7 +74,7 @@ public:
 		m_last_zoom = zoom_m;
 	}
 
-	int includes(Location& center, Location& location1, int16_t h_pixels, PixelPoint& point);
+	int includes(Location& center, Location& location1, int16_t h_pixels, int16_t v_pixels, PixelPoint& point);
 	int intersects(Location& center, int16_t h_pixels, int16_t v_pixels, Location& location1, Location& location2, PixelLine& line_rep);
 
 private:
@@ -82,7 +82,6 @@ private:
 	uint16_t m_v_size;
 
 	uint8_t m_zoom_level;
-protected:
 	float m_last_zoom;
 };
 

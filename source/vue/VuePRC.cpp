@@ -330,7 +330,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	if (p_seg->getStatus() < SEG_OFF) {
 
 		// draw a rectangle at the end of the segment (done)
-		if (this->includes(center, pSuivant, m_last_zoom, point)) {
+		if (this->includes(center, pSuivant, _width, fin_cadran - debut_cadran, point)) {
 
 			// shift from center of rectangle to screen coordinates
 			point.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
@@ -340,7 +340,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	} else if (p_seg->getStatus() != SEG_OFF) {
 
 		// draw a flag at the end of the segment (not done yet)
-		if (this->includes(center, pSuivant, m_last_zoom, point)) {
+		if (this->includes(center, pSuivant, _width, fin_cadran - debut_cadran, point)) {
 
 			// shift from center of rectangle to screen coordinates
 			point.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
@@ -356,7 +356,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
-		if (this->includes(center, *maPos, m_last_zoom, point)) {
+		if (this->includes(center, *maPos, _width, fin_cadran - debut_cadran, point)) {
 
 			// shift from center of rectangle to screen coordinates
 			point.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
