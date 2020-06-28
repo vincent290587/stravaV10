@@ -206,7 +206,7 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 	}
 }
 
-void app_ble_central_ble_evt_handler(ble_evt_t const * p_ble_evt)
+void app_ble_central_ble_evt_handler(ble_evt_t const * p_ble_evt, void *p_context)
 {
 	ret_code_t            err_code;
 	ble_gap_evt_t const * p_gap_evt = &p_ble_evt->evt.gap_evt;

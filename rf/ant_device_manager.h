@@ -19,7 +19,7 @@
 
 #define BSC_CHANNEL_NUMBER              0x01
 #define BSC_DEVICE_NUMBER               15568U    /**< Device Number. */
-#define BSC_DEVICE_TYPE                 0x79
+#define BSC_DEVICE_TYPE                 BSC_CADENCE_DEVICE_TYPE
 
 #define GLASSES_CHANNEL_NUMBER          0x04
 #define GLASSES_DEVICE_NUMBER           0xFDDA
