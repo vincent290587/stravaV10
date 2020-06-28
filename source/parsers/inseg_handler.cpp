@@ -562,7 +562,7 @@ static void _handler_route_parse(UploadSegment& cur_u_seg) {
 			bBuffer.addU(cur_u_seg.buffer+index, poly_length);
 
 			(void)myPoly.decodeBinaryPolyline(bBuffer);
-			myPoly.toString();
+			//myPoly.toString();
 		}
 
 		sd_save_route(cur_u_seg, myPoly);
