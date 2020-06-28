@@ -645,6 +645,8 @@ static void app_ble_peripheral_ble_evt_handler(ble_evt_t const * p_ble_evt, void
         	if(p_gap_evt->params.connected.role == BLE_GAP_ROLE_PERIPH) {
         		NRF_LOG_INFO("PR Connected");
 
+        	    app_handler__on_connected();
+
         		m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
         		err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
         		APP_ERROR_CHECK(err_code);
@@ -656,6 +658,8 @@ static void app_ble_peripheral_ble_evt_handler(ble_evt_t const * p_ble_evt, void
         		NRF_LOG_INFO("PR Disconnected");
         		// LED indication will be changed when advertising starts.
         		m_conn_handle = BLE_CONN_HANDLE_INVALID;
+
+        	    app_handler__on_disconnected();
         	}
             break;
 
