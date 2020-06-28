@@ -41,8 +41,6 @@
 #include "app_usbd_msc.h"
 #include "app_usbd_serial_num.h"
 
-#define USB_PORT_OPEN_EVENT      (1 << 0u)
-
 
 /**
  * @brief Enable power USB detection
@@ -298,15 +296,15 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 	case APP_USBD_EVT_POWER_DETECTED:
 		LOG_WARNING("USB power detected");
 
-		// remove the block on the task
-		if (m_tasks_id.usb_id != TASK_ID_INVALID) {
-			w_task_events_set(m_tasks_id.usb_id, USB_PORT_OPEN_EVENT);
-		}
-
 		if (!nrf_drv_usbd_is_enabled())
 		{
 			app_usbd_enable();
 			NRF_LOG_INFO("app_usbd_enable");
+		}
+
+		// remove the block on the task
+		if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+			w_task_delay_cancel(m_tasks_id.usb_id);
 		}
 
 		break;
@@ -620,9 +618,11 @@ void usb_cdc_tasks(void *p_context) {
 	usb_cdc_event_enable();
 #endif
 
-	w_task_events_wait(USB_PORT_OPEN_EVENT);
-
 	for (;;) {
+
+		while (!nrf_drv_usbd_is_enabled()) {
+			w_task_delay(5000);
+		}
 
 		usb_cdc_process();
 
