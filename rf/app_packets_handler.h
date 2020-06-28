@@ -21,6 +21,8 @@ void app_handler__signal(void);
 
 void app_handler__on_connected(void);
 
+void app_handler__on_disconnected(void);
+
 void app_handler__task(void * p_context);
 
 

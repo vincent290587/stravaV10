@@ -96,6 +96,7 @@ NRF_QUEUE_DEF(sNusLongPacket, m_nus_tx_queue, 4, NRF_QUEUE_MODE_NO_OVERFLOW);
 NRF_QUEUE_DEF(sNusPacket, m_nus_rx_queue, 20, NRF_QUEUE_MODE_NO_OVERFLOW);
 
 
+static uint8_t  m_is_connected = 0;
 static uint8_t  m_fit_up = 0;
 static uint32_t m_fit_xfer_rem = 0;
 static uint16_t m_nb_segs = 0;
@@ -744,6 +745,7 @@ void app_handler__nus_data_handler(uint8_t const *p_data, uint16_t length)
  */
 void app_handler__on_connected(void)
 {
+	m_is_connected = 1;
 
 	_handle_send_command(ConnectedInLowSpeed);
 	_send_status_packet();
@@ -751,6 +753,11 @@ void app_handler__on_connected(void)
 	model_add_notification("APP", "Connected to phone", 3, eNotificationTypeComplete);
 
 	app_handler__signal();
+}
+
+void app_handler__on_disconnected(void) {
+
+	m_is_connected = 0;
 }
 
 void app_handler__task(void * p_context) {
@@ -764,6 +771,10 @@ void app_handler__task(void * p_context) {
 	// Start execution.
 
 	while (1) {
+
+		while (m_is_connected == 0) {
+			task_delay(5000);
+		}
 
 		uint8_t cur_event = 0;
 
