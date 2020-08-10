@@ -165,7 +165,7 @@ static void _queue_nus(uint8_t const *p_data, uint16_t length) {
 	err_code = nrf_queue_push(&m_nus_tx_queue, &data_array);
 	APP_ERROR_CHECK(err_code);
 
-	task_delay_cancel(m_rx_task_id);
+	w_task_delay_cancel(m_rx_task_id);
 }
 
 static void _handle_send_command(uint8_t cmd) {
@@ -173,6 +173,8 @@ static void _handle_send_command(uint8_t cmd) {
 	sNusLongPacket data_array;
 
 	memset(&data_array, 0x00, sizeof(data_array));
+
+	NRF_LOG_INFO("_handle_send_command %u", cmd);
 
 	// command
 	data_array.nus_data[0] = cmd;
@@ -316,7 +318,7 @@ static void _handle_file_upload(uint8_t const *p_data, uint16_t  length) {
 
 		NRF_LOG_HEXDUMP_INFO(data_array, BLE_NUS_STD_DATA_LEN);
 
-		task_delay(500);
+		w_task_delay(500);
 
 		_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
@@ -471,7 +473,7 @@ static void _handle__request_segment(void) {
 
 		//NRF_LOG_HEXDUMP_INFO(data_array, BLE_NUS_STD_DATA_LEN);
 
-		task_delay(200);
+		w_task_delay(200);
 
 		_queue_nus(data_array, BLE_NUS_STD_DATA_LEN);
 
@@ -688,7 +690,7 @@ static uint8_t _process_tx(void) {
 
 			if (err_code == NRF_ERROR_RESOURCES) {
 
-				task_delay(25);
+				w_task_delay(10);
 			}
 
 			//artificial delay
@@ -697,7 +699,7 @@ static uint8_t _process_tx(void) {
 				NRF_LOG_INFO("Sent packet %u (%lu) size %u",
 						data_array.nus_data[0], millis(), data_array.data_length);
 
-				//task_delay(20);
+				//w_task_delay(20);
 				_last_tx = millis();
 			}
 
@@ -714,7 +716,7 @@ static uint8_t _process_tx(void) {
 void app_handler__signal(void) {
 
 	if (m_rx_task_id != TASK_ID_INVALID) {
-		task_delay_cancel(m_rx_task_id);
+		w_task_delay_cancel(m_rx_task_id);
 	}
 }
 
@@ -766,21 +768,21 @@ void app_handler__task(void * p_context) {
 
 	m_rx_task_id = task_id_get();
 
-	task_delay(2000);
+	w_task_delay(2000);
 
 	// Start execution.
 
 	while (1) {
 
 		while (m_is_connected == 0) {
-			task_delay(5000);
+			w_task_delay(5000);
 		}
 
 		uint8_t cur_event = 0;
 
 		if (!nrf_queue_is_empty(&m_nus_rx_queue)) {
 
-			cur_event = 1;
+			cur_event |= 1;
 
 			// get the next victim
 			ret_code_t err_code = nrf_queue_pop(&m_nus_rx_queue, &data_array);
@@ -871,7 +873,7 @@ void app_handler__task(void * p_context) {
 		_handle__request_segment();
 
 		if (cur_event == 0) {
-			task_delay(100);
+			w_task_delay(100);
 		}
 
 	}

@@ -283,6 +283,8 @@ void idle_task(void * p_context)
 		app_sched_execute();
 #endif
 
+		NRF_LOG_PROCESS();
+
 		pwr_mgmt_run();
 
 		w_task_yield();

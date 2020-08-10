@@ -28,8 +28,8 @@ SRC_FILES += \
 
 # Include folders common to all targets
 INC_FOLDERS += \
-  ../config \
-  $(SDK_ROOT)/components/softdevice/mbr/nrf52840/headers \
+  ../../s340/config \
+  $(SDK_ROOT)/components/softdevice/mbr/headers \
   $(PROJ_DIR)/source/usb \
   $(SDK_ROOT)/modules/nrfx/drivers/src/ \
   $(SDK_ROOT)/components/drivers_nrf/nrf_soc_nosd/ \
@@ -54,12 +54,14 @@ OPT = -O3 -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
-CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
+CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=0
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
 #CFLAGS += -DNRF_LOG_ENABLED=0 -DNRF_LOG_USES_RTT=0 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 #CFLAGS += -DNRF_LOG_BACKEND_UART_ENABLED=1 -DNRF_LOG_BACKEND_RTT_ENABLED=0
 CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
+CFLAGS += -DAPP_TIMER_V2
+CFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840
 CFLAGS += -DNRF52840_XXAA
@@ -73,6 +75,7 @@ CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant
+#CFLAGS += -Wdouble-promotion -Wfloat-conversion
 # keep every function in separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin --short-enums -nostdlib -MMD -nostdlib
@@ -87,6 +90,8 @@ ASMFLAGS += -DFLOAT_ABI_HARD
 ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DARM_MATH_CM4
 ASMFLAGS += -DBOARD_CUSTOM
+ASMFLAGS += -DAPP_TIMER_V2
+ASMFLAGS += -DAPP_TIMER_V2_RTC1_ENABLED
 ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += -D__HEAP_SIZE=150000
@@ -126,6 +131,16 @@ $(foreach target, $(TARGETS), $(call define_target, $(target)))
 flash: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	@echo Flashing: $<
 	nrfjprog --program $< -f nrf52 --sectorerase
+	nrfjprog --reset -f nrf52
+	nrfjprog --run
+
+# Flash the program and the DFU settings so that
+flash_dfu: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
+	@echo Generating DFU settings...
+	nrfutil settings generate --family NRF52840 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex  --bootloader-version 1 --bl-settings-version 2 settings_dfu.hex
+	mergehex --merge $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex settings_dfu.hex --output app_dfu_settings.hex
+	@echo Flashing: app_dfu_settings.hex
+	nrfjprog --program app_dfu_settings.hex -f nrf52 --sectorerase
 	nrfjprog --reset -f nrf52
 	nrfjprog --run
 

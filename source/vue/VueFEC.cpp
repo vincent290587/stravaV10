@@ -67,7 +67,7 @@ eVueFECScreenModes VueFEC::tasksFEC() {
 		this->cadran(4, VUE_FEC_NB_LINES, 1, "Pwr", _imkstr(fec_info.power), "W");
 		this->cadranRR(4, VUE_FEC_NB_LINES, 2, "RR", rrZones);
 
-#if 0
+#ifndef BLE_STACK_SUPPORT_REQD
 		sVueHistoConfiguration h_config;
 		h_config.cur_elem_nb = boucle_fec.m_pw_buffer.size();
 		h_config.ref_value   = (tHistoValue)210;

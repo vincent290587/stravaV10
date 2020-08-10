@@ -1,6 +1,7 @@
 
 # Source files common to all targets
 SRC_FILES += \
+  $(PROJ_DIR)/rf/app_packets_handler.c \
   $(wildcard $(PROJ_DIR)/libraries/ble_services/ble_nus/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/ble_services/ble_cp_c/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/ble_services/ble_lns_c/*.c) \

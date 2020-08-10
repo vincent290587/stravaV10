@@ -94,7 +94,7 @@
 
 #define APP_ADV_DURATION                18000                                       /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(20, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(10, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
 #define MAX_CONN_INTERVAL               MSEC_TO_UNITS(75, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
@@ -642,7 +642,7 @@ static void app_ble_peripheral_ble_evt_handler(ble_evt_t const * p_ble_evt, void
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-        	if(p_gap_evt->params.connected.role == BLE_GAP_ROLE_PERIPH) {
+        	if(p_gap_evt->params.connected.role != BLE_GAP_ROLE_CENTRAL) {
         		NRF_LOG_INFO("PR Connected");
 
         	    app_handler__on_connected();
@@ -654,7 +654,7 @@ static void app_ble_peripheral_ble_evt_handler(ble_evt_t const * p_ble_evt, void
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
-        	if(p_gap_evt->params.connected.role == BLE_GAP_ROLE_PERIPH) {
+        	if(p_gap_evt->params.connected.role != BLE_GAP_ROLE_CENTRAL) {
         		NRF_LOG_INFO("PR Disconnected");
         		// LED indication will be changed when advertising starts.
         		m_conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -674,6 +674,12 @@ static void app_ble_peripheral_ble_evt_handler(ble_evt_t const * p_ble_evt, void
             err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
             APP_ERROR_CHECK(err_code);
         } break;
+
+        case BLE_GATTS_EVT_HVN_TX_COMPLETE:
+        	NRF_LOG_INFO("GATTC BLE_GATTS_EVT_HVN_TX Complete");
+    		m_qwr_nrf_error = 0;
+    		app_handler__signal();
+    		break;
 
     	case BLE_GATTC_EVT_WRITE_CMD_TX_COMPLETE:
     		NRF_LOG_DEBUG("GATTC WRITE_CMD_TX Complete");

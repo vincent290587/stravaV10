@@ -11,7 +11,6 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/sd/*.c) \
   $(wildcard $(PROJ_DIR)/sd/*.cpp) \
   $(wildcard $(PROJ_DIR)/rf/*.cpp) \
-  $(PROJ_DIR)/rf/app_packets_handler.c \
   $(wildcard $(PROJ_DIR)/source/*.c) \
   $(wildcard $(PROJ_DIR)/source/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/display/*.c) \
@@ -143,7 +142,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/pwr_mgmt \
   $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/libraries/hardfault \
-  $(SDK_ROOT)/components/toolchain/cmsis/include \
   $(SDK_ROOT)/components/libraries/timer \
   $(SDK_ROOT)/components/libraries/util \
   $(SDK_ROOT)/components/libraries/fds \
