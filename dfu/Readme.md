@@ -6,4 +6,4 @@ With it, you can update both the softdevice and the application over USB.
 
 To start the bike computer in DFU mode, keep the right button pressed while plugging it to your computer.
 
-Supported SDK: 15.3.0_59ac345
+Supported SDK: 16.0

@@ -113,6 +113,7 @@ void Attitude::addNewDate(SDate *date_) {
 void Attitude::computeFusion(void) {
 
 	// get current elevation
+	static Location lastPos;
 	float ele = att.loc.alt;
 
 #ifndef KALMAN_USE_GPS_ALTITUDE
@@ -125,7 +126,6 @@ void Attitude::computeFusion(void) {
 #if USE_KALMAN
 
 	static sKalmanExtFeed feed;
-	static uint32_t m_update_time = 0;
 	float alpha_zero = 0;
 	float alpha_bar = 0;
 
@@ -159,20 +159,30 @@ void Attitude::computeFusion(void) {
 		// init X
 		m_k_lin.ker.matX.zeros();
 		m_k_lin.ker.matX.set(0, 0, ele);
-		m_update_time = millis();
+
+		lastPos._lat = att.loc.lat;
+		lastPos._lon = att.loc.lon;
+
+		// force first Kalman loop
+		feed.dt = 2.1f;
 
 		LOG_INFO("Kalman lin. init !");
+	} else {
+
+		feed.dt = lastPos.dist(att.loc.lat, att.loc.lon);
 	}
 
-	if (m_speed_ms < 1.5f) {
-		m_update_time = millis();
-		return;
+	if (feed.dt < 4.f / 3.6f) {
+		// speed limit: we want the filter to run even when stopped completely
+		feed.dt = 4.f / 3.6f;
 	}
 
 	float pitch_rad;
 	fxos_get_pitch(pitch_rad);
 
-	feed.dt = m_speed_ms * 0.001f * (float)(millis() - m_update_time); // in seconds
+	// store last position
+	lastPos._lat = att.loc.lat;
+	lastPos._lon = att.loc.lon;
 
 	// set measures: Z
 	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
@@ -246,8 +256,6 @@ void Attitude::computeFusion(void) {
 		att.slope = (int8_t)(100.f * slope);
 		att.vit_asc = slope * m_speed_ms;
 	}
-
-	m_update_time = millis();
 
 	LOG_DEBUG("Vit. vert.: %f / alpha: %f / alpha0: %f",
 			att.vit_asc,
@@ -499,8 +507,7 @@ void Attitude::addNewLocation(SLoc& loc_, SDate &date_, eLocationSource source_)
 
 	if (m_is_init) {
 
-		// small correction to allow time with millisecond precision
-		float cur_time = (float)date_.secj + ((millis() - date_.timestamp) / 1000);
+		float cur_time = (float)date_.secj;
 
 		LOG_INFO("Adding location: %f", cur_time);
 

@@ -3216,9 +3216,6 @@ FRESULT f_mount (
 	return FR_OK;
 }
 
-
-FILE *m_o_file = NULL;
-
 /*-----------------------------------------------------------------------*/
 /* Open or Create a File                                                 */
 /*-----------------------------------------------------------------------*/
@@ -3229,13 +3226,25 @@ FRESULT f_open (
 	BYTE mode			/* Access mode and file open mode flags */
 )
 {
-	char *o_type = "r";
+	BYTE index;
+	char o_type[4] = {'r',0,0,0};
 
+	if (mode & FA_CREATE_NEW) {
+
+		o_type[0] = 'w';
+	}
+
+	// TODO replace FA_OPEN_APPEND by a fseek ..?
 	if (mode & FA_OPEN_APPEND) {
 
-		o_type = "a+";
-
+		o_type[0] = 'a';
 	}
+
+	index=1;
+
+	o_type[index++] = '+';
+
+	o_type[index++] = 'b';
 
 	// f_open
 	char l_fname[60];
@@ -3243,10 +3252,10 @@ FRESULT f_open (
 	snprintf(l_fname, sizeof(l_fname),
 			"%s%s", TDD_BASE_DIR, path);
 
-	m_o_file = fopen(l_fname, o_type);
+	fp->p_file = fopen(l_fname, o_type);
 
 
-	if (!m_o_file) return FR_NO_FILE;
+	if (!fp->p_file) return FR_NO_FILE;
 
 	return FR_OK;
 }
@@ -3265,7 +3274,7 @@ FRESULT f_read (
 	UINT* br	/* Pointer to number of bytes read */
 )
 {
-	*br = fread(buff, btr, 1, m_o_file);
+	*br = fread(buff, btr, 1, fp->p_file);
 
 	return FR_OK;
 }
@@ -3285,7 +3294,7 @@ FRESULT f_write (
 	UINT* bw			/* Pointer to number of bytes written */
 )
 {
-	UINT nb_written = fwrite(buff, btw, 1, m_o_file);
+	UINT nb_written = fwrite(buff, 1, btw, fp->p_file);
 	if (bw) *bw = nb_written;
 	return FR_OK;
 }
@@ -3317,8 +3326,8 @@ FRESULT f_close (
 	FIL* fp		/* Pointer to the file object to be closed */
 )
 {
-	fclose(m_o_file);
-	m_o_file = NULL;
+	fclose(fp->p_file);
+	fp->p_file = NULL;
 
 	return FR_OK;
 }
@@ -3482,6 +3491,38 @@ FRESULT f_getcwd (
 /* Seek File R/W Pointer                                                 */
 /*-----------------------------------------------------------------------*/
 
+long int f_tell (
+	FIL* fp)
+{
+	return ftell(fp->p_file);
+}
+
+//#include "stat.h"
+
+FRESULT f_stat (
+	const TCHAR* path,	/* Pointer to the file path */
+	FILINFO* fno		/* Pointer to file information to return */
+)
+{
+//	int fd;
+//	struct stat stbuf;
+//
+//	fd = open(path, O_RDONLY);
+//	if (fd == -1) {
+//	  /* Handle error */
+//	}
+//
+//	if (fstat(fd, &stbuf) != 0) {
+//	  /* Handle error */
+//	}
+//
+//	close(fd);
+//
+//	fno->fsize = stbuf.st_size;
+
+	return FR_OK;
+}
+
 FRESULT f_lseek (
 	FIL* fp,		/* Pointer to the file object */
 	FSIZE_t ofs		/* File pointer from top of file */
@@ -3628,7 +3669,17 @@ FRESULT f_lseek (
 //
 //	LEAVE_FF(fs, res);
 
-	fseek(fp, ofs, SEEK_SET);
+	int res = 0;
+	if (ofs == 0) {
+		res = fseek(fp->p_file, 0, SEEK_SET);
+	} else {
+		res = fseek(fp->p_file, 0, SEEK_END);
+	}
+
+	if (res) {
+
+		return FR_INT_ERR;
+	}
 
 	return FR_OK;
 }

@@ -71,7 +71,8 @@ void BoucleFEC::run_internal(void) {
 	if (m_pw_buffer.isFull()) {
 		m_pw_buffer.popLast();
 	}
-	m_pw_buffer.add(&fec_info.power);
+	uint16_t power = fec_info.power;
+	m_pw_buffer.add(&power);
 	zPower.addPowerData(fec_info.power, millis());
 #endif
 

@@ -30,4 +30,6 @@ bool test_fram(void);
 
 bool test_rollover(void);
 
+bool test_zoom(void);
+
 #endif /* TDD_UNIT_TESTING_HPP_ */

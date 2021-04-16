@@ -33,7 +33,7 @@ Vecteur::Vecteur(float x, float y, float z, float t) {
 }
 
 
-Vecteur::Vecteur(Point &point1, Point &point2) {
+Vecteur::Vecteur(Location &point1, Location &point2) {
 
     _x = distance_between(point1._lat, point1._lon, point1._lat, point2._lon);
 

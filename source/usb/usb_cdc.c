@@ -302,6 +302,11 @@ static void usbd_user_ev_handler(app_usbd_event_type_t event)
 			NRF_LOG_INFO("app_usbd_enable");
 		}
 
+		// remove the block on the task
+		if (m_tasks_id.usb_id != TASK_ID_INVALID) {
+			w_task_delay_cancel(m_tasks_id.usb_id);
+		}
+
 		break;
 	case APP_USBD_EVT_POWER_REMOVED:
 		NRF_LOG_INFO("USB power removed");
@@ -605,12 +610,31 @@ void usb_cdc_process(void) {
  */
 void usb_cdc_tasks(void *p_context) {
 
+	uint8_t is_msc_mode = 0;
+
+	// turn USB events ON
+#ifdef USB_ENABLED
+	usb_cdc_process();
+	usb_cdc_event_enable();
+#endif
+
 	for (;;) {
+
+		while (!nrf_drv_usbd_is_enabled()) {
+			w_task_delay(5000);
+		}
 
 		usb_cdc_process();
 
 		if (task_manager_is_started()) {
-			w_task_delay(50);
+			w_task_delay(200);
+		}
+
+		// automatically start MSC mode !
+		if (is_msc_mode < 20 &&
+				++is_msc_mode == 20) {
+
+			usb_cdc_start_msc();
 		}
 
 	}

@@ -51,7 +51,6 @@ add_subdirectory(TDD/sd/fatfs)
 include_directories(
     ./
 	TDD
-	TDD/sd
 	TDD/sd/fatfs/src
 	TDD/drivers
     TDD/logger
@@ -65,6 +64,7 @@ include_directories(
 	libraries/AltiBaro
 	libraries/GlobalTop
 	libraries/utils
+	libraries/fitLib
     libraries/filters
     libraries/komoot
     libraries/kalman
@@ -76,6 +76,7 @@ include_directories(
 	source/model
 	source/usb
 	source/scheduling
+	source/sd
 	source/vue
 	source/parsers
 	source/display
@@ -84,6 +85,7 @@ include_directories(
 
 
 aux_source_directory(TDD/nordic                   NORDIC)
+aux_source_directory(libraries/fitLib             FIT)
 
 # Cree des variables avec les fichiers a compiler
 set(SRCS
@@ -142,6 +144,7 @@ set(SRCS
 	source/model/SufferScore.cpp
 	source/model/UserSettings.cpp
 	source/scheduling/power_scheduler.cpp
+	source/sd/fit_encode.cpp
 	source/sd/sd_functions.cpp
 	source/vue/Screenutils.cpp
 	source/vue/Menuable.cpp
@@ -162,7 +165,7 @@ set(HEADERS
     )
 
 # add the executable
-add_executable(StravaV10 ${SRCS} ${NORDIC})
+add_executable(StravaV10 ${SRCS} ${FIT} ${NORDIC})
 
 # Et pour que l'executable fonctionne, il faut lui indiquer la bibliotheque dont il depend
 target_link_libraries(StravaV10 fatfs)

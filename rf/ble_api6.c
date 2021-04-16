@@ -32,6 +32,7 @@
 #include "ble_lns_c.h"
 #include "ble_komoot_c.h"
 #include "ant.h"
+#include "utils.h"
 #include "glasses.h"
 #include "Model.h"
 #include "Locator.h"
@@ -380,6 +381,11 @@ static void lns_c_evt_handler(ble_lns_c_t * p_lns_c, ble_lns_c_evt_t * p_lns_c_e
 		lns_info.date = p_lns_c_evt->params.lns.utc_time.year   % 100;
 		lns_info.date += p_lns_c_evt->params.lns.utc_time.day   * 10000;
 		lns_info.date += p_lns_c_evt->params.lns.utc_time.month * 100;
+
+		lns_info.utc_timestamp = date_to_timestamp(lns_info.secj,
+				p_lns_c_evt->params.lns.utc_time.day,
+				p_lns_c_evt->params.lns.utc_time.month,
+				p_lns_c_evt->params.lns.utc_time.year);
 
 		if (p_lns_c_evt->params.lns.flags & ELE_PRESENT) {
 			lns_info.ele = p_lns_c_evt->params.lns.ele;

@@ -20,6 +20,9 @@ eFuncMenuAction MenuItem::clickAction(uint8_t ind_sel) {
 
 	if (!ind_sel) {
 		// Return button was clicked
+		if (p_func != nullptr) {
+			p_func(ind_sel);
+		}
 		p_parent.goToParent();
 		return eFuncMenuActionEndMenu;
 	}

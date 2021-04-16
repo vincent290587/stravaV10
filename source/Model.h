@@ -17,7 +17,6 @@
 typedef struct {
 	task_id_t peripherals_id;
 	task_id_t boucle_id;
-	task_id_t system_id;
 	task_id_t ls027_id;
 	task_id_t uart_id;
 	task_id_t usb_id;

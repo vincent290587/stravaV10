@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "Model.h"
+#include "Zoom.h"
 #include "Screenutils.h"
 #include "ant_device_manager.h"
 #include "fram.h"
@@ -431,4 +432,33 @@ bool test_liste (void) {
 	mon_seg.uninit();
 
 	return true;
+}
+
+bool test_zoom(void) {
+
+	int16_t h_pixels = 100;
+	int16_t v_pixels = 100;
+
+	Zoom zoom;
+	zoom.setSpan(h_pixels, v_pixels);
+	zoom.setLastZoom(10000000);
+
+	Location center(0,0);
+	Location location1(-50 , 100);
+	Location location2( 100, -50);
+	PixelLine line_rep;
+
+	int res = zoom.intersects(center, h_pixels, v_pixels, location1, location2, line_rep);
+
+	//line_rep.shift(h_pixels/2, v_pixels/2);
+
+	LOG_INFO("PixelLine: %d (%d %d) (%d %d)", res,
+			line_rep.x0, line_rep.y0,
+			line_rep.x1, line_rep.y1);
+
+	if (res == 1) {
+		return true;
+	}
+
+	return false;
 }

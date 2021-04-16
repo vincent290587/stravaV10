@@ -36,9 +36,7 @@ static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 
 static TCHAR g_bufferReadPRC[BUFFER_SIZE];  /* Read buffer */
-static FIL g_fileObjectPRC;   /* File object */
 
-static FIL g_fileObject;   /* File object */
 static FIL g_EpoFileObject;   /* File object */
 static FIL g_LogFileObject;   /* File object */
 
@@ -48,12 +46,20 @@ class HistoFile {
 public:
 	HistoFile(const char * const name) {
 		_name = name;
+		fsize = 0;
+	};
+	HistoFile(const char * const name, uint32_t length) {
+		_name = name;
+		fsize = length;
 	};
 
+
 	String _name;
+	uint32_t fsize;
 private:
 };
 
+static std::vector<HistoFile> m_list_fit;
 static std::vector<HistoFile> m_list_histo;
 static uint16_t cur_idx = 0;
 
@@ -61,7 +67,7 @@ static uint16_t cur_idx = 0;
 /**
  *
  */
-int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
+int sd_functions__start_query(eSDTaskQuery query, const char * const fname, uint32_t *f_size) {
 
 	LOG_INFO("SD function query start !");
 
@@ -78,6 +84,26 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
 
 	case eSDTaskQueryNone: {
 
+	} break;
+
+	case eSDTaskQueryFit:
+	{
+		if (f_size) {
+			// get out file size
+			for (auto fit_file : m_list_fit) {
+
+				if (fit_file._name.equals(fname) &&
+						fit_file.fsize > 0) {
+					*f_size = fit_file.fsize;
+
+					int ret = 0;
+					if ((ret = sd_functions__query_file_start(fname)) != 0) {
+						return ret;
+					}
+					LOG_INFO("SD function query FIT file");
+				}
+			}
+		}
 	} break;
 
 	case eSDTaskQueryFile: {
@@ -100,7 +126,7 @@ int sd_functions__start_query(eSDTaskQuery query, const char * const fname) {
 		int ret = 0;
 		ret = sd_functions__unlink(fname);
 		m_cur_query = eSDTaskQueryNone;
-		LOG_INFO("SD function unlink");
+		LOG_INFO("SD function unlink res=%d", ret);
 		return ret;
 	} break;
 
@@ -130,6 +156,7 @@ int sd_functions__stop_query(void) {
 
 	} break;
 
+	case eSDTaskQueryFit:
 	case eSDTaskQueryFile: {
 		if (sd_functions__query_file_stop(false)) {
 			ret = -2;
@@ -172,6 +199,7 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 
 	} break;
 
+	case eSDTaskQueryFit:
 	case eSDTaskQueryFile: {
 		if (!sd_functions__query_file_run(p_array, max_size)) {
 			return -2;
@@ -189,6 +217,7 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 	} break;
 
 	default:
+		LOG_ERROR("sd_functions__run_query: NO query started !");
 		m_cur_query = eSDTaskQueryNone;
 		return -1;
 		break;
@@ -196,6 +225,57 @@ int sd_functions__run_query(int restart, sCharArray *p_array, size_t max_size) {
 	}
 
 	return ret;
+}
+
+/**
+ *
+ */
+uint16_t sd_functions__query_fit_list(int restart, sCharArray *p_array, size_t max_size) {
+
+	if (!is_fat_init()) return 0;
+
+	sysview_task_void_enter(SdFunction);
+
+	size_t nb_files = 0;
+	size_t rem_size = 0;
+	size_t cur_size = 0;
+
+	if (restart) {
+		cur_idx = 0;
+		// number of FIT files
+		cur_size = 1;
+
+	}
+
+	while (cur_idx < m_list_fit.size() &&
+			cur_size + 4 < max_size) {
+
+		if (m_list_fit[cur_idx].fsize > 0) {
+			char tab[15];
+			memset(tab, 0, sizeof(tab));
+			m_list_fit[cur_idx]._name.toCharArray(tab, sizeof(tab));
+			tab[8] = 0;
+			uint32_t l_value = strtoul(tab, NULL, 16);
+
+			LOG_INFO("Adding FIT %08lX size %lu", l_value, m_list_fit[cur_idx].fsize);
+
+			encode_uint32((uint8_t*)p_array->str + cur_size, l_value);
+
+			cur_size += 4;
+			nb_files += 1;
+		}
+		cur_idx  += 1;
+	}
+
+	p_array->str[0] = nb_files;
+
+	rem_size = 4 * m_list_fit.size() - 4 * cur_idx;
+
+	p_array->length = cur_size;
+
+	sysview_task_void_exit(SdFunction);
+
+	return rem_size;
 }
 
 /**
@@ -323,8 +403,14 @@ int init_liste_segments(void)
 			} else if (fileInformation.fname[0] == HISTO_MARKER_CHAR) {
 
 				LOG_INFO("Histo added");
-				HistoFile h_file(fileInformation.fname);
+				HistoFile h_file(fileInformation.fname, fileInformation.fsize);
 				m_list_histo.push_back(h_file);
+
+			} else if (memcmp(&fileInformation.fname[8], (const char *)".FIT ", 4)==0) {
+
+				LOG_INFO("FIT added %s size %lu", fileInformation.fname, fileInformation.fsize);
+				HistoFile h_file(fileInformation.fname, fileInformation.fsize);
+				m_list_fit.push_back(h_file);
 
 			} else {
 
@@ -390,6 +476,7 @@ int load_segment(Segment& seg) {
 
 	String fat_name = seg.getName();
 
+	FIL g_fileObject;   /* File object */
 	error = f_open(&g_fileObject, _T(fat_name.c_str()), FA_READ);
 	if (error)
 	{
@@ -462,6 +549,7 @@ int load_parcours(Parcours& mon_parcours) {
 
 	sysview_task_void_enter(SdFunction);
 
+	FIL g_fileObjectPRC;   /* File object */
 	error = f_open(&g_fileObjectPRC, _T(fat_name.c_str()), FA_READ);
 
 	if (error)
@@ -602,12 +690,15 @@ float segment_allocator(Segment& mon_seg, float lat1, float long1) {
  * @param att
  * @param nb_pos
  */
-void sd_save_pos_buffer(SAttTime* att, uint16_t nb_pos) {
+void sd_save_pos_buffer(SAttTime att[], uint16_t nb_pos) {
+
+	fit_save_pos_buffer(att, nb_pos);
 
 	String fname = HISTO_MARKER_CHAR;
 	fname += att->date.date;
 	fname += ".txt";
 
+	FIL g_fileObject;
 	FRESULT error = f_open(&g_fileObject, fname.c_str(), FA_OPEN_APPEND | FA_WRITE);
 	APP_ERROR_CHECK(error);
 	if (error)
@@ -805,6 +896,7 @@ int sd_functions__query_file_start(const char * const fname) {
 		LOG_INFO("Open file failed.");
 		return -2;
 	}
+	LOG_INFO("sd_functions__query_file_start %s", fname);
 
 	return 0;
 }
@@ -869,10 +961,20 @@ int sd_functions__unlink(const char * const fname) {
 
 	if (!is_fat_init() || !fname) return -3;
 
+	// get out file size
+	for (auto& fit_file : m_list_fit) {
+
+		if (fit_file._name.equals(fname)) {
+
+			// remove from fit list
+			fit_file.fsize = 0;
+		}
+	}
+
 	FRESULT error = f_unlink(fname);
 	if (error)
 	{
-		LOG_INFO("Unlink file failed.");
+		LOG_INFO("Unlink file %s failed.", fname);
 		return -2;
 	}
 

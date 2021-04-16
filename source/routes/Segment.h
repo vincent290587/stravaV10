@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define MARGE_DESACT  2.f
+#define MARGE_DESACT  1.f
 #define MARGE_ACT     1.5f
 #define DIST_ACT     50.f
 

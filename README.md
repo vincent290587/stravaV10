@@ -5,12 +5,14 @@
 
 This application is an open-source small form-factor bicycle GPS computer.  
 
-Included features: 
-* Real-time compete with the internally stored Strava Segments (500+)
-* Store GPX files and follow it on-screen with zoom options
-* ANT+ connection to heart rate monitors, FE-C devices (smart home trainer), cadence & speed sensors...
-* BLE connection to use the LNS, UART and Komoot (see https://www.komoot.com/)
-* Estimate power using a precise barometer and special algorithms
+Included features:  
+
+* Strava live segments (500+ segments max)
+* Strava routes
+* ANT+ connection to heart rate monitors, FE-C devices (smart home trainer), cadence sensors
+* BLE connection to use Komoot (see <https://www.komoot.com/>)
+* Phone application (GPS Ally v2)
+* Estimate power / slope using a precise barometer and Kalman filtering
 
 Autonomy depends on the use: it uses <8mA in indoor mode (100+ hours), and around 35mA in outdoor modes (30+ hours).
 
@@ -18,50 +20,49 @@ Autonomy depends on the use: it uses <8mA in indoor mode (100+ hours), and aroun
 ## Hardware
 
 This project uses Nordic nRF52840, a Cortex M4F MCU which can do BLE/ANT+ RF communications.  
-The PCB can be found under: https://github.com/vincent290587/EAGLE/tree/master/Projects/myStravaB_V3  
-The BOM costs around 100€
+The PCB can be found under: <https://github.com/vincent290587/EAGLE/tree/master/Projects/myStravaB_V3>  
+The BOM costs around 100 euros.  
+
+Mechanical files are available in the STL folder.
 
 
 ## Compilation & Programming
 
-Must be compiled with GCC 6 2017-q2-update and nRF SDK V16.0 with softdevice s340 V6.1.1
+You will first need to setup your Nordic SDK and download the right softdevice fron <http://www.thisisant.com> before running the following commands.  
 
-/!\ The USB bootloader must be programmed before using the dfu targets (found in dfu subfolder)
+/!\ Must be compiled with GCC 6 2017-q2-update and nRF SDK V16.0 with softdevice s340 V6.1.1
 
-cd pca10056/s340/armgcc  
-make  
-make flash_softdevice (or) make dfu_softdevice  
-make flash            (or) make dfu  
+1- Flash softdevice 'cd pca10056/s340/armgcc && make flash_softdevice'  
+2- Flash bootloader 'cd dfu/armgcc && make && make flash_dfu'  
+3- Flash app 'cd pca10056/s340/armgcc && make flash_dfu'  
 
 
 ## Roadmap
 
-- [x] Strava segments compete
-- [x] GPX file following on a map
 - [x] Better menu-system
 - [x] Turn-by-turn navigation (using the Komoot app)
 - [x] Better power computation
 - [x] ANT+ sensors pairing (FEC, HRM, BSC)
 - [x] User settings (FTP, weight)
 - [x] Better LED interaction
-- [x] Connection to a BLE AP to unload recorded data
-- [x] BLE Cycling power vector (same as ANT+ cycling dynamics)
+- [x] BLE Cycling power vector (ANT+ cycling dynamics equivalent)
+- [x] Phone-app compatibility (GPS Ally v2)
 
 
 ## Screenshots
 
+
+![Front view](STL/Front.PNG)
+
 Outdoor modes:
 
-![](docs/crs.png) ![](docs/crs_2seg.png) ![](docs/prc.png)  
+![CRS screen](docs/crs.png) ![CRS2 screen](docs/crs_2seg.png) ![PRC screen](docs/prc.png)  
 
 Indoor mode:
 
-![](docs/FEC.png)  
+![FEC](docs/FEC.png)  
 
 Menu:
 
-![](docs/menu1.png) ![](docs/menu2.png)
-
-
-
+![Menu1](docs/menu1.png) ![Menu2](docs/menu2.png)
 

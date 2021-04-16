@@ -16,7 +16,8 @@ SRC_FILES += \
   $(PROJ_DIR)/rf/hrm.c \
   $(PROJ_DIR)/rf/bsc.c \
   $(PROJ_DIR)/rf/glasses.c \
-  $(PROJ_DIR)/rf/ble_api6.c \
+  $(PROJ_DIR)/rf/app_ble_central.c \
+  $(PROJ_DIR)/rf/app_ble_peripheral.c \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52840.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
   $(wildcard $(PROJ_DIR)/source/usb/*.c) \
@@ -102,7 +103,7 @@ OPT = -O3 -g3
 
 # C flags common to all targets
 CFLAGS += $(OPT)
-CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
+CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=0
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 #CFLAGS += -DUSE_SVIEW=1 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
@@ -215,7 +216,7 @@ dfu_softdevice:
 	nrfutil pkg display stravaV10_soft.zip
 	nrfutil dfu usb-serial -pkg stravaV10_soft.zip -p $(COM_PORT)
 
-dfu:
+dfu: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
 	nrfutil pkg display stravaV10.zip
 	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)

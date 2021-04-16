@@ -106,6 +106,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/jscope \
   $(PROJ_DIR)/libraries/filters \
   $(PROJ_DIR)/libraries/sysview \
+  $(PROJ_DIR)/libraries/fitLib \
   $(PROJ_DIR)/libraries/task_manager \
   $(PROJ_DIR)/libraries/komoot \
   $(PROJ_DIR)/libraries/kalman \
@@ -141,7 +142,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/pwr_mgmt \
   $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/libraries/hardfault \
-  $(SDK_ROOT)/components/toolchain/cmsis/include \
   $(SDK_ROOT)/components/libraries/timer \
   $(SDK_ROOT)/components/libraries/util \
   $(SDK_ROOT)/components/libraries/fds \
@@ -210,7 +210,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/ble/ble_services/ble_lbs \
   $(SDK_ROOT)/components/ble/ble_services/ble_lbs_c \
   $(SDK_ROOT)/components/ble/ble_services/ble_lls \
-  $(SDK_ROOT)/components/ble/ble_services/ble_nus \
   $(SDK_ROOT)/components/ble/ble_services/ble_nus_c \
   $(SDK_ROOT)/components/ble/ble_services/ble_rscs \
   $(SDK_ROOT)/components/ble/ble_services/ble_rscs_c \
@@ -221,7 +220,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/ble/nrf_ble_scan \
   $(SDK_ROOT)/components/ble/nrf_ble_qwr \
   $(SDK_ROOT)/components/ble/nrf_ble_gq \
-  $(SDK_ROOT)/components/ble/peer_manager \
   $(SDK_ROOT)/external/utf_converter \
   $(SDK_ROOT)/components/toolchain/cmsis/include \
 

@@ -19,6 +19,7 @@
 #include "usb_cdc.h"
 #include "Model.h"
 #include "Simulator.h"
+#include "sd_functions.h"
 #include "segger_wrapper.h"
 #include "assert_wrapper.h"
 
@@ -36,7 +37,7 @@
 static TCHAR g_bufferRead[BUFFER_SIZE];  /* Read buffer */
 static TCHAR g_bufferWrite[BUFFER_SIZE]; /* Write buffer */
 
-static FIL* g_fileObject;   /* File object */
+static FILE* g_fileObject;   /* File object */
 
 #ifdef LS027_GUI
 #define NEW_POINT_PERIOD_MS       400
@@ -46,11 +47,12 @@ static FIL* g_fileObject;   /* File object */
 
 static uint32_t nb_gps_loc = 0;
 
+static float last_dl;
 static float cur_speed = 20.0f;
 static float alt_sim = 100.0f;
 
 static std::default_random_engine s_generator;
-static std::normal_distribution<float> distr_speed(20.f, .4f);
+static std::normal_distribution<float> distr_speed(0.f, .4f);
 
 static void simulator_modes(void) {
 
@@ -290,8 +292,7 @@ static void _sensors_sim(void) {
 
 	if (millis() - last_point_ms < BARO_REFRESH_PER_MS) return;
 
-	cur_speed = distr_speed(s_generator);
-	alt_sim += tanf(cur_a) * cur_speed * (millis() - last_point_ms) / 3600.f; // over 1 second
+	alt_sim += tanf(cur_a) * last_dl * (millis() - last_point_ms) / 1000.f; // over 1 second
 
 	if (++sim_nb > 2000) {
 
@@ -381,6 +382,24 @@ static void _loc_sim(void) {
 			rtime += 1.;
 		}
 
+		static Point lastPoint;
+
+		last_dl = lastPoint.dist(lat, lon);
+		if (last_dl > 50.f) {
+			last_dl = 50.f;
+		}
+
+		cur_speed = 3.6f * last_dl;
+		if (rtime - lastPoint._rtime > .5f) {
+			cur_speed /= (rtime - lastPoint._rtime);
+		}
+
+		cur_speed += distr_speed(s_generator);
+
+		lastPoint._lat = lat;
+		lastPoint._lon = lon;
+		lastPoint._rtime = rtime;
+
 #ifdef TDD_RANDOMIZE
 		int rnd_add;
 		rnd_add = (rand() % 20) - 10;
@@ -438,6 +457,7 @@ static void _loc_sim(void) {
 			lns_info.lon = lon * 10000000.;
 			lns_info.ele = (alt_sim + 32.3f + distr_alt(generator)) * 100.;
 			lns_info.secj = (int)rtime;
+			lns_info.utc_timestamp = date_to_timestamp(lns_info.secj, 1, 12, 2018);
 			lns_info.date = 11218;
 			lns_info.heading = 5;
 			lns_info.speed = cur_speed * 10.;
@@ -477,11 +497,13 @@ static void _loc_sim(void) {
 		mes_parcours._parcs.clear();
 		mes_points.removeAll();
 
+		fit_terminate();
+
 		// print memory state
 		print_mem_state();
 
 		assert(Point2D::getObjectCount() == 1);
-		assert(Point::getObjectCount() == 2);
+		assert(Point::getObjectCount() == 3);
 
 		exit(0);
 

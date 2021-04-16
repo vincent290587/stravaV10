@@ -81,6 +81,8 @@ uint8_t calculate_crc(uint8_t *, uint16_t);
 
 int floorSqrt(int x);
 
+uint32_t date_to_timestamp(uint32_t sec_j, uint8_t day, uint8_t month, uint16_t year);
+
 #ifdef	__cplusplus
 }
 #endif

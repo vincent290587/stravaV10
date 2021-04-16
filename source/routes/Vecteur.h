@@ -16,7 +16,7 @@ class Vecteur {
 public:
     Vecteur() ;
     Vecteur(float x, float y, float z, float t) ;
-    Vecteur(Point& point1, Point& point2);
+    Vecteur(Location& point1, Location& point2);
 
     Vecteur operator=(const Point *point);
     Vecteur operator/(const float cst);

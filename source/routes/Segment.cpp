@@ -97,6 +97,7 @@ bool Segment::init(void) {
 
 void Segment::uninit(void) {
 
+	_actif = SEG_OFF;
     if (m_p_data) delete m_p_data;
     m_p_data = nullptr;
 
@@ -412,7 +413,8 @@ void Segment::majPerformance(ListePoints& mes_points) {
 
 			vect = m_p_data->_lpts.getPosRelative();
 
-			if (fabsf(vect._y) < MARGE_ACT * DIST_ACT) {
+			if (fabsf(vect._y) < MARGE_ACT * DIST_ACT &&
+					m_p_data->_lpts.m_P1.dist(pc) < MARGE_ACT * DIST_ACT) {
 
 				Point *pp = m_p_data->_lpts.getFirstPoint();
 

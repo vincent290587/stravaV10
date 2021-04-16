@@ -224,7 +224,7 @@ void ant_search_start(eAntPairingSensorType search_type) {
 	} break;
 	case eAntPairingSensorTypeBSC:
 	{
-		err_code = sd_ant_channel_id_set (BS_CHANNEL_NUMBER, 0, BSC_COMBINED_DEVICE_TYPE, WILDCARD_TRANSMISSION_TYPE);
+		err_code = sd_ant_channel_id_set (BS_CHANNEL_NUMBER, 0, BSC_DEVICE_TYPE, WILDCARD_TRANSMISSION_TYPE);
 		APP_ERROR_CHECK(err_code);
 	} break;
 	case eAntPairingSensorTypeFEC:

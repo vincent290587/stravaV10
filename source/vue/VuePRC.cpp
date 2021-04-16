@@ -139,10 +139,6 @@ bool VuePRC::propagateEventsPRC(eButtonsEvent event) {
  */
 void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 
-	float minLat = 100.;
-	float minLon = 400.;
-	float maxLat = -100.;
-	float maxLon = -400.;
 	uint16_t points_nb = 0;
 	Point2D pCourant, pSuivant;
 
@@ -167,53 +163,46 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 
 	LOG_INFO("PRC size %d\r\n", p_liste->size());
 
-	m_distance_prc = p_liste->dist(att.loc.lat, att.loc.lon);
+	m_distance_prc = 0; // unused argument
 
 	this->computeZoom(att.loc.lat, m_distance_prc, dZoom_h, dZoom_v);
-
-	// our pos is at the center
-	maxLat = minLat = att.loc.lat;
-	maxLon = minLon = att.loc.lon;
-
-	// zoom level
-	minLat -= dZoom_v;
-	minLon -= dZoom_h;
-	maxLat += dZoom_v;
-	maxLon += dZoom_h;
 
 	sysview_task_void_exit(ComputeZoom);
 	sysview_task_void_enter(DisplayPoints);
 
 	// on affiche
 	points_nb = 0;
-	uint16_t printed_nb = 0;
+	Location center(att.loc.lat, att.loc.lon);
 	for (auto& pPt : *p_liste->getLPTS()) {
 
 		pSuivant = pPt;
 
 		// print only points in the current zoom
-		if (points_nb &&
-				(((pCourant._lon > minLon && pCourant._lon < maxLon) &&
-				(pCourant._lat > minLat && pCourant._lat < maxLat)) ||
-				((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
-				(pSuivant._lat > minLat && pSuivant._lat < maxLat)))) {
+		if (points_nb) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
-			int16_t thickness = 1;
-			if (points_nb >= p_liste->idx_P1 &&
-					points_nb < p_liste->idx_P1 + 30) {
-				// show which path to take
-				thickness = 2;
+			// handle very distant points with line clipped in window
+			PixelLine line_rep;
+			int res = this->intersects(center, _width, fin_cadran - debut_cadran, pCourant, pSuivant, line_rep);
+
+			if (res > 0) {
+
+				// shift from center of rectangle to screen coordinates
+				line_rep.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
+
+				int16_t thickness = 1;
+				if (points_nb >= p_liste->idx_P1 &&
+						points_nb < p_liste->idx_P1 + 15) {
+					// show which path to take
+					thickness = 2;
+				}
+
+				// draw the line
+				drawLine(line_rep.x0, line_rep.y0,
+						line_rep.x1, line_rep.y1,
+						LS027_PIXEL_BLACK, thickness);
 			}
-
-			drawLine(regFenLim(pCourant._lon, minLon, maxLon, 0.f, _width),
-					regFenLim(pCourant._lat, minLat, maxLat, fin_cadran, debut_cadran),
-					regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran),
-					LS027_PIXEL_BLACK, thickness);
-
-			printed_nb++;
 		}
 
 		pCourant = pPt;
@@ -223,7 +212,7 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
 	sysview_task_void_exit(DisplayPoints);
 	sysview_task_void_enter(DisplayMyself);
 
-	LOG_INFO("VuePRC %u / %u points printed\r\n", printed_nb, points_nb);
+	LOG_INFO("VuePRC %u points in total\r\n", points_nb);
 
 	// ma position
 	if (att.loc.course > 0) {
@@ -261,10 +250,6 @@ void VuePRC::afficheParcours(uint8_t ligne, ListePoints2D *p_liste) {
  */
 void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
-	float minLat = 100.;
-	float minLon = 400.;
-	float maxLat = -100.;
-	float maxLon = -400.;
 	uint16_t points_nb = 0;
 	ListePoints *liste = nullptr;
 	Point pCourant, pSuivant;
@@ -293,24 +278,6 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 
 	LOG_DEBUG("Printing PRC\r\n");
 
-	// init zoom
-	this->setSpan(_width, fin_cadran - debut_cadran);
-
-	float dZoom_h;
-	float dZoom_v;
-
-	this->computeZoom(att.loc.lat, m_distance_prc, dZoom_h, dZoom_v);
-
-	// our pos is at the center
-	maxLat = minLat = att.loc.lat;
-	maxLon = minLon = att.loc.lon;
-
-	// zoom level
-	minLat -= dZoom_v;
-	minLon -= dZoom_h;
-	maxLat += dZoom_v;
-	maxLon += dZoom_h;
-
 	sysview_task_void_exit(ComputeZoom);
 	sysview_task_void_enter(DisplayPoints);
 
@@ -318,6 +285,7 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 	points_nb = 0;
 	uint16_t pourc = 0;
 	bool pourc_found = 0;
+	Location center(att.loc.lat, att.loc.lon);
 	for (auto& pPt : *liste->getLPTS()) {
 
 		if (p_seg->getStatus() == SEG_OFF && points_nb > SEG_OFF_NB_POINTS) {
@@ -334,56 +302,67 @@ void VuePRC::afficheSegment(uint8_t ligne, Segment *p_seg) {
 		}
 
 		// print only points in the current zoom
-		if (points_nb &&
-				(((pCourant._lon > minLon && pCourant._lon < maxLon) &&
-						(pCourant._lat > minLat && pCourant._lat < maxLat)) ||
-						((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
-								(pSuivant._lat > minLat && pSuivant._lat < maxLat)))) {
+		if (points_nb) {
 
 			if (!pSuivant.isValid() || !pCourant.isValid()) break;
 
-			drawLine(regFenLim(pCourant._lon, minLon, maxLon, 0.f, _width),
-					regFenLim(pCourant._lat, minLat, maxLat, fin_cadran, debut_cadran),
-					regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), LS027_PIXEL_BLACK);
+			// handle very distant points with line clipped in window
+			PixelLine line_rep;
+			int res = this->intersects(center, _width, fin_cadran - debut_cadran, pCourant, pSuivant, line_rep);
+
+			if (res > 0) {
+
+				// shift from center of rectangle to screen coordinates
+				line_rep.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
+
+				// draw the line
+				drawLine(line_rep.x0, line_rep.y0,
+						line_rep.x1, line_rep.y1,
+						LS027_PIXEL_BLACK);
+			}
 		}
 
-		pCourant = pSuivant;
+		pCourant = pPt;
 		points_nb++;
 	}
-	LOG_DEBUG("VuePRC %u points printed\r\n", points_nb);
 
+	PixelPoint point;
 	if (p_seg->getStatus() < SEG_OFF) {
 
-		// draw a rect at the end of the segment (done)
-		if (((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
-				(pSuivant._lat > minLat && pSuivant._lat < maxLat))) {
+		// draw a rectangle at the end of the segment (done)
+		if (this->includes(center, pSuivant, _width, fin_cadran - debut_cadran, point)) {
 
-			drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
+			// shift from center of rectangle to screen coordinates
+			point.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
+
+			drawRect(point.x - 5, point.y - 5, 10, 10, LS027_PIXEL_BLACK);
 		}
 	} else if (p_seg->getStatus() != SEG_OFF) {
 
 		// draw a flag at the end of the segment (not done yet)
-		if (((pSuivant._lon > minLon && pSuivant._lon < maxLon) &&
-						(pSuivant._lat > minLat && pSuivant._lat < maxLat))) {
+		if (this->includes(center, pSuivant, _width, fin_cadran - debut_cadran, point)) {
 
-			drawRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 10, 10, LS027_PIXEL_BLACK);
-			fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width) - 5,
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran) - 5, 5, 5, LS027_PIXEL_BLACK);
-			fillRect(regFenLim(pSuivant._lon, minLon, maxLon, 0.f, _width),
-					regFenLim(pSuivant._lat, minLat, maxLat, fin_cadran, debut_cadran), 5, 5, LS027_PIXEL_BLACK);
+			// shift from center of rectangle to screen coordinates
+			point.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
+
+			drawRect(point.x - 5, point.y - 5, 10, 10, LS027_PIXEL_BLACK);
+
+			fillRect(point.x - 5, point.y - 5, 5, 5, LS027_PIXEL_BLACK);
+
+			fillRect(point.x, point.y, 5, 5, LS027_PIXEL_BLACK);
 		}
 
 	} else {
 
 		// draw a circle at the start of the segment
 		maPos = liste->getFirstPoint();
-		if (((maPos->_lon > minLon && maPos->_lon < maxLon) &&
-				(maPos->_lat > minLat && maPos->_lat < maxLat)))
-			drawCircle(regFenLim(maPos->_lon, minLon, maxLon, 0.f, _width),
-					regFenLim(maPos->_lat, minLat, maxLat, fin_cadran, debut_cadran), 5.f, LS027_PIXEL_BLACK);
+		if (this->includes(center, *maPos, _width, fin_cadran - debut_cadran, point)) {
+
+			// shift from center of rectangle to screen coordinates
+			point.shift(_width/2, debut_cadran + _height / VUE_PRC_NB_LINES);
+
+			drawCircle(point.x, point.y, 5.f, LS027_PIXEL_BLACK);
+		}
 	}
 
 	// return before printing text

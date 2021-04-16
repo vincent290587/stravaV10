@@ -135,7 +135,7 @@ void model_input_virtual_uart(char c) {
 		locator.sim_loc.data.utc_time = locator.gps_loc.data.utc_time + vparser.getSecJ();
 		locator.sim_loc.data.date = locator.gps_loc.data.date;
 
-		locator.sim_loc.data.utc_timestamp = millis();
+		locator.sim_loc.data.utc_timestamp = date_to_timestamp(locator.sim_loc.data.utc_time, gps.date.day(), gps.date.month(), gps.date.year());
 
 		locator.sim_loc.setIsUpdated();
 
@@ -161,7 +161,7 @@ void model_input_virtual_uart(char c) {
 
 		// filename argument
 		vparser._qy_msg.toCharArray(fname, sizeof(fname));
-		if ((ret = sd_functions__start_query((eSDTaskQuery)vparser._qy, fname)) == 0) {
+		if ((ret = sd_functions__start_query((eSDTaskQuery)vparser._qy, fname, NULL)) == 0) {
 
 			LOG_INFO("SD function query start success");
 
@@ -282,6 +282,8 @@ void idle_task(void * p_context)
 #if APP_SCHEDULER_ENABLED
 		app_sched_execute();
 #endif
+
+		NRF_LOG_PROCESS();
 
 		pwr_mgmt_run();
 

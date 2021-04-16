@@ -10,7 +10,7 @@
 #include "boards.h"
 #include "Model.h"
 #include "gpio.h"
-//#include "nrf_pwr_mgmt.h"
+#include "sd_functions.h"
 #include "power_scheduler.h"
 
 #define POWER_SCHEDULER_MAX_IDLE_MIN               15
@@ -35,6 +35,9 @@ void power_scheduler__shutdown(void) {
 
 	// clear the saved attitude
 	memset(&m_app_error.saved_data.att, 0, sizeof(m_app_error.saved_data.att));
+
+	// finish writing out beloved FIT file
+	fit_terminate();
 
 	// shutdown system
 #if defined (PROTO_V11)

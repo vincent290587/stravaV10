@@ -164,6 +164,11 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
+	if (!test_zoom()) {
+		LOG_ERROR("Unit test zoom failed !");
+		exit(-1);
+	}
+
 	if (!test_fusion()) {
 		LOG_ERROR("Unit testing failed !");
 		exit(-1);
@@ -217,7 +222,6 @@ int main(void)
 	LOG_INFO("Program init");
 
 	m_tasks_id.boucle_id		= TASK_ID_INVALID;
-	m_tasks_id.system_id		= TASK_ID_INVALID;
 	m_tasks_id.peripherals_id	= TASK_ID_INVALID;
 	m_tasks_id.ls027_id			= TASK_ID_INVALID;
 	m_tasks_id.uart_id			= TASK_ID_INVALID;
@@ -262,8 +266,8 @@ int main(void)
 
 	delay_ms(1);
 
+	(void)task_create(system_task, "system_task", 65536, NULL);
 	m_tasks_id.boucle_id = task_create(boucle_task, "boucle_task", 65536, NULL);
-	m_tasks_id.system_id = task_create(system_task, "system_task", 65536, NULL);
 	m_tasks_id.peripherals_id = task_create(peripherals_task, "peripherals_task", 65536, NULL);
 	m_tasks_id.ls027_id = task_create(ls027_task, "ls027_task", 65536, NULL);
 

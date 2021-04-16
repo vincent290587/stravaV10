@@ -10,9 +10,46 @@
 #define ZOOM_H_
 
 #include <stdint.h>
+#include "Points.h"
 
 #define BASE_ZOOM_LEVEL    10.f
 #define BASE_ZOOM_METERS   250.f
+
+class PixelPoint {
+public:
+	PixelPoint() {
+		x = 0; y = 0;
+	}
+
+	void shift(int16_t h_pixels, int16_t v_pixels) {
+		x += h_pixels;
+		y += v_pixels;
+	}
+
+	int16_t x, y;
+};
+
+class PixelLine {
+public:
+	PixelLine() {
+
+		region_width  = 0;
+		region_length = 0;
+		x0 = 0; y0 = 0; x1 = 0; y1 = 0;
+	}
+
+	void shift(int16_t h_pixels, int16_t v_pixels) {
+
+		x0 += h_pixels;
+		x1 += h_pixels;
+		y0 += v_pixels;
+		y1 += v_pixels;
+	}
+
+	int16_t region_width;
+	int16_t region_length;
+	int16_t x0, y0, x1, y1;
+};
 
 class Zoom {
 public:
@@ -32,6 +69,13 @@ public:
 	float getLastZoom() const {
 		return m_last_zoom;
 	}
+
+	void setLastZoom(float zoom_m) {
+		m_last_zoom = zoom_m;
+	}
+
+	int includes(Location& center, Location& location1, int16_t h_pixels, int16_t v_pixels, PixelPoint& point);
+	int intersects(Location& center, int16_t h_pixels, int16_t v_pixels, Location& location1, Location& location2, PixelLine& line_rep);
 
 private:
 	uint16_t m_h_size;
