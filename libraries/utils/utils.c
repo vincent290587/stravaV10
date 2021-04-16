@@ -450,7 +450,7 @@ uint32_t date_to_timestamp(uint32_t sec_j, uint8_t day, uint8_t month, uint16_t 
 
 	static const uint32_t fitSystemTimeOffset = 631065600; // Needed for conversion from UNIX time to FIT time
 	static const uint8_t day_per_month[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-	uint32_t timestamp = 86400;
+	uint32_t timestamp = 0;
 
 	if (day < 1 || day > 31 ||
 			month < 1 || month > 12 ||
@@ -459,30 +459,32 @@ uint32_t date_to_timestamp(uint32_t sec_j, uint8_t day, uint8_t month, uint16_t 
 		return 0;
 	}
 
-	// iterate on the years
+	// iterate on the completed years
 	for (uint16_t curY = 1970; curY < year; curY++) {
 
-		uint8_t is_leap = (curY & 0b11) == 0;
-
-		timestamp += 86400 * 365;
-
-		if (is_leap) {
-
-			timestamp += 86400;
+		if ((curY & 0b11) == 0) {
+			// leap year
+			timestamp += 86400 * 366;
+		} else {
+			// non-leap year
+			timestamp += 86400 * 365;
 		}
 	}
 
 	// current year : completed months
-	for (uint8_t curM = 1; curM < sizeof(day_per_month) && curM < month; curM++) {
+	uint8_t is_leap = (year & 0b11) == 0;
+	for (uint8_t curM = 1; curM < month; curM++) {
 
 		timestamp += 86400 * day_per_month[curM];
 
+		if (is_leap && curM == 2) {
+			// current year is leap and February is completed
+			timestamp += 86400;
+		}
 	}
 
 	// current month: completed days
-	if (day > 1) {
-		timestamp += 86400 * (day - 1);
-	}
+	timestamp += 86400 * (day - 1);
 
 	timestamp += sec_j;
 
