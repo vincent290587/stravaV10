@@ -14,6 +14,7 @@ Included features:
 
 Autonomy depends on the use: it uses <8mA in indoor mode (100+ hours), and around 35mA in outdoor modes (30+ hours).
 
+![](docs/front1.png)
 
 ## Hardware
 
@@ -49,6 +50,8 @@ make flash            (or) make dfu
 
 
 ## Screenshots
+
+![](docs/side1.png) ![](docs/back1.png)  
 
 Outdoor modes:
 
