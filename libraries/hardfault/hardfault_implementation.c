@@ -1,7 +1,7 @@
 /*
  * hardfault_implementation.c
  *
- *  Created on: 23 déc. 2018
+ *  Created on: 23 dÃ©c. 2018
  *      Author: Vincent
  */
 
@@ -67,7 +67,6 @@ void HardFault_c_handler(uint32_t * p_stack_address)
 
     uint32_t cfsr = SCB->CFSR;
 
-#if defined(DEBUG)
     if (p_stack != NULL)
     {
         // Print information about error.
@@ -107,9 +106,10 @@ void HardFault_c_handler(uint32_t * p_stack_address)
 
 
 
+#if defined(DEBUG)
     NRF_BREAKPOINT_COND;
 
- #endif // defined (DEBUG)
+#endif // defined (DEBUG)
 
 #endif // __CORTEX_M == 0x04
 
